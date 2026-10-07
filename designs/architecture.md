@@ -56,13 +56,13 @@ Console 在 0.19 深色重构后继续统一文字与容器的比例，避免出
 
 post span-builder 审查现在是单一的项目闸门：`candidate spans -> Agent 生成建议 -> 用户在 /chronology 审查 -> 原子提交 -> fresh spans`。Agent 阶段不得直接把裁切、取消口播或非正字归一的文本修改写入 `store/spans.json`。
 
-- 结构化事实为 `analysis/speech-transcript-reviews/<inputsHash>.json`，包含 immutable baseline 引用、Agent 建议、用户选择和审计状态；Markdown 仅由同一 JSON 生成，按类别输出独立表格。
-- 正式类别只有五个：字幕的 `auto-normalized / suggested-correction / needs-listening`，口播窗口的 `suggested-trim / suggested-cancel`。无变化项完全省略。窗口 Agent 的 `needs-human` 表示没有足够把握提出动作，程序按 keep 处理并省略审查项；旧 `speech-window-needs-listening` 在读取时按 keep 丢弃，不再阻塞人工审查。
+- 结构化事实为 `analysis/speech-transcript-reviews/<inputsHash>.json`，包含 immutable baseline 引用、Agent 建议、用户选择、跨素材重复组和审计状态；Markdown 仅由同一 JSON 生成，按类别输出独立表格。新产物使用 schema v1.1，旧 v1.0 读取时迁移为空重复组。
+- 正式审查有六类：字幕的 `auto-normalized / suggested-correction / needs-listening`，口播窗口的 `suggested-trim / suggested-cancel`，以及跨素材 `duplicateGroups`。无变化项完全省略。窗口 Agent 的 `needs-human` 表示没有足够把握提出动作，程序按 keep 处理并省略审查项；旧 `speech-window-needs-listening` 在读取时按 keep 丢弃，不再阻塞人工审查。
 - 字幕 `needs-listening` 行通过只读 `GET /api/projects/:projectId/speech-transcript-review/audio/:assetId?startMs=&endMs=` 获取区间音频。客户端在正式审查区间前后各扩展 `1000ms`，起点不早于素材 `0ms`，终点由服务端按素材时长截断；试听余量不得写回字幕、speech window 或审查结果。服务端只允许从该项目 `store/assets.json` 与 ingest roots 解析素材，使用工作区 ffmpeg 转码并缓存到项目 `.tmp/chronology/speech-review-audio/`；客户端不传文件路径，缓存不改变任何分析或审查事实。
 - 确定性简体中文正字归一和 `config/transcript-normalization.json` 的精确替换规则可以在准备审查时写入 candidate spans，同时保留原文、命中规则和修正审计。精确替换采用一次、不级联的最长优先匹配；同一句在归一后仍作为 Agent 输入，不会因自动修正而跳过其他错字审查。其余 suggestion 初始 `accepted=true`，但只代表 UI 默认选择；用户改成不接受后，最终提交保留 baseline。字幕人工听音项以 `unresolved / completed` 表达审查状态，UI 只显示单个 `审查完成` Radio，结果由可编辑 `finalText` 决定。旧 `accepted / rejected` 字幕听音草稿在读取或保存时折叠到完成状态，rejected 的最终文本取原文。
-- 窗口裁切只引用原有 segment id/范围；取消口播清除该 speech candidate 的 transcript truth 和 `有口播语音` tag，但必须保留重叠 visual span。缺少合法视觉事实时取消建议无效。
-- 服务端批量提交是唯一正式写入口：它重新加载 baseline spans，校验 inputs/effective-glossary/normalization/trip hashes、segment 覆盖、建议边界、重复引用和视觉保留，然后一次写入 review、spans 与 meta。任一失败均保持原文件与 `pending-speech-review`。
-- `PUT /api/projects/:projectId/speech-transcript-review/draft` 只更新审查 artifact 中的选择、文本和裁切范围，并重写同源 Markdown；它必须复核 baseline/effective-glossary/normalization/trip hashes，不得修改 spans。Console 对用户修改做短延迟自动保存并显示持久化状态，刷新后从 artifact 恢复。
+- 窗口裁切只引用原有 segment id/范围；取消口播清除该 speech candidate 的 transcript truth 和 `有口播语音` tag，但必须保留重叠 visual span。缺少合法视觉事实时取消建议无效。重复组是独立的跨素材排除合同：Agent 只对明显同功能且可互相替代的 speech/mixed spans 分组，默认保留 1 项、互补时最多 2 项；用户拒绝分组时全部保留，接受时未保留 spans 从正式索引删除，但原始素材与分析事实不变。
+- 服务端批量提交是唯一正式写入口：它重新加载 baseline spans，校验 inputs/effective-glossary/normalization/trip hashes、segment 覆盖、建议边界、重复引用、视觉保留、重复组成员唯一性和每组 1–2 个保留项，然后一次写入 review、spans 与 meta。任一失败均保持原文件与 `pending-speech-review`。
+- `PUT /api/projects/:projectId/speech-transcript-review/draft` 只更新审查 artifact 中的选择、文本、裁切范围和重复组保留项，并重写同源 Markdown；它必须复核 baseline/effective-glossary/normalization/trip hashes，不得修改 spans。Console 对用户修改做短延迟自动保存并显示持久化状态，刷新后从 artifact 恢复。
 - effective glossary 由只读内置 `resources/transcript-glossaries/*.json` 与工作区 `config/transcript-glossary.json` 合并，同名时工作区语境覆盖内置语境。摄影/视频稳定术语进入内置领域表，人名、地名、菜名、设备型号和个人用语进入工作区表。glossary v3 条目固定为 `canonical + context`；v1/v2 只兼容读取，下一次保存迁移到 v3。两层词表只供 post-ASR Agent 判断，不进入 ASR prompt。
 
 ## 0.18 2026-08-31 Pharos 弹性行程与 record import 协议同步

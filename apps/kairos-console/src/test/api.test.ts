@@ -57,7 +57,11 @@ describe('Supervisor API compatibility', () => {
   it('submits the unified speech and transcript review in one batch', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'completed' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const payload = { inputsHash: 'hash', resolutions: [{ itemId: 'item-1', selection: 'rejected' }] };
+    const payload = {
+      inputsHash: 'hash',
+      resolutions: [{ itemId: 'item-1', selection: 'rejected' }],
+      duplicateGroupResolutions: [{ groupId: 'group-1', selection: 'accepted', retainedSpanIds: ['span-1'] }],
+    };
     await commitSpeechTranscriptReview('trip', payload);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/trip/speech-transcript-review/commit', expect.objectContaining({
       method: 'POST',
@@ -68,7 +72,11 @@ describe('Supervisor API compatibility', () => {
   it('persists speech review draft choices before final submission', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'pending-human' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const payload = { inputsHash: 'hash', resolutions: [{ itemId: 'item-1', selection: 'rejected' }] };
+    const payload = {
+      inputsHash: 'hash',
+      resolutions: [{ itemId: 'item-1', selection: 'rejected' }],
+      duplicateGroupResolutions: [{ groupId: 'group-1', selection: 'rejected', retainedSpanIds: [] }],
+    };
     await saveSpeechTranscriptReviewDraft('trip', payload);
     expect(fetchMock).toHaveBeenCalledWith('/api/projects/trip/speech-transcript-review/draft', expect.objectContaining({
       method: 'PUT',

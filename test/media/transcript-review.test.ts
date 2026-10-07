@@ -581,9 +581,10 @@ describe('post-ASR transcript review', () => {
     expect(staged.artifact.items.some(item => item.category === 'speech-window-needs-listening')).toBe(false);
     const report = await readFile(staged.reportPath, 'utf-8');
     expect(report).not.toContain('口播窗口｜需人工听音');
-    await writeJson(staged.artifactPath, {
-      ...staged.artifact,
-      items: [{
+    const legacyArtifact = JSON.parse(JSON.stringify(staged.artifact));
+    legacyArtifact.schemaVersion = '1.0';
+    delete legacyArtifact.duplicateGroups;
+    legacyArtifact.items = [{
         id: 'legacy-window-listen',
         category: 'speech-window-needs-listening',
         selection: 'unresolved',
@@ -593,9 +594,12 @@ describe('post-ASR transcript review', () => {
         endMs: span.sourceOutMs,
         originalText: span.transcript,
         reason: '旧窗口听音项',
-      }],
-    });
-    expect((await readSpeechTranscriptReviewArtifact(staged.artifactPath)).items).toHaveLength(0);
+      }];
+    await writeJson(staged.artifactPath, legacyArtifact);
+    const migratedLegacy = await readSpeechTranscriptReviewArtifact(staged.artifactPath);
+    expect(migratedLegacy.schemaVersion).toBe('1.1');
+    expect(migratedLegacy.duplicateGroups).toEqual([]);
+    expect(migratedLegacy.items).toHaveLength(0);
 
     await commitProjectSpeechTranscriptReview({
       workspaceRoot: fixture.workspaceRoot,
@@ -606,6 +610,221 @@ describe('post-ASR transcript review', () => {
     });
     expect((await loadSpans(fixture.projectRoot))[0]?.transcript).toBe('保留这段口播');
     expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('fresh');
+  });
+
+  it('stages cross-asset duplicate speech groups, persists the draft, and excludes unretained spans on commit', async () => {
+    const fixture = await createFixture();
+    const secondAsset = IKtepAsset.parse({
+      ...fixture.asset,
+      id: 'asset-2',
+      sourcePath: '/media/asset-2.mp4',
+      displayName: 'asset-2.mp4',
+    });
+    const secondReport = IAssetCoarseReport.parse({ ...fixture.report, assetId: secondAsset.id });
+    const spans = [
+      createSpan('span-intro-a', '这里是野猪嶂，我们现在开始登山。'),
+      IKtepSpan.parse({
+        ...createSpan('span-intro-b', '这里是野猪嶂，今天从这里开始登山。'),
+        assetId: secondAsset.id,
+      }),
+      IKtepSpan.parse({
+        ...createSpan('span-route', '前方进入盘山公路。'),
+        assetId: secondAsset.id,
+        sourceInMs: 3000,
+        sourceOutMs: 4000,
+        transcriptSegments: [{ startMs: 3000, endMs: 4000, text: '前方进入盘山公路。' }],
+      }),
+    ];
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets: [fixture.asset, secondAsset],
+      reports: [fixture.report, secondReport],
+      spans,
+      speechCandidates: spans,
+      inputsHash: 'inputs-duplicates',
+      generatedAt: '2026-10-07T00:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-duplicates', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-duplicates',
+      transcriptDecisions: prepared.artifact.items.map(item => ({
+        itemId: item.id,
+        inputsHash: 'inputs-duplicates',
+        originalTextHash: item.originalTextHash,
+        startMs: item.startMs,
+        endMs: item.endMs,
+        action: 'keep-original' as const,
+        confidence: 0.98,
+        containsProperNoun: false,
+        evidence: [],
+      })),
+      windowDecisions: spans.map(span => ({
+        spanId: span.id,
+        inputsHash: 'inputs-duplicates',
+        action: 'keep' as const,
+        confidence: 0.98,
+        reason: '有效口播',
+        evidence: [],
+      })),
+      duplicateGroupDecisions: [{
+        inputsHash: 'inputs-duplicates',
+        spanIds: ['span-intro-a', 'span-intro-b'],
+        recommendedSpanIds: ['span-intro-b'],
+        label: '野猪嶂开场介绍',
+        reason: '两段承担相同开场功能，第二段表达更完整。',
+        confidence: 0.97,
+      }],
+      now: '2026-10-07T00:10:00.000Z',
+    });
+    expect(staged.artifact.schemaVersion).toBe('1.1');
+    expect(staged.artifact.duplicateGroups[0]).toMatchObject({
+      label: '野猪嶂开场介绍',
+      selection: 'accepted',
+      recommendedSpanIds: ['span-intro-b'],
+      retainedSpanIds: ['span-intro-b'],
+    });
+    expect(staged.artifact.duplicateGroups[0]?.candidates.map(candidate => candidate.assetId)).toEqual([
+      'asset-1',
+      'asset-2',
+    ]);
+    const groupId = staged.artifact.duplicateGroups[0]!.id;
+    await saveProjectSpeechTranscriptReviewDraft({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-duplicates',
+      resolutions: [],
+      duplicateGroupResolutions: [{
+        groupId,
+        selection: 'accepted',
+        retainedSpanIds: ['span-intro-a'],
+      }],
+      now: '2026-10-07T00:15:00.000Z',
+    });
+    expect((await readSpeechTranscriptReviewArtifact(staged.artifactPath)).duplicateGroups[0]?.retainedSpanIds)
+      .toEqual(['span-intro-a']);
+
+    await commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-duplicates',
+      resolutions: [],
+      duplicateGroupResolutions: [],
+      now: '2026-10-07T00:20:00.000Z',
+    });
+    const committed = await loadSpans(fixture.projectRoot);
+    expect(committed.some(span => span.assetId === 'asset-1' && span.transcript?.includes('野猪嶂'))).toBe(true);
+    expect(committed.some(span => span.assetId === 'asset-2' && span.sourceInMs === 1000)).toBe(false);
+    expect(committed.some(span => span.assetId === 'asset-2' && span.sourceInMs === 3000)).toBe(true);
+    expect((await loadSpansMeta(fixture.projectRoot))?.speechReview).toMatchObject({
+      duplicateGroupCount: 1,
+      duplicateCandidateCount: 2,
+      duplicateExcludedCount: 1,
+    });
+    expect(await readFile(staged.reportPath, 'utf-8')).toContain('## 口播｜重复候选');
+  });
+
+  it('keeps every candidate when the human rejects a duplicate group and rejects invalid group contracts', async () => {
+    const fixture = await createFixture();
+    const spans = [
+      createSpan('span-repeat-a', '再介绍一次这个景点。'),
+      IKtepSpan.parse({
+        ...createSpan('span-repeat-b', '再介绍一次这个景点。'),
+        sourceInMs: 3000,
+        sourceOutMs: 4000,
+        transcriptSegments: [{ startMs: 3000, endMs: 4000, text: '再介绍一次这个景点。' }],
+      }),
+    ];
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets: [fixture.asset],
+      reports: [fixture.report],
+      spans,
+      speechCandidates: spans,
+      inputsHash: 'inputs-reject-duplicates',
+      generatedAt: '2026-10-07T01:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-reject-duplicates', prepared.artifactPath);
+    const transcriptDecisions = prepared.artifact.items.map(item => ({
+      itemId: item.id,
+      inputsHash: 'inputs-reject-duplicates',
+      originalTextHash: item.originalTextHash,
+      startMs: item.startMs,
+      endMs: item.endMs,
+      action: 'keep-original' as const,
+      confidence: 0.98,
+      containsProperNoun: false,
+      evidence: [],
+    }));
+    const windowDecisions = spans.map(span => ({
+      spanId: span.id,
+      inputsHash: 'inputs-reject-duplicates',
+      action: 'keep' as const,
+      confidence: 0.98,
+      reason: '有效口播',
+      evidence: [],
+    }));
+    await expect(stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-reject-duplicates',
+      transcriptDecisions,
+      windowDecisions,
+      duplicateGroupDecisions: [
+        {
+          inputsHash: 'inputs-reject-duplicates',
+          spanIds: ['span-repeat-a', 'span-repeat-b'],
+          recommendedSpanIds: ['span-repeat-a'],
+          label: '第一次分组',
+          reason: '重复',
+          confidence: 0.9,
+        },
+        {
+          inputsHash: 'inputs-reject-duplicates',
+          spanIds: ['span-repeat-a', 'span-repeat-b'],
+          recommendedSpanIds: ['span-repeat-b'],
+          label: '第二次分组',
+          reason: '重复',
+          confidence: 0.9,
+        },
+      ],
+    })).rejects.toThrow(/multiple duplicate groups/u);
+
+    const staged = await stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-reject-duplicates',
+      transcriptDecisions,
+      windowDecisions,
+      duplicateGroupDecisions: [{
+        inputsHash: 'inputs-reject-duplicates',
+        spanIds: ['span-repeat-a', 'span-repeat-b'],
+        recommendedSpanIds: ['span-repeat-a'],
+        label: '景点介绍重复',
+        reason: '两段内容相同。',
+        confidence: 0.95,
+      }],
+    });
+    const groupId = staged.artifact.duplicateGroups[0]!.id;
+    await expect(commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-reject-duplicates',
+      duplicateGroupResolutions: [{ groupId, selection: 'accepted', retainedSpanIds: [] }],
+    })).rejects.toThrow();
+    expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('pending-speech-review');
+
+    await commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-reject-duplicates',
+      duplicateGroupResolutions: [{ groupId, selection: 'rejected', retainedSpanIds: [] }],
+      now: '2026-10-07T01:20:00.000Z',
+    });
+    const committed = await loadSpans(fixture.projectRoot);
+    expect(committed).toHaveLength(2);
+    expect(committed.map(span => span.sourceInMs).sort((left, right) => (left ?? 0) - (right ?? 0))).toEqual([1000, 3000]);
   });
 });
 

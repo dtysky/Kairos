@@ -452,6 +452,9 @@ export const ISpansMeta = z.object({
     suggestedTrimCount: z.number().int().nonnegative().optional(),
     suggestedCancelCount: z.number().int().nonnegative().optional(),
     needsListeningCount: z.number().int().nonnegative().optional(),
+    duplicateGroupCount: z.number().int().nonnegative().optional(),
+    duplicateCandidateCount: z.number().int().nonnegative().optional(),
+    duplicateExcludedCount: z.number().int().nonnegative().optional(),
     glossaryHash: z.string().optional(),
     normalizationHash: z.string().optional(),
     tripContextHash: z.string().optional(),
@@ -2489,6 +2492,86 @@ export const ISpeechWindowAgentDecision = z.object({
 });
 export type ISpeechWindowAgentDecision = z.infer<typeof ISpeechWindowAgentDecision>;
 
+export const ISpeechDuplicateGroupAgentDecision = z.object({
+  inputsHash: z.string(),
+  spanIds: z.array(z.string()).min(2),
+  recommendedSpanIds: z.array(z.string()).min(1).max(2),
+  label: z.string().min(1),
+  reason: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+}).strict().superRefine((group, context) => {
+  const spanIds = new Set(group.spanIds);
+  if (spanIds.size !== group.spanIds.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate group spanIds must be unique' });
+  }
+  const recommended = new Set(group.recommendedSpanIds);
+  if (recommended.size !== group.recommendedSpanIds.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate group recommendedSpanIds must be unique' });
+  }
+  if (group.recommendedSpanIds.some(spanId => !spanIds.has(spanId))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate group recommendations must belong to the group' });
+  }
+});
+export type ISpeechDuplicateGroupAgentDecision = z.infer<typeof ISpeechDuplicateGroupAgentDecision>;
+
+export const ISpeechDuplicateCandidateSnapshot = z.object({
+  spanId: z.string(),
+  assetId: z.string(),
+  assetDisplayName: z.string().optional(),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  transcript: z.string().optional(),
+  visualObservation: z.string().optional(),
+}).strict().superRefine((candidate, context) => {
+  if (candidate.endMs < candidate.startMs) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate candidate endMs must be >= startMs' });
+  }
+});
+export type ISpeechDuplicateCandidateSnapshot = z.infer<typeof ISpeechDuplicateCandidateSnapshot>;
+
+export const ISpeechDuplicateReviewGroup = z.object({
+  id: z.string(),
+  label: z.string().min(1),
+  reason: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+  selection: z.enum(['accepted', 'rejected']),
+  candidates: z.array(ISpeechDuplicateCandidateSnapshot).min(2),
+  recommendedSpanIds: z.array(z.string()).min(1).max(2),
+  retainedSpanIds: z.array(z.string()).min(1).max(2),
+  resolvedAt: z.string().optional(),
+}).strict().superRefine((group, context) => {
+  const candidateIds = new Set(group.candidates.map(candidate => candidate.spanId));
+  if (candidateIds.size !== group.candidates.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate group candidates must be unique' });
+  }
+  for (const [field, values] of [
+    ['recommendedSpanIds', group.recommendedSpanIds],
+    ['retainedSpanIds', group.retainedSpanIds],
+  ] as const) {
+    if (new Set(values).size !== values.length) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate group ${field} must be unique` });
+    }
+    if (values.some(spanId => !candidateIds.has(spanId))) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate group ${field} must belong to candidates` });
+    }
+  }
+});
+export type ISpeechDuplicateReviewGroup = z.infer<typeof ISpeechDuplicateReviewGroup>;
+
+export const ISpeechDuplicateGroupResolution = z.object({
+  groupId: z.string(),
+  selection: z.enum(['accepted', 'rejected']),
+  retainedSpanIds: z.array(z.string()).max(2).default([]),
+}).strict().superRefine((resolution, context) => {
+  if (resolution.selection === 'accepted' && resolution.retainedSpanIds.length < 1) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'accepted duplicate group must retain at least one span' });
+  }
+  if (new Set(resolution.retainedSpanIds).size !== resolution.retainedSpanIds.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'duplicate group retainedSpanIds must be unique' });
+  }
+});
+export type ISpeechDuplicateGroupResolution = z.infer<typeof ISpeechDuplicateGroupResolution>;
+
 export const ESpeechTranscriptReviewCategory = z.enum([
   'transcript-auto-normalized',
   'transcript-suggested-correction',
@@ -2549,7 +2632,7 @@ export const ISpeechTranscriptReviewItem = z.object({
 export type ISpeechTranscriptReviewItem = z.infer<typeof ISpeechTranscriptReviewItem>;
 
 export const ISpeechTranscriptReviewArtifact = z.object({
-  schemaVersion: z.literal('1.0'),
+  schemaVersion: z.enum(['1.0', '1.1']),
   projectId: z.string(),
   inputsHash: z.string(),
   baselineSpansHash: z.string(),
@@ -2561,6 +2644,7 @@ export const ISpeechTranscriptReviewArtifact = z.object({
   updatedAt: z.string(),
   reportPath: z.string(),
   items: z.array(ISpeechTranscriptReviewItem).default([]),
+  duplicateGroups: z.array(ISpeechDuplicateReviewGroup).default([]),
 });
 export type ISpeechTranscriptReviewArtifact = z.infer<typeof ISpeechTranscriptReviewArtifact>;
 

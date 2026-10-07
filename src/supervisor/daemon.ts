@@ -731,6 +731,9 @@ async function routeRequest(
       projectRoot,
       inputsHash,
       resolutions: Array.isArray(payload?.resolutions) ? payload.resolutions : [],
+      duplicateGroupResolutions: Array.isArray(payload?.duplicateGroupResolutions)
+        ? payload.duplicateGroupResolutions
+        : [],
     });
     sendJson(response, 200, artifact);
     return;
@@ -751,6 +754,9 @@ async function routeRequest(
       projectRoot,
       inputsHash,
       resolutions: Array.isArray(payload?.resolutions) ? payload.resolutions : [],
+      duplicateGroupResolutions: Array.isArray(payload?.duplicateGroupResolutions)
+        ? payload.duplicateGroupResolutions
+        : [],
     });
     sendJson(response, 200, artifact);
     return;

@@ -87,7 +87,7 @@ Kairos 的标准顺序是：
 - 有 `store/assets.json` 但缺少对应 `analysis/asset-reports/*.json`：先做 `Analyze`
 - 如果已有完整 `analysis/asset-reports/*.json`，用户只改了 span 派生口径，优先去 `/chronology` 运行 `生成候选素材片段与模式`，不能默认重跑完整 Analyze
 - 如果用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，先运行 `spatial-refresh` 修补 reports，再回 `/chronology` 重新生成 spans 和 chronology
-- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 meta 为 `pending-speech-review`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成候选素材片段与模式；如 pending 则由 Codex Agent 生成统一口播与字幕审查报告，用户在五张分类表中复核默认接受的建议并处理字幕需听音项。提交后生成 chronology 候选，再复制 UI 指令交给 Codex Agent 完成事件语义归并，最后才开放人工 chronology 审查和确认；无法可靠提出动作的窗口保持原状，不增加人工任务
+- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 meta 为 `pending-speech-review`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成候选素材片段与模式；如 pending 则由 Codex Agent 生成统一口播与字幕审查报告，用户在六个分类区中复核默认接受的建议、跨素材重复口播保留项并处理字幕需听音项。提交后生成 chronology 候选，再复制 UI 指令交给 Codex Agent 完成事件语义归并，最后才开放人工 chronology 审查和确认；无法可靠提出动作的窗口保持原状，不增加人工任务
 - 有 confirmed chronology，但缺少 `edits/<editId>/config/edit-unit.json` 或其中没有 `editRuleCategory`：先进入 `/edit` 初始化 Edit Unit
 - 有 Edit Unit 但缺少 confirmed `edits/<editId>/planning/flow-plan.json`：由 Codex Agent 生成/更新 Flow Plan；如果后续 capability 声明需要 fresh spans，再由该 step 精确阻塞
 - 有 confirmed Flow Plan 但缺少当前 `plannerPolicyVersion=codex-agent-v1` 或 `materialIdPolicyVersion=human-source-v1`：视为旧计划，由 Codex Agent 重新生成

@@ -5,6 +5,8 @@ import { z } from 'zod';
 import {
   ITranscriptAgentDecision,
   ITranscriptReviewArtifact,
+  ISpeechDuplicateGroupAgentDecision,
+  ISpeechDuplicateGroupResolution,
   ISpeechTranscriptReviewArtifact,
   ISpeechTranscriptReviewDraftResolution,
   ISpeechTranscriptReviewResolution,
@@ -22,6 +24,9 @@ import {
   type ITranscriptReviewArtifact as TTranscriptReviewArtifact,
   type ITranscriptReviewContextEvent,
   type ITranscriptReviewItem,
+  type ISpeechDuplicateGroupAgentDecision as TSpeechDuplicateGroupAgentDecision,
+  type ISpeechDuplicateGroupResolution as TSpeechDuplicateGroupResolution,
+  type ISpeechDuplicateReviewGroup,
   type ISpeechTranscriptReviewArtifact as TSpeechTranscriptReviewArtifact,
   type ISpeechTranscriptReviewDraftResolution as TSpeechTranscriptReviewDraftResolution,
   type ISpeechTranscriptReviewItem,
@@ -439,6 +444,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
   inputsHash: string;
   transcriptDecisions: TTranscriptAgentDecision[];
   windowDecisions: TSpeechWindowAgentDecision[];
+  duplicateGroupDecisions?: TSpeechDuplicateGroupAgentDecision[];
   now?: string;
 }): Promise<IStageSpeechTranscriptReviewResult> {
   const now = input.now ?? new Date().toISOString();
@@ -493,6 +499,9 @@ export async function stageProjectSpeechTranscriptReview(input: {
   if (missingWindows.length > 0) {
     throw new Error(`Agent window decisions are incomplete: ${missingWindows.length} span(s) missing`);
   }
+  const duplicateGroupDecisions = z.array(ISpeechDuplicateGroupAgentDecision).parse(
+    input.duplicateGroupDecisions ?? [],
+  );
 
   const reviewItems: ISpeechTranscriptReviewItem[] = candidateArtifact.autoNormalizations.map(item => ({
     id: `speech-review-${item.id}`,
@@ -613,11 +622,18 @@ export async function stageProjectSpeechTranscriptReview(input: {
       visualSpanIds: visualSpanIds.length > 0 ? visualSpanIds : [span.id],
     });
   }
+  const duplicateGroups = buildSpeechDuplicateReviewGroups({
+    inputsHash: input.inputsHash,
+    decisions: duplicateGroupDecisions,
+    spans: spansAfterNormalization,
+    transcriptItems: candidateArtifact.items,
+    windowDecisionBySpanId,
+  });
 
   const artifactPath = getSpeechTranscriptReviewArtifactPath(input.projectRoot, input.inputsHash);
   const reportPath = getSpeechTranscriptReviewReportPath(input.projectRoot, input.inputsHash);
   const artifact = ISpeechTranscriptReviewArtifact.parse({
-    schemaVersion: '1.0',
+    schemaVersion: '1.1',
     projectId: candidateArtifact.projectId,
     inputsHash: input.inputsHash,
     baselineSpansHash: hashJson(spansAfterNormalization),
@@ -629,6 +645,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
     updatedAt: now,
     reportPath,
     items: reviewItems,
+    duplicateGroups,
   });
   await writeJson(getSpansPath(input.projectRoot), spansAfterNormalization);
   await writeJson(artifactPath, artifact);
@@ -648,6 +665,9 @@ export async function stageProjectSpeechTranscriptReview(input: {
       suggestedTrimCount: countReviewCategory(reviewItems, 'speech-window-suggested-trim'),
       suggestedCancelCount: countReviewCategory(reviewItems, 'speech-window-suggested-cancel'),
       needsListeningCount: reviewItems.filter(item => item.category.endsWith('needs-listening')).length,
+      duplicateGroupCount: duplicateGroups.length,
+      duplicateCandidateCount: duplicateGroups.reduce((sum, group) => sum + group.candidates.length, 0),
+      duplicateExcludedCount: countExcludedDuplicateSpans(duplicateGroups),
       reviewArtifactPath: artifactPath,
       reportPath,
       glossaryHash: artifact.glossaryHash,
@@ -664,6 +684,7 @@ export async function saveProjectSpeechTranscriptReviewDraft(input: {
   projectRoot: string;
   inputsHash: string;
   resolutions: TSpeechTranscriptReviewDraftResolution[];
+  duplicateGroupResolutions?: TSpeechDuplicateGroupResolution[];
   now?: string;
 }): Promise<TSpeechTranscriptReviewArtifact> {
   const now = input.now ?? new Date().toISOString();
@@ -713,8 +734,15 @@ export async function saveProjectSpeechTranscriptReviewDraft(input: {
   });
   const nextArtifact = ISpeechTranscriptReviewArtifact.parse({
     ...artifact,
+    schemaVersion: '1.1',
     updatedAt: now,
     items: normalizedItems,
+    duplicateGroups: applyDuplicateGroupResolutions({
+      groups: artifact.duplicateGroups,
+      resolutions: z.array(ISpeechDuplicateGroupResolution).parse(input.duplicateGroupResolutions ?? []),
+      now,
+      finalize: false,
+    }),
   });
   await writeJson(artifactPath, nextArtifact);
   await writeSpeechTranscriptReviewReport(nextArtifact.reportPath, nextArtifact);
@@ -723,6 +751,7 @@ export async function saveProjectSpeechTranscriptReviewDraft(input: {
     speechReview: {
       ...meta.speechReview,
       pendingCorrectionCount: normalizedItems.filter(item => item.selection === 'unresolved').length,
+      duplicateExcludedCount: countExcludedDuplicateSpans(nextArtifact.duplicateGroups),
       updatedAt: now,
     },
   });
@@ -734,6 +763,7 @@ export async function commitProjectSpeechTranscriptReview(input: {
   projectRoot: string;
   inputsHash: string;
   resolutions?: TSpeechTranscriptReviewResolution[];
+  duplicateGroupResolutions?: TSpeechDuplicateGroupResolution[];
   now?: string;
 }): Promise<TSpeechTranscriptReviewArtifact> {
   const now = input.now ?? new Date().toISOString();
@@ -784,12 +814,21 @@ export async function commitProjectSpeechTranscriptReview(input: {
     if (action === 'trim') spans = applyUnifiedWindowTrim(spans, item);
     if (action === 'cancel') spans = applyUnifiedWindowCancel(spans, item);
   }
+  const duplicateGroups = applyDuplicateGroupResolutions({
+    groups: artifact.duplicateGroups,
+    resolutions: z.array(ISpeechDuplicateGroupResolution).parse(input.duplicateGroupResolutions ?? []),
+    now,
+    finalize: true,
+  });
+  spans = applyAcceptedDuplicateGroups(spans, duplicateGroups);
   spans = assignUniqueMaterialSpanIds(spans);
   const completedArtifact = ISpeechTranscriptReviewArtifact.parse({
     ...artifact,
+    schemaVersion: '1.1',
     status: 'completed',
     updatedAt: now,
     items: resolvedItems,
+    duplicateGroups,
   });
   validateFinalSpeechTranscriptReview(spans, completedArtifact);
   await writeJson(getSpansPath(input.projectRoot), spans);
@@ -804,6 +843,9 @@ export async function commitProjectSpeechTranscriptReview(input: {
       status: 'completed',
       phase: 'human',
       pendingCorrectionCount: 0,
+      duplicateGroupCount: duplicateGroups.length,
+      duplicateCandidateCount: duplicateGroups.reduce((sum, group) => sum + group.candidates.length, 0),
+      duplicateExcludedCount: countExcludedDuplicateSpans(duplicateGroups),
       updatedAt: now,
     },
   });
@@ -822,6 +864,7 @@ export async function readSpeechTranscriptReviewArtifact(path: string): Promise<
   const artifact = ISpeechTranscriptReviewArtifact.parse(JSON.parse(await readFile(path, 'utf-8')));
   return ISpeechTranscriptReviewArtifact.parse({
     ...artifact,
+    schemaVersion: '1.1',
     items: artifact.items
       .filter(item => item.category !== 'speech-window-needs-listening')
       .map(normalizeLegacyNeedsListeningItem),
@@ -969,6 +1012,135 @@ function countReviewCategory(
   category: ISpeechTranscriptReviewItem['category'],
 ): number {
   return items.filter(item => item.category === category).length;
+}
+
+function buildSpeechDuplicateReviewGroups(input: {
+  inputsHash: string;
+  decisions: TSpeechDuplicateGroupAgentDecision[];
+  spans: IKtepSpan[];
+  transcriptItems: ITranscriptReviewItem[];
+  windowDecisionBySpanId: Map<string, TSpeechWindowAgentDecision>;
+}): ISpeechDuplicateReviewGroup[] {
+  const spanById = new Map(
+    input.spans
+      .filter(span => span.semanticKind === 'speech' || span.semanticKind === 'mixed')
+      .map(span => [span.id, span] as const),
+  );
+  const assetDisplayNameById = new Map<string, string>();
+  for (const item of input.transcriptItems) {
+    if (item.assetDisplayName && !assetDisplayNameById.has(item.assetId)) {
+      assetDisplayNameById.set(item.assetId, item.assetDisplayName);
+    }
+  }
+  const usedSpanIds = new Set<string>();
+  const groupIds = new Set<string>();
+  return input.decisions.map(decision => {
+    if (decision.inputsHash !== input.inputsHash) {
+      throw new Error(`duplicate group uses stale inputsHash: ${decision.label}`);
+    }
+    for (const spanId of decision.spanIds) {
+      const span = spanById.get(spanId);
+      if (!span) throw new Error(`duplicate group references unknown speech candidate: ${spanId}`);
+      if (usedSpanIds.has(spanId)) throw new Error(`speech candidate belongs to multiple duplicate groups: ${spanId}`);
+      if (input.windowDecisionBySpanId.get(spanId)?.action === 'cancel') {
+        throw new Error(`cancelled speech candidate cannot belong to a duplicate group: ${spanId}`);
+      }
+      usedSpanIds.add(spanId);
+    }
+    const sortedSpanIds = [...decision.spanIds].sort((left, right) => left.localeCompare(right, 'en'));
+    const id = `speech-duplicate-${hashText(`${input.inputsHash}:${sortedSpanIds.join('|')}`).slice(0, 20)}`;
+    if (groupIds.has(id)) throw new Error(`duplicate Agent duplicate group: ${id}`);
+    groupIds.add(id);
+    return {
+      id,
+      label: decision.label.trim(),
+      reason: decision.reason.trim(),
+      confidence: decision.confidence,
+      selection: 'accepted' as const,
+      candidates: decision.spanIds.map(spanId => {
+        const span = spanById.get(spanId)!;
+        return {
+          spanId,
+          assetId: span.assetId,
+          assetDisplayName: assetDisplayNameById.get(span.assetId),
+          startMs: span.sourceInMs ?? 0,
+          endMs: span.sourceOutMs ?? span.sourceInMs ?? 0,
+          transcript: span.transcript,
+          visualObservation: span.visualObservation,
+        };
+      }),
+      recommendedSpanIds: [...decision.recommendedSpanIds],
+      retainedSpanIds: [...decision.recommendedSpanIds],
+    };
+  });
+}
+
+function countExcludedDuplicateSpans(groups: ISpeechDuplicateReviewGroup[]): number {
+  return groups.reduce((sum, group) => (
+    group.selection === 'accepted'
+      ? sum + group.candidates.length - group.retainedSpanIds.length
+      : sum
+  ), 0);
+}
+
+function applyDuplicateGroupResolutions(input: {
+  groups: ISpeechDuplicateReviewGroup[];
+  resolutions: TSpeechDuplicateGroupResolution[];
+  now: string;
+  finalize: boolean;
+}): ISpeechDuplicateReviewGroup[] {
+  const groupById = new Map(input.groups.map(group => [group.id, group] as const));
+  const resolutionById = new Map<string, TSpeechDuplicateGroupResolution>();
+  for (const resolution of input.resolutions) {
+    if (!groupById.has(resolution.groupId)) {
+      throw new Error(`duplicate group resolution references unknown group: ${resolution.groupId}`);
+    }
+    if (resolutionById.has(resolution.groupId)) {
+      throw new Error(`duplicate duplicate-group resolution: ${resolution.groupId}`);
+    }
+    resolutionById.set(resolution.groupId, resolution);
+  }
+  return input.groups.map(group => {
+    const resolution = resolutionById.get(group.id);
+    const candidateIds = new Set(group.candidates.map(candidate => candidate.spanId));
+    const retainedSpanIds = resolution?.selection === 'accepted'
+      ? [...resolution.retainedSpanIds]
+      : [...group.retainedSpanIds];
+    if (retainedSpanIds.some(spanId => !candidateIds.has(spanId))) {
+      throw new Error(`duplicate group ${group.id} retains a span outside the group`);
+    }
+    const selection = resolution?.selection ?? group.selection;
+    if (selection === 'accepted' && (retainedSpanIds.length < 1 || retainedSpanIds.length > 2)) {
+      throw new Error(`duplicate group ${group.id} must retain one or two spans`);
+    }
+    return {
+      ...group,
+      selection,
+      retainedSpanIds,
+      resolvedAt: input.finalize ? input.now : undefined,
+    };
+  });
+}
+
+function applyAcceptedDuplicateGroups(
+  spans: IKtepSpan[],
+  groups: ISpeechDuplicateReviewGroup[],
+): IKtepSpan[] {
+  const spanIds = new Set(spans.map(span => span.id));
+  const excludedSpanIds = new Set<string>();
+  for (const group of groups) {
+    const candidateIds = group.candidates.map(candidate => candidate.spanId);
+    const missing = candidateIds.filter(spanId => !spanIds.has(spanId));
+    if (missing.length > 0) {
+      throw new Error(`duplicate group ${group.id} no longer matches baseline spans: ${missing[0]}`);
+    }
+    if (group.selection !== 'accepted') continue;
+    const retained = new Set(group.retainedSpanIds);
+    for (const spanId of candidateIds) {
+      if (!retained.has(spanId)) excludedSpanIds.add(spanId);
+    }
+  }
+  return spans.filter(span => !excludedSpanIds.has(span.id));
 }
 
 function findVisualRecallSpans(spans: IKtepSpan[], speechSpan: IKtepSpan): string[] {
@@ -1271,6 +1443,7 @@ async function writeSpeechTranscriptReviewReport(
     '| 分类 | 数量 |',
     '|---|---:|',
     ...categories.map(entry => `| ${entry.title} | ${countReviewCategory(artifact.items, entry.category)} |`),
+    `| 口播｜重复候选 | ${artifact.duplicateGroups.length} |`,
     '',
   ];
   for (const entry of categories) {
@@ -1287,6 +1460,20 @@ async function writeSpeechTranscriptReviewReport(
       for (const item of items) {
         lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.assetDisplayName ?? item.assetId)} | ${md(item.spanIds.join(', '))} | ${formatReviewRange(item.startMs, item.endMs)} | ${md(item.originalText)} | ${md(formatWindowSuggestion(item))} | ${md(item.reason)} |`);
       }
+    }
+    lines.push('');
+  }
+  if (artifact.duplicateGroups.length > 0) {
+    lines.push('## 口播｜重复候选', '');
+    lines.push('| 状态 | 功能 | 候选 | 保留 | 依据 |', '|---|---|---|---|---|');
+    for (const group of artifact.duplicateGroups) {
+      const candidates = group.candidates
+        .map(candidate => `${candidate.assetDisplayName ?? candidate.assetId} / ${candidate.spanId}`)
+        .join('；');
+      const retained = group.selection === 'rejected'
+        ? '不采用分组，全部保留'
+        : group.retainedSpanIds.join('；');
+      lines.push(`| ${group.selection === 'accepted' ? '采用' : '不采用'} | ${md(group.label)} | ${md(candidates)} | ${md(retained)} | ${md(group.reason)} |`);
     }
     lines.push('');
   }

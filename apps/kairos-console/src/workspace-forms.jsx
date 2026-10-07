@@ -3117,6 +3117,7 @@ const SPEECH_TRANSCRIPT_REVIEW_SECTIONS = [
 export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, onSubmit, busy = false }) {
   const [drafts, setDrafts] = React.useState({});
   const [activeAudioId, setActiveAudioId] = React.useState(null);
+  const [activeDuplicateGroupId, setActiveDuplicateGroupId] = React.useState('');
   const [saveStatus, setSaveStatus] = React.useState('saved');
   const [saveError, setSaveError] = React.useState('');
   const draftDirtyRef = React.useRef(false);
@@ -3143,8 +3144,15 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
         windowAction: item.resolvedWindowAction || '',
       };
     }
+    for (const group of review?.duplicateGroups || []) {
+      next[group.id] = {
+        selection: group.selection,
+        retainedSpanIds: [...(group.retainedSpanIds || group.recommendedSpanIds || [])],
+      };
+    }
     setDrafts(next);
     setActiveAudioId(null);
+    setActiveDuplicateGroupId('');
     draftDirtyRef.current = false;
     setSaveStatus('saved');
     setSaveError('');
@@ -3186,6 +3194,14 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
     item.category === 'transcript-needs-listening'
     && (drafts[item.id]?.selection || item.selection) === 'unresolved'
   ));
+  const invalidDuplicateGroups = (review.duplicateGroups || []).filter(group => {
+    const draft = drafts[group.id] || group;
+    const selection = draft.selection || group.selection;
+    const retainedSpanIds = draft.retainedSpanIds || group.retainedSpanIds || [];
+    return selection === 'accepted' && (retainedSpanIds.length < 1 || retainedSpanIds.length > 2);
+  });
+  const activeDuplicateGroup = (review.duplicateGroups || [])
+    .find(group => group.id === activeDuplicateGroupId) || null;
 
   function submitReview() {
     saveSequenceRef.current += 1;
@@ -3336,8 +3352,115 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
           </section>
         );
       })}
+      {(review.duplicateGroups || []).length > 0 ? (
+        <section className="speech-review-section speech-duplicate-groups-section">
+          <div className="section-header">
+            <div>
+              <h3>口播｜重复候选</h3>
+              <p className="muted">Agent 已跨视频分组并预选建议保留项；人工可改选或不采用整个分组。</p>
+            </div>
+            <Tag color={invalidDuplicateGroups.length > 0 ? 'error' : 'processing'}>
+              {invalidDuplicateGroups.length > 0 ? `${invalidDuplicateGroups.length} 组选择无效` : `${review.duplicateGroups.length} 组`}
+            </Tag>
+          </div>
+          <Table
+            rowKey="id"
+            size="small"
+            pagination={false}
+            dataSource={review.duplicateGroups}
+            columns={[
+              {
+                title: '状态',
+                key: 'selection',
+                width: 110,
+                render: (_, group) => (drafts[group.id]?.selection || group.selection) === 'accepted'
+                  ? <Tag color="processing">采用分组</Tag>
+                  : <Tag>全部保留</Tag>,
+              },
+              { title: '功能', dataIndex: 'label', width: 220 },
+              { title: '候选', key: 'candidateCount', width: 90, render: (_, group) => `${group.candidates.length} 段` },
+              {
+                title: '保留',
+                key: 'retained',
+                width: 90,
+                render: (_, group) => (drafts[group.id]?.selection || group.selection) === 'rejected'
+                  ? '全部'
+                  : `${(drafts[group.id]?.retainedSpanIds || group.retainedSpanIds || []).length} 段`,
+              },
+              { title: '依据', dataIndex: 'reason' },
+              {
+                title: '',
+                key: 'action',
+                width: 88,
+                render: (_, group) => <Button size="small" onClick={() => setActiveDuplicateGroupId(group.id)}>审查</Button>,
+              },
+            ]}
+            scroll={{ x: 980, y: 320 }}
+          />
+        </section>
+      ) : null}
+      <Drawer
+        title={activeDuplicateGroup ? `重复口播 · ${activeDuplicateGroup.label}` : '重复口播'}
+        size={620}
+        open={Boolean(activeDuplicateGroup)}
+        onClose={() => { setActiveDuplicateGroupId(''); setActiveAudioId(null); }}
+      >
+        {activeDuplicateGroup ? (() => {
+          const draft = drafts[activeDuplicateGroup.id] || activeDuplicateGroup;
+          const accepted = (draft.selection || activeDuplicateGroup.selection) === 'accepted';
+          const retainedSpanIds = draft.retainedSpanIds || activeDuplicateGroup.retainedSpanIds || [];
+          return (
+            <div className="speech-duplicate-group-drawer">
+              <Checkbox
+                aria-label={`${activeDuplicateGroup.id}:采用重复判断`}
+                checked={accepted}
+                onChange={event => updateDraft(activeDuplicateGroup.id, {
+                  selection: event.target.checked ? 'accepted' : 'rejected',
+                })}
+              >
+                采用该重复判断
+              </Checkbox>
+              <p className="muted">{activeDuplicateGroup.reason}</p>
+              <div className="speech-duplicate-candidate-list">
+                {activeDuplicateGroup.candidates.map(candidate => {
+                  const checked = retainedSpanIds.includes(candidate.spanId);
+                  const audioId = `${activeDuplicateGroup.id}:${candidate.spanId}`;
+                  return (
+                    <div className={`speech-duplicate-candidate${checked && accepted ? ' is-retained' : ''}`} key={candidate.spanId}>
+                      <div className="speech-duplicate-candidate-header">
+                        <Checkbox
+                          aria-label={`${activeDuplicateGroup.id}:${candidate.spanId}:保留`}
+                          checked={accepted && checked}
+                          disabled={!accepted || (!checked && retainedSpanIds.length >= 2)}
+                          onChange={event => updateDraft(activeDuplicateGroup.id, {
+                            retainedSpanIds: event.target.checked
+                              ? [...retainedSpanIds, candidate.spanId]
+                              : retainedSpanIds.filter(spanId => spanId !== candidate.spanId),
+                          })}
+                        >
+                          保留
+                        </Checkbox>
+                        <strong>{candidate.assetDisplayName || candidate.assetId}</strong>
+                        <span>{formatSpeechReviewRange(candidate.startMs, candidate.endMs)}</span>
+                        <SpeechReviewAudioPlayer
+                          projectId={projectId}
+                          item={{ ...candidate, id: audioId }}
+                          active={activeAudioId === audioId}
+                          setActiveId={setActiveAudioId}
+                        />
+                      </div>
+                      <p>{candidate.transcript || '无可显示口播文本'}</p>
+                      {candidate.visualObservation ? <small>{candidate.visualObservation}</small> : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })() : null}
+      </Drawer>
       <div className="actions transcript-review-actions">
-        <Button type="primary" disabled={unresolved.length > 0 || review.status === 'completed'} loading={busy} onClick={submitReview}>
+        <Button type="primary" disabled={unresolved.length > 0 || invalidDuplicateGroups.length > 0 || review.status === 'completed'} loading={busy} onClick={submitReview}>
           {review.status === 'completed' ? '审查已提交' : '提交整轮审查'}
         </Button>
       </div>
@@ -3363,7 +3486,15 @@ function buildSpeechReviewResolutionPayload(review, drafts, allowUnresolved) {
         retainEndMs: draft.retainEndMs,
       };
     });
-  return { inputsHash: review.inputsHash, resolutions };
+  const duplicateGroupResolutions = (review.duplicateGroups || []).map(group => {
+    const draft = drafts[group.id] || group;
+    return {
+      groupId: group.id,
+      selection: draft.selection || group.selection,
+      retainedSpanIds: [...(draft.retainedSpanIds || group.retainedSpanIds || [])],
+    };
+  });
+  return { inputsHash: review.inputsHash, resolutions, duplicateGroupResolutions };
 }
 
 function SpeechReviewAudioPlayer({ projectId, item, active, setActiveId }) {

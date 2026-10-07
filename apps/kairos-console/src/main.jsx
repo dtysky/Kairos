@@ -1903,7 +1903,7 @@ function ChronologyPage({
   const speechWindowAgentHandoffPath = speechReview.handoffPath || null;
   const speechReviewHandoffRef = speechWindowAgentHandoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/speech-window-agent-handoff.md`;
-  const speechReviewAgentPrompt = `请按 kairos-speech-review skill 和 handoff 生成这个项目的口播与字幕审查报告：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}，调用 stageProjectSpeechTranscriptReview 写统一 JSON 和分表报告。简体中文正字归一直接应用；其余建议默认接受但不要在用户提交前写入正式 spans。不要重跑 ASR、span-builder、fine-scan 或 chronology。`;
+  const speechReviewAgentPrompt = `请按 kairos-speech-review skill 和 handoff 生成这个项目的口播与字幕审查报告：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}，调用 stageProjectSpeechTranscriptReview 写统一 JSON 和分表报告，并跨全部 speech/mixed candidates 识别明显同功能、可互相替代的重复口播组。每组默认推荐最佳 1 段，内容互补时最多 2 段；不确定时不要分组。简体中文正字归一直接应用；其余建议和重复筛选不要在用户提交前写入正式 spans。不要重跑 ASR、span-builder、fine-scan 或 chronology。`;
   const eventConsolidationHandoffRef = eventConsolidation?.handoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/event-consolidation-agent-handoff.md`;
   const eventConsolidationAgentPrompt = `请按 kairos-chronology-consolidation skill 处理项目 ${projectId || '<projectId>'}：读取 ${eventConsolidationHandoffRef} 和当前 media/chronology.json。合并语义连续的相邻普通 pending event；也允许用 anchorEventId 指定组内唯一 confirmed Pharos event，让其吸收两侧属于同一行程的相邻普通 pending event，并保留 Pharos id、标题、地点和 confirmed 状态。允许跨自然日零点，不得跨 route、gap 或另一个 Pharos event，也不得修改 GPS、路线、源时间和 span。按 handoff 写 decisions 并运行其中的应用命令；不要重跑 chronology-build、Analyze 或 span-rebuild。`;
@@ -2091,8 +2091,8 @@ function ChronologyPage({
               eyebrow={isHumanTranscriptReview ? 'Human Review Pending' : 'Agent Review Pending'}
               title={isHumanTranscriptReview ? '审查口播与字幕建议后再生成编年史' : '等待 Agent 生成口播与字幕审查报告'}
               body={isHumanTranscriptReview
-                ? `建议修正、裁切和取消默认接受；手动取消不采用的项目，并处理 ${speechReview.needsListeningCount ?? 0} 条需人工听音项后统一提交。`
-                : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将生成分表报告，不会直接应用裁切、取消或非正字归一的文字修改。`}
+                ? `建议修正、裁切、取消和 ${speechReview.duplicateGroupCount ?? 0} 个重复口播组默认接受；复核每组保留的 1–2 段，并处理 ${speechReview.needsListeningCount ?? 0} 条需人工听音项后统一提交。`
+                : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将跨视频识别重复口播并生成分表报告，不会直接应用裁切、取消、重复排除或非正字归一的文字修改。`}
               detail={!isHumanTranscriptReview ? (
                 <div className="workflow-prompt-command-block">
                   <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>

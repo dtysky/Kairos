@@ -144,4 +144,50 @@ describe('transcript review UI', () => {
     render(<SpeechTranscriptReviewPanel projectId="trip" review={{ ...review, updatedAt: '2026-09-06T00:01:00.000Z', items: [{ ...item, selection: 'rejected' }] }} onSaveDraft={onSaveDraft} onSubmit={() => {}} />);
     expect(screen.getByRole('checkbox')).not.toBeChecked();
   });
+
+  it('reviews cross-asset duplicate groups with Agent defaults and a one-to-two span limit', () => {
+    const onSubmit = vi.fn();
+    const group = {
+      id: 'duplicate-1',
+      label: '景点介绍重复尝试',
+      reason: '三段承担相同介绍功能。',
+      confidence: 0.97,
+      selection: 'accepted',
+      recommendedSpanIds: ['span-b'],
+      retainedSpanIds: ['span-b'],
+      candidates: [
+        { spanId: 'span-a', assetId: 'asset-a', assetDisplayName: 'A.mp4', startMs: 0, endMs: 1000, transcript: '第一次介绍' },
+        { spanId: 'span-b', assetId: 'asset-b', assetDisplayName: 'B.mp4', startMs: 0, endMs: 1200, transcript: '第二次完整介绍' },
+        { spanId: 'span-c', assetId: 'asset-c', assetDisplayName: 'C.mp4', startMs: 0, endMs: 1100, transcript: '第三次介绍' },
+      ],
+    };
+    const review = {
+      inputsHash: 'hash',
+      updatedAt: '2026-10-07T00:00:00.000Z',
+      status: 'pending-human',
+      items: [],
+      duplicateGroups: [group],
+    };
+    render(<SpeechTranscriptReviewPanel projectId="trip" review={review} onSubmit={onSubmit} />);
+    expect(screen.getByRole('heading', { name: '口播｜重复候选' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^审\s*查$/u }));
+    const keepA = screen.getByLabelText('duplicate-1:span-a:保留');
+    const keepB = screen.getByLabelText('duplicate-1:span-b:保留');
+    const keepC = screen.getByLabelText('duplicate-1:span-c:保留');
+    expect(keepA).not.toBeChecked();
+    expect(keepB).toBeChecked();
+    fireEvent.click(keepA);
+    expect(keepC).toBeDisabled();
+    fireEvent.click(keepB);
+    fireEvent.click(keepC);
+    fireEvent.click(screen.getByRole('button', { name: '提交整轮审查' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      inputsHash: 'hash',
+      duplicateGroupResolutions: [{
+        groupId: 'duplicate-1',
+        selection: 'accepted',
+        retainedSpanIds: ['span-a', 'span-c'],
+      }],
+    }));
+  });
 });
