@@ -725,6 +725,7 @@ describe('post-ASR transcript review', () => {
     expect(await readFile(staged.reportPath, 'utf-8')).toContain('## 口播｜重复候选');
   });
 
+
   it('keeps every candidate when the human rejects a duplicate group and rejects invalid group contracts', async () => {
     const fixture = await createFixture();
     const spans = [
@@ -826,6 +827,363 @@ describe('post-ASR transcript review', () => {
     expect(committed).toHaveLength(2);
     expect(committed.map(span => span.sourceInMs).sort((left, right) => (left ?? 0) - (right ?? 0))).toEqual([1000, 3000]);
   });
+
+  it('keeps take choices and duplicate filtering disjoint through staging, draft, and commit', async () => {
+    const fixture = await createFixture();
+    const inputsHash = 'inputs-combined-speech-groups';
+    const assets = Array.from({ length: 4 }, (_, index) => IKtepAsset.parse({
+      ...fixture.asset,
+      id: `asset-${index + 1}`,
+      sourcePath: `/media/asset-${index + 1}.mp4`,
+      displayName: `asset-${index + 1}.mp4`,
+      capturedAt: `2026-07-01T00:00:${String(index * 10).padStart(2, '0')}.000Z`,
+    }));
+    const spans = assets.map((asset, index) => IKtepSpan.parse({
+      ...createSpan(`speech-${index + 1}`, index < 2 ? '这里是山谷观景机位。' : '今天从山脚开始徒步。'),
+      assetId: asset.id,
+    }));
+    await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), assets);
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets,
+      reports: assets.map(asset => IAssetCoarseReport.parse({ ...fixture.report, assetId: asset.id })),
+      spans,
+      speechCandidates: spans,
+      inputsHash,
+      generatedAt: '2026-10-08T00:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, inputsHash, prepared.artifactPath);
+    const stageInput = {
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash,
+      transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, inputsHash),
+      windowDecisions: spans.map(span => ({
+        spanId: span.id, inputsHash, action: 'keep' as const,
+        confidence: 1, reason: '有效口播', evidence: [],
+      })),
+      takeDecisions: [{
+        groupId: 'adjacent-takes', inputsHash, spanIds: ['speech-1', 'speech-2'],
+        action: 'needs-choice' as const, confidence: 0.9,
+        reason: '相邻素材同次介绍均完整', evidence: [],
+      }],
+      duplicateGroupDecisions: [{
+        inputsHash, spanIds: ['speech-3', 'speech-4'], recommendedSpanIds: ['speech-3'],
+        label: '徒步开场', reason: '两段承担相同功能', confidence: 0.95,
+      }],
+    };
+    for (const action of ['prefer-one', 'needs-choice'] as const) {
+      await expect(stageProjectSpeechTranscriptReview({
+        ...stageInput,
+        takeDecisions: [{
+          ...stageInput.takeDecisions[0]!, action,
+          preferredSpanId: action === 'prefer-one' ? 'speech-2' : undefined,
+        }],
+        duplicateGroupDecisions: [{
+          ...stageInput.duplicateGroupDecisions[0]!,
+          spanIds: ['speech-2', 'speech-3'],
+        }],
+      })).rejects.toThrow(/both take and duplicate groups/u);
+    }
+    expect(await loadSpans(fixture.projectRoot)).toEqual(prepared.spans);
+
+    const staged = await stageProjectSpeechTranscriptReview(stageInput);
+    const choice = staged.artifact.items.find(item => item.category === 'speech-take-needs-choice')!;
+    const group = staged.artifact.duplicateGroups[0]!;
+    const saved = await saveProjectSpeechTranscriptReviewDraft({
+      workspaceRoot: fixture.workspaceRoot, projectRoot: fixture.projectRoot, inputsHash,
+      resolutions: [{ itemId: choice.id, selection: 'accepted', selectedSpanId: 'speech-2' }],
+      duplicateGroupResolutions: [{ groupId: group.id, selection: 'accepted', retainedSpanIds: ['speech-4'] }],
+    });
+    await writeJson(staged.artifactPath, {
+      ...saved,
+      duplicateGroups: [{ ...saved.duplicateGroups[0], candidates: [...group.candidates, choice.takeCandidates![1]] }],
+    });
+    const commitInput = { workspaceRoot: fixture.workspaceRoot, projectRoot: fixture.projectRoot, inputsHash };
+    await expect(saveProjectSpeechTranscriptReviewDraft({ ...commitInput, resolutions: [] }))
+      .rejects.toThrow(/both take and duplicate groups/u);
+    await expect(commitProjectSpeechTranscriptReview(commitInput))
+      .rejects.toThrow(/both take and duplicate groups/u);
+    expect(await loadSpans(fixture.projectRoot)).toEqual(prepared.spans);
+    expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('pending-speech-review');
+
+    await writeJson(staged.artifactPath, saved);
+    await commitProjectSpeechTranscriptReview(commitInput);
+    const committed = await loadSpans(fixture.projectRoot);
+    expect(committed).toHaveLength(3);
+    expect(committed.find(span => span.assetId === 'asset-1')?.semanticKind).toBe('visual');
+    expect(committed.find(span => span.assetId === 'asset-2')?.semanticKind).toBe('speech');
+    expect(committed.some(span => span.assetId === 'asset-3')).toBe(false);
+    expect(committed.find(span => span.assetId === 'asset-4')?.semanticKind).toBe('speech');
+    expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('fresh');
+  });
+
+  it('stages an earlier failed start as one continuous segment-boundary trim', async () => {
+    const fixture = await createFixture();
+    await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), [fixture.asset]);
+    const span = IKtepSpan.parse({
+      ...createSpan('span-restart', '这个兴坪古镇现在， 这兴坪古镇现在怎么到处都是大工地呀？ 搞不懂啊！'),
+      sourceInMs: 0,
+      sourceOutMs: 8000,
+      transcriptSegments: [
+        { startMs: 0, endMs: 1600, text: '这个兴坪古镇现在，' },
+        { startMs: 2000, endMs: 5280, text: '这兴坪古镇现在怎么到处都是大工地呀？' },
+        { startMs: 6640, endMs: 7680, text: '搞不懂啊！' },
+      ],
+    });
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets: [fixture.asset],
+      reports: [fixture.report],
+      spans: [span],
+      speechCandidates: [span],
+      inputsHash: 'inputs-restart-trim',
+      generatedAt: '2026-09-06T03:30:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-restart-trim', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-restart-trim',
+      transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, 'inputs-restart-trim'),
+      windowDecisions: [{
+        spanId: span.id,
+        inputsHash: 'inputs-restart-trim',
+        action: 'trim',
+        retainStartMs: 2000,
+        retainEndMs: 7680,
+        confidence: 0.99,
+        reason: '前一残句被后续完整重说覆盖',
+        evidence: ['后续句完整包含前一残句主题'],
+      }],
+    });
+    const trim = staged.artifact.items.find(item => item.category === 'speech-window-suggested-trim');
+    expect(trim).toMatchObject({
+      selection: 'accepted',
+      retainStartMs: 2000,
+      retainEndMs: 7680,
+      suggestedText: '这兴坪古镇现在怎么到处都是大工地呀？ 搞不懂啊！',
+    });
+  });
+
+  it('turns inferior adjacent takes into default cancel suggestions and names the retained take', async () => {
+    const fixture = await createFixture();
+    const secondAsset = IKtepAsset.parse({
+      ...fixture.asset,
+      id: 'asset-2',
+      sourcePath: '/media/asset-2.mp4',
+      displayName: 'asset-2.mp4',
+      capturedAt: '2026-07-01T00:00:10.000Z',
+    });
+    const failedTake = IKtepSpan.parse({
+      ...createSpan('take-failed', '今天这个机位，我重新说。'),
+      transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '今天这个机位，我重新说。' }],
+    });
+    const completeTake = IKtepSpan.parse({
+      ...createSpan('take-complete', '今天这个机位能看见完整的山谷和日落。'),
+      assetId: 'asset-2',
+      transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '今天这个机位能看见完整的山谷和日落。' }],
+    });
+    const assets = [fixture.asset, secondAsset];
+    const spans = [failedTake, completeTake];
+    await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), assets);
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets,
+      reports: [fixture.report],
+      spans,
+      speechCandidates: spans,
+      inputsHash: 'inputs-take-winner',
+      generatedAt: '2026-09-06T04:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-take-winner', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-winner',
+      transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, 'inputs-take-winner'),
+      windowDecisions: spans.map(span => ({
+        spanId: span.id,
+        inputsHash: 'inputs-take-winner',
+        action: 'keep' as const,
+        confidence: 1,
+        reason: '窗口本身可用',
+        evidence: [],
+      })),
+      takeDecisions: [{
+        groupId: 'take-position-intro',
+        inputsHash: 'inputs-take-winner',
+        spanIds: [failedTake.id, completeTake.id],
+        action: 'prefer-one',
+        preferredSpanId: completeTake.id,
+        confidence: 0.98,
+        reason: '第二遍信息完整且没有重新起句',
+        evidence: ['相邻素材表达同一机位介绍'],
+      }],
+    });
+
+    const cancel = staged.artifact.items.find(item => item.category === 'speech-window-suggested-cancel')!;
+    expect(cancel).toMatchObject({
+      selection: 'accepted',
+      spanIds: [failedTake.id],
+      takeGroupId: 'take-position-intro',
+      preferredSpanId: completeTake.id,
+    });
+    const report = await readFile(staged.reportPath, 'utf-8');
+    expect(report).toContain('同组保留 asset-2.mp4');
+    await commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-winner',
+      resolutions: [],
+    });
+    const committed = await loadSpans(fixture.projectRoot);
+    expect(committed.find(span => span.assetId === fixture.asset.id)?.semanticKind).toBe('visual');
+    expect(committed.find(span => span.assetId === secondAsset.id)?.semanticKind).toBe('speech');
+  });
+
+  it('blocks on equally complete adjacent takes until one version is selected', async () => {
+    const fixture = await createFixture();
+    const secondAsset = IKtepAsset.parse({
+      ...fixture.asset,
+      id: 'asset-2',
+      sourcePath: '/media/asset-2.mp4',
+      displayName: 'asset-2.mp4',
+      capturedAt: '2026-07-01T00:00:10.000Z',
+    });
+    const firstTake = createSpan('take-first', '这里能完整看到山谷和日落。');
+    const secondTake = IKtepSpan.parse({
+      ...createSpan('take-second', '从这个机位可以完整看到山谷和日落。'),
+      assetId: 'asset-2',
+      transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '从这个机位可以完整看到山谷和日落。' }],
+    });
+    const assets = [fixture.asset, secondAsset];
+    const spans = [firstTake, secondTake];
+    await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), assets);
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets,
+      reports: [fixture.report],
+      spans,
+      speechCandidates: spans,
+      inputsHash: 'inputs-take-choice',
+      generatedAt: '2026-09-06T05:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-take-choice', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-choice',
+      transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, 'inputs-take-choice'),
+      windowDecisions: spans.map(span => ({
+        spanId: span.id,
+        inputsHash: 'inputs-take-choice',
+        action: 'keep' as const,
+        confidence: 1,
+        reason: '窗口本身可用',
+        evidence: [],
+      })),
+      takeDecisions: [{
+        groupId: 'take-equal-intro',
+        inputsHash: 'inputs-take-choice',
+        spanIds: [firstTake.id, secondTake.id],
+        action: 'needs-choice',
+        confidence: 0.85,
+        reason: '两遍都完整且仅表达方式不同',
+        evidence: ['相邻素材表达同一机位介绍'],
+      }],
+    });
+    const choice = staged.artifact.items.find(item => item.category === 'speech-take-needs-choice')!;
+    expect(choice).toMatchObject({ selection: 'unresolved', takeGroupId: 'take-equal-intro' });
+    expect(choice.takeCandidates).toHaveLength(2);
+    await expect(commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-choice',
+      resolutions: [],
+    })).rejects.toThrow(/unresolved/u);
+
+    await saveProjectSpeechTranscriptReviewDraft({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-choice',
+      resolutions: [{ itemId: choice.id, selection: 'accepted', selectedSpanId: secondTake.id }],
+    });
+    const saved = await readSpeechTranscriptReviewArtifact(staged.artifactPath);
+    expect(saved.items.find(item => item.id === choice.id)).toMatchObject({
+      selection: 'accepted',
+      selectedSpanId: secondTake.id,
+    });
+    await commitProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-choice',
+      resolutions: [],
+    });
+    const committed = await loadSpans(fixture.projectRoot);
+    expect(committed.find(span => span.assetId === fixture.asset.id)?.semanticKind).toBe('visual');
+    expect(committed.find(span => span.assetId === secondAsset.id)?.semanticKind).toBe('speech');
+  });
+
+  it('rejects a take group that skips an intervening video asset', async () => {
+    const fixture = await createFixture();
+    const middleAsset = IKtepAsset.parse({
+      ...fixture.asset,
+      id: 'asset-middle',
+      sourcePath: '/media/asset-middle.mp4',
+      displayName: 'asset-middle.mp4',
+      capturedAt: '2026-07-01T00:00:10.000Z',
+    });
+    const lastAsset = IKtepAsset.parse({
+      ...fixture.asset,
+      id: 'asset-last',
+      sourcePath: '/media/asset-last.mp4',
+      displayName: 'asset-last.mp4',
+      capturedAt: '2026-07-01T00:00:20.000Z',
+    });
+    const firstTake = createSpan('take-first', '第一次机位介绍。');
+    const lastTake = IKtepSpan.parse({
+      ...createSpan('take-last', '第二次机位介绍。'),
+      assetId: lastAsset.id,
+      transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '第二次机位介绍。' }],
+    });
+    const assets = [fixture.asset, middleAsset, lastAsset];
+    const spans = [firstTake, lastTake];
+    await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), assets);
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture,
+      assets,
+      reports: [fixture.report],
+      spans,
+      speechCandidates: spans,
+      inputsHash: 'inputs-take-nonadjacent',
+      generatedAt: '2026-09-06T06:00:00.000Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'inputs-take-nonadjacent', prepared.artifactPath);
+    await expect(stageProjectSpeechTranscriptReview({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-nonadjacent',
+      transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, 'inputs-take-nonadjacent'),
+      windowDecisions: spans.map(span => ({
+        spanId: span.id,
+        inputsHash: 'inputs-take-nonadjacent',
+        action: 'keep' as const,
+        confidence: 1,
+        reason: '窗口本身可用',
+        evidence: [],
+      })),
+      takeDecisions: [{
+        groupId: 'take-skips-video',
+        inputsHash: 'inputs-take-nonadjacent',
+        spanIds: [firstTake.id, lastTake.id],
+        action: 'needs-choice',
+        confidence: 0.8,
+        reason: '错误地跨过一个视频素材',
+        evidence: [],
+      }],
+    })).rejects.toThrow(/adjacent in capture-time video order/u);
+  });
 });
 
 async function createFixture() {
@@ -898,4 +1256,23 @@ async function seedPendingReview(projectRoot: string, spans: ReturnType<typeof c
     },
     warnings: [],
   });
+}
+
+function keepTranscriptDecisions(items: Array<{
+  id: string;
+  originalTextHash: string;
+  startMs: number;
+  endMs: number;
+}>, inputsHash: string) {
+  return items.map(item => ({
+    itemId: item.id,
+    inputsHash,
+    originalTextHash: item.originalTextHash,
+    startMs: item.startMs,
+    endMs: item.endMs,
+    action: 'keep-original' as const,
+    confidence: 1,
+    containsProperNoun: false,
+    evidence: [],
+  }));
 }

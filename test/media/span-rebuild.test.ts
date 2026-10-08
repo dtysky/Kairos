@@ -880,6 +880,8 @@ describe('rebuildProjectSpans', () => {
     expect(handoff).toContain('C0368_zve1_day0_drive_speech_s148-150');
     expect(handoff).toContain('中');
     expect(handoff).toContain('Speech/mixed candidates needing review: 1');
+    expect(handoff).toContain('Structured Take Group Decision');
+    expect(handoff).toContain('later complete restatement');
     await expect(assertFreshSpans(projectRoot))
       .rejects.toThrow(/pending-speech-review.*Codex Agent speech-window review/u);
 

@@ -455,6 +455,7 @@ export const ISpansMeta = z.object({
     duplicateGroupCount: z.number().int().nonnegative().optional(),
     duplicateCandidateCount: z.number().int().nonnegative().optional(),
     duplicateExcludedCount: z.number().int().nonnegative().optional(),
+    takeChoiceCount: z.number().int().nonnegative().optional(),
     glossaryHash: z.string().optional(),
     normalizationHash: z.string().optional(),
     tripContextHash: z.string().optional(),
@@ -2572,6 +2573,39 @@ export const ISpeechDuplicateGroupResolution = z.object({
 });
 export type ISpeechDuplicateGroupResolution = z.infer<typeof ISpeechDuplicateGroupResolution>;
 
+export const ISpeechTakeAgentDecision = z.object({
+  groupId: z.string().min(1),
+  inputsHash: z.string(),
+  spanIds: z.array(z.string()).min(2),
+  action: z.enum(['prefer-one', 'needs-choice']),
+  preferredSpanId: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  reason: z.string().min(1),
+  evidence: z.array(z.string()).default([]),
+}).superRefine((decision, context) => {
+  if (new Set(decision.spanIds).size !== decision.spanIds.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'take group spanIds must be unique' });
+  }
+  if (decision.action === 'prefer-one') {
+    if (!decision.preferredSpanId || !decision.spanIds.includes(decision.preferredSpanId)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'prefer-one take group requires a preferredSpanId from the group' });
+    }
+  } else if (decision.preferredSpanId !== undefined) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'needs-choice take group must not preselect a preferredSpanId' });
+  }
+});
+export type ISpeechTakeAgentDecision = z.infer<typeof ISpeechTakeAgentDecision>;
+
+export const ISpeechTakeReviewCandidate = z.object({
+  spanId: z.string(),
+  assetId: z.string(),
+  assetDisplayName: z.string().optional(),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  transcript: z.string(),
+});
+export type ISpeechTakeReviewCandidate = z.infer<typeof ISpeechTakeReviewCandidate>;
+
 export const ESpeechTranscriptReviewCategory = z.enum([
   'transcript-auto-normalized',
   'transcript-suggested-correction',
@@ -2579,6 +2613,7 @@ export const ESpeechTranscriptReviewCategory = z.enum([
   'speech-window-suggested-trim',
   'speech-window-suggested-cancel',
   'speech-window-needs-listening',
+  'speech-take-needs-choice',
 ]);
 export type ESpeechTranscriptReviewCategory = z.infer<typeof ESpeechTranscriptReviewCategory>;
 
@@ -2609,6 +2644,10 @@ export const ISpeechTranscriptReviewItem = z.object({
   confidence: z.number().min(0).max(1).optional(),
   containsProperNoun: z.boolean().optional(),
   visualSpanIds: z.array(z.string()).default([]),
+  takeGroupId: z.string().optional(),
+  preferredSpanId: z.string().optional(),
+  selectedSpanId: z.string().optional(),
+  takeCandidates: z.array(ISpeechTakeReviewCandidate).optional(),
   resolvedAt: z.string().optional(),
 }).superRefine((item, context) => {
   if (item.endMs < item.startMs) {
@@ -2626,6 +2665,21 @@ export const ISpeechTranscriptReviewItem = z.object({
   if (item.category === 'speech-window-suggested-trim') {
     if (item.retainStartMs === undefined || item.retainEndMs === undefined || item.retainEndMs <= item.retainStartMs) {
       context.addIssue({ code: z.ZodIssueCode.custom, message: 'trim item requires a positive retained range' });
+    }
+  }
+  if (item.category === 'speech-take-needs-choice') {
+    if (!item.takeGroupId || !item.takeCandidates || item.takeCandidates.length < 2) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'take choice item requires a group and at least two candidates' });
+    }
+    const candidateIds = item.takeCandidates?.map(candidate => candidate.spanId) ?? [];
+    if (new Set(candidateIds).size !== candidateIds.length || candidateIds.some(spanId => !item.spanIds.includes(spanId))) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'take choice candidates must uniquely reference group spanIds' });
+    }
+    if (item.selection === 'accepted' && (!item.selectedSpanId || !candidateIds.includes(item.selectedSpanId))) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'completed take choice requires one selected group candidate' });
+    }
+    if (item.selection === 'rejected' || item.selection === 'applied') {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'take choice item supports only unresolved or accepted selection' });
     }
   }
 });
@@ -2655,6 +2709,7 @@ export const ISpeechTranscriptReviewResolution = z.object({
   windowAction: z.enum(['keep', 'trim', 'cancel']).optional(),
   retainStartMs: z.number().nonnegative().optional(),
   retainEndMs: z.number().nonnegative().optional(),
+  selectedSpanId: z.string().optional(),
 });
 export type ISpeechTranscriptReviewResolution = z.infer<typeof ISpeechTranscriptReviewResolution>;
 

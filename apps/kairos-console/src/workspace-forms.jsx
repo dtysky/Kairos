@@ -3112,6 +3112,7 @@ const SPEECH_TRANSCRIPT_REVIEW_SECTIONS = [
   { category: 'transcript-needs-listening', title: '字幕｜需人工听音', kind: 'transcript' },
   { category: 'speech-window-suggested-trim', title: '口播窗口｜建议裁切', kind: 'window' },
   { category: 'speech-window-suggested-cancel', title: '口播窗口｜建议取消', kind: 'window' },
+  { category: 'speech-take-needs-choice', title: '口播版本｜待选择', kind: 'take' },
 ];
 
 export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, onSubmit, busy = false }) {
@@ -3142,6 +3143,7 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
         retainStartMs: item.retainStartMs,
         retainEndMs: item.retainEndMs,
         windowAction: item.resolvedWindowAction || '',
+        selectedSpanId: item.selectedSpanId || '',
       };
     }
     for (const group of review?.duplicateGroups || []) {
@@ -3191,7 +3193,7 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
   }
 
   const unresolved = (review.items || []).filter(item => (
-    item.category === 'transcript-needs-listening'
+    (item.category === 'transcript-needs-listening' || item.category === 'speech-take-needs-choice')
     && (drafts[item.id]?.selection || item.selection) === 'unresolved'
   ));
   const invalidDuplicateGroups = (review.duplicateGroups || []).filter(group => {
@@ -3299,7 +3301,13 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
               ? 'cancel'
               : draft.windowAction || 'keep';
           if (action === 'cancel') {
-            return '取消口播属性和字幕，保留视觉素材召回';
+            const preferred = item.preferredSpanId
+              ? (item.takeCandidates || []).find(candidate => candidate.spanId === item.preferredSpanId)
+              : null;
+            const retained = preferred?.assetDisplayName || preferred?.assetId || item.preferredSpanId;
+            return retained
+              ? `取消口播属性和字幕，保留视觉素材召回；同组保留 ${retained}`
+              : '取消口播属性和字幕，保留视觉素材召回';
           }
           if (action === 'trim') {
             return (
@@ -3320,6 +3328,53 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
     ];
   }
 
+  function takeColumns() {
+    return [
+      {
+        title: '状态',
+        key: 'status',
+        width: 110,
+        render: (_, item) => {
+          const selectedSpanId = drafts[item.id]?.selectedSpanId || item.selectedSpanId;
+          return <Tag color={selectedSpanId ? 'success' : 'warning'}>{selectedSpanId ? '已选择' : '待选择'}</Tag>;
+        },
+      },
+      { title: '版本组', dataIndex: 'takeGroupId', width: 180 },
+      {
+        title: '候选版本',
+        key: 'candidates',
+        render: (_, item) => {
+          const selectedSpanId = drafts[item.id]?.selectedSpanId || item.selectedSpanId || '';
+          return (
+            <Radio.Group
+              className="speech-take-choice-group"
+              aria-label={`${item.id} 保留版本`}
+              value={selectedSpanId}
+              onChange={event => updateDraft(item.id, { selection: 'accepted', selectedSpanId: event.target.value })}
+            >
+              {(item.takeCandidates || []).map(candidate => (
+                <div className="speech-take-choice-candidate" key={candidate.spanId}>
+                  <Radio value={candidate.spanId}>
+                    <strong>{candidate.assetDisplayName || candidate.assetId}</strong>
+                    <span>{formatSpeechReviewRange(candidate.startMs, candidate.endMs)}</span>
+                  </Radio>
+                  <p>{candidate.transcript}</p>
+                  <SpeechReviewAudioPlayer
+                    projectId={projectId}
+                    item={{ ...candidate, id: `${item.id}:${candidate.spanId}` }}
+                    active={activeAudioId === `${item.id}:${candidate.spanId}`}
+                    setActiveId={setActiveAudioId}
+                  />
+                </div>
+              ))}
+            </Radio.Group>
+          );
+        },
+      },
+      { title: '依据', dataIndex: 'reason', width: 260 },
+    ];
+  }
+
   return (
     <Card className="panel speech-transcript-review-panel">
       <div className="section-header">
@@ -3331,7 +3386,7 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
           <Tag color={saveStatus === 'error' ? 'error' : saveStatus === 'saving' ? 'processing' : 'success'}>
             {saveStatus === 'error' ? '草稿保存失败' : saveStatus === 'saving' ? '草稿保存中' : '草稿已保存'}
           </Tag>
-          <Tag color={unresolved.length > 0 ? 'warning' : 'success'}>{unresolved.length > 0 ? `${unresolved.length} 条待听音` : '可以提交'}</Tag>
+          <Tag color={unresolved.length > 0 ? 'warning' : 'success'}>{unresolved.length > 0 ? `${unresolved.length} 项待处理` : '可以提交'}</Tag>
         </div>
       </div>
       {saveError ? <div className="error-banner speech-review-save-error">{saveError}</div> : null}
@@ -3346,7 +3401,11 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
               size="small"
               pagination={false}
               dataSource={rows}
-              columns={section.kind === 'transcript' ? transcriptColumns(section.category) : windowColumns(section.category)}
+              columns={section.kind === 'transcript'
+                ? transcriptColumns(section.category)
+                : section.kind === 'take'
+                  ? takeColumns()
+                  : windowColumns(section.category)}
               scroll={{ x: 1180, y: 320 }}
             />
           </section>
@@ -3475,15 +3534,17 @@ function buildSpeechReviewResolutionPayload(review, drafts, allowUnresolved) {
       const draft = drafts[item.id] || {};
       const selection = draft.selection || item.selection;
       const needsListening = item.category.endsWith('needs-listening');
+      const requiresResolution = needsListening || item.category === 'speech-take-needs-choice';
       return {
         itemId: item.id,
-        selection: needsListening
+        selection: requiresResolution
           ? allowUnresolved && selection === 'unresolved' ? 'unresolved' : 'accepted'
           : selection === 'rejected' ? 'rejected' : 'accepted',
         finalText: item.category.startsWith('transcript-') ? draft.finalText : undefined,
         windowAction: undefined,
         retainStartMs: draft.retainStartMs,
         retainEndMs: draft.retainEndMs,
+        selectedSpanId: item.category === 'speech-take-needs-choice' ? draft.selectedSpanId : undefined,
       };
     });
   const duplicateGroupResolutions = (review.duplicateGroups || []).map(group => {

@@ -190,4 +190,48 @@ describe('transcript review UI', () => {
       }],
     }));
   });
+
+  it('requires one choice among equally complete spoken takes and autosaves it', async () => {
+    const onSaveDraft = vi.fn().mockResolvedValue({ status: 'pending-human' });
+    const onSubmit = vi.fn();
+    const review = {
+      inputsHash: 'hash',
+      updatedAt: '2026-09-06T00:00:00.000Z',
+      status: 'pending-human',
+      items: [{
+        id: 'take-choice-1',
+        category: 'speech-take-needs-choice',
+        selection: 'unresolved',
+        assetId: 'C1',
+        spanIds: ['C1_speech', 'C2_speech'],
+        startMs: 0,
+        endMs: 2000,
+        takeGroupId: 'position-intro',
+        reason: '两遍都完整且没有明确优劣',
+        takeCandidates: [
+          { spanId: 'C1_speech', assetId: 'C1', assetDisplayName: 'C1.mp4', startMs: 0, endMs: 2000, transcript: '第一遍完整机位介绍。' },
+          { spanId: 'C2_speech', assetId: 'C2', assetDisplayName: 'C2.mp4', startMs: 0, endMs: 2200, transcript: '第二遍完整机位介绍。' },
+        ],
+      }],
+    };
+    render(<SpeechTranscriptReviewPanel projectId="trip" review={review} onSaveDraft={onSaveDraft} onSubmit={onSubmit} />);
+    expect(screen.getByRole('heading', { name: '口播版本｜待选择' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '循环播放' })).toHaveLength(2);
+    const submit = screen.getByRole('button', { name: '提交整轮审查' });
+    expect(submit).toBeDisabled();
+    fireEvent.click(screen.getAllByRole('radio')[1]);
+    expect(submit).toBeEnabled();
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledWith(expect.objectContaining({
+      inputsHash: 'hash',
+      resolutions: [expect.objectContaining({
+        itemId: 'take-choice-1',
+        selection: 'accepted',
+        selectedSpanId: 'C2_speech',
+      })],
+    })), { timeout: 2000 });
+    fireEvent.click(submit);
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      resolutions: [expect.objectContaining({ itemId: 'take-choice-1', selectedSpanId: 'C2_speech' })],
+    }));
+  });
 });

@@ -424,6 +424,7 @@ export async function rebuildProjectSpans(input: {
       projectRoot,
       spans,
       speechCandidates: normalizedSpeechReviewCandidates,
+      assets,
       inputsHash: generated.inputsHash,
       generatedAt: now,
       transcriptReviewArtifactPath: transcriptReview?.artifactPath,
@@ -2642,15 +2643,19 @@ async function writeSpeechWindowAgentHandoff(input: {
   projectRoot: string;
   spans: IKtepSlice[];
   speechCandidates: IKtepSlice[];
+  assets: IKtepAsset[];
   inputsHash: string;
   generatedAt: string;
   transcriptReviewArtifactPath?: string;
   transcriptReviewItems: ITranscriptReviewItem[];
 }): Promise<void> {
+  const assetById = new Map(input.assets.map(asset => [asset.id, asset] as const));
   await mkdir(dirname(input.path), { recursive: true });
   const rows = input.speechCandidates.map(span => [
     `- ${span.id}`,
     `  - assetId: ${span.assetId}`,
+    `  - capturedAt: ${assetById.get(span.assetId)?.capturedAt ?? 'unknown'}`,
+    `  - assetDisplayName: ${assetById.get(span.assetId)?.displayName ?? span.assetId}`,
     `  - range: ${formatMsForHandoff(span.sourceInMs)}-${formatMsForHandoff(span.sourceOutMs)} ms`,
     `  - semanticKind: ${span.semanticKind ?? 'unknown'}`,
     span.transcript ? `  - transcript: ${truncateText(span.transcript, 160)}` : undefined,
@@ -2681,7 +2686,7 @@ async function writeSpeechWindowAgentHandoff(input: {
     `- Built-in domain glossaries: ${join(input.workspaceRoot, 'resources', 'transcript-glossaries')}`,
     `- Workspace personal glossary: ${join(input.workspaceRoot, 'config', 'transcript-glossary.json')}`,
     `- Deterministic text normalization: ${join(input.workspaceRoot, 'config', 'transcript-normalization.json')}`,
-    '- Final output contract: Agent returns structured transcript, window, and cross-asset duplicate-group decisions, then stages one user-facing report through `stageProjectSpeechTranscriptReview`.',
+    '- Final output contract: Agent returns structured transcript, window, optional adjacent take-group, and cross-asset duplicate-group decisions, then stages one user-facing report through `stageProjectSpeechTranscriptReview`.',
     '',
     '## Status',
     '',
@@ -2694,17 +2699,18 @@ async function writeSpeechWindowAgentHandoff(input: {
     'Copy this into a Codex/Agent thread:',
     '',
     '```text',
-    `请按 kairos-speech-review skill 和这个 handoff 处理项目的口播与字幕审查：读取 ${input.path} 与 ${input.transcriptReviewArtifactPath ?? 'transcript review artifact'}，以程序已归一的字幕文本为输入，结合内置领域词表、工作区个性词表和时间段行程语境，为每个 pending transcript item 和 speech/mixed span 返回结构化决策，并跨全部素材识别明显承担同一功能、内容可互相替代的重复口播组，再调用 stageProjectSpeechTranscriptReview 生成统一审查 JSON 与分表 Markdown。重复组每组至少两个候选，默认推荐最佳一个，只有内容互补时最多推荐两个；不确定时不要分组，建议 cancel 的窗口不要进入重复组。其余修正、裁切、取消和重复筛选只生成默认接受的建议，不能在用户提交前写入正式 spans。带明确地点、道路设施或方向锚点的导航播报属于行程事实，不得仅因它来自导航而取消。保持原文、保持窗口和无需调整的现场声音不要写进报告。不得改 segment 时间/分段或 asset-reports，不要重跑 ASR、span-builder、fine-scan 或 chronology。`,
+    `请按 kairos-speech-review skill 和这个 handoff 处理项目的口播与字幕审查：读取 ${input.path} 与 ${input.transcriptReviewArtifactPath ?? 'transcript review artifact'}，以程序已归一的字幕文本为输入，结合内置领域词表、工作区个性词表和时间段行程语境，为每个 pending transcript item 和 speech/mixed span 返回结构化决策；同时检查窗口内被后续完整重说覆盖的残句，以及拍摄时间相邻素材中同一次口播的多次尝试，再调用 stageProjectSpeechTranscriptReview 生成统一审查 JSON 与分表 Markdown。唯一明显完整版本保留、其余版本建议取消；多个完整版本没有明确优劣时输出 needs-choice 交给用户单选。take group 优先；对未分组且未 cancel 的候选再跨素材识别明确同功能、可互换的重复组，推荐最佳 1 段，互补时最多 2 段，不确定时不分组；两类组不得共享成员。重复组默认采用，用户可改选或拒绝。其余修正、裁切和取消只生成默认接受的建议，不能在用户提交前写入正式 spans。带明确地点、道路设施或方向锚点的导航播报属于行程事实，不得仅因它来自导航而取消。保持原文、保持窗口和无需调整的现场声音不要写进报告。不得改 segment 时间/分段或 asset-reports，不要重跑 ASR、span-builder、fine-scan 或 chronology。`,
     '```',
     '',
     '## Required Agent Workflow',
     '',
     '1. Main Agent reads `store/spans.json`, the transcript review artifact, built-in domain glossaries, the workspace personal glossary, and this handoff.',
     '2. Agent reviews each pending transcript item from its normalized full sentence, neighboring speech, effective glossary context and time-scoped trip context, and returns one structured transcript decision per pending item.',
-    '3. Agent reviews each speech/mixed span for usable spoken content and returns one structured window decision per span. `keep` rows are omitted from the user report.',
-    '4. Agent compares all usable speech/mixed candidates across asset ids and returns only high-confidence duplicate groups. Each span may appear in at most one group; cancelled windows are excluded; each group recommends one span or at most two complementary spans.',
-    '5. `stageProjectSpeechTranscriptReview` validates immutable timing, effective-glossary/normalization/trip hashes, duplicate decisions, proposed trim boundaries, visual recall preservation, and duplicate-group membership, and generates the unified review report including the automatic-normalization audit rows prepared before Agent review.',
-    '6. User reviews six sections in `/chronology`; suggestions and duplicate groups start accepted, while subtitle needs-listening rows remain unresolved. `commitProjectSpeechTranscriptReview` applies the final batch atomically and writes `status="fresh"`.',
+    '3. Agent reviews each speech/mixed span for usable spoken content and returns one structured window decision per span. It checks ordered segments for an incomplete start that a later complete restatement subsumes; when one continuous segment range remains, it returns `trim`. `keep` rows are omitted from the user report.',
+    '4. Agent compares only spans from adjacent video assets in corrected capture-time order. It returns compact take-group decisions only when the entries are semantically the same recording attempt. A unique complete version uses `prefer-one`; multiple complete versions without a clear winner use `needs-choice`. Group members must not also receive a window `cancel` decision.',
+    '5. Agent compares remaining usable speech/mixed candidates across asset ids for high-confidence duplicate groups, recommending one span or at most two complementary spans. Take-group members and cancelled windows are excluded.',
+    '6. `stageProjectSpeechTranscriptReview` validates immutable timing, effective-glossary/normalization/trip hashes, duplicate decisions, proposed trim boundaries, take-group adjacency, duplicate-group membership, disjoint groups and visual recall preservation, and generates the unified review report including the automatic-normalization audit rows prepared before Agent review.',
+    '7. User reviews seven sections in `/chronology`; suggestions and duplicate groups start accepted, while subtitle needs-listening and take-choice rows remain unresolved. `commitProjectSpeechTranscriptReview` applies the final batch atomically and writes `status="fresh"`.',
     '',
     '## Review Contract',
     '',
@@ -2716,6 +2722,9 @@ async function writeSpeechWindowAgentHandoff(input: {
     '- Agent knowledge may auto-correct ordinary lexical errors only; unsupported new proper names must use `needs-human`.',
     '- Historical corrections are reusable only for the exact same assetId + segment range + original text hash.',
     '- A trim suggestion must retain one positive range bounded by existing transcript segments.',
+    '- If an earlier fragment, hesitation or restart is semantically covered by a later complete restatement, prefer the later complete continuous segment range. Do not remove intentional rhetorical repetition or repeated facts that add new information.',
+    '- A take group contains candidates from adjacent video assets in corrected capture-time order that are semantically the same recording attempt. Completeness depends on information coverage, finished delivery and absence of failed starts; duration alone must not choose the winner.',
+    '- If one take is clearly complete, use `prefer-one`. If multiple takes are complete without a clear winner, use `needs-choice`. If equivalence or completeness is uncertain, emit no take group.',
     '- A cancel suggestion must preserve the same source range as a valid visual span with `visualObservation`; it clears speech truth only after user submission.',
     '- A duplicate group is not a cancel suggestion. It may span multiple assets and contains only speech/mixed candidates that serve the same narrative function and can replace one another. Mentioning the same place is not sufficient when the narrative purpose differs.',
     '- Recommend exactly one retained span by default and at most two only when their spoken information is complementary. Use transcript completeness, false starts/repetition, information density, context fit, and existing visualObservation; do not invent audio-quality evidence.',
@@ -2742,6 +2751,16 @@ async function writeSpeechWindowAgentHandoff(input: {
     '```json',
     '{"spanId":"...","inputsHash":"...","action":"keep|trim|cancel|needs-human","retainStartMs":1000,"retainEndMs":5000,"confidence":0.95,"reason":"...","evidence":["..."]}',
     '```',
+    '',
+    '## Structured Take Group Decision',
+    '',
+    'Return only groups that meet the adjacent, cross-asset and semantic-equivalence contract:',
+    '',
+    '```json',
+    '{"groupId":"take-...","inputsHash":"...","spanIds":["...","..."],"action":"prefer-one|needs-choice","preferredSpanId":"...","confidence":0.95,"reason":"...","evidence":["..."]}',
+    '```',
+    '',
+    '`preferredSpanId` is required only for `prefer-one` and must be omitted for `needs-choice`. Pass the resulting array as `takeDecisions` to `stageProjectSpeechTranscriptReview`.',
     '',
     '## Structured Duplicate Group Decision',
     '',

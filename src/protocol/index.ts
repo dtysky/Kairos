@@ -160,6 +160,8 @@ export {
   ITranscriptAgentDecision,
   ESpeechWindowAgentAction,
   ISpeechWindowAgentDecision,
+  ISpeechTakeAgentDecision,
+  ISpeechTakeReviewCandidate,
   ESpeechTranscriptReviewCategory,
   ESpeechTranscriptReviewSelection,
   ISpeechTranscriptReviewItem,

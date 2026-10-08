@@ -10,6 +10,7 @@ import {
   ISpeechTranscriptReviewArtifact,
   ISpeechTranscriptReviewDraftResolution,
   ISpeechTranscriptReviewResolution,
+  ISpeechTakeAgentDecision,
   ISpeechWindowAgentDecision,
   type IAssetCoarseReport,
   type IKtepAsset,
@@ -31,6 +32,7 @@ import {
   type ISpeechTranscriptReviewDraftResolution as TSpeechTranscriptReviewDraftResolution,
   type ISpeechTranscriptReviewItem,
   type ISpeechTranscriptReviewResolution as TSpeechTranscriptReviewResolution,
+  type ISpeechTakeAgentDecision as TSpeechTakeAgentDecision,
   type ISpeechWindowAgentDecision as TSpeechWindowAgentDecision,
 } from '../../protocol/schema.js';
 import {
@@ -38,6 +40,7 @@ import {
   computeTranscriptNormalizationHash,
   getSpansPath,
   loadManualItineraryConfig,
+  loadAssets,
   loadProjectBriefConfig,
   loadProjectPharosContext,
   loadReviewQueue,
@@ -445,6 +448,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
   transcriptDecisions: TTranscriptAgentDecision[];
   windowDecisions: TSpeechWindowAgentDecision[];
   duplicateGroupDecisions?: TSpeechDuplicateGroupAgentDecision[];
+  takeDecisions?: TSpeechTakeAgentDecision[];
   now?: string;
 }): Promise<IStageSpeechTranscriptReviewResult> {
   const now = input.now ?? new Date().toISOString();
@@ -476,7 +480,10 @@ export async function stageProjectSpeechTranscriptReview(input: {
     throw new Error(`Agent transcript decisions are incomplete: ${missingTranscript.length} item(s) missing`);
   }
 
-  const currentSpans = await loadSpans(input.projectRoot);
+  const [currentSpans, assets] = await Promise.all([
+    loadSpans(input.projectRoot),
+    loadAssets(input.projectRoot),
+  ]);
   validateSpanSegmentReferences(currentSpans, candidateArtifact.items);
   const candidateBySpanId = new Map(
     currentSpans
@@ -503,6 +510,13 @@ export async function stageProjectSpeechTranscriptReview(input: {
     input.duplicateGroupDecisions ?? [],
   );
 
+  const takeDecisions = validateSpeechTakeDecisions({
+    rawDecisions: input.takeDecisions ?? [],
+    inputsHash: input.inputsHash,
+    candidates: [...candidateBySpanId.values()],
+    assets,
+    windowDecisionBySpanId,
+  });
   const reviewItems: ISpeechTranscriptReviewItem[] = candidateArtifact.autoNormalizations.map(item => ({
     id: `speech-review-${item.id}`,
     category: 'transcript-auto-normalized' as const,
@@ -629,6 +643,84 @@ export async function stageProjectSpeechTranscriptReview(input: {
     transcriptItems: candidateArtifact.items,
     windowDecisionBySpanId,
   });
+  assertDisjointSpeechReviewGroups(duplicateGroups, takeDecisions.flatMap(decision => decision.spanIds));
+
+  const assetById = new Map(assets.map(asset => [asset.id, asset] as const));
+  for (const decision of takeDecisions) {
+    const takeCandidates = decision.spanIds.map(spanId => {
+      const span = normalizedSpanById.get(spanId)!;
+      return {
+        spanId,
+        assetId: span.assetId,
+        assetDisplayName: assetById.get(span.assetId)?.displayName,
+        startMs: span.sourceInMs ?? 0,
+        endMs: span.sourceOutMs ?? span.sourceInMs ?? 0,
+        transcript: span.transcript?.trim()
+          || (span.transcriptSegments ?? []).map(segment => segment.text.trim()).filter(Boolean).join(' '),
+      };
+    });
+    if (decision.action === 'prefer-one') {
+      for (const spanId of decision.spanIds.filter(candidate => candidate !== decision.preferredSpanId)) {
+        const span = normalizedSpanById.get(spanId)!;
+        const visualSpanIds = findVisualRecallSpans(spansAfterNormalization, span);
+        if (!span.visualObservation?.trim() && visualSpanIds.length === 0) {
+          throw new Error(`take group ${decision.groupId} cannot cancel ${span.id} without retained visual evidence`);
+        }
+        reviewItems.push({
+          id: `speech-take-cancel-${hashText(`${input.inputsHash}:${decision.groupId}:${span.id}`).slice(0, 20)}`,
+          category: 'speech-window-suggested-cancel',
+          selection: 'accepted',
+          assetId: span.assetId,
+          assetDisplayName: assetById.get(span.assetId)?.displayName,
+          spanIds: [span.id],
+          startMs: span.sourceInMs ?? 0,
+          endMs: span.sourceOutMs ?? span.sourceInMs ?? 0,
+          originalText: span.transcript,
+          transcriptSegments: span.transcriptSegments,
+          reason: decision.reason.trim(),
+          evidence: [],
+          contextEvents: [],
+          confidence: decision.confidence,
+          containsProperNoun: false,
+          windowEvidence: decision.evidence,
+          visualSpanIds: visualSpanIds.length > 0 ? visualSpanIds : [span.id],
+          takeGroupId: decision.groupId,
+          preferredSpanId: decision.preferredSpanId,
+          takeCandidates,
+        });
+      }
+      continue;
+    }
+    for (const spanId of decision.spanIds) {
+      const span = normalizedSpanById.get(spanId)!;
+      if (!span.visualObservation?.trim() && findVisualRecallSpans(spansAfterNormalization, span).length === 0) {
+        throw new Error(`take group ${decision.groupId} cannot offer a choice that may cancel ${span.id} without retained visual evidence`);
+      }
+    }
+    const first = normalizedSpanById.get(decision.spanIds[0]!)!;
+    reviewItems.push({
+      id: `speech-take-choice-${hashText(`${input.inputsHash}:${decision.groupId}`).slice(0, 20)}`,
+      category: 'speech-take-needs-choice',
+      selection: 'unresolved',
+      assetId: first.assetId,
+      spanIds: [...decision.spanIds],
+      startMs: first.sourceInMs ?? 0,
+      endMs: first.sourceOutMs ?? first.sourceInMs ?? 0,
+      reason: decision.reason.trim(),
+      evidence: [],
+      contextEvents: [],
+      confidence: decision.confidence,
+      containsProperNoun: false,
+      windowEvidence: decision.evidence,
+      visualSpanIds: decision.spanIds.flatMap(spanId => {
+        const span = normalizedSpanById.get(spanId)!;
+        const visualSpanIds = findVisualRecallSpans(spansAfterNormalization, span);
+        return visualSpanIds.length > 0 ? visualSpanIds : [span.id];
+      }),
+      takeGroupId: decision.groupId,
+      takeCandidates,
+    });
+  }
 
   const artifactPath = getSpeechTranscriptReviewArtifactPath(input.projectRoot, input.inputsHash);
   const reportPath = getSpeechTranscriptReviewReportPath(input.projectRoot, input.inputsHash);
@@ -668,6 +760,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
       duplicateGroupCount: duplicateGroups.length,
       duplicateCandidateCount: duplicateGroups.reduce((sum, group) => sum + group.candidates.length, 0),
       duplicateExcludedCount: countExcludedDuplicateSpans(duplicateGroups),
+      takeChoiceCount: countReviewCategory(reviewItems, 'speech-take-needs-choice'),
       reviewArtifactPath: artifactPath,
       reportPath,
       glossaryHash: artifact.glossaryHash,
@@ -701,10 +794,14 @@ export async function saveProjectSpeechTranscriptReviewDraft(input: {
   ]);
   assertTranscriptReviewConfiguration(artifact, glossary, normalization, 'human');
   await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
-  const baselineSpans = await loadSpans(input.projectRoot);
+  const [baselineSpans, assets] = await Promise.all([
+    loadSpans(input.projectRoot),
+    loadAssets(input.projectRoot),
+  ]);
   if (hashJson(baselineSpans) !== artifact.baselineSpansHash) {
     throw new Error('candidate spans changed during speech/transcript review');
   }
+  validateStagedTakeReviewItems(artifact.items, baselineSpans, assets, artifact.duplicateGroups);
 
   const resolutions = z.array(ISpeechTranscriptReviewDraftResolution).parse(input.resolutions);
   const resolutionById = new Map<string, TSpeechTranscriptReviewDraftResolution>();
@@ -779,10 +876,14 @@ export async function commitProjectSpeechTranscriptReview(input: {
   ]);
   assertTranscriptReviewConfiguration(artifact, glossary, normalization, 'human');
   await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
-  const baselineSpans = await loadSpans(input.projectRoot);
+  const [baselineSpans, assets] = await Promise.all([
+    loadSpans(input.projectRoot),
+    loadAssets(input.projectRoot),
+  ]);
   if (hashJson(baselineSpans) !== artifact.baselineSpansHash) {
     throw new Error('candidate spans changed during speech/transcript review');
   }
+  validateStagedTakeReviewItems(artifact.items, baselineSpans, assets, artifact.duplicateGroups);
 
   const resolutions = z.array(ISpeechTranscriptReviewResolution).parse(input.resolutions ?? []);
   const resolutionById = new Map<string, TSpeechTranscriptReviewResolution>();
@@ -796,7 +897,7 @@ export async function commitProjectSpeechTranscriptReview(input: {
   const resolvedItems = artifact.items.map(item => resolveUnifiedReviewItem(item, resolutionById.get(item.id), now));
   const unresolved = resolvedItems.filter(item => item.selection === 'unresolved');
   if (unresolved.length > 0) {
-    throw new Error(`speech/transcript review still has ${unresolved.length} needs-listening item(s)`);
+    throw new Error(`speech/transcript review still has ${unresolved.length} unresolved needs-listening or take-choice item(s)`);
   }
 
   let spans = baselineSpans;
@@ -804,6 +905,10 @@ export async function commitProjectSpeechTranscriptReview(input: {
     if (item.selection !== 'accepted') continue;
     if (item.category === 'transcript-suggested-correction' || item.category === 'transcript-needs-listening') {
       spans = applyUnifiedTranscriptCorrection(spans, item);
+      continue;
+    }
+    if (item.category === 'speech-take-needs-choice') {
+      spans = applyUnifiedTakeChoice(spans, item);
       continue;
     }
     const action = item.category === 'speech-window-suggested-trim'
@@ -1014,6 +1119,20 @@ function countReviewCategory(
   return items.filter(item => item.category === category).length;
 }
 
+function assertDisjointSpeechReviewGroups(
+  duplicateGroups: ISpeechDuplicateReviewGroup[],
+  takeSpanIds: string[],
+): void {
+  const takeMembers = new Set(takeSpanIds);
+  for (const group of duplicateGroups) {
+    for (const candidate of group.candidates) {
+      if (takeMembers.has(candidate.spanId)) {
+        throw new Error(`speech candidate belongs to both take and duplicate groups: ${candidate.spanId}`);
+      }
+    }
+  }
+}
+
 function buildSpeechDuplicateReviewGroups(input: {
   inputsHash: string;
   decisions: TSpeechDuplicateGroupAgentDecision[];
@@ -1158,6 +1277,181 @@ function findVisualRecallSpans(spans: IKtepSpan[], speechSpan: IKtepSpan): strin
     .map(span => span.id);
 }
 
+function validateSpeechTakeDecisions(input: {
+  rawDecisions: TSpeechTakeAgentDecision[];
+  inputsHash: string;
+  candidates: IKtepSpan[];
+  assets: IKtepAsset[];
+  windowDecisionBySpanId: Map<string, TSpeechWindowAgentDecision>;
+}): TSpeechTakeAgentDecision[] {
+  const parsed = z.array(ISpeechTakeAgentDecision).parse(input.rawDecisions);
+  const candidateById = new Map(input.candidates.map(span => [span.id, span] as const));
+  const assetById = new Map(input.assets.map(asset => [asset.id, asset] as const));
+  const orderedVideoAssetIds = input.assets
+    .filter(asset => asset.kind === 'video')
+    .sort((left, right) => {
+      const leftCapturedAt = left.capturedAt ? Date.parse(left.capturedAt) : Number.NaN;
+      const rightCapturedAt = right.capturedAt ? Date.parse(right.capturedAt) : Number.NaN;
+      const capturedOrder = (Number.isFinite(leftCapturedAt) ? leftCapturedAt : Number.MAX_SAFE_INTEGER)
+        - (Number.isFinite(rightCapturedAt) ? rightCapturedAt : Number.MAX_SAFE_INTEGER);
+      return capturedOrder
+        || left.id.localeCompare(right.id, 'en');
+    })
+    .map(asset => asset.id);
+  const positionByAssetId = new Map(orderedVideoAssetIds.map((assetId, index) => [assetId, index] as const));
+  const groupIds = new Set<string>();
+  const groupedSpanIds = new Set<string>();
+  return parsed.map(decision => {
+    if (decision.inputsHash !== input.inputsHash) {
+      throw new Error(`take group ${decision.groupId} uses stale inputsHash`);
+    }
+    if (groupIds.has(decision.groupId)) throw new Error(`duplicate take group id: ${decision.groupId}`);
+    groupIds.add(decision.groupId);
+    const spans = decision.spanIds.map(spanId => {
+      const span = candidateById.get(spanId);
+      if (!span) throw new Error(`take group ${decision.groupId} references unknown speech candidate: ${spanId}`);
+      const asset = assetById.get(span.assetId);
+      if (!asset || asset.kind !== 'video') {
+        throw new Error(`take group ${decision.groupId} requires video asset truth for ${spanId}`);
+      }
+      if (groupedSpanIds.has(spanId)) throw new Error(`speech candidate belongs to multiple take groups: ${spanId}`);
+      groupedSpanIds.add(spanId);
+      const windowDecision = input.windowDecisionBySpanId.get(spanId);
+      if (windowDecision?.action === 'cancel') {
+        throw new Error(`take group ${decision.groupId} member ${spanId} must not also have a window cancel decision`);
+      }
+      return span;
+    });
+    if (new Set(spans.map(span => span.assetId)).size !== spans.length) {
+      throw new Error(`take group ${decision.groupId} must contain at most one speech candidate from each asset`);
+    }
+    const positions = spans.map(span => positionByAssetId.get(span.assetId)!).sort((a, b) => a - b);
+    if (positions.at(-1)! - positions[0]! + 1 !== positions.length) {
+      throw new Error(`take group ${decision.groupId} members must be adjacent in capture-time video order`);
+    }
+    const spanByAssetId = new Map(spans.map(span => [span.assetId, span] as const));
+    const spanIds = positions.map(position => spanByAssetId.get(orderedVideoAssetIds[position]!)!.id);
+    return ISpeechTakeAgentDecision.parse({ ...decision, spanIds });
+  });
+}
+
+function validateStagedTakeReviewItems(
+  items: ISpeechTranscriptReviewItem[],
+  spans: IKtepSpan[],
+  assets: IKtepAsset[],
+  duplicateGroups: ISpeechDuplicateReviewGroup[],
+): void {
+  const takeItems = items.filter(item => Boolean(item.takeGroupId));
+  assertDisjointSpeechReviewGroups(
+    duplicateGroups,
+    takeItems.flatMap(item => (item.takeCandidates ?? []).map(candidate => candidate.spanId)),
+  );
+  if (takeItems.length === 0) return;
+  const spanById = new Map(spans.map(span => [span.id, span] as const));
+  const assetById = new Map(assets.map(asset => [asset.id, asset] as const));
+  const orderedVideoAssetIds = assets
+    .filter(asset => asset.kind === 'video')
+    .sort((left, right) => {
+      const leftCapturedAt = Date.parse(left.capturedAt ?? '');
+      const rightCapturedAt = Date.parse(right.capturedAt ?? '');
+      return (Number.isFinite(leftCapturedAt) ? leftCapturedAt : Number.MAX_SAFE_INTEGER)
+        - (Number.isFinite(rightCapturedAt) ? rightCapturedAt : Number.MAX_SAFE_INTEGER)
+        || left.id.localeCompare(right.id, 'en');
+    })
+    .map(asset => asset.id);
+  const positionByAssetId = new Map(orderedVideoAssetIds.map((assetId, index) => [assetId, index] as const));
+  const signatureByGroupId = new Map<string, string>();
+  const groupBySpanId = new Map<string, string>();
+  const cancelSpanIdsByGroup = new Map<string, Set<string>>();
+  const preferredSpanIdByGroup = new Map<string, string>();
+  const candidateCountByGroup = new Map<string, number>();
+  const choiceGroupIds = new Set<string>();
+
+  for (const item of takeItems) {
+    const groupId = item.takeGroupId!;
+    const candidates = item.takeCandidates ?? [];
+    if (candidates.length < 2) throw new Error(`take group ${groupId} has fewer than two candidates`);
+    const signature = candidates.map(candidate => candidate.spanId).join('\0');
+    const previousSignature = signatureByGroupId.get(groupId);
+    if (previousSignature && previousSignature !== signature) {
+      throw new Error(`take group ${groupId} uses inconsistent candidate membership`);
+    }
+    if (!previousSignature) {
+      signatureByGroupId.set(groupId, signature);
+      candidateCountByGroup.set(groupId, candidates.length);
+      const assetIds = new Set<string>();
+      const positions: number[] = [];
+      for (const candidate of candidates) {
+        const span = spanById.get(candidate.spanId);
+        if (!span || (span.semanticKind !== 'speech' && span.semanticKind !== 'mixed')) {
+          throw new Error(`take group ${groupId} references a non-speech baseline span: ${candidate.spanId}`);
+        }
+        if (assetById.get(span.assetId)?.kind !== 'video') {
+          throw new Error(`take group ${groupId} requires video asset truth for ${candidate.spanId}`);
+        }
+        if (candidate.assetId !== span.assetId
+          || candidate.startMs !== (span.sourceInMs ?? 0)
+          || candidate.endMs !== (span.sourceOutMs ?? span.sourceInMs ?? 0)
+          || candidate.transcript !== (span.transcript?.trim()
+            || (span.transcriptSegments ?? []).map(segment => segment.text.trim()).filter(Boolean).join(' '))) {
+          throw new Error(`take group ${groupId} candidate facts changed for ${candidate.spanId}`);
+        }
+        if (assetIds.has(candidate.assetId)) {
+          throw new Error(`take group ${groupId} must contain at most one candidate from each asset`);
+        }
+        assetIds.add(candidate.assetId);
+        const previousGroupId = groupBySpanId.get(candidate.spanId);
+        if (previousGroupId && previousGroupId !== groupId) {
+          throw new Error(`speech candidate belongs to multiple take groups: ${candidate.spanId}`);
+        }
+        groupBySpanId.set(candidate.spanId, groupId);
+        const position = positionByAssetId.get(candidate.assetId);
+        if (position === undefined) throw new Error(`take group ${groupId} candidate is missing from video order`);
+        positions.push(position);
+      }
+      positions.sort((a, b) => a - b);
+      if (positions.at(-1)! - positions[0]! + 1 !== positions.length) {
+        throw new Error(`take group ${groupId} members are no longer adjacent in capture-time video order`);
+      }
+    }
+    if (item.category === 'speech-take-needs-choice') {
+      if (choiceGroupIds.has(groupId) || cancelSpanIdsByGroup.has(groupId)) {
+        throw new Error(`take group ${groupId} has conflicting or duplicate review items`);
+      }
+      choiceGroupIds.add(groupId);
+      if (item.spanIds.join('\0') !== signature) {
+        throw new Error(`take choice ${item.id} does not reference the full ordered group`);
+      }
+      continue;
+    }
+    if (item.category !== 'speech-window-suggested-cancel' || !item.preferredSpanId) {
+      throw new Error(`take group ${groupId} is attached to an unsupported review item`);
+    }
+    if (!candidates.some(candidate => candidate.spanId === item.preferredSpanId)) {
+      throw new Error(`take group ${groupId} preferred span is outside the group`);
+    }
+    if (choiceGroupIds.has(groupId)) throw new Error(`take group ${groupId} mixes a choice with cancel suggestions`);
+    const previousPreferredSpanId = preferredSpanIdByGroup.get(groupId);
+    if (previousPreferredSpanId && previousPreferredSpanId !== item.preferredSpanId) {
+      throw new Error(`take group ${groupId} uses inconsistent preferred spans`);
+    }
+    preferredSpanIdByGroup.set(groupId, item.preferredSpanId);
+    const cancelledSpanId = item.spanIds[0];
+    if (item.spanIds.length !== 1 || !cancelledSpanId || cancelledSpanId === item.preferredSpanId) {
+      throw new Error(`take group ${groupId} cancel item must reference one non-preferred candidate`);
+    }
+    const cancelled = cancelSpanIdsByGroup.get(groupId) ?? new Set<string>();
+    if (cancelled.has(cancelledSpanId)) throw new Error(`take group ${groupId} cancels ${cancelledSpanId} more than once`);
+    cancelled.add(cancelledSpanId);
+    cancelSpanIdsByGroup.set(groupId, cancelled);
+  }
+  for (const [groupId, cancelledSpanIds] of cancelSpanIdsByGroup) {
+    if (cancelledSpanIds.size !== (candidateCountByGroup.get(groupId) ?? 0) - 1) {
+      throw new Error(`take group ${groupId} must cancel every non-preferred candidate exactly once`);
+    }
+  }
+}
+
 function validateWindowTrim(span: IKtepSpan, retainStartMs?: number, retainEndMs?: number): void {
   if (retainStartMs === undefined || retainEndMs === undefined || retainEndMs <= retainStartMs) {
     throw new Error(`window ${span.id} trim requires a positive retained range`);
@@ -1187,6 +1481,19 @@ function resolveUnifiedReviewItem(
 ): ISpeechTranscriptReviewItem {
   if (item.selection === 'applied') return item;
   if (!resolution) return item;
+  if (item.category === 'speech-take-needs-choice') {
+    if (resolution.selection === 'rejected') throw new Error(`take choice ${item.id} cannot be rejected`);
+    const candidateIds = item.takeCandidates?.map(candidate => candidate.spanId) ?? [];
+    if (!resolution.selectedSpanId || !candidateIds.includes(resolution.selectedSpanId)) {
+      throw new Error(`take choice ${item.id} requires one selected group candidate`);
+    }
+    return {
+      ...item,
+      selection: 'accepted',
+      selectedSpanId: resolution.selectedSpanId,
+      resolvedAt: now,
+    };
+  }
   if (resolution.selection === 'rejected') {
     return { ...item, selection: 'rejected', resolvedWindowAction: 'keep', resolvedAt: now };
   }
@@ -1237,13 +1544,16 @@ function applyDraftResolution(
   resolution?: TSpeechTranscriptReviewDraftResolution,
 ): ISpeechTranscriptReviewItem {
   if (item.selection === 'applied' || !resolution) return item;
-  const needsListening = item.category.endsWith('needs-listening');
+  const allowsUnresolved = item.category.endsWith('needs-listening') || item.category === 'speech-take-needs-choice';
   if (resolution.selection === 'unresolved') {
-    if (!needsListening) throw new Error(`suggested review ${item.id} cannot be unresolved`);
+    if (!allowsUnresolved) throw new Error(`suggested review ${item.id} cannot be unresolved`);
     return {
       ...item,
       selection: 'unresolved',
       finalText: resolution.finalText ?? item.finalText,
+      selectedSpanId: item.category === 'speech-take-needs-choice'
+        ? resolution.selectedSpanId
+        : item.selectedSpanId,
       resolvedWindowAction: item.category === 'speech-window-needs-listening'
         ? resolution.windowAction ?? item.resolvedWindowAction
         : undefined,
@@ -1253,11 +1563,24 @@ function applyDraftResolution(
     };
   }
   if (resolution.selection === 'rejected') {
+    if (item.category === 'speech-take-needs-choice') throw new Error(`take choice ${item.id} cannot be rejected`);
     return {
       ...item,
       selection: 'rejected',
       finalText: resolution.finalText ?? item.finalText,
       resolvedWindowAction: item.category.startsWith('speech-window-') ? 'keep' : item.resolvedWindowAction,
+      resolvedAt: undefined,
+    };
+  }
+  if (item.category === 'speech-take-needs-choice') {
+    const candidateIds = item.takeCandidates?.map(candidate => candidate.spanId) ?? [];
+    if (!resolution.selectedSpanId || !candidateIds.includes(resolution.selectedSpanId)) {
+      throw new Error(`take choice ${item.id} requires one selected group candidate`);
+    }
+    return {
+      ...item,
+      selection: 'accepted',
+      selectedSpanId: resolution.selectedSpanId,
       resolvedAt: undefined,
     };
   }
@@ -1348,10 +1671,14 @@ function applyUnifiedWindowTrim(spans: IKtepSpan[], item: ISpeechTranscriptRevie
 
 function applyUnifiedWindowCancel(spans: IKtepSpan[], item: ISpeechTranscriptReviewItem): IKtepSpan[] {
   let matches = 0;
-  const next = spans.map(span => {
+  const next = spans.flatMap(span => {
     if (!item.spanIds.includes(span.id)) return span;
     if (!span.visualObservation?.trim()) {
-      throw new Error(`review ${item.id} cannot preserve visual recall because visualObservation is missing`);
+      if (findVisualRecallSpans(spans, span).length === 0) {
+        throw new Error(`review ${item.id} cannot preserve visual recall because visualObservation is missing`);
+      }
+      matches += 1;
+      return [];
     }
     matches += 1;
     return {
@@ -1371,6 +1698,25 @@ function applyUnifiedWindowCancel(spans: IKtepSpan[], item: ISpeechTranscriptRev
     };
   });
   if (matches === 0) throw new Error(`review ${item.id} no longer references a speech window`);
+  return next;
+}
+
+function applyUnifiedTakeChoice(spans: IKtepSpan[], item: ISpeechTranscriptReviewItem): IKtepSpan[] {
+  const candidates = item.takeCandidates ?? [];
+  if (!item.selectedSpanId || !candidates.some(candidate => candidate.spanId === item.selectedSpanId)) {
+    throw new Error(`take choice ${item.id} has no valid selected candidate`);
+  }
+  let next = spans;
+  for (const candidate of candidates) {
+    if (candidate.spanId === item.selectedSpanId) continue;
+    next = applyUnifiedWindowCancel(next, {
+      ...item,
+      assetId: candidate.assetId,
+      spanIds: [candidate.spanId],
+      startMs: candidate.startMs,
+      endMs: candidate.endMs,
+    });
+  }
   return next;
 }
 
@@ -1413,6 +1759,21 @@ function validateFinalSpeechTranscriptReview(
     ));
     if (!retainedVisual) throw new Error(`cancelled speech window ${item.id} lost visual recall`);
   }
+  for (const item of artifact.items.filter(candidate => (
+    candidate.selection === 'accepted' && candidate.category === 'speech-take-needs-choice'
+  ))) {
+    for (const candidate of item.takeCandidates ?? []) {
+      if (candidate.spanId === item.selectedSpanId) continue;
+      const retainedVisual = spans.some(span => (
+        span.assetId === candidate.assetId
+        && span.semanticKind === 'visual'
+        && Boolean(span.visualObservation?.trim())
+        && (span.sourceOutMs ?? span.sourceInMs ?? 0) > candidate.startMs
+        && (span.sourceInMs ?? 0) < candidate.endMs
+      ));
+      if (!retainedVisual) throw new Error(`take choice ${item.id} lost visual recall for ${candidate.spanId}`);
+    }
+  }
 }
 
 async function writeSpeechTranscriptReviewReport(
@@ -1422,13 +1783,14 @@ async function writeSpeechTranscriptReviewReport(
   const categories: Array<{
     category: ISpeechTranscriptReviewItem['category'];
     title: string;
-    kind: 'transcript' | 'window';
+    kind: 'transcript' | 'window' | 'take';
   }> = [
     { category: 'transcript-auto-normalized', title: '字幕｜已自动修正', kind: 'transcript' },
     { category: 'transcript-suggested-correction', title: '字幕｜建议修正', kind: 'transcript' },
     { category: 'transcript-needs-listening', title: '字幕｜需人工听音', kind: 'transcript' },
     { category: 'speech-window-suggested-trim', title: '口播窗口｜建议裁切', kind: 'window' },
     { category: 'speech-window-suggested-cancel', title: '口播窗口｜建议取消', kind: 'window' },
+    { category: 'speech-take-needs-choice', title: '口播版本｜待选择', kind: 'take' },
   ];
   const lines = [
     '# 口播与字幕审查报告',
@@ -1455,10 +1817,15 @@ async function writeSpeechTranscriptReviewReport(
       for (const item of items) {
         lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.assetDisplayName ?? item.assetId)} | ${md(item.spanIds.join(', '))} | ${formatReviewRange(item.startMs, item.endMs)} | ${md(item.originalText)} | ${md(item.finalText ?? item.suggestedText)} | ${md(item.reason)} |`);
       }
-    } else {
+    } else if (entry.kind === 'window') {
       lines.push('| 状态 | 素材 | 窗口 | 时间 | 原内容 | 建议结果 | 依据 |', '|---|---|---|---|---|---|---|');
       for (const item of items) {
         lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.assetDisplayName ?? item.assetId)} | ${md(item.spanIds.join(', '))} | ${formatReviewRange(item.startMs, item.endMs)} | ${md(item.originalText)} | ${md(formatWindowSuggestion(item))} | ${md(item.reason)} |`);
+      }
+    } else {
+      lines.push('| 状态 | 版本组 | 候选版本 | 已选版本 | 依据 |', '|---|---|---|---|---|');
+      for (const item of items) {
+        lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.takeGroupId)} | ${md(formatTakeCandidates(item))} | ${md(formatSelectedTake(item))} | ${md(item.reason)} |`);
       }
     }
     lines.push('');
@@ -1483,6 +1850,7 @@ async function writeSpeechTranscriptReviewReport(
 
 function reviewSelectionLabel(item: ISpeechTranscriptReviewItem): string {
   if (item.selection === 'applied') return '已应用';
+  if (item.category === 'speech-take-needs-choice') return item.selection === 'accepted' ? '已选择' : '待选择';
   if (item.category.endsWith('needs-listening') && item.selection !== 'unresolved') return '审查完成';
   if (item.selection === 'accepted') {
     if (item.resolvedAt) return '已接受';
@@ -1503,9 +1871,29 @@ function formatWindowSuggestion(item: ISpeechTranscriptReviewItem): string {
     const range = `保留 ${formatReviewRange(item.retainStartMs ?? 0, item.retainEndMs ?? 0)}`;
     return item.suggestedText?.trim() ? `${range}；裁切后：${item.suggestedText.trim()}` : range;
   }
-  if (action === 'cancel') return '取消口播属性和字幕，保留视觉素材召回';
+  if (action === 'cancel') {
+    const preferred = item.preferredSpanId
+      ? item.takeCandidates?.find(candidate => candidate.spanId === item.preferredSpanId)
+      : undefined;
+    const retained = preferred ? preferred.assetDisplayName ?? preferred.assetId : item.preferredSpanId;
+    return retained
+      ? `取消口播属性和字幕，保留视觉素材召回；同组保留 ${retained}`
+      : '取消口播属性和字幕，保留视觉素材召回';
+  }
   if (action === 'keep') return item.category === 'speech-window-needs-listening' ? '不调整' : '保持原窗口';
   return '需人工听音后决定';
+}
+
+function formatTakeCandidates(item: ISpeechTranscriptReviewItem): string {
+  return (item.takeCandidates ?? []).map(candidate => (
+    `${candidate.assetDisplayName ?? candidate.assetId} ${formatReviewRange(candidate.startMs, candidate.endMs)} ${candidate.transcript}`
+  )).join('<br>');
+}
+
+function formatSelectedTake(item: ISpeechTranscriptReviewItem): string {
+  if (!item.selectedSpanId) return '未选择';
+  const candidate = item.takeCandidates?.find(entry => entry.spanId === item.selectedSpanId);
+  return candidate?.assetDisplayName ?? candidate?.assetId ?? item.selectedSpanId;
 }
 
 function retainedTranscriptText(span: IKtepSpan, startMs?: number, endMs?: number): string | undefined {

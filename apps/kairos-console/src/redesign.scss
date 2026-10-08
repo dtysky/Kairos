@@ -831,6 +831,19 @@ body {
 .speech-duplicate-candidate-header .speech-review-audio-player { margin-left: auto; }
 .speech-duplicate-candidate p { margin: 0; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 .speech-duplicate-candidate small { color: var(--muted); line-height: 1.45; }
+.speech-take-choice-group { display: grid; gap: 10px; width: 100%; }
+.speech-take-choice-candidate {
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+.speech-take-choice-candidate .ant-radio-wrapper { display: flex; gap: 8px; align-items: center; }
+.speech-take-choice-candidate .ant-radio-wrapper span:last-child { display: flex; gap: 10px; align-items: baseline; }
+.speech-take-choice-candidate .ant-radio-wrapper span:last-child > span { color: var(--muted); font-size: 12px; }
+.speech-take-choice-candidate p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
 .drawer-form-stack { display: grid; gap: 14px; }
 .drawer-form-stack .field { margin: 0; }
 .transcript-comparison-row {

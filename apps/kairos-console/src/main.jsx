@@ -1594,7 +1594,7 @@ export function resolveChronologyNextStep({ spans, chronology, eventConsolidatio
       eyebrow: '下一步 · 口播与字幕审查',
       title: isHumanReview ? '完成本轮口播与字幕审查' : '生成口播与字幕审查报告',
       body: isHumanReview
-        ? '复核默认接受的字幕修正、口播裁切和取消建议，提交后才会把 spans 标记为 fresh。'
+        ? '复核默认接受的字幕修正、口播裁切和取消建议，并完成待选口播版本，提交后才会把 spans 标记为 fresh。'
         : '让 Codex Agent 根据 handoff 生成统一分表报告；这一步不会重新识别音频或改变字幕时间。',
       detail: '完成后：生成编年史。',
       tone: 'warn',
@@ -1747,7 +1747,7 @@ export function resolveChronologyPipelineStages({ spans, chronology, eventConsol
     speechStage = {
       status: 'review',
       detail: isHuman
-        ? '报告已生成；复核默认接受的字幕修正、裁切和取消建议。'
+        ? '报告已生成；复核默认接受的字幕修正、裁切和取消建议，并完成待选口播版本。'
         : '需要回到 Codex/Agent，按 handoff 生成统一审查报告。',
       action: 'speech-review',
       actionLabel: isHuman ? '打开审查表' : '查看 Agent 指引',
@@ -1903,7 +1903,7 @@ function ChronologyPage({
   const speechWindowAgentHandoffPath = speechReview.handoffPath || null;
   const speechReviewHandoffRef = speechWindowAgentHandoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/speech-window-agent-handoff.md`;
-  const speechReviewAgentPrompt = `请按 kairos-speech-review skill 和 handoff 生成这个项目的口播与字幕审查报告：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}，调用 stageProjectSpeechTranscriptReview 写统一 JSON 和分表报告，并跨全部 speech/mixed candidates 识别明显同功能、可互相替代的重复口播组。每组默认推荐最佳 1 段，内容互补时最多 2 段；不确定时不要分组。简体中文正字归一直接应用；其余建议和重复筛选不要在用户提交前写入正式 spans。不要重跑 ASR、span-builder、fine-scan 或 chronology。`;
+  const speechReviewAgentPrompt = `请按 kairos-speech-review skill 和 handoff 生成这个项目的口播与字幕审查报告：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}，检查窗口内被完整重说覆盖的残句，并比较拍摄时间相邻素材中同一次口播的多次尝试，调用 stageProjectSpeechTranscriptReview 写统一 JSON 和七个审查区报告。唯一明显完整版本保留并建议取消其余版本；多个完整版本没有明确优劣时输出待选择组。对未进入 take group 且未 cancel 的口播候选，再识别明确同功能、可互相替代的跨素材重复组，默认推荐最佳 1 段，互补时最多 2 段，不确定时不分组；两类组不得共享成员。简体中文正字归一直接应用；其余建议默认接受但不要在用户提交前写入正式 spans。不要重跑 ASR、span-builder、fine-scan 或 chronology。`;
   const eventConsolidationHandoffRef = eventConsolidation?.handoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/event-consolidation-agent-handoff.md`;
   const eventConsolidationAgentPrompt = `请按 kairos-chronology-consolidation skill 处理项目 ${projectId || '<projectId>'}：读取 ${eventConsolidationHandoffRef} 和当前 media/chronology.json。合并语义连续的相邻普通 pending event；也允许用 anchorEventId 指定组内唯一 confirmed Pharos event，让其吸收两侧属于同一行程的相邻普通 pending event，并保留 Pharos id、标题、地点和 confirmed 状态。允许跨自然日零点，不得跨 route、gap 或另一个 Pharos event，也不得修改 GPS、路线、源时间和 span。按 handoff 写 decisions 并运行其中的应用命令；不要重跑 chronology-build、Analyze 或 span-rebuild。`;
@@ -2091,8 +2091,8 @@ function ChronologyPage({
               eyebrow={isHumanTranscriptReview ? 'Human Review Pending' : 'Agent Review Pending'}
               title={isHumanTranscriptReview ? '审查口播与字幕建议后再生成编年史' : '等待 Agent 生成口播与字幕审查报告'}
               body={isHumanTranscriptReview
-                ? `建议修正、裁切、取消和 ${speechReview.duplicateGroupCount ?? 0} 个重复口播组默认接受；复核每组保留的 1–2 段，并处理 ${speechReview.needsListeningCount ?? 0} 条需人工听音项后统一提交。`
-                : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将跨视频识别重复口播并生成分表报告，不会直接应用裁切、取消、重复排除或非正字归一的文字修改。`}
+                ? `建议修正、裁切和取消默认接受；手动取消不采用的项目，处理 ${speechReview.needsListeningCount ?? 0} 条需人工听音项，完成 ${speechReview.takeChoiceCount ?? 0} 组口播版本选择，并复核 ${speechReview.duplicateGroupCount ?? 0} 个重复组保留的 1–2 段后统一提交。`
+                : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将生成分表报告，不会直接应用裁切、取消、重复排除或非正字归一的文字修改。`}
               detail={!isHumanTranscriptReview ? (
                 <div className="workflow-prompt-command-block">
                   <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>
