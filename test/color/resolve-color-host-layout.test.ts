@@ -653,34 +653,6 @@ print(json.dumps(module.build_clip_creative_summary(payload), ensure_ascii=False
   };
 }
 
-async function summarizeGroupColorCast(clips: Array<Record<string, unknown>>) {
-  const code = `
-import importlib.util
-import json
-import sys
-
-host_path = sys.argv[1]
-clips = json.loads(sys.argv[2])
-
-spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-
-print(json.dumps({"colorCastClass": module.summarize_group_color_cast(clips)}, ensure_ascii=False))
-`;
-  const { stdout } = await exec(
-    pythonPath,
-    ['-c', code, hostPath, JSON.stringify(clips)],
-    {
-      encoding: 'utf8',
-      windowsHide: true,
-    },
-  );
-  return JSON.parse(stdout) as {
-    colorCastClass: string;
-  };
-}
-
 describe('resolve color host clip layout helpers', () => {
   it('builds day-level render specs with final target directories', async () => {
     const outputRoot = getTestOutputRoot();
@@ -1075,6 +1047,17 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
+  it('does not infer available motion data from eligibility or an empty repair state', async () => {
+    for (const repairSeedState of [undefined, {}]) {
+      const result = await buildRepairSnapshot({
+        nodeCount: 5, gyroEligible: true,
+        toolsByNode: { '1': ['OFX: Gyroflow'], '2': ['OFX: Dehaze'], '5': ['OFX: Noise Reduction'] },
+        repairSeedState,
+      });
+      expect(result).not.toHaveProperty('gyroDataAvailable');
+    }
+  });
+
   it('marks missing portrait DRT clips as pending-orientation-template and disables effective gyro', async () => {
     const result = await buildRepairSnapshot({
       nodeCount: 0,
@@ -1166,10 +1149,10 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
-  it('applies portrait timeline transform through Resolve TimelineItem properties', async () => {
+  it('applies zero portrait rotation through Resolve without changing fill or framing', async () => {
     const result = await applyTimelineTransform({
       transform: {
-        rotationAngle: -90,
+        rotationAngle: 0,
         zoomGang: true,
         zoomX: 1.7778,
         zoomY: 1.7778,
@@ -1179,7 +1162,7 @@ describe('resolve color host clip layout helpers', () => {
     });
 
     expect(result.calls).toEqual([
-      ['RotationAngle', -90],
+      ['RotationAngle', 0],
       ['ZoomGang', true],
       ['ZoomX', 1.7778],
       ['ZoomY', 1.7778],
@@ -1188,171 +1171,31 @@ describe('resolve color host clip layout helpers', () => {
     ]);
   });
 
-  it('builds generated groups from log plus the highest-priority review addon', async () => {
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'cool-cyan'],
-      displayName: 'slog3 + cool-cyan',
-    });
+  it.each(['horizontal', 'portrait'])('groups %s clips by Log and orientation regardless of old visual diagnoses', async orientationStatus => {
+    for (const logProfile of ['slog3', 'dlog-m', 'rec709', 'hlg']) {
+      const baseline = await buildCreativeSummary({ logProfile, orientationStatus });
+      expect(baseline).toEqual({
+        creativeTags: [logProfile, orientationStatus],
+        displayName: `${logProfile} + ${orientationStatus}`,
+      });
+      const diagnosed = await buildCreativeSummary({
+        logProfile, orientationStatus, lowlight: true, windshieldHaze: true,
+        colorCastClass: 'green', colorCastConfidence: 0.99,
+        exposureSceneClass: 'underexposed', exposureSceneConfidence: 0.99,
+        exposureSceneMetrics: { exposureSceneReasons: ['white-reference-underexposed'] },
+      });
+      expect(diagnosed).toEqual(baseline);
+    }
+  });
 
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'green-cyan',
-      colorCastConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'green-cyan'],
-      displayName: 'slog3 + green-cyan',
+  it('keeps missing profile and direction explicit instead of guessing horizontal', async () => {
+    await expect(buildCreativeSummary({})).resolves.toEqual({
+      creativeTags: ['unknown', 'unknown-orientation'],
+      displayName: 'unknown + unknown-orientation',
     });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'green-cyan',
-      colorCastConfidence: 0.4,
-    })).resolves.toEqual({
-      creativeTags: ['slog3'],
-      displayName: 'slog3',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.4,
-    })).resolves.toEqual({
-      creativeTags: ['slog3'],
-      displayName: 'slog3',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      orientationStatus: 'portrait',
-      lowlight: true,
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.8,
-      exposureSceneClass: 'overexposed',
-      exposureSceneConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'portrait-review'],
-      displayName: 'slog3 + portrait-review',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'rec709',
-      lowlight: true,
-      windshieldHaze: true,
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.8,
-      exposureSceneClass: 'overexposed',
-      exposureSceneConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['rec709', 'lowlight'],
-      displayName: 'rec709 + lowlight',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      windshieldHaze: true,
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.8,
-      exposureSceneClass: 'underexposed',
-      exposureSceneConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'windshield-haze'],
-      displayName: 'slog3 + windshield-haze',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'neutral',
-      colorCastConfidence: 0.9,
-      exposureSceneClass: 'high-contrast',
-      exposureSceneConfidence: 0.4,
-    })).resolves.toEqual({
-      creativeTags: ['slog3'],
-      displayName: 'slog3',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'neutral',
-      colorCastConfidence: 0.9,
-      exposureSceneClass: 'overexposed',
-      exposureSceneConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'overexposed'],
-      displayName: 'slog3 + overexposed',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: false,
-      colorCastClass: 'neutral',
-      colorCastConfidence: 0.9,
-      exposureSceneClass: 'underexposed',
-      exposureSceneConfidence: 0.8,
-      exposureSceneMetrics: {
-        exposureSceneReasons: ['white-reference-underexposed'],
-      },
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'white-reference-underexposed'],
-      displayName: 'slog3 + white-reference-underexposed',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'slog3',
-      lowlight: true,
-      colorCastClass: 'neutral',
-      colorCastConfidence: 0.9,
-      exposureSceneClass: 'underexposed',
-      exposureSceneConfidence: 0.8,
-      exposureSceneMetrics: {
-        exposureSceneReasons: ['white-reference-underexposed'],
-      },
-    })).resolves.toEqual({
-      creativeTags: ['slog3', 'lowlight'],
-      displayName: 'slog3 + lowlight',
-    });
-
-    await expect(buildCreativeSummary({
-      logProfile: 'rec709',
-      lowlight: false,
-      colorCastClass: 'neutral',
-      colorCastConfidence: 0.9,
-      exposureSceneClass: 'overexposed',
-      exposureSceneConfidence: 0.8,
-    })).resolves.toEqual({
-      creativeTags: ['rec709', 'overexposed'],
-      displayName: 'rec709 + overexposed',
-    });
-
-    await expect(summarizeGroupColorCast([{
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.4,
-    }])).resolves.toEqual({
-      colorCastClass: 'unknown',
-    });
-
-    await expect(summarizeGroupColorCast([{
-      colorCastClass: 'cool-cyan',
-      colorCastConfidence: 0.8,
-    }])).resolves.toEqual({
-      colorCastClass: 'cool-cyan',
-    });
-
-    await expect(summarizeGroupColorCast([{
-      colorCastClass: 'green-cyan',
-      colorCastConfidence: 0.8,
-    }])).resolves.toEqual({
-      colorCastClass: 'green-cyan',
+    await expect(buildCreativeSummary({ logProfile: 'S-Log3', orientationStatus: 'unknown' })).resolves.toEqual({
+      creativeTags: ['slog3', 'unknown-orientation'],
+      displayName: 'slog3 + unknown-orientation',
     });
   });
 

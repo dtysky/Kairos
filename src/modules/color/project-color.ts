@@ -61,13 +61,8 @@ import {
   resolveColorDrpLatestFilename,
 } from './workspace-state.js';
 import { readColorRenderPresetBitrateKbps } from './render-preset.js';
-import { classifyMidpointLowlight } from './lowlight-classifier.js';
-import { classifyColorCast } from './color-cast-classifier.js';
-import { classifyExposureScene } from './exposure-scene-classifier.js';
-import { classifyWindshieldHaze } from './windshield-haze-classifier.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
-  detectResolveDefaultLutRoot,
   resolveClipTransformSeeds,
   resolveEffectiveColorProfile,
   syncReferencedResolveLuts,
@@ -107,12 +102,6 @@ const CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY = 'default';
 const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY = 'portrait-90';
 const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY = 'portrait--90';
 const CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL = '方向 DRT 模板已更新，需重新 seed portrait repair。';
-const CCOLOR_CAST_CONTINUITY_MIN_CANDIDATE_RATIO = 0.03;
-const CCOLOR_CAST_CONTINUITY_MAX_ANCHOR_GAP = 8;
-const CCOLOR_CAST_CONTINUITY_MAX_FORWARD_EXTENSION = 3;
-
-type TColorCastContinuityTarget = 'cool-cyan' | 'green-cyan' | 'green';
-
 const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; label: string }>> = {
   relink_media: [
     { key: 'relink_media', label: '重链 Resolve 素材路径' },
@@ -1322,12 +1311,7 @@ export async function prepareProjectColorRoot(
       const executorClips = await buildColorExecutorClipsForInventory(
         chunk.items,
         context.runtimeConfig,
-        {
-          workspaceRoot: context.workspaceRoot,
-          rootColorSpaceProfile: context.rootSummary.colorSpaceProfile,
-          rootTransformPresetKey: context.rootSummary.transformPresetKey,
-          transformPresetsConfig: context.transformPresetsConfig,
-        },
+        context.rootSummary.colorSpaceProfile,
       );
       const executorClipsWithPreviousRepair = applyPreviousColorRepairSnapshots(
         executorClips,
@@ -3171,13 +3155,6 @@ interface IColorPrepareChunkPlan extends IColorPrepareChunk {
   items: IColorRawInventoryItem[];
 }
 
-interface IColorCastPreviewContext {
-  workspaceRoot: string;
-  rootColorSpaceProfile?: IColorRootContext['rootSummary']['colorSpaceProfile'];
-  rootTransformPresetKey?: IColorRootContext['rootSummary']['transformPresetKey'];
-  transformPresetsConfig: Awaited<ReturnType<typeof loadColorTransformPresetsConfig>>;
-}
-
 async function scanColorRawInventory(rawLocalPath: string): Promise<IColorRawInventoryItem[]> {
   const scanned = await scanDirectory(rawLocalPath);
   return scanned
@@ -3423,19 +3400,10 @@ function portableParentDir(rawRelativePath: string): string {
   return parent === '.' ? '' : parent;
 }
 
-async function buildColorExecutorClips(
-  rawLocalPath: string,
-  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
-  previewContext?: IColorCastPreviewContext,
-): Promise<IColorExecutorClipInput[]> {
-  const inventory = await scanColorRawInventory(rawLocalPath);
-  return buildColorExecutorClipsForInventory(inventory, runtimeConfig, previewContext);
-}
-
 async function buildColorExecutorClipsForInventory(
   inventory: IColorRawInventoryItem[],
   runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
-  previewContext?: IColorCastPreviewContext,
+  rootColorSpaceProfile?: IColorRootContext['rootSummary']['colorSpaceProfile'],
 ): Promise<IColorExecutorClipInput[]> {
   const clips = await mapWithConcurrency(
     inventory,
@@ -3445,78 +3413,17 @@ async function buildColorExecutorClipsForInventory(
       const captureTime = probed
         ? await resolveCaptureTime(item.sourceAbsolutePath, probed).catch(() => null)
         : null;
-      const [sourceTruth, lowlightClassification] = await Promise.all([
-        extractColorSourceTruth(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
-          logProfile: undefined,
-          gyro: undefined,
-          deviceFamilyKeys: [],
-          sourceKinds: [],
-        })),
-        classifyMidpointLowlight(item.sourceAbsolutePath, runtimeConfig, {
-          durationMs: probed?.durationMs,
-        }).catch(() => ({
-          lowlight: false,
-          metrics: undefined,
-        })),
-      ]);
+      const sourceTruth = await extractColorSourceTruth(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
+        logProfile: undefined,
+        gyro: undefined,
+        gyroDataAvailable: undefined,
+        deviceFamilyKeys: [],
+        sourceKinds: [],
+      }));
       const profileResolution = resolveEffectiveColorProfile(
         sourceTruth.logProfile,
-        previewContext?.rootColorSpaceProfile,
+        rootColorSpaceProfile,
       );
-      const colorCastPreview = await resolveColorCastPreviewLut(previewContext, {
-        rawRelativePath: item.rawRelativePath,
-        detectedProfile: profileResolution.detectedProfile,
-        effectiveProfile: profileResolution.effectiveProfile,
-        profileSource: profileResolution.profileSource,
-        logProfile: profileResolution.logProfile,
-        deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
-      });
-      const colorCastClassification = colorCastPreview.status === 'missing-technical-lut'
-        ? {
-          colorCastClass: 'unknown' as const,
-          colorCastConfidence: 0,
-          colorCastMetrics: {
-            technicalTransformStatus: colorCastPreview.status,
-            technicalLutRelativePath: colorCastPreview.relativeLutPath,
-          },
-        }
-        : await classifyColorCast(item.sourceAbsolutePath, runtimeConfig, {
-          durationMs: probed?.durationMs,
-          lutPath: colorCastPreview.lutPath,
-        }).catch(() => ({
-          colorCastClass: 'unknown' as const,
-          colorCastConfidence: 0,
-          colorCastMetrics: {
-            technicalTransformStatus: colorCastPreview.status,
-            technicalLutRelativePath: colorCastPreview.relativeLutPath,
-          },
-        }));
-      const exposureSceneClassification = shouldClassifyExposureScene(colorCastPreview, profileResolution)
-        ? await classifyExposureScene(item.sourceAbsolutePath, runtimeConfig, {
-          durationMs: probed?.durationMs,
-          lutPath: colorCastPreview.lutPath,
-        }).catch(() => buildUnknownExposureSceneClassification({
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-        }))
-        : buildUnknownExposureSceneClassification({
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-          exposureSceneSkippedReason: resolveExposureSceneSkippedReason(colorCastPreview, profileResolution),
-        });
-      const windshieldHazeClassification = shouldClassifyExposureScene(colorCastPreview, profileResolution)
-        ? await classifyWindshieldHaze(item.sourceAbsolutePath, runtimeConfig, {
-          durationMs: probed?.durationMs,
-          lutPath: colorCastPreview.lutPath,
-        }).catch(() => buildUnknownWindshieldHazeClassification({
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-        }))
-        : buildUnknownWindshieldHazeClassification({
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-          windshieldHazeSkippedReason: resolveExposureSceneSkippedReason(colorCastPreview, profileResolution),
-        });
       const orientation = resolveColorClipOrientation(probed);
       return {
         rawRelativePath: item.rawRelativePath,
@@ -3539,389 +3446,13 @@ async function buildColorExecutorClipsForInventory(
         effectiveProfile: profileResolution.effectiveProfile,
         profileSource: profileResolution.profileSource,
         logProfile: profileResolution.logProfile,
-        gyroDataAvailable: sourceTruth.gyro === true,
+        gyroDataAvailable: sourceTruth.gyroDataAvailable,
         gyroEligible: sourceTruth.gyro,
-        lowlight: lowlightClassification.lowlight,
-        colorCastClass: colorCastClassification.colorCastClass,
-        colorCastConfidence: colorCastClassification.colorCastConfidence,
-        colorCastMetrics: {
-          ...colorCastClassification.colorCastMetrics,
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-        },
-        exposureSceneClass: exposureSceneClassification.exposureSceneClass,
-        exposureSceneConfidence: exposureSceneClassification.exposureSceneConfidence,
-        exposureSceneMetrics: {
-          ...exposureSceneClassification.exposureSceneMetrics,
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-        },
-        windshieldHaze: windshieldHazeClassification.windshieldHaze,
-        windshieldHazeConfidence: windshieldHazeClassification.windshieldHazeConfidence,
-        windshieldHazeMetrics: {
-          ...windshieldHazeClassification.windshieldHazeMetrics,
-          technicalTransformStatus: colorCastPreview.status,
-          technicalLutRelativePath: colorCastPreview.relativeLutPath,
-        },
         deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
       } satisfies IColorExecutorClipInput;
     },
   );
-  return smoothContinuousColorCastClips(clips);
-}
-
-function smoothContinuousColorCastClips(
-  clips: IColorExecutorClipInput[],
-): IColorExecutorClipInput[] {
-  const sorted = [...clips].sort((left, right) => (
-    left.rawRelativePath.localeCompare(right.rawRelativePath, 'zh-Hans-CN')
-  ));
-  const byKey = new Map(clips.map(clip => [clip.rawRelativePath, clip]));
-  for (const sequence of buildNumericClipSequences(sorted)) {
-    const runs = buildColorCastAnchorRuns(sequence);
-    for (const run of runs) {
-      if (run.anchorIndexes.length < 2) continue;
-      const target = resolveColorCastContinuityTarget(run.anchorClasses);
-      if (!target) continue;
-      const firstAnchor = run.anchorIndexes[0] ?? run.start;
-      const lastAnchor = run.anchorIndexes[run.anchorIndexes.length - 1] ?? run.end;
-      const start = firstAnchor;
-      let end = lastAnchor;
-      while (
-        end < sequence.length - 1
-        && end - lastAnchor < CCOLOR_CAST_CONTINUITY_MAX_FORWARD_EXTENSION
-        && canPromoteByColorCastContinuity(sequence[end + 1], target)
-      ) {
-        end += 1;
-      }
-      for (let index = start; index <= end; index += 1) {
-        const clip = sequence[index];
-        if (!clip || !canPromoteByColorCastContinuity(clip, target)) continue;
-        byKey.set(clip.rawRelativePath, promoteClipToContinuityColorCast(clip, target, run.anchorClipKeys));
-      }
-    }
-  }
-  return clips.map(clip => byKey.get(clip.rawRelativePath) ?? clip);
-}
-
-function buildNumericClipSequences(
-  clips: IColorExecutorClipInput[],
-): IColorExecutorClipInput[][] {
-  const sequences: IColorExecutorClipInput[][] = [];
-  let current: IColorExecutorClipInput[] = [];
-  let previous: ReturnType<typeof parseNumericClipKey> | null = null;
-  let previousLogProfile = '';
-  for (const clip of clips) {
-    const parsed = parseNumericClipKey(clip.rawRelativePath);
-    const logProfile = normalizeClipSequenceLogProfile(clip);
-    if (
-      !parsed
-      || !previous
-      || parsed.parent !== previous.parent
-      || parsed.prefix !== previous.prefix
-      || logProfile !== previousLogProfile
-      || parsed.number < previous.number
-      || parsed.number - previous.number > 3
-    ) {
-      if (current.length > 0) sequences.push(current);
-      current = [clip];
-    } else {
-      current.push(clip);
-    }
-    previous = parsed;
-    previousLogProfile = parsed ? logProfile : '';
-  }
-  if (current.length > 0) sequences.push(current);
-  return sequences;
-}
-
-function normalizeClipSequenceLogProfile(clip: IColorExecutorClipInput): string {
-  return String(clip.logProfile ?? '').trim().toLowerCase();
-}
-
-function parseNumericClipKey(rawRelativePath: string): {
-  parent: string;
-  prefix: string;
-  number: number;
-} | null {
-  const normalized = normalizePortablePath(rawRelativePath);
-  const slashIndex = normalized.lastIndexOf('/');
-  const parent = slashIndex >= 0 ? normalized.slice(0, slashIndex) : '';
-  const filename = slashIndex >= 0 ? normalized.slice(slashIndex + 1) : normalized;
-  const stem = filename.replace(/\.[^.]+$/, '');
-  const match = /^([A-Za-z_-]*?)(\d+)$/.exec(stem);
-  if (!match) return null;
-  return {
-    parent,
-    prefix: match[1] ?? '',
-    number: Number(match[2]),
-  };
-}
-
-function buildColorCastAnchorRuns(sequence: IColorExecutorClipInput[]): Array<{
-  start: number;
-  end: number;
-  anchorIndexes: number[];
-  anchorClipKeys: string[];
-  anchorClasses: TColorCastContinuityTarget[];
-}> {
-  const runs: Array<{
-    start: number;
-    end: number;
-    anchorIndexes: number[];
-    anchorClipKeys: string[];
-    anchorClasses: TColorCastContinuityTarget[];
-  }> = [];
-  let current: {
-    start: number;
-    end: number;
-    anchorIndexes: number[];
-    anchorClipKeys: string[];
-    anchorClasses: TColorCastContinuityTarget[];
-  } | null = null;
-  for (let index = 0; index < sequence.length; index += 1) {
-    const clip = sequence[index];
-    const anchorClass = getColorCastContinuityAnchorClass(clip);
-    if (!clip || !anchorClass) continue;
-    if (!current || index - current.end > CCOLOR_CAST_CONTINUITY_MAX_ANCHOR_GAP) {
-      if (current) runs.push(current);
-      current = {
-        start: index,
-        end: index,
-        anchorIndexes: [index],
-        anchorClipKeys: [clip.rawRelativePath],
-        anchorClasses: [anchorClass],
-      };
-    } else {
-      current.end = index;
-      current.anchorIndexes.push(index);
-      current.anchorClipKeys.push(clip.rawRelativePath);
-      current.anchorClasses.push(anchorClass);
-    }
-  }
-  if (current) runs.push(current);
-  return runs;
-}
-
-function getColorCastContinuityAnchorClass(
-  clip: IColorExecutorClipInput | undefined,
-): TColorCastContinuityTarget | null {
-  if (
-    !clip
-    || clip.lowlight === true
-    || clip.windshieldHaze === true
-    || hasWhiteReferenceUnderexposedExposureScene(clip)
-    || (clip.colorCastConfidence ?? 0) < 0.65
-  ) return null;
-  if (clip.colorCastClass === 'cool-cyan' || clip.colorCastClass === 'green' || clip.colorCastClass === 'green-cyan') {
-    return clip.colorCastClass;
-  }
-  return null;
-}
-
-function resolveColorCastContinuityTarget(
-  anchorClasses: TColorCastContinuityTarget[],
-): TColorCastContinuityTarget | null {
-  const classSet = new Set(anchorClasses);
-  if (classSet.has('green-cyan') || (classSet.has('green') && classSet.has('cool-cyan'))) {
-    return 'green-cyan';
-  }
-  if (classSet.has('cool-cyan')) return 'cool-cyan';
-  if (classSet.has('green')) return 'green';
-  return null;
-}
-
-function canPromoteByColorCastContinuity(
-  clip: IColorExecutorClipInput | undefined,
-  target: TColorCastContinuityTarget,
-): clip is IColorExecutorClipInput {
-  if (!clip || clip.lowlight === true || clip.windshieldHaze === true || hasWhiteReferenceUnderexposedExposureScene(clip)) return false;
-  if (clip.colorCastClass === 'warm' && (clip.colorCastConfidence ?? 0) >= 0.55) return false;
-  const medianA = readColorCastMetricNumber(clip, 'medianA');
-  const medianB = readColorCastMetricNumber(clip, 'medianB');
-  const candidatePixelRatio = readColorCastMetricNumber(clip, 'candidatePixelRatio');
-  if (medianA == null || medianB == null || candidatePixelRatio == null) return false;
-  if (candidatePixelRatio < CCOLOR_CAST_CONTINUITY_MIN_CANDIDATE_RATIO) return false;
-  if (target === 'cool-cyan') {
-    return medianA <= 1.5 && medianB <= 1.2;
-  }
-  if (target === 'green') {
-    return medianA <= -2.5 && medianB > -2.0 && medianB < 8;
-  }
-  return medianA <= -2.5 && medianB >= -6.5 && medianB <= 5.5;
-}
-
-function hasWhiteReferenceUnderexposedExposureScene(
-  clip: IColorExecutorClipInput | undefined,
-): boolean {
-  if (!clip || clip.exposureSceneClass !== 'underexposed') return false;
-  const metrics = clip.exposureSceneMetrics;
-  const reasons = Array.isArray(metrics?.exposureSceneReasons) ? metrics.exposureSceneReasons : [];
-  if (reasons.some(isWhiteReferenceUnderexposedReason)) return true;
-  const frames = Array.isArray(metrics?.frames) ? metrics.frames : [];
-  return frames.some(frame => (
-    isUnknownRecord(frame) && isWhiteReferenceUnderexposedReason(frame.exposureSceneReason)
-  ));
-}
-
-function isWhiteReferenceUnderexposedReason(value: unknown): boolean {
-  return typeof value === 'string' && value.trim() === 'white-reference-underexposed';
-}
-
-function isUnknownRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function promoteClipToContinuityColorCast(
-  clip: IColorExecutorClipInput,
-  target: TColorCastContinuityTarget,
-  anchorClipKeys: string[],
-): IColorExecutorClipInput {
-  if (clip.colorCastClass === target && (clip.colorCastConfidence ?? 0) >= 0.65) {
-    return clip;
-  }
-  return {
-    ...clip,
-    colorCastClass: target,
-    colorCastConfidence: Math.max(clip.colorCastConfidence ?? 0, 0.66),
-    colorCastMetrics: {
-      ...(clip.colorCastMetrics ?? {}),
-      continuityAdjustedFromClass: clip.colorCastClass,
-      continuityAdjustedFromConfidence: clip.colorCastConfidence,
-      continuityAdjustment: `${target}-sequence`,
-      continuityAnchorClipKeys: anchorClipKeys,
-    },
-  };
-}
-
-function readColorCastMetricNumber(
-  clip: IColorExecutorClipInput,
-  key: string,
-): number | null {
-  const value = clip.colorCastMetrics?.[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-async function resolveColorCastPreviewLut(
-  previewContext: IColorCastPreviewContext | undefined,
-  clip: {
-    rawRelativePath: string;
-    detectedProfile?: IColorExecutorClipInput['detectedProfile'];
-    effectiveProfile?: IColorExecutorClipInput['effectiveProfile'];
-    profileSource: NonNullable<IColorExecutorClipInput['profileSource']>;
-    logProfile?: IColorExecutorClipInput['logProfile'];
-    deviceFamilyKeys?: string[];
-  },
-): Promise<{
-  status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
-  lutPath?: string;
-  relativeLutPath?: string;
-}> {
-  if (!previewContext) {
-    return { status: 'source-rgb' };
-  }
-  const workspaceLutRoot = resolve(join(previewContext.workspaceRoot, 'config', 'luts'));
-  const resolved = resolveClipTransformSeeds(
-    [clip],
-    previewContext.transformPresetsConfig,
-    previewContext.rootTransformPresetKey,
-    workspaceLutRoot,
-  );
-  const relativeLutPath = resolved.clips[0]?.resolvedLutRelativePath;
-  if (!relativeLutPath || resolved.blockers.length > 0) {
-    return { status: 'source-rgb' };
-  }
-
-  const workspaceLutPath = resolve(join(workspaceLutRoot, relativeLutPath));
-  if (await isReadableFile(workspaceLutPath)) {
-    return {
-      status: 'technical-lut',
-      lutPath: workspaceLutPath,
-      relativeLutPath,
-    };
-  }
-
-  const resolveLutPath = resolve(join(detectResolveDefaultLutRoot(), relativeLutPath));
-  if (await isReadableFile(resolveLutPath)) {
-    return {
-      status: 'technical-lut',
-      lutPath: resolveLutPath,
-      relativeLutPath,
-    };
-  }
-
-  return {
-    status: 'missing-technical-lut',
-    relativeLutPath,
-  };
-}
-
-function shouldClassifyExposureScene(
-  preview: {
-    status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
-  },
-  profile: ReturnType<typeof resolveEffectiveColorProfile>,
-): boolean {
-  if (preview.status === 'technical-lut') return true;
-  if (preview.status === 'missing-technical-lut') return false;
-  return normalizeExposureProfile(profile.effectiveProfile) === 'rec709';
-}
-
-function resolveExposureSceneSkippedReason(
-  preview: {
-    status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
-  },
-  profile: ReturnType<typeof resolveEffectiveColorProfile>,
-): string | undefined {
-  if (preview.status === 'missing-technical-lut') return 'missing-technical-lut';
-  if (preview.status === 'source-rgb' && normalizeExposureProfile(profile.effectiveProfile) !== 'rec709') {
-    return profile.effectiveProfile ? 'requires-technical-transform' : 'unknown-input-profile';
-  }
-  return undefined;
-}
-
-function normalizeExposureProfile(value: unknown): string {
-  return String(value ?? '').trim().toLowerCase();
-}
-
-function buildUnknownExposureSceneClassification(extraMetrics: Record<string, unknown> = {}): {
-  exposureSceneClass: 'unknown';
-  exposureSceneConfidence: number;
-  exposureSceneMetrics: Record<string, unknown>;
-} {
-  return {
-    exposureSceneClass: 'unknown',
-    exposureSceneConfidence: 0,
-    exposureSceneMetrics: {
-      frameCount: 0,
-      classifiedFrameCount: 0,
-      ...extraMetrics,
-    },
-  };
-}
-
-function buildUnknownWindshieldHazeClassification(extraMetrics: Record<string, unknown> = {}): {
-  windshieldHaze: false;
-  windshieldHazeConfidence: number;
-  windshieldHazeMetrics: Record<string, unknown>;
-} {
-  return {
-    windshieldHaze: false,
-    windshieldHazeConfidence: 0,
-    windshieldHazeMetrics: {
-      frameCount: 0,
-      classifiedFrameCount: 0,
-      positiveFrameCount: 0,
-      positiveFrameRatio: 0,
-      ...extraMetrics,
-    },
-  };
-}
-
-async function isReadableFile(filePath: string): Promise<boolean> {
-  return stat(filePath)
-    .then(fileStat => fileStat.isFile())
-    .catch(() => false);
+  return clips;
 }
 
 function buildColorSyncExecutorClipsForInventory(
@@ -3949,16 +3480,6 @@ function buildColorSyncExecutorClipsForInventory(
       logProfile: previous?.logProfile as IColorExecutorClipInput['logProfile'],
       gyroDataAvailable: previous?.gyroDataAvailable,
       gyroEligible: previous?.gyroEligible,
-      lowlight: previous?.lowlight,
-      windshieldHaze: previous?.windshieldHaze,
-      windshieldHazeConfidence: previous?.windshieldHazeConfidence,
-      windshieldHazeMetrics: previous?.windshieldHazeMetrics,
-      colorCastClass: previous?.colorCastClass,
-      colorCastConfidence: previous?.colorCastConfidence,
-      colorCastMetrics: previous?.colorCastMetrics,
-      exposureSceneClass: previous?.exposureSceneClass,
-      exposureSceneConfidence: previous?.exposureSceneConfidence,
-      exposureSceneMetrics: previous?.exposureSceneMetrics,
     };
   });
 }
@@ -4072,11 +3593,6 @@ function resolveColorTimelineTransform(
     return undefined;
   }
   const rotation = normalizeColorRotationDegrees(clip.rotationDegrees);
-  const rotationAngle = rotation === 90
-    ? -90
-    : rotation === -90
-      ? 90
-      : 90;
   const fillDimensions = resolveColorPortraitFillDimensions(clip, {
     timelineWidth,
     timelineHeight,
@@ -4089,7 +3605,9 @@ function resolveColorTimelineTransform(
     timelineHeight / fillDimensions.height,
   ));
   return {
-    rotationAngle,
+    // Source orientation identifies portrait media; it is not an extra rotation.
+    // Adding ±90 here and in the Gyroflow donor breaks portrait stabilization.
+    rotationAngle: 0,
     zoomGang: true,
     zoomX: fillScale,
     zoomY: fillScale,

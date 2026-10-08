@@ -29,6 +29,7 @@ describe('extractColorSourceTruth', () => {
     expect(result).toEqual({
       logProfile: undefined,
       gyro: undefined,
+      gyroDataAvailable: undefined,
       deviceFamilyKeys: [],
       sourceKinds: [],
     });
@@ -46,6 +47,7 @@ describe('extractColorSourceTruth', () => {
     expect(result).toEqual({
       logProfile: undefined,
       gyro: undefined,
+      gyroDataAvailable: undefined,
       deviceFamilyKeys: [],
       sourceKinds: [],
     });
@@ -78,18 +80,19 @@ describe('extractColorSourceTruth', () => {
     expect(result).toEqual({
       logProfile: 'slog3',
       gyro: true,
+      gyroDataAvailable: true,
       deviceFamilyKeys: [],
       sourceKinds: ['sony-sidecar-xml'],
     });
   });
 
-  it('does not enable gyro for unsupported Sony devices even when sidecar Gyroscope exists', async () => {
+  it.each(['ILCE-7RM6', 'NEW-MODEL-999', undefined])('uses the Gyroscope declaration regardless of model %s', async model => {
     const tempDir = await mkdtemp(join(tmpdir(), 'kairos-source-truth-unsupported-sony-'));
     tempDirs.push(tempDir);
     const filePath = join(tempDir, 'C0341.MP4');
     await writeFile(join(tempDir, 'C0341M01.XML'), [
       '<NonRealTimeMeta>',
-      '  <Device manufacturer="Sony" modelName="ILCE-6000"/>',
+      model ? `  <Device manufacturer="Sony" modelName="${model}"/>` : '',
       '  <AcquisitionRecord>',
       '    <ChangeTable name="Gyroscope"/>',
       '  </AcquisitionRecord>',
@@ -102,7 +105,8 @@ describe('extractColorSourceTruth', () => {
     expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: undefined,
-      gyro: undefined,
+      gyro: true,
+      gyroDataAvailable: true,
       deviceFamilyKeys: [],
       sourceKinds: ['sony-sidecar-xml'],
     });
@@ -121,6 +125,7 @@ describe('extractColorSourceTruth', () => {
     expect(result).toEqual({
       logProfile: undefined,
       gyro: true,
+      gyroDataAvailable: undefined,
       deviceFamilyKeys: [],
       sourceKinds: ['gyroflow-project'],
     });
@@ -133,6 +138,7 @@ describe('extractColorSourceTruth', () => {
     await writeFile(join(tempDir, 'C1493M01.XML'), [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<NonRealTimeMeta>',
+      '  <Device manufacturer="Sony" modelName="ZV-E1"/>',
       '  <AcquisitionRecord>',
       '    <Group name="CameraUnitMetadataSet">',
       '      <Item name="CaptureGammaEquation" value="s-log3-cine"/>',
@@ -148,6 +154,7 @@ describe('extractColorSourceTruth', () => {
     expect(result).toEqual({
       logProfile: 'slog3',
       gyro: undefined,
+      gyroDataAvailable: undefined,
       deviceFamilyKeys: [],
       sourceKinds: ['sony-sidecar-xml'],
     });

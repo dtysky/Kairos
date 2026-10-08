@@ -7,6 +7,14 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.23 2026-10-08 Pharos 协议兼容性复核
+
+本轮上游新增 Atlas / Argo 文档、`field-guide.json` 只读研究旁路、`pharos:active_route` 与 `pyxis:route_progress` 路线扩展、地点局部日关联，以及 Pyxis GPS 停滞恢复。Kairos 继续只镜像 canonical `plan.json / record.json / gpx/*.gpx`；Atlas / Argo、field guide、研究会话、地图缓存和 `record-import.json` 不进入项目输入。路线计划、完成/跳过状态和地点 `DAYn` 不替代绝对日期、执行时间或 GPX，不推导素材缺口。
+
+`src/modules/pharos/context.ts` 已只枚举上述 canonical 文件，读取已排期 Day shots 与 `record.extra_shots[]`，忽略未知规划/展示扩展；没有已排期 shots 的弹性行程仍可完整读取 canonical extra events。因此本轮协议差异不需要代码变更。正式 GPX 镜像保留原始字节及上游补建估算标记；上游历史匹配建议不覆盖 Kairos 既有的精确 actual-time 与 GPX 空间合同。
+
+同日追加复核：Pyxis 仅在已确认存在记录任务或绑定记录会话时触发 GPS 健康告警；无任务、首次门控尚未确认等状态只保留本地日志并重试。该变化属于移动端运行策略，不新增 WebDAV / JSON 字段，也不改变 Kairos 镜像、解析或素材匹配。历史 GPX 和旧行程不能证明移动端当前正在记录，告警缺席也不能用于推导轨迹或素材缺口。
+
 ## 0.22 2026-09-05 ASR 字级时间轴与确定性字幕拆句合同
 
 - `/asr` 的正式输出是原始识别文本、ForcedAligner token 和运行 timing。无 ForcedAligner token 的 rawText 只作审计，不能生成字幕或推测时间。
@@ -129,20 +137,13 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - `manual-required` 生成的素材时间 blocker 必须要求显式日期和时间；不能用当前文件时间或建议日期自动补齐日期后视为已解决
 - 对本次成功扫描到的 root，Ingest 以当前扫描结果为准剪掉该 root 中已经不存在的旧资产；missing root 的既有资产保持不动，避免未挂载磁盘导致误删
 
-## 0.14 2026-05-14 DaVinci color log 前置 review addon 分组补记
+## 0.14 2026-10-08 DaVinci color 简化分组
 
-当前 `/color` 自动 Group 继续保持 Resolve Group 扁平结构，但分桶语义收口为：
+自动 Group 只使用 `logProfile × orientationStatus`：例如 `slog3 + horizontal`、`slog3 + portrait`、`dlog-m + horizontal`。`logProfile` 优先读取显式 sidecar，缺失时使用 root `color.colorSpaceProfile`；方向来自 probe 的显示尺寸和旋转元数据，无法确认时使用 `unknown-orientation`，不猜测横屏。
 
-- `logProfile` 是前置分组轴，来自显式 sidecar 真值，缺失时回退 root `color.colorSpaceProfile`
-- 同一 log bucket 内，每条 clip 只选择一个最高优先级 addon，顺序固定为：
-  - `portrait-review`
-  - `lowlight`
-  - 高置信 `colorCastClass`
-  - 明显 `exposureSceneClass`
-- addon 不跨 log 合并；例如 `slog3 + overexposed` 与 `rec709 + overexposed` 是两个不同 Resolve Groups
-- `portrait-review` 来自 `orientationStatus=portrait`，用于在当前 log 下单独交给人工 review；它不改变竖屏 Gyro/DRT、repair template 或横屏 timeline transform 合同
-- `exposureSceneClass` 是解 log / 技术 LUT 后 proxy 画面的 review 信号；仅明显 `high-contrast / overexposed / underexposed` 参与分桶，`normal / unknown` 只作为诊断显示；`high-contrast` 包含逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，包含硬剪过曝和高亮面积/亮度明显偏高的画面，不把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 包含单帧雪景等低饱和高键白参考区域被压灰且无真实高光尾部的 `white-reference-underexposed` 诊断，并保留白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed` 但 Resolve Group addon 使用 `white-reference-underexposed`
-- 这些 review addon 只影响 Resolve Group 分桶和 `/color` 展示，不自动开启 `Dehaze / NR / Gyro`
+`prepare_root` 停用白平衡/色偏、低照度、曝光、前挡雾化分类、相关抽帧和连续性提升。历史字段仅保留读取兼容，不参与新分组，也不在当前 Console 作为检测结果展示。技术 LUT 仍应用于 Group Pre-Clip，Gyroflow 和固定 clip repair 节点规则继续有效，人工逐条调色仍在 Resolve 完成。
+
+代码更新不会自动重跑既有工程；`sync_groups` 继续只读取真实 Resolve Groups。已完成的 prepare chunks 不因分组规则变化而失效，用户已调色的旧组不会自动合并；已有工程迁移需要单独明确处理已有 Group 调色。
 
 ## 0.13 2026-05-13 剪辑规则与多 Edit Unit 补记
 
@@ -261,17 +262,16 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - `Dehaze` 是第 2 个保留节点，默认禁用
   - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
-  - `lowlight` 继续是中点单帧 creative 标签，不自动开启 `Dehaze / NR`
-  - `gyroEligible` 是一个最终布尔值：当前安装 Gyroflow/OFX 支持设备匹配 + 对应运动元信息，或同名 `.gyroflow` 工程；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
+  - `gyroEligible` 是一个最终布尔值：关联 Sony XML 的 Gyroscope 声明或同名 `.gyroflow` 工程，不使用硬编码机型白名单；`gyroDataAvailable` 独立记录声明，缺证据为未知，不能从是否启用反推；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
 - `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排，但重申最终 Gyro 开关”：
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
   - 规范图重跑仍必须按最终 `gyroEligible` 布尔值重新请求 node1 开/关，因为 Gyro 是技术判断，不是 creative 用户区
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
-- ZV-E1 / Sony 竖屏 Gyro 使用方向感知路径：
+- ZV-E1 / Sony 竖屏 Gyro 保留方向识别，但不追加方向旋转：
   - ffprobe 的 `rotate/display matrix` 解析为 clip orientation truth
-  - 横屏使用 `config/default.drt`；竖屏 timeline transform 跟随 Resolve 显示方向，DRT 选择跟随 Gyroflow 的相反方向口径：ffprobe 源 `rotation=90` 写 `RotationAngle=-90` 并使用 `config/gyroflow-portrait--90.drt`，ffprobe 源 `rotation=-90/270` 写 `RotationAngle=90` 并使用 `config/gyroflow-portrait-90.drt`
+  - 横屏使用 `config/default.drt`；竖屏保留历史模板映射：ffprobe 源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。模板键和文件名仅作兼容定位；两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，timeline `RotationAngle=0`，不能从元数据再派生 ±90° 补偿
   - 缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`，不阻塞素材导入、Group、LUT 或 timeline transform
-  - 竖屏 clip 会在 timeline item 上自动设置 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，默认旋转并放大填满横屏导出；对横向编码但 display-matrix 竖屏的素材，缩放按 Gyroflow/DRT 实际输出的横屏内接画面补偿，避免 3840x2160 画布中只剩约 2160x1216 有效画面
+  - 2026-10-08 用户验证两处额外 ±90° 会导致防抖异常，取消后正常。修正只撤销 Gyroflow 输出与 timeline 的自动旋转，保留既有 fill zoom、ZoomGang、Pan、Tilt 与模板其他参数；横向编码 3840x2160、display-matrix 竖屏素材的 zoom 仍为 `1.7778`。代码和模板更新不自动重跑已有 root，也不覆盖当前工程的人工修正；用户显式重跑 prepare 时仍遵循下述模板 hash 迁移规则
   - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 必须把当前 DRT hash 持久化回 clip snapshot
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
   - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；默认 DRT 不存在时，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
@@ -302,24 +302,10 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - `root.color.colorSpaceProfile`
   - `root.color.transformPresetKey?`
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
-  - group 级至少包含 `logProfile`、`orientationStatus`、`lowlight`、`colorCastClass`、`exposureSceneClass`、`postClipCreativeStatus`
+  - group 级至少包含 `logProfile`、`orientationStatus`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
-- 自动 Group 的正式分桶轴当前收口为：
-  - `logProfile`
-  - first-match addon：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`
-- `gyro` 不再参与 Group 分桶；它正式回到 clip repair 层，只负责说明该 clip 是否需要 `Gyroflow shell`
-- `lowlight` 的正式合同当前收口为：
-  - 来源：每条 clip 的中点单帧视觉分类
-  - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
-  - 约束：不等价于“必须降噪”
-- `windshield-haze` 的正式合同当前收口为：
-  - 来源：显示态 proxy 的车内/前挡暗前景 + 压灰低对比亮度分布
-  - 语义：白天租车前挡/车膜灰雾 review addon，用于统一做车膜补偿
-  - 约束：不等价于普通色偏，也不自动开启 `Dehaze / NR`
-- `colorCastClass` 的正式合同当前收口为：
-  - 来源：每条 clip 的廉价单帧 proxy 数值分类，默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空、高饱和、底部黄橙遮挡和曝光异常区域后估计中性像素偏移。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`；`prepare_root` 还会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免单个中点帧偏中性时把连续冷色路段切碎；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升
-  - 语义：用于把 `cool-cyan / green-cyan / green / warm / mixed` 色偏素材拆到独立 Group，方便 `Group Post-Clip` 做白平衡修正
-  - 约束：不判断偏色原因是否一定来自前挡膜；`neutral / unknown` 不参与自动 Group 分桶
+- 自动 Group 的正式分桶轴为 `logProfile × orientationStatus`；组名固定使用 `<logProfile> + horizontal / portrait / unknown-orientation`。
+- `gyro` 只参与 clip repair；历史 `lowlight / windshieldHaze / colorCastClass / exposureSceneClass` 仅兼容读取，正式 prepare 不调用这些分类器或抽帧。
 - clip repair 的正式合同当前已收口为固定节点图：
   - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
   - brand-new clip 若没有旧 repair，宿主必须建立 canonical layout，而不是把 donor matrix 当成用户口径
@@ -341,7 +327,6 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - 默认 repair 行为当前固定为：
   - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 开启
   - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 关闭
-  - `lowlight=true`：继续只影响 creative/group 标签与状态提示，不自动启用 `Dehaze / NR`
   - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
@@ -464,15 +449,12 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
     - `.xml/.gyroflow` 只服务 prepare/source truth，不作为成片 sidecar 导出
     - 更新 `entries[].sidecars` 和 `managedSidecarSet`
   - 后处理动作可在 `manifest.json` 缺失但 `plan.json` 中所有最终输出都已存在时恢复 manifest；这是中断/旧失败 batch 的恢复路径，不允许对缺输出的 batch 伪造成功
-- 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意 / review 标签：
-  - `log`
-  - first-match addon：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`
-- `windshield-haze` 是行车前挡 / 劣质租车车膜灰雾 review addon：只有同时存在 driving POV 或前挡/仪表台前景证据，以及高光未爆、白参考被压灰、整体低对比发灰发暗的曝光特征时才分桶；它优先于普通 `colorCastClass`，避免车膜素材被 `cool-cyan / green-cyan` 切散，但仍只承担分组诊断，不自动开启 `Dehaze / NR`
+- 自动 Group 只按 `logProfile × orientationStatus` 分桶，不做白平衡、色偏、低照度、曝光或前挡雾化判断，也不为这些判断抽帧。
 - `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
   1. 显式 sidecar 真值
   2. root `color.colorSpaceProfile`
-- Sony 路径当前只从显式 XML sidecar 读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`，且只有当前 Gyroflow/OFX 支持的 Sony 型号带 `Gyroscope` 时才开启 Gyro
+- Sony 路径当前只从显式 XML sidecar 读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`，关联 XML 声明 `Gyroscope` 即可请求开启 Gyro，机型名称不参与启用判定
 - DJI 路径默认不深扫 embedded private telemetry / `dvtm_*`，也不从中推断 log 或 gyro。DJI 若没有同名 `.gyroflow` 或 root `color.colorSpaceProfile` 等显式输入，技术输入正式保持 `unknown`
 - Group truth 继续以 Resolve 为准：
   - `/color` 通过 `sync_groups` 镜像 Resolve 当前 group name

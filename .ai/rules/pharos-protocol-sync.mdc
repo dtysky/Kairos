@@ -44,6 +44,15 @@ alwaysApply: true
 - `trip_kind: "freeform"` 的产品语义现为“弹性行程”：`dates` 是预计窗口，`days[]` 可稀疏或为空，`pharos:freeform_route_options / pharos:freeform_shot_options` 是未执行备选。Kairos 只消费已排期 `days[].shots[]` 与 canonical `record.json.records[] / extra_shots[]`，不得把备选项当作素材缺口或 chronology event。
 - 当前 Kairos parser 已只对 `plan.json / record.json / gpx/*.gpx` 建 fingerprint，并忽略未知 freeform extensions；因此本次 2026-08 同步不需要 Kairos 代码变更。
 
+## 2026-10 同步复核
+
+- Atlas / Argo 属于上游本地规划与器材资料；摄影器材配置迁至 `argo/photographer-profile.json` 不改变 Kairos 的 trip 输入。
+- `field-guide.json` 是 Pharos 发布、Pyxis 只读的研究旁路，不进入 Kairos 镜像、source fingerprint 或素材匹配。
+- `pharos:active_route`、`pyxis:route_progress` 和 `pharos:route_stop_id / route_stop_day` 不提供素材执行时间；不得把路线完成状态、计划停留日或地点局部 `DAYn` 转成 chronology 真相。
+- 弹性行程没有已排期 shots 时，仍消费 canonical `record.extra_shots[]`。已由 Pyxis 合并的补建事件可以进入现有解析链，遗留 `record-import.json` 仍忽略。正式 GPX 按字节镜像，保留估算与质量扩展，不把补建点密度当精度。
+- Pyxis GPS 停滞恢复及 Carta 路线报告变化不改变输入 schema；现有 parser 的 canonical 文件白名单与扩展忽略行为已满足上述边界，本轮无需代码变更。
+- Pyxis 仅对已确认记录任务或绑定记录会话触发 GPS 健康告警；无任务或首次门控未确认时抑制告警属于移动端运行策略，不改变 Kairos 输入或解析。历史 GPX 不能证明当前正在记录，告警缺席不能推导轨迹或素材缺口。
+
 ## 禁止行为
 
 - 不要在未做 hash 比对前直接修改 Pharos 相关实现。

@@ -13,28 +13,6 @@ import uuid
 from pathlib import Path
 
 
-CCREATIVE_SIGNAL_KEYS = (
-    "slog3",
-    "dlog-m",
-    "hlg",
-    "rec709",
-    "portrait-review",
-    "lowlight",
-    "windshield-haze",
-    "cool-cyan",
-    "green-cyan",
-    "green",
-    "warm",
-    "mixed",
-    "high-contrast",
-    "overexposed",
-    "underexposed",
-    "white-reference-underexposed",
-)
-
-CCOLOR_CAST_GROUP_CLASSES = ("cool-cyan", "green-cyan", "green", "warm", "mixed")
-CEXPOSURE_SCENE_GROUP_CLASSES = ("high-contrast", "overexposed", "underexposed")
-CEXPOSURE_SCENE_REASON_GROUP_TAGS = ("white-reference-underexposed",)
 CROUGH_CUT_AUDIBLE_CLIP_COLOR = "Orange"
 CROUGH_CUT_PHOTO_CLIP_COLOR = "Blue"
 CROUGH_CUT_TIMELAPSE_CLIP_COLOR = "Purple"
@@ -3074,7 +3052,7 @@ def seed_clip_repairs(
             "forcedRepairTemplateReseed": force_template_reseed,
             "orientationStatus": stringify_signal_value(clip_request.get("orientationStatus")),
             "timelineTransform": clip_request.get("timelineTransform") if isinstance(clip_request.get("timelineTransform"), dict) else None,
-            "gyroDataAvailable": clip_request.get("gyroDataAvailable") is True or clip_request.get("gyroEligible") is True,
+            "gyroDataAvailable": clip_request.get("gyroDataAvailable"),
             "effectiveGyroEligible": effective_clip_request.get("gyroEligible") is True,
         }
         if (
@@ -3194,12 +3172,10 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         else clip_request.get("gyroEligible") is True
     )
     gyro_data_available = (
-        repair_seed_state.get("gyroDataAvailable") is True
-        if isinstance(repair_seed_state, dict)
-        else clip_request.get("gyroDataAvailable") is True or clip_request.get("gyroEligible") is True
+        repair_seed_state.get("gyroDataAvailable")
+        if isinstance(repair_seed_state, dict) and "gyroDataAvailable" in repair_seed_state
+        else clip_request.get("gyroDataAvailable")
     )
-    lowlight_requested = clip_request.get("lowlight") is True
-    windshield_haze_requested = clip_request.get("windshieldHaze") is True
     orientation_status = stringify_signal_value(clip_request.get("orientationStatus"))
     repair_template_key = stringify_signal_value(clip_request.get("repairTemplateKey"))
     repair_template_hash = stringify_signal_value((repair_seed_state or {}).get("repairTemplateHash")) if isinstance(repair_seed_state, dict) else stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
@@ -3243,16 +3219,6 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "clipKey": clip_request["rawRelativePath"],
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
         "logProfile": normalize_log_profile(clip_request.get("logProfile")) or "unknown",
-        "lowlight": lowlight_requested,
-        "windshieldHaze": windshield_haze_requested,
-        "windshieldHazeConfidence": parse_float(clip_request.get("windshieldHazeConfidence")),
-        "windshieldHazeMetrics": clip_request.get("windshieldHazeMetrics") if isinstance(clip_request.get("windshieldHazeMetrics"), dict) else {},
-        "colorCastClass": normalize_color_cast_class(clip_request.get("colorCastClass")) or "unknown",
-        "colorCastConfidence": parse_float(clip_request.get("colorCastConfidence")),
-        "colorCastMetrics": clip_request.get("colorCastMetrics") if isinstance(clip_request.get("colorCastMetrics"), dict) else {},
-        "exposureSceneClass": normalize_exposure_scene_class(clip_request.get("exposureSceneClass")) or "unknown",
-        "exposureSceneConfidence": parse_float(clip_request.get("exposureSceneConfidence")),
-        "exposureSceneMetrics": clip_request.get("exposureSceneMetrics") if isinstance(clip_request.get("exposureSceneMetrics"), dict) else {},
         "encodedWidth": parse_int(clip_request.get("encodedWidth") or clip_request.get("width")),
         "encodedHeight": parse_int(clip_request.get("encodedHeight") or clip_request.get("height")),
         "displayWidth": parse_int(clip_request.get("displayWidth") or clip_request.get("width")),
@@ -3296,6 +3262,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         },
     }
     for optional_key in (
+        "gyroDataAvailable",
         "encodedWidth",
         "encodedHeight",
         "displayWidth",
@@ -3305,9 +3272,6 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "repairTemplateKey",
         "repairTemplateHash",
         "timelineTransform",
-        "windshieldHazeConfidence",
-        "colorCastConfidence",
-        "exposureSceneConfidence",
     ):
         if snapshot.get(optional_key) in (None, "", {}):
             snapshot.pop(optional_key, None)
@@ -3566,58 +3530,6 @@ def summarize_group_log_profile(clip_requests):
     return "unknown"
 
 
-def summarize_group_lowlight(clip_snapshots):
-    lowlight_values = {
-        "lowlight" if clip.get("lowlight") is True else "base"
-        for clip in clip_snapshots or []
-        if clip.get("lowlight") is not None
-    }
-    if len(lowlight_values) == 1:
-        return next(iter(lowlight_values))
-    if len(lowlight_values) > 1:
-        return "mixed"
-    return None
-
-
-def summarize_group_windshield_haze(clip_snapshots):
-    values = {
-        "windshield-haze" if clip.get("windshieldHaze") is True else "base"
-        for clip in clip_snapshots or []
-        if clip.get("windshieldHaze") is not None
-    }
-    if len(values) == 1:
-        return next(iter(values))
-    if len(values) > 1:
-        return "mixed"
-    return None
-
-
-def summarize_group_color_cast(clip_snapshots):
-    values = set()
-    for clip in clip_snapshots or []:
-        normalized = normalize_color_cast_class(clip.get("colorCastClass"))
-        if normalized in ("neutral", "unknown"):
-            values.add(normalized)
-        elif should_group_color_cast(normalized, clip.get("colorCastConfidence")):
-            values.add(normalized)
-    if not values:
-        return "unknown"
-    non_neutral_values = {
-        value
-        for value in values
-        if value not in ("neutral", "unknown")
-    }
-    if len(non_neutral_values) == 1:
-        dominant = next(iter(non_neutral_values))
-        if values.issubset({dominant, "neutral", "unknown"}):
-            return dominant
-    if len(non_neutral_values) > 1:
-        return "mixed"
-    if len(values) == 1:
-        return next(iter(values))
-    return "unknown"
-
-
 def summarize_group_orientation(clip_snapshots):
     values = {
         stringify_signal_value(clip.get("orientationStatus"))
@@ -3627,41 +3539,6 @@ def summarize_group_orientation(clip_snapshots):
     if len(values) == 1:
         return next(iter(values))
     return "unknown"
-
-
-def summarize_group_exposure_scene(clip_snapshots):
-    values = set()
-    for clip in clip_snapshots or []:
-        normalized = normalize_exposure_scene_class(clip.get("exposureSceneClass"))
-        if normalized in ("normal", "unknown"):
-            values.add(normalized)
-        elif should_group_exposure_scene(normalized, clip.get("exposureSceneConfidence")):
-            values.add(normalized)
-    if not values:
-        return "unknown"
-    grouped_values = {
-        value
-        for value in values
-        if value in CEXPOSURE_SCENE_GROUP_CLASSES
-    }
-    if len(grouped_values) == 1:
-        dominant = next(iter(grouped_values))
-        if values.issubset({dominant, "normal", "unknown"}):
-            return dominant
-    if len(values) == 1:
-        return next(iter(values))
-    return "unknown"
-
-
-def summarize_group_exposure_scene_addon_tag(clip_snapshots):
-    values = set()
-    for clip in clip_snapshots or []:
-        addon_tag = resolve_exposure_scene_addon_tag(clip)
-        if addon_tag:
-            values.add(addon_tag)
-    if len(values) == 1:
-        return next(iter(values))
-    return None
 
 
 def inspect_group_post_clip_creative_status(color_group):
@@ -3821,21 +3698,8 @@ def build_groups_snapshot(
         entry = group_map[display_name]
         log_profile = summarize_group_log_profile(entry["clipRequests"])
         orientation_status = summarize_group_orientation(entry["clipSnapshots"])
-        lowlight = summarize_group_lowlight(entry["clipSnapshots"])
-        windshield_haze = summarize_group_windshield_haze(entry["clipSnapshots"])
-        color_cast = summarize_group_color_cast(entry["clipSnapshots"])
-        exposure_scene = summarize_group_exposure_scene(entry["clipSnapshots"])
-        exposure_scene_addon_tag = summarize_group_exposure_scene_addon_tag(entry["clipSnapshots"])
         post_clip_creative_status = inspect_group_post_clip_creative_status(entry.get("colorGroup"))
-        summary = build_group_creative_summary(
-            log_profile,
-            orientation_status,
-            lowlight,
-            windshield_haze,
-            color_cast,
-            exposure_scene,
-            exposure_scene_addon_tag,
-        )
+        summary = build_group_creative_summary(log_profile, orientation_status)
         transform_summary = {
             **build_group_transform_summary(entry["clipRequests"]),
             **((group_transform_summaries or {}).get(display_name) or {}),
@@ -3846,10 +3710,6 @@ def build_groups_snapshot(
             "clipKeys": entry["clipKeys"],
             "logProfile": log_profile,
             "orientationStatus": orientation_status,
-            "lowlight": lowlight,
-            "windshieldHaze": windshield_haze,
-            "colorCastClass": color_cast,
-            "exposureSceneClass": exposure_scene,
             "postClipCreativeStatus": post_clip_creative_status,
             "clips": entry["clipSnapshots"],
             "hostSummary": {
@@ -3859,11 +3719,6 @@ def build_groups_snapshot(
                 "creativeTags": summary["creativeTags"],
                 "logProfile": log_profile,
                 "orientationStatus": orientation_status,
-                "lowlight": lowlight,
-                "windshieldHaze": windshield_haze,
-                "colorCastClass": color_cast,
-                "exposureSceneClass": exposure_scene,
-                "exposureSceneAddonTag": exposure_scene_addon_tag,
                 "postClipCreativeStatus": post_clip_creative_status,
                 "detectedProfile": transform_summary.get("detectedProfile"),
                 "effectiveProfile": transform_summary.get("effectiveProfile"),
@@ -3885,58 +3740,18 @@ def build_groups_snapshot(
 
 
 def build_clip_creative_summary(clip_request):
-    log_profile = normalize_log_profile(clip_request.get("logProfile")) or "unknown"
-    color_cast = normalize_color_cast_class(clip_request.get("colorCastClass"))
-    exposure_scene_addon_tag = resolve_exposure_scene_addon_tag(clip_request)
-    addon_tag = None
-    if stringify_signal_value(clip_request.get("orientationStatus")) == "portrait":
-        addon_tag = "portrait-review"
-    elif clip_request.get("lowlight") is True:
-        addon_tag = "lowlight"
-    elif clip_request.get("windshieldHaze") is True:
-        addon_tag = "windshield-haze"
-    elif should_group_color_cast(color_cast, clip_request.get("colorCastConfidence")):
-        addon_tag = color_cast
-    elif exposure_scene_addon_tag:
-        addon_tag = exposure_scene_addon_tag
-    creative_tags = [log_profile]
-    if addon_tag:
-        creative_tags.append(addon_tag)
-    return {
-        "creativeTags": creative_tags,
-        "displayName": " + ".join(creative_tags),
-    }
+    # Visual diagnoses from historical requests must never affect automatic groups.
+    summary = build_group_creative_summary(
+        normalize_log_profile(clip_request.get("logProfile")),
+        stringify_signal_value(clip_request.get("orientationStatus")),
+    )
+    return {**summary, "displayName": " + ".join(summary["creativeTags"])}
 
 
-def build_group_creative_summary(
-    log_profile,
-    orientation_status,
-    lowlight,
-    windshield_haze,
-    color_cast=None,
-    exposure_scene=None,
-    exposure_scene_addon_tag=None,
-):
+def build_group_creative_summary(log_profile, orientation_status):
     base_log = log_profile if log_profile and log_profile != "mixed" else "unknown"
-    addon_tag = None
-    if orientation_status == "portrait":
-        addon_tag = "portrait-review"
-    elif lowlight == "lowlight":
-        addon_tag = "lowlight"
-    elif windshield_haze == "windshield-haze":
-        addon_tag = "windshield-haze"
-    elif color_cast in CCOLOR_CAST_GROUP_CLASSES:
-        addon_tag = color_cast
-    elif exposure_scene_addon_tag in CEXPOSURE_SCENE_REASON_GROUP_TAGS:
-        addon_tag = exposure_scene_addon_tag
-    elif exposure_scene in CEXPOSURE_SCENE_GROUP_CLASSES:
-        addon_tag = exposure_scene
-    creative_tags = [base_log]
-    if addon_tag:
-        creative_tags.append(addon_tag)
-    return {
-        "creativeTags": creative_tags,
-    }
+    orientation = orientation_status if orientation_status in ("horizontal", "portrait") else "unknown-orientation"
+    return {"creativeTags": [base_log, orientation]}
 
 
 def build_group_transform_summary(clip_requests):
@@ -4160,98 +3975,6 @@ def normalize_log_profile(value):
     if "rec709" in lowered or "rec 709" in lowered or "rec-709" in lowered:
         return "rec709"
     return None
-
-
-def normalize_color_cast_class(value):
-    normalized = stringify_signal_value(value)
-    if not normalized:
-        return None
-    lowered = normalized.strip().lower()
-    aliases = {
-        "neutral": "neutral",
-        "none": "neutral",
-        "coolcyan": "cool-cyan",
-        "cool-cyan": "cool-cyan",
-        "cyan": "cool-cyan",
-        "bluegreen": "green-cyan",
-        "greencyan": "green-cyan",
-        "green-cyan": "green-cyan",
-        "green cyan": "green-cyan",
-        "cyan-green": "green-cyan",
-        "cyan green": "green-cyan",
-        "green": "green",
-        "warm": "warm",
-        "mixed": "mixed",
-        "unknown": "unknown",
-    }
-    compact = lowered.replace("_", "").replace(" ", "").replace("-", "")
-    if lowered in aliases:
-        return aliases[lowered]
-    return aliases.get(compact)
-
-
-def normalize_exposure_scene_class(value):
-    normalized = stringify_signal_value(value)
-    if not normalized:
-        return None
-    lowered = normalized.strip().lower()
-    aliases = {
-        "normal": "normal",
-        "base": "normal",
-        "highcontrast": "high-contrast",
-        "high-contrast": "high-contrast",
-        "high contrast": "high-contrast",
-        "overexposed": "overexposed",
-        "over-exposed": "overexposed",
-        "over exposed": "overexposed",
-        "underexposed": "underexposed",
-        "under-exposed": "underexposed",
-        "under exposed": "underexposed",
-        "unknown": "unknown",
-    }
-    compact = lowered.replace("_", "").replace(" ", "").replace("-", "")
-    if lowered in aliases:
-        return aliases[lowered]
-    return aliases.get(compact)
-
-
-def should_group_color_cast(value, confidence=None):
-    normalized = normalize_color_cast_class(value)
-    if normalized not in CCOLOR_CAST_GROUP_CLASSES:
-        return False
-    parsed_confidence = parse_float(confidence)
-    return parsed_confidence is not None and parsed_confidence >= 0.65
-
-
-def should_group_exposure_scene(value, confidence=None):
-    normalized = normalize_exposure_scene_class(value)
-    if normalized not in CEXPOSURE_SCENE_GROUP_CLASSES:
-        return False
-    parsed_confidence = parse_float(confidence)
-    return parsed_confidence is not None and parsed_confidence >= 0.65
-
-
-def resolve_exposure_scene_addon_tag(clip_request):
-    exposure_scene = normalize_exposure_scene_class(clip_request.get("exposureSceneClass"))
-    if not should_group_exposure_scene(exposure_scene, clip_request.get("exposureSceneConfidence")):
-        return None
-    if exposure_scene == "underexposed":
-        metrics = clip_request.get("exposureSceneMetrics")
-        reasons = metrics.get("exposureSceneReasons") if isinstance(metrics, dict) else None
-        if isinstance(reasons, list):
-            for reason in reasons:
-                normalized_reason = stringify_signal_value(reason)
-                if normalized_reason in CEXPOSURE_SCENE_REASON_GROUP_TAGS:
-                    return normalized_reason
-        frame_metrics = metrics.get("frames") if isinstance(metrics, dict) else None
-        if isinstance(frame_metrics, list):
-            for frame in frame_metrics:
-                if not isinstance(frame, dict):
-                    continue
-                normalized_reason = stringify_signal_value(frame.get("exposureSceneReason"))
-                if normalized_reason in CEXPOSURE_SCENE_REASON_GROUP_TAGS:
-                    return normalized_reason
-    return exposure_scene
 
 
 def normalize_rough_cut_clips(clips):
@@ -4848,15 +4571,8 @@ def normalize_clip_requests(clips):
             "effectiveProfile": stringify_signal_value(clip.get("effectiveProfile")),
             "profileSource": stringify_signal_value(clip.get("profileSource")) or "unknown",
             "logProfile": normalize_log_profile(clip.get("logProfile")),
-            "gyroDataAvailable": clip.get("gyroDataAvailable") is True,
+            "gyroDataAvailable": clip.get("gyroDataAvailable") if isinstance(clip.get("gyroDataAvailable"), bool) else None,
             "gyroEligible": clip.get("gyroEligible") is True,
-            "lowlight": clip.get("lowlight") is True,
-            "colorCastClass": normalize_color_cast_class(clip.get("colorCastClass")),
-            "colorCastConfidence": parse_float(clip.get("colorCastConfidence")),
-            "colorCastMetrics": clip.get("colorCastMetrics") if isinstance(clip.get("colorCastMetrics"), dict) else {},
-            "exposureSceneClass": normalize_exposure_scene_class(clip.get("exposureSceneClass")),
-            "exposureSceneConfidence": parse_float(clip.get("exposureSceneConfidence")),
-            "exposureSceneMetrics": clip.get("exposureSceneMetrics") if isinstance(clip.get("exposureSceneMetrics"), dict) else {},
             "resolvedTransformPresetKey": stringify_signal_value(clip.get("resolvedTransformPresetKey")),
             "resolvedLutRelativePath": stringify_signal_value(clip.get("resolvedLutRelativePath")),
             "resolvedLutAbsolutePath": normalize_filesystem_path(clip.get("resolvedLutAbsolutePath")),

@@ -4502,13 +4502,7 @@ function describeProjectColorAction(action, roots, liveJobs, busy) {
 }
 
 function describeColorTechnicalSignals(hostSummary) {
-  const creativeTags = Array.isArray(hostSummary?.creativeTags)
-    ? hostSummary.creativeTags.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim())
-    : [];
   const details = [];
-  if (creativeTags.length > 0) {
-    details.push(`tags: ${creativeTags.join(' · ')}`);
-  }
   const detectedProfile = getColorStringField(hostSummary, ['detectedProfile']);
   const effectiveProfile = getColorStringField(hostSummary, ['effectiveProfile']);
   const resolvedPreset = getColorStringField(hostSummary, ['resolvedTransformPresetKey']);
@@ -4536,10 +4530,6 @@ function describeColorGroupCreativeState(group) {
   const details = [];
   if (group?.logProfile) details.push(`log: ${group.logProfile}`);
   if (group?.orientationStatus) details.push(`orientation: ${group.orientationStatus}`);
-  if (group?.lowlight) details.push(`lowlight: ${group.lowlight}`);
-  if (group?.windshieldHaze) details.push(`windshield: ${group.windshieldHaze}`);
-  if (group?.colorCastClass) details.push(`cast: ${group.colorCastClass}`);
-  if (group?.exposureSceneClass) details.push(`exposure: ${group.exposureSceneClass}`);
   if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
   return details.join(' · ');
 }
@@ -4552,17 +4542,9 @@ function describeColorClipRepairSummary(clips) {
   const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
   const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
   const orientationCounts = countBy(clips.map(clip => clip?.orientationStatus || ''));
-  const windshieldCounts = countBy(clips.map(clip => (
-    typeof clip?.windshieldHaze === 'boolean'
-      ? (clip.windshieldHaze ? 'windshield-haze' : 'base')
-      : ''
-  )));
-  const exposureCounts = countBy(clips.map(clip => clip?.exposureSceneClass || ''));
   const templateCounts = countBy(clips.map(clip => clip?.repairTemplateKey || ''));
   const details = [];
   const orientationSummary = summarizeCountMap('orientation', orientationCounts);
-  const windshieldSummary = summarizeCountMap('windshield', windshieldCounts);
-  const exposureSummary = summarizeCountMap('exposure', exposureCounts);
   const templateSummary = summarizeCountMap('template', templateCounts);
   const gyroSummary = summarizeCountMap('gyro', gyroCounts);
   const dehazeSummary = summarizeCountMap('dehaze', dehazeCounts);
@@ -4570,8 +4552,6 @@ function describeColorClipRepairSummary(clips) {
   const repairSummary = summarizeCountMap('repair', repairCounts);
   const layoutSummary = summarizeCountMap('layout', layoutCounts);
   if (orientationSummary) details.push(orientationSummary);
-  if (windshieldSummary) details.push(windshieldSummary);
-  if (exposureSummary) details.push(exposureSummary);
   if (templateSummary) details.push(templateSummary);
   if (gyroSummary) details.push(gyroSummary);
   if (dehazeSummary) details.push(dehazeSummary);
@@ -4584,25 +4564,6 @@ function describeColorClipRepairSummary(clips) {
 function describeColorClipRepairState(clip) {
   const details = [];
   if (clip?.logProfile) details.push(`log: ${clip.logProfile}`);
-  if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
-  if (typeof clip?.windshieldHaze === 'boolean') {
-    const confidence = Number.isFinite(Number(clip.windshieldHazeConfidence))
-      ? ` ${Math.round(Number(clip.windshieldHazeConfidence) * 100)}%`
-      : '';
-    details.push(`${clip.windshieldHaze ? 'windshield-haze' : 'clear-windshield'}${confidence}`);
-  }
-  if (clip?.colorCastClass) {
-    const confidence = Number.isFinite(Number(clip.colorCastConfidence))
-      ? ` ${Math.round(Number(clip.colorCastConfidence) * 100)}%`
-      : '';
-    details.push(`cast: ${clip.colorCastClass}${confidence}`);
-  }
-  if (clip?.exposureSceneClass) {
-    const confidence = Number.isFinite(Number(clip.exposureSceneConfidence))
-      ? ` ${Math.round(Number(clip.exposureSceneConfidence) * 100)}%`
-      : '';
-    details.push(`exposure: ${clip.exposureSceneClass}${confidence}`);
-  }
   if (clip?.orientationStatus) details.push(`orientation: ${clip.orientationStatus}`);
   if (Number.isFinite(Number(clip?.rotationDegrees))) details.push(`rotation: ${clip.rotationDegrees}`);
   if (clip?.repairTemplateKey) details.push(`template: ${clip.repairTemplateKey}`);

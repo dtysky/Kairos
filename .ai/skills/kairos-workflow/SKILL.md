@@ -59,24 +59,20 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 当前以 `logProfile` 为前置分组轴，再在同一 log bucket 内按 first-match addon 分桶：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`；`gyro` 是 clip 级 repair 信号，不再参与分桶
-- 当前 `lowlight` 是中点单帧视觉 creative 标签，不是 metadata fallback，也不等价于“必须降噪”
-- 当前 `windshield-haze` 是白天租车/前挡车膜 review addon：要求行车视角 / 前挡或仪表台前景证据，且画面呈现高光未爆、白参考被压灰、整体低对比发灰发暗；它区别于低光和普通色偏，优先于高置信 `colorCastClass` 分桶，且不自动开启 `Dehaze / NR`
-- 当前 `colorCastClass` 是便宜数值色偏标签：默认取 clip 中点单帧 proxy；若能解析到当前 root/profile 的技术 LUT，则先用同路径 `.cube` 转换 proxy，再做中性区域色偏判断。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免一个中点帧偏中性就切碎连续冷色路段；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升。它只用于把 `cool-cyan / green-cyan / green / warm / mixed` 素材拆到独立 Group；不判断原因是否一定是前挡膜，`neutral / unknown` 不参与分桶
-- 当前 `portrait-review` 是 `orientationStatus=portrait` 的 review addon，用于把竖屏素材在当前 log 下拆成单独 Group 给人工 review；它不改变竖屏 Gyro/DRT、repair template 或横屏 timeline transform 合同
-- 当前 `exposureSceneClass` 是解 log / 技术 LUT 后 proxy 画面的便宜数值曝光标签；只有明显 `high-contrast / overexposed / underexposed` 在未命中更高优先级 addon 时才拆 Group，`normal / unknown` 仅作为诊断显示；`high-contrast` 也覆盖逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，只覆盖明确剪白或高亮面积/亮度明显偏高的画面，不再把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 也覆盖单帧雪景等低饱和高键白参考区域被压灰且无真实高光尾部的 `white-reference-underexposed` 诊断，metrics 保留白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed` 但 Resolve Group addon 使用 `white-reference-underexposed`
+  - 自动 Group 只按 `logProfile × orientationStatus`，例如 `slog3 + horizontal`、`slog3 + portrait`；无法确认方向时使用 `unknown-orientation`。Log 读显式 sidecar 后回退 root profile，方向读 probe 元数据。
+- `/color` prepare 停用色偏/白平衡、低照度、曝光、前挡雾化分类及相关抽帧和连续性提升；历史字段只兼容读取，不影响新分组，也不展示为当前检测结果。技术 LUT 与 Gyroflow repair 继续使用。
+- 更新代码不自动重跑既有 Resolve 工程或使已完成 chunks 失效；`sync_groups` 仍只镜像实际组。迁移已有组前必须明确处理已有 Group 调色，不能用普通 prepare 悄悄合并。
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
   - `Gyro` 固定为第 1 节点；每次 `prepare_root` 都按最终 `gyroEligible` 布尔判定重申 node1 开关，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
   - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停，不表示 Gyroflow 已执行 source-specific `Load for current file`
-  - `gyroEligible` 必须来自显式声明：同名 `.gyroflow` 可开启 Gyro；带 Gyroscope 且型号受支持的 Sony XML sidecar 可开启 Gyro。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 私有 telemetry 不扫描、不能单独开启 Gyro，也不能据此猜测 log profile
+  - `gyroEligible` 必须来自显式声明：同名 `.gyroflow` 可开启 Gyro；关联 Sony XML sidecar 明确声明 Gyroscope 即可请求开启 Gyro，不按机型名称做白名单判断。`gyroDataAvailable` 独立记录运动数据声明；缺少证据时保持未知，不能由启用判定、模板可用性或 `.gyroflow` 文件存在反推。启用请求不等于 Gyroflow 已成功载入有效样本。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 私有 telemetry 不扫描、不能单独开启 Gyro，也不能据此猜测 log profile
   - `Dehaze` 固定为第 2 节点且默认禁用
   - `User1 / User2` 是最小用户区，默认开启；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
   - `NR` 对所有视频 clip 固定预留在尾部且默认禁用，正式开关入口只有 Resolve
-  - `lowlight` 继续只是 creative 标签与状态提示，不自动开启 `Dehaze / NR`
-- ZV-E1 / Sony 竖屏素材可以进入 Gyro 路径，但必须方向感知：Kairos 从 ffprobe `rotate/display matrix` 解析方向，横屏用 `config/default.drt`；ffprobe 源 `rotation=90` 会写 `RotationAngle=-90`，但按 Gyroflow `270` 使用 `config/gyroflow-portrait--90.drt`；ffprobe 源 `rotation=-90/270` 会写 `RotationAngle=90`，但按 Gyroflow `90` 使用 `config/gyroflow-portrait-90.drt`；缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`
-- `/color` 默认把竖屏素材导出成横屏单 clip：`prepare_root` 对竖屏 timeline item 写入 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，旋转并放大填满横屏 root timeline；横向编码但 display-matrix 竖屏的素材需要额外 fill zoom，避免 Gyroflow/DRT 输出层留下居中小画面；Gyroflow OFX 内部 orientation 仍由方向专用 DRT 提供，不通过 Resolve scripting 猜参数
+- ZV-E1 / Sony 竖屏素材继续进入 Gyro 路径，ffprobe `rotate/display matrix` 只识别方向和选择兼容模板：源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，文件名角度不再表示实际旋转；缺少模板时仍只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`
+- `/color` 的竖屏 timeline `RotationAngle=0`；2026-10-08 用户实测取消 Gyroflow 输出与 timeline 两处额外 ±90° 后防抖正常。保留既有 `ZoomX / ZoomY / ZoomGang / Pan / Tilt` 计算及其他 DRT 参数，包括横向编码 3840x2160、display-matrix 竖屏素材的 `1.7778` fill zoom。修正代码/模板不自动重跑既有工程，不覆盖用户当前的人工修正；OFX 参数继续由 DRT 提供，不猜测 Resolve scripting 参数 API
 - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 要把当前 DRT hash 写回 clip snapshot，后续 hash 未变时才走 canonical preserve
 - 旧非规范 clip graph 记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout，不存在时 bulk prepare 在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图；规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍按最终 `gyroEligible` 重申 Gyro node1 开关；`NR` 后新增节点也视为 legacy
 - 只使用 clean DRT donor 做正式自动 clip repair seeding：旧 `gyro-only.drt + CopyGrades + render` 已实测可触发 Gyroflow source-specific load；仓库不再携带默认 `config/default.drx`，DRX 仅允许作为显式外部人工诊断材料，不再作为 bulk prepare fallback
