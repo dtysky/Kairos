@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pyxis" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd_2026-09-26_0000-0400</name>
+    <trkseg>
+      <trkpt lat="23.6973318" lon="117.4717433">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T16:25:00.901Z</time>
+        <speed>0.074969664</speed>
+      </trkpt>
+      <trkpt lat="23.6973302" lon="117.471773">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T16:59:42.899Z</time>
+        <speed>0.071367614</speed>
+      </trkpt>
+      <trkpt lat="23.6973132" lon="117.4717979">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T18:16:47.890Z</time>
+        <speed>0.10005753</speed>
+      </trkpt>
+      <trkpt lat="23.6972865" lon="117.4717902">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T18:25:43.893Z</time>
+        <speed>0.0659109</speed>
+      </trkpt>
+      <trkpt lat="23.6972807" lon="117.471761">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T18:33:19.889Z</time>
+        <speed>0.06537997</speed>
+      </trkpt>
+      <trkpt lat="23.69728" lon="117.4717315">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T18:38:43.888Z</time>
+        <speed>0.078152075</speed>
+      </trkpt>
+      <trkpt lat="23.6972731" lon="117.4717028">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T19:09:22.883Z</time>
+        <speed>0.09463955</speed>
+      </trkpt>
+      <trkpt lat="23.697278" lon="117.4716737">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T19:26:30.885Z</time>
+        <speed>0.09207087</speed>
+      </trkpt>
+      <trkpt lat="23.6972826" lon="117.4716441">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T19:32:10.883Z</time>
+        <speed>0.1099551</speed>
+      </trkpt>
+      <trkpt lat="23.6972805" lon="117.4716143">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T19:38:30.886Z</time>
+        <speed>0.09559345</speed>
+      </trkpt>
+      <trkpt lat="23.6972846" lon="117.471585">
+        <ele>8.100000381469727</ele>
+        <time>2026-09-25T19:46:50.574Z</time>
+        <speed>0.07051808</speed>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

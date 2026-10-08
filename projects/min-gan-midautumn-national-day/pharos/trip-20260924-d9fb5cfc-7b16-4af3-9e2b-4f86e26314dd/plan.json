@@ -1,0 +1,2460 @@
+{
+  "$schema": "pharos/plan/v3.0",
+  "trip_id": "trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd",
+  "trip_kind": "freeform",
+  "title": "闽赣山海人文弹性自驾",
+  "revision": 29,
+  "updated_at": "2026-10-06T13:53:27.720761Z",
+  "timezone": "Asia/Shanghai",
+  "dates": {
+    "start": "2026-09-24",
+    "end": "2026-10-07"
+  },
+  "companion": false,
+  "pre_trip_tasks": [
+    {
+      "id": "vehicle-maintenance",
+      "label": "确认坦克 500 Hi4-T 保养状态：轮胎及备胎、刹车、油液、雨刮、随车工具和搭电设备",
+      "completed_in_plan": false
+    },
+    {
+      "id": "offline-maps",
+      "label": "下载福建、江西、粤北离线地图；另存上堡梯田、筑峰顶周边离线区域",
+      "completed_in_plan": false
+    },
+    {
+      "id": "weather-72h",
+      "label": "出发前 72 小时核验台风、强对流、逐小时云量、能见度和山区累计降雨",
+      "completed_in_plan": false
+    },
+    {
+      "id": "dark-sky-weather-72h",
+      "label": "出发前 72 小时复核上堡梯田、筑峰顶的逐小时低云、湿度、能见度和阵风；两地星空均为可取消的天气窗口",
+      "completed_in_plan": false
+    },
+    {
+      "id": "poyang-lake-water-level",
+      "label": "出发前 72 小时核验鄱阳湖水位、落星墩露出程度和岸线通行状态",
+      "completed_in_plan": false
+    },
+    {
+      "id": "tail-route-order",
+      "label": "抵达南昌前确定“上堡梯田 → 筑峰顶”或“筑峰顶 → 上堡梯田”的最终顺序",
+      "completed_in_plan": false
+    },
+    {
+      "id": "shangbao-access",
+      "label": "向上堡梯田住宿方确认景区开放、秋收进度、清晨交通、停车方式及夜间合法机位；询问村灯、民宿灯光与西南山脊遮挡",
+      "completed_in_plan": false
+    },
+    {
+      "id": "zhufeng-access",
+      "label": "向筑峰顶当地住宿方或管理方确认上山道路、临时管制、风力和车宿位置；同时核验风机航空灯和夜间车辆灯光影响",
+      "completed_in_plan": false
+    },
+    {
+      "id": "wuyishan-booking",
+      "label": "提前预约武夷山景区、九曲溪竹筏及国庆期间需要预约的博物馆/景区；抵达前核验下梅村开放、停车和茶文化体验安排",
+      "completed_in_plan": false
+    },
+    {
+      "id": "aojiao-access",
+      "label": "抵达东山岛前核验澳角村渔港生产区域、停车和无人机限制；不进入作业码头或阻碍渔获装卸",
+      "completed_in_plan": false
+    },
+    {
+      "id": "quanzhou-access",
+      "label": "抵达泉州前核验天后宫、德济门遗址、蟳埔女习俗非遗馆的开放安排及节假日交通；古城和蟳埔优先步行/接驳，不把车开入拥挤窄巷",
+      "completed_in_plan": false
+    },
+    {
+      "id": "drone-registration",
+      "label": "Mavic 4 Pro 完成实名登记；每次起飞前检查 UOM 适飞空域、临时管制和景区现场规定",
+      "completed_in_plan": false
+    },
+    {
+      "id": "camera-kit",
+      "label": "准备 A7R6、A7R5、ZV-E1、Osmo Pocket 3、Mavic 4 Pro 与所需镜头",
+      "completed_in_plan": false
+    },
+    {
+      "id": "field-accessories",
+      "label": "准备 FP100 x3、额外 SD 卡 x2、额外 TF 卡 x2、双三脚架、滤镜、防雨罩、DJI Mic 2 和提灯",
+      "completed_in_plan": false
+    },
+    {
+      "id": "dual-backup",
+      "label": "准备两份独立存储介质；每日只做素材校验与双备份，不在路上剪辑",
+      "completed_in_plan": false
+    },
+    {
+      "id": "dongshan-late-checkin",
+      "label": "为 9 月 24 日深夜抵达东山岛预留可自助入住或 24 小时接待的住宿",
+      "completed_in_plan": false
+    },
+    {
+      "id": "car-camping-safety",
+      "label": "准备车宿保暖层、防潮垫、遮光、通风和一氧化碳风险管理方案；严禁在密闭车内燃烧取暖",
+      "completed_in_plan": false
+    },
+    {
+      "id": "travel-insurance",
+      "label": "购买覆盖自驾、意外和财物损失的旅行保险",
+      "completed_in_plan": false
+    }
+  ],
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-09-24",
+      "title": "2026-09-24",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 2,
+      "date": "2026-09-25",
+      "title": "2026-09-25",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 3,
+      "date": "2026-09-26",
+      "title": "2026-09-26",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 4,
+      "date": "2026-09-27",
+      "title": "2026-09-27",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 5,
+      "date": "2026-09-28",
+      "title": "2026-09-28",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 6,
+      "date": "2026-09-29",
+      "title": "2026-09-29",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 7,
+      "date": "2026-09-30",
+      "title": "2026-09-30",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 8,
+      "date": "2026-10-01",
+      "title": "2026-10-01",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 9,
+      "date": "2026-10-02",
+      "title": "2026-10-02",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 10,
+      "date": "2026-10-03",
+      "title": "2026-10-03",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 11,
+      "date": "2026-10-04",
+      "title": "2026-10-04",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 12,
+      "date": "2026-10-05",
+      "title": "2026-10-05",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 13,
+      "date": "2026-10-06",
+      "title": "2026-10-06",
+      "shots": [],
+      "extensions": null
+    }
+  ],
+  "extensions": {
+    "plan_md": "plans/20260924-闽赣-山海人文弹性自驾.md",
+    "pharos:story_groups": [
+      {
+        "id": "ep1-minnan-coast",
+        "title": "1·闽南海岸",
+        "route": "东山岛 → 泉州老城 → 蟳埔"
+      },
+      {
+        "id": "ep2-mountains-villages-craft",
+        "title": "2·山、村落与手艺",
+        "route": "武夷山 → 景德镇"
+      },
+      {
+        "id": "ep3-return-to-wild",
+        "title": "3·回程进入山野",
+        "route": "落星墩（条件项）→ 南昌 → 上堡梯田 / 筑峰顶"
+      }
+    ],
+    "pharos:extra_pre_trip_equipment": [
+      {
+        "id": "FP100 x3",
+        "kind": "accessory"
+      },
+      {
+        "id": "额外 SD 卡 x2",
+        "kind": "accessory"
+      },
+      {
+        "id": "额外 TF 卡 x2",
+        "kind": "accessory"
+      },
+      {
+        "id": "磐图 TT5PRO 三脚架",
+        "kind": "accessory"
+      },
+      {
+        "id": "空气一号三脚架",
+        "kind": "accessory"
+      },
+      {
+        "id": "滤镜系统",
+        "kind": "accessory"
+      },
+      {
+        "id": "防雨罩",
+        "kind": "accessory"
+      },
+      {
+        "id": "DJI Mic 2 麦克风",
+        "kind": "accessory"
+      },
+      {
+        "id": "提灯",
+        "kind": "accessory"
+      }
+    ],
+    "pharos:freeform_route_options": [
+      {
+        "id": "route-primary-shangbao-first",
+        "title": "Primary · 梯田先行",
+        "tier": "primary",
+        "description": "9 月 24 日晚离开深圳，10 月 7 日必须返深。落星墩仅在主体露出、岸线开放且停车步行安全时进入；南昌之后先上堡梯田，再到筑峰顶。",
+        "stops": [
+          {
+            "name": "深圳",
+            "gps": [
+              113.938529,
+              22.551291
+            ],
+            "note": "9 月 24 日晚出发",
+            "planned_arrival_date": "2026-09-24",
+            "planned_arrival_period": "morning",
+            "planned_departure_date": "2026-09-24",
+            "planned_departure_period": "evening"
+          },
+          {
+            "name": "东山岛",
+            "gps": [
+              117.47261090695848,
+              23.694255382639774
+            ],
+            "planned_arrival_date": "2026-09-25",
+            "planned_arrival_period": "early_morning",
+            "planned_departure_date": "2026-09-26",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "泉州",
+            "gps": [
+              118.575017,
+              24.924571
+            ],
+            "note": "蟳埔为泉州段机位候选，不单列路线站",
+            "planned_arrival_date": "2026-09-26",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-09-28",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "武夷山",
+            "gps": [
+              117.954734,
+              27.659782
+            ],
+            "planned_arrival_date": "2026-09-28",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-01",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "景德镇",
+            "gps": [
+              117.172714,
+              29.272319
+            ],
+            "planned_arrival_date": "2026-10-01",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-02",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "落星墩",
+            "gps": [
+              116.03210314419435,
+              29.435626135151455
+            ],
+            "note": "条件项；水位、岸线或安全条件不成立即跳过",
+            "planned_arrival_date": "2026-10-02",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-03",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "南昌",
+            "gps": [
+              115.85307102389159,
+              28.686305729501644
+            ],
+            "note": "休整并一次性确定尾段顺序",
+            "planned_arrival_date": "2026-10-03",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-04",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "上堡梯田",
+            "gps": [
+              114.03552810499761,
+              25.755373055837875
+            ],
+            "planned_arrival_date": "2026-10-04",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-05",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "筑峰顶",
+            "gps": [
+              114.36098992225024,
+              26.1092523901194
+            ],
+            "planned_arrival_date": "2026-10-05",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-07",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "深圳",
+            "gps": [
+              113.938529,
+              22.551291
+            ],
+            "note": "10 月 7 日必须返抵",
+            "planned_arrival_date": "2026-10-07",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-07",
+            "planned_departure_period": "evening"
+          }
+        ]
+      },
+      {
+        "id": "route-backup-zhufeng-first",
+        "title": "Backup · 山顶抢窗",
+        "tier": "backup",
+        "description": "9 月 24 日晚离开深圳，10 月 7 日必须返深。前半程与主路线一致；仅当筑峰顶先出现明确低风晴窗时，南昌之后交换筑峰顶与上堡梯田顺序。落星墩仍为可跳过条件项。",
+        "stops": [
+          {
+            "name": "深圳",
+            "gps": [
+              113.938529,
+              22.551291
+            ],
+            "note": "9 月 24 日晚出发",
+            "planned_arrival_date": "2026-09-24",
+            "planned_arrival_period": "morning",
+            "planned_departure_date": "2026-09-24",
+            "planned_departure_period": "evening"
+          },
+          {
+            "name": "东山岛",
+            "gps": [
+              117.47261090695848,
+              23.694255382639774
+            ],
+            "planned_arrival_date": "2026-09-25",
+            "planned_arrival_period": "early_morning",
+            "planned_departure_date": "2026-09-26",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "泉州",
+            "gps": [
+              118.575017,
+              24.924571
+            ],
+            "note": "蟳埔为泉州段机位候选，不单列路线站",
+            "planned_arrival_date": "2026-09-26",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-09-28",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "武夷山",
+            "gps": [
+              117.954734,
+              27.659782
+            ],
+            "planned_arrival_date": "2026-09-28",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-01",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "景德镇",
+            "gps": [
+              117.172714,
+              29.272319
+            ],
+            "planned_arrival_date": "2026-10-01",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-02",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "落星墩",
+            "gps": [
+              116.03210314419435,
+              29.435626135151455
+            ],
+            "note": "条件项；水位、岸线或安全条件不成立即跳过",
+            "planned_arrival_date": "2026-10-02",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-03",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "南昌",
+            "gps": [
+              115.85307102389159,
+              28.686305729501644
+            ],
+            "note": "休整并一次性确定尾段顺序",
+            "planned_arrival_date": "2026-10-03",
+            "planned_arrival_period": "afternoon",
+            "planned_departure_date": "2026-10-04",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "筑峰顶",
+            "gps": [
+              114.36098992225024,
+              26.1092523901194
+            ],
+            "planned_arrival_date": "2026-10-04",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-05",
+            "planned_departure_period": "afternoon"
+          },
+          {
+            "name": "上堡梯田",
+            "gps": [
+              114.03552810499761,
+              25.755373055837875
+            ],
+            "planned_arrival_date": "2026-10-05",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-07",
+            "planned_departure_period": "morning"
+          },
+          {
+            "name": "深圳",
+            "gps": [
+              113.938529,
+              22.551291
+            ],
+            "note": "10 月 7 日必须返抵",
+            "planned_arrival_date": "2026-10-07",
+            "planned_arrival_period": "evening",
+            "planned_departure_date": "2026-10-07",
+            "planned_departure_period": "evening"
+          }
+        ]
+      }
+    ],
+    "pharos:freeform_shot_options": [
+      {
+        "id": "3d4c2be9-090a-4b07-9537-21adcfd4f47e",
+        "kind": "event",
+        "location": "东山岛金銮湾东向岸线",
+        "description": "东向开阔岸线拍海上日出；9 月 25 日受夜车疲劳限制，9 月 26 日为替代窗口，天气或睡眠不成立即取消。A7R6 以中长焦提取海面层次，A7R5 以广角保留岸线前景，Osmo Pocket 3 固定机位记录架机过程。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:金銮湾",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:date_hint": "2026-09-26",
+          "pharos:route_stop_id": "route-primary-shangbao-first:1"
+        },
+        "gps": [
+          117.47261090695848,
+          23.694255382639774
+        ],
+        "time_window": [
+          "05:20",
+          "06:40"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "今天这个日出不算任务，睡够了、天气也对，我才来海边等这一会儿。",
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "压缩海面、云层和日轮层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "14mm F1.8 GM",
+            "note": "广角岸线与天空",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与架机过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "3c729f8a-bb03-4a3a-86a3-0d626c6a9e9f",
+        "kind": "event",
+        "location": "东山岛金銮湾东向岸线",
+        "description": "以礁石、渔船或开阔海面为前景拍月升至蓝调；主体、潮位与遮挡在现场确认，和泉州/石狮月升候选只选一处。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:金銮湾",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:date_hint": "2026-09-26",
+          "pharos:option_group": "海上月升",
+          "pharos:route_stop_id": "route-primary-shangbao-first:1"
+        },
+        "gps": [
+          117.47261090695848,
+          23.694255382639774
+        ],
+        "time_window": [
+          "16:50",
+          "18:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "这两天月亮几乎是满的，我想看看它能不能从海面和最后一点天光里一起升起来。",
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "长焦月升与前景关系",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20mm F1.8 G",
+            "note": "岸线、蓝调与月光环境",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与现场反应",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "529dfc0f-4322-4c4a-a6a7-1d54918dd1b0",
+        "kind": "event",
+        "location": "东山岛澳角村渔港公共区域",
+        "description": "观察渔港、渔获、生产与村落生活，只在公共区域拍摄；近距离人物、作业流程和航拍先取得许可，不阻碍装卸。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:天涯澳角",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:1"
+        },
+        "gps": [
+          117.42913044758107,
+          23.58826223807399
+        ],
+        "time_window": [
+          "08:00",
+          "11:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "这里不是给游客摆好的渔村，我先看看真正的生产节奏，再决定今天能拍到哪一步。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "渔港建立、劳动与环境声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "不打扰生产的远距离人物与船只细节",
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": "仅在空域、现场和生产安全均允许时执行",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "e7a06719-8415-498c-aef6-30c73ec92091",
+        "kind": "event",
+        "location": "东山岛南门湾与铜陵镇生活线",
+        "description": "当澳角生产线索不足时，改拍海湾、坡城、居民与游客混合的岛上日常；不与澳角、南门湾、铜陵镇三处连续打卡。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:南门湾风景区",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:1"
+        },
+        "gps": [
+          117.52285614685208,
+          23.733949805767306
+        ],
+        "time_window": [
+          "15:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "步行观察与环境声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "海湾、街巷与人物关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "5e8f0172-f04b-4a7a-8b5a-c59aeec0d372",
+        "kind": "event",
+        "location": "泉州开元寺—西街",
+        "description": "从宗教建筑、塔、街巷和当代生活建立泉州老城，不追求在拥挤时段补齐全部景点。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:泉州大开元寺",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.58106869359582,
+          24.91716650587427
+        ],
+        "time_window": [
+          "08:30",
+          "12:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "泉州老城不只是一条西街，我先从寺、塔和街上的生活看看这座城是怎么长在一起的。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "进入老城、香火与街巷环境声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "建筑与生活关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "dd4f49df-89b4-49e2-812c-59ed7dff488d",
+        "kind": "event",
+        "location": "泉州天后宫—德济门—聚宝街",
+        "description": "沿旧港轴线串联妈祖信仰、城门遗址和商品入城街道；以连续观察为主，不把三个点拆成独立打卡。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:天后宫；沿线复核德济门遗址与聚宝街",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.5843080162037,
+          24.898237663758913
+        ],
+        "time_window": [
+          "14:00",
+          "17:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "从天后宫走到德济门和聚宝街，这条线更像是在追泉州以前怎么和海发生关系。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "步行连续观察、环境声与口播",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "35mm F1.4 GM",
+            "note": "建筑细节、香火与街巷人物",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "94bbb89c-c9a7-416f-9390-ace786c7047f",
+        "kind": "event",
+        "location": "蟳埔蚵壳厝与社区环境",
+        "description": "从仍可辨认的蚵壳厝、窄巷和社区空间理解海洋材料如何进入日常建筑；不堵门、不占巷、不把居民住宅当布景。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:蟳埔村蚵壳厝",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.64775880958861,
+          24.858342576947994
+        ],
+        "time_window": [
+          "09:00",
+          "11:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "社区建立与行走观察",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "35mm F1.4 GM",
+            "note": "蚵壳墙体、生活痕迹和尺度细节",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "777d053d-6794-4c5c-ad9d-6ea378360771",
+        "kind": "event",
+        "location": "泉州国家级蟳埔女习俗非遗馆及周边",
+        "description": "理解簪花围、服饰与女性文化的历史和当代呈现；近距离肖像、妆造过程或采访必须先取得明确同意。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:泉州国家级蟳埔女习俗非遗馆",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.64771887368173,
+          24.85850562666681
+        ],
+        "time_window": [
+          "09:30",
+          "12:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "簪花只是最显眼的一层，我更想知道这套习俗为什么留在这里，又怎么变成今天看到的样子。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "35mm F1.4 GM",
+            "note": "经同意后的人物、手部与访谈",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "保持距离的环境肖像与细节",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "83496dd0-12a2-47e9-ae3e-244f3688ea18",
+        "kind": "event",
+        "location": "蟳埔渔村劳动与当代文旅变化",
+        "description": "观察市场、渔业生活、社区经营和簪花旅拍如何共处；没有愿意被拍的人物时只记录环境，不强造采访。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:蟳埔民俗文化村",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.64673276168111,
+          24.858012418945147
+        ],
+        "time_window": [
+          "15:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "劳动、交易、游客与居民关系",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "社区环境与人物关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "f63fcb1b-f634-4322-b478-8e589b7b9ff4",
+        "kind": "event",
+        "location": "泉州老城外围合法制高点",
+        "description": "在不占用人群通道且不进入敏感宗教空间的前提下，拍城市从黄昏到入夜；具体制高点抵达后勘察。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:泉州大开元寺；具体机位待现场合法勘察",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.58106869359582,
+          24.91716650587427
+        ],
+        "time_window": [
+          "17:30",
+          "19:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "塔、屋顶和人流压缩层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "老城环境与天色变化",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与收工过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "4f2ee5cc-a33b-4a1f-b960-b5c052ed584d",
+        "kind": "event",
+        "location": "石狮黄金海岸或洛伽寺外侧合法岸线",
+        "description": "在南侧或开阔海岸先勘察月升方向；常见广场机位不保证月亮落在寺后，构图不成立就只拍海面月升，或放弃此候选。与东山岛月升只选一处。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:石狮黄金海岸；洛伽寺另行现场勘察",
+          "pharos:story_group": "ep1-minnan-coast",
+          "pharos:date_hint": "2026-09-27",
+          "pharos:option_group": "海上月升",
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.70259976230618,
+          24.676555800657972
+        ],
+        "time_window": [
+          "17:00",
+          "18:40"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "长焦月升与海岸前景",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20mm F1.8 G",
+            "note": "蓝调海岸环境",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与现场勘景",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "96dfc0d9-2631-4bbf-a81f-3865f3674625",
+        "kind": "event",
+        "location": "武夷山崇阳溪或九曲溪合法河谷机位",
+        "description": "拍山岚、云层与水面晨光；东偏南日出会被山体推迟，不承诺峰体日照，只以河谷实际光线为准。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:夜游崇阳溪；具体合法岸线待现场确认",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          117.97273951658062,
+          27.651550188742117
+        ],
+        "time_window": [
+          "05:20",
+          "07:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "山体、薄雾和水面压缩层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "河谷环境与天空",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与等待过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "7e0348c2-cb65-475d-ab19-d8ee365547cf",
+        "kind": "event",
+        "location": "武夷山九曲溪—武夷宫",
+        "description": "按预约和客流执行竹筏或河岸观察，记录丹霞、水路、船工与游客关系；武夷宫作为下筏后的自然延伸，不拆成打卡。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:九曲溪竹筏码头；终点武夷宫",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          117.9237225731365,
+          27.642296861347003
+        ],
+        "time_window": [
+          "07:00",
+          "12:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "九曲溪是从水上看武夷山，我想拍的不只是山，也包括这条水路今天怎么被人使用。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "水路、环境声与行进过程",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "丹霞局部、竹筏与岸线关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "6f3ea4d0-cb39-4321-9b99-3a9fd08a9e24",
+        "kind": "event",
+        "location": "武夷山天游峰片区",
+        "description": "天气、步道和客流都合适时才进入，用高处俯瞰九曲与丹霞；若拥堵或关闭，直接把时间还给河谷或下梅。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:武夷山风景名胜区-天游峰",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          117.94732866691015,
+          27.65317655868911
+        ],
+        "time_window": [
+          "08:00",
+          "12:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "步道、到达反应与环境建立",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "九曲溪与峰林关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "0f0f3b78-2118-4dff-84b2-fbe7414f7309",
+        "kind": "event",
+        "location": "武夷山下梅古村",
+        "description": "用半天建立古村、水系、茶与万里茶道关系；有人物线索时优先拍茶农、制茶人或经营者，没有同意则只拍环境，不摆拍工序。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:武夷山下梅古民居",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          118.04275358953643,
+          27.67197774919369
+        ],
+        "time_window": [
+          "13:00",
+          "17:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "武夷山的茶不只长在山里，下梅更像是它走向外面世界的一个起点。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "35mm F1.4 GM",
+            "note": "经同意的人物、访谈与茶事细节",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "古村、水系与茶道环境",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "行走观察与不打扰的补充视角",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "25fbbcee-40c2-4224-b155-bf5529791113",
+        "kind": "event",
+        "location": "景德镇陶阳里历史文化旅游区",
+        "description": "从御窑遗址、老街和城市空间建立景德镇制瓷历史，只承担“历史面”，不与当代园区连续打卡。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:景德镇陶阳里历史文化旅游区",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:5"
+        },
+        "gps": [
+          117.19925571427584,
+          29.299128288152943
+        ],
+        "time_window": [
+          "09:00",
+          "12:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "空间建立、遗址与游客关系",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "窑址、建筑与器物细节",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "ee954a7d-b0aa-4c10-940b-840129c73153",
+        "kind": "event",
+        "location": "景德镇市雕塑瓷厂",
+        "description": "观察老瓷厂、工作室、创作者和交易现场；摊主、陶艺师和工作过程都先取得拍摄同意。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:景德镇市雕塑瓷厂",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:5"
+        },
+        "gps": [
+          117.24877084906562,
+          29.302549725849712
+        ],
+        "time_window": [
+          "13:00",
+          "17:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "景德镇不只在讲过去，这些老厂房里正在发生的制作和交易，才是今天这一面。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "35mm F1.4 GM",
+            "note": "工作室、人物与同期声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "器物、手部、窑火与空间细节",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "7d9fcbc2-bfe0-4873-add4-f3db8e2cbf60",
+        "kind": "event",
+        "location": "景德镇陶溪川文创街区",
+        "description": "作为当代制作、交易和游客文化的候选内容面；与雕塑瓷厂、三宝最多保留一至两个，不为补齐点位赶场。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:陶溪川文创街区",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:5"
+        },
+        "gps": [
+          117.23170176925314,
+          29.29962299902767
+        ],
+        "time_window": [
+          "14:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "工业遗存、店铺、市集与人流",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "35mm F1.4 GM",
+            "note": "创作者、器物与空间细节",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "be270a67-18c7-4058-9f9a-d310d6f2ea6c",
+        "kind": "event",
+        "location": "景德镇三宝国际陶艺村",
+        "description": "有明确创作者或工作室线索时进入，重点拍当代创作和人与环境；没有人物入口时不额外绕行。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:景德镇陶源谷·三宝国际陶艺村",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:5"
+        },
+        "gps": [
+          117.26007613299487,
+          29.249875839589897
+        ],
+        "time_window": [
+          "09:00",
+          "13:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "35mm F1.4 GM",
+            "note": "经同意的工作室、创作者与访谈",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "陶艺村环境与作品关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "19815428-efda-4ca5-a1b3-6d809a9cba78",
+        "kind": "event",
+        "location": "景德镇陶溪川合法公共区域",
+        "description": "拍工业遗存、烟囱、灯光与人流从黄昏进入夜晚；三脚架和商业拍摄限制现场确认。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:陶溪川文创街区",
+          "pharos:story_group": "ep2-mountains-villages-craft",
+          "pharos:route_stop_id": "route-primary-shangbao-first:5"
+        },
+        "gps": [
+          117.23170176925314,
+          29.29962299902767
+        ],
+        "time_window": [
+          "17:30",
+          "20:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "烟囱、建筑与人流局部",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "街区整体与天色变化",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与收工过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "061f8c55-b976-4485-bfd2-bf67c3a5e3fa",
+        "kind": "event",
+        "location": "鄱阳湖落星墩开放岸线",
+        "description": "仅在主体露出、岸线开放、泥滩与停车步行安全时执行，拍湖滩、古建筑、日落与蓝调；不进入软泥，不安排银河。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:落星墩",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-02",
+          "pharos:route_stop_id": "route-primary-shangbao-first:6"
+        },
+        "gps": [
+          116.03210314419435,
+          29.435626135151455
+        ],
+        "time_window": [
+          "17:00",
+          "19:20"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "这个点值不值得留下，不是看攻略，而是看今天的水位、岸线和天气到底给不给机会。",
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "主体、湖滩与落日压缩层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "湖岸环境、云影与蓝调",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与水位观察",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "050d3fa3-6a65-47b1-9c42-c4430b188edb",
+        "kind": "event",
+        "location": "鄱阳湖落星墩与湖岸水位线",
+        "description": "记录水位如何决定景观、进入方式和本次取舍；如果条件不成立，也可只在安全位置完成放弃决策的叙事，不寻找危险替代入口。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:落星墩",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:route_stop_id": "route-primary-shangbao-first:6"
+        },
+        "gps": [
+          116.03210314419435,
+          29.435626135151455
+        ],
+        "time_window": [
+          "14:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "落星墩今天如果不露出来，或者岸线不安全，我就直接走；这个放弃本身也是这趟弹性行程的一部分。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "水位、岸线、决策口播与环境声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "安全距离记录主体与湖岸尺度",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "51da25ba-459f-4fe5-8106-9833e85699c1",
+        "kind": "event",
+        "location": "南昌休整与尾段天气决策",
+        "description": "把洗衣、车辆整理、补给、素材双备份和上堡/筑峰顶顺序决策拍成旅程喘息；不承担南昌景点打卡任务。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:南昌市；具体休整点按住宿选择",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:route_stop_id": "route-primary-shangbao-first:7"
+        },
+        "gps": [
+          115.85307102389159,
+          28.686305729501644
+        ],
+        "time_window": [
+          "10:00",
+          "16:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "走到南昌先停一下，把人、车和素材都收拾好，再看未来两三天的天气决定最后两站怎么走。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "车辆、补给、备份与天气决策口播",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "整理过程与第三视角自拍",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "5cab16c2-f9d2-4dfa-822c-79a7cf9e222c",
+        "kind": "event",
+        "location": "上堡梯田八卦田或民宿确认的东向机位",
+        "description": "拍晨雾、秋收与梯田层次；山谷可能推迟入光，机位由住宿方确认合法可达，不为预设日出进入未开放区域。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:上堡梯田景区；八卦田具体机位待住宿方确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-05",
+          "pharos:route_stop_id": "route-primary-shangbao-first:8"
+        },
+        "gps": [
+          114.03552810499761,
+          25.755373055837875
+        ],
+        "time_window": [
+          "05:30",
+          "07:30"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "梯田、晨雾与劳作压缩层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "梯田大环境与天空",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与清晨环境声",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "ce8fc20b-4bd9-4f84-847f-3fcd38ed7cab",
+        "kind": "event",
+        "location": "上堡梯田八卦田或木梓排",
+        "description": "按稻谷进度和人物线索在八卦田、木梓排中择一，重点拍梯田线条、秋收人与客家村落；没有秋收就转向农耕系统和当代生活。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:上堡梯田景区；八卦田/木梓排具体落点待现场确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:route_stop_id": "route-primary-shangbao-first:8"
+        },
+        "gps": [
+          114.03552810499761,
+          25.755373055837875
+        ],
+        "time_window": [
+          "08:00",
+          "16:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": "这里不一定还有金色稻浪，我更想看看梯田到了今天还怎么被耕作、怎么和村子一起生活。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "村落、劳作与同期声",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "梯田线条、人物和层次",
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": "仅在 UOM 空域、景区和村落隐私均允许时执行",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "a1267ef9-9cee-4715-971d-f2e8415fd592",
+        "kind": "event",
+        "location": "上堡梯田西向层叠田块合法观景位",
+        "description": "拍稻浪、劳作与日落收光，人物与环境关系优先于纯航拍大全景；是否有秋收以当地进度为准。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:上堡梯田景区；具体西向机位待现场确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-04",
+          "pharos:route_stop_id": "route-primary-shangbao-first:8"
+        },
+        "gps": [
+          114.03552810499761,
+          25.755373055837875
+        ],
+        "time_window": [
+          "17:00",
+          "18:40"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "层叠田块、人物与收光",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "梯田大环境与天色变化",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与收工过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "c37c8511-4065-4b1c-b417-a1a598e07f28",
+        "kind": "event",
+        "location": "上堡梯田避开村灯的西南开阔机位",
+        "description": "第一主星空候选。银河核心从西南约 211°逐渐降低；薄雾、村灯、山脊遮挡或疲劳明显时改拍环境夜景或取消。机位须由住宿方确认合法可达。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:上堡梯田景区；暗处机位待住宿方现场确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-04",
+          "pharos:route_stop_id": "route-primary-shangbao-first:8"
+        },
+        "gps": [
+          114.03552810499761,
+          25.755373055837875
+        ],
+        "time_window": [
+          "19:25",
+          "21:15"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "这里的暗空条件够好，但银河很快会往山后面落，今晚到底拍不拍只看云、雾和现场灯光。",
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "14mm F1.8 GM",
+            "note": "银河、梯田与天空主机位",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20mm F1.8 G",
+            "note": "前景与银河补位",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "星空直录与现场口播",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与架机过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "a4e4bc22-8400-42b0-9c52-f7b3299023a3",
+        "kind": "event",
+        "location": "筑峰顶合法停车点附近开阔山脊",
+        "description": "从日落、蓝调过渡到山脊银河的第二主星空候选；避开风机航空灯、道路车灯和风振，强风、低云、雷暴或路况不成立时整体取消。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:筑峰顶；具体合法停车与机位待管理方确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-05",
+          "pharos:route_stop_id": "route-primary-shangbao-first:9"
+        },
+        "gps": [
+          114.36098992225024,
+          26.1092523901194
+        ],
+        "time_window": [
+          "17:00",
+          "21:10"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "筑峰顶的优势是开阔，问题也是开阔。今晚风、云和风机灯只要有一个不对，我就不硬拍。",
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "14mm F1.8 GM",
+            "note": "山脊银河与天空主机位",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20mm F1.8 G",
+            "note": "风机、山脊与前景补位",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "日落转蓝调、星空直录与决策口播",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与架机过程",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "31cfc766-4cf9-4ffc-b504-6def7e741881",
+        "kind": "event",
+        "location": "筑峰顶车宿点附近东南开阔处",
+        "description": "拍蓝调、云海或日出，东偏南约 95°；不承诺云海，雷暴、大风、浓雾、道路结露或返程压力出现时取消。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:筑峰顶；具体东南机位待现场确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:date_hint": "2026-10-06",
+          "pharos:route_stop_id": "route-primary-shangbao-first:9"
+        },
+        "gps": [
+          114.36098992225024,
+          26.1092523901194
+        ],
+        "time_window": [
+          "05:30",
+          "07:20"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R6",
+            "lens": "50-400mm F4.5-6.3",
+            "note": "云海、远山和日轮层次",
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "20-70mm F4 G",
+            "note": "山脊大环境与晨光",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍与清晨撤收",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "b3e208f2-ef38-4176-ad58-274d6190915c",
+        "kind": "event",
+        "location": "筑峰顶合法车宿与天气决策点",
+        "description": "记录上山道路、风力判断、合法停车、车宿准备和是否放弃星空的全过程；恶劣天气改住县城，不以越野能力替代安全判断。",
+        "priority": "optional",
+        "source": "pharos",
+        "added_at": null,
+        "extensions": {
+          "gps_source": "amap:筑峰顶；合法停车位置待管理方确认",
+          "pharos:story_group": "ep3-return-to-wild",
+          "pharos:route_stop_id": "route-primary-shangbao-first:9"
+        },
+        "gps": [
+          114.36098992225024,
+          26.1092523901194
+        ],
+        "time_window": [
+          "15:00",
+          "22:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": true,
+        "script": "今天能不能睡在山上，不取决于车能不能上来，而是这里到底适不适合安全过夜。",
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": "道路、天气、停车和车宿决策",
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "Osmo Pocket 3",
+            "lens": null,
+            "note": "第三视角自拍、布置与撤收",
+            "extensions": null
+          },
+          {
+            "type": "photo",
+            "camera": "A7R6",
+            "lens": "20-70mm F4 G",
+            "note": "车辆、山脊与天气关系",
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "3c4244b5-71d8-4597-baf4-6fa467054ef1",
+        "kind": "event",
+        "location": "武夷山风景名胜区-白云禅寺",
+        "description": "白云禅寺日出风光，延时，航拍",
+        "priority": "must",
+        "source": "mobile",
+        "added_at": "2026-09-15T14:16:56.238411Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          117.925305,
+          27.652856
+        ],
+        "time_window": [
+          "05:00",
+          "07:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "14mm F1.8 GM",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "2f5d274e-02be-4ca5-8a83-475312ac9faf",
+        "kind": "event",
+        "location": "武夷山齐云峰景区",
+        "description": "齐云峰日出云海，延时，航拍",
+        "priority": "must",
+        "source": "mobile",
+        "added_at": "2026-09-15T14:19:30.780259Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:3"
+        },
+        "gps": [
+          117.923707,
+          27.624688
+        ],
+        "time_window": [
+          "05:00",
+          "07:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "14mm F1.8 GM",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "413ca8b2-a325-4fcf-a2f3-e35cf459fb1c",
+        "kind": "event",
+        "location": "晋江大桥",
+        "description": "晋江大桥日出，延时，视频，航拍",
+        "priority": "must",
+        "source": "mobile",
+        "added_at": "2026-09-17T06:11:46.753681Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.63381,
+          24.870993
+        ],
+        "time_window": [
+          "05:00",
+          "07:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "14mm F1.8 GM",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "1d2f27b0-13fa-45a1-a4be-93cca8e38097",
+        "kind": "event",
+        "location": "东城灯塔公园",
+        "description": "泉州石狮海上生明月",
+        "priority": "optional",
+        "source": "mobile",
+        "added_at": "2026-09-18T04:54:39.758175Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.777676,
+          24.772354
+        ],
+        "time_window": [
+          "17:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "50-400mm F4.5-6.3",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "90695125-a160-42c1-bc3a-60efaf5fc4d9",
+        "kind": "event",
+        "location": "泉州湾跨海大桥",
+        "description": "泉州湾大桥悬日",
+        "priority": "optional",
+        "source": "mobile",
+        "added_at": "2026-09-18T05:02:29.215010Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:2"
+        },
+        "gps": [
+          118.7121,
+          24.843562
+        ],
+        "time_window": [
+          "05:00",
+          "07:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "50-400mm F4.5-6.3",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "video",
+            "camera": "ZV-E1",
+            "lens": "17-28mm F2.8",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      },
+      {
+        "id": "a41fbbec-5177-413e-8920-963e073c75ca",
+        "kind": "event",
+        "location": "南屿灯塔",
+        "description": "南屿灯塔悬日",
+        "priority": "optional",
+        "source": "mobile",
+        "added_at": "2026-09-18T05:16:40.652237Z",
+        "extensions": {
+          "pharos:route_stop_id": "route-primary-shangbao-first:1"
+        },
+        "gps": [
+          117.524077,
+          23.720141
+        ],
+        "time_window": [
+          "17:00",
+          "18:00"
+        ],
+        "needs_companion": false,
+        "self_shoot": false,
+        "script": null,
+        "captures": [
+          {
+            "type": "timelapse",
+            "camera": "A7R5",
+            "lens": "50-400mm F4.5-6.3",
+            "note": null,
+            "extensions": null
+          },
+          {
+            "type": "aerial",
+            "camera": "Mavic 4 Pro",
+            "lens": null,
+            "note": null,
+            "extensions": null
+          }
+        ],
+        "gps_start": null,
+        "gps_end": null,
+        "trigger_radius_km": null,
+        "angles": null,
+        "script_points": null
+      }
+    ],
+    "pharos:active_route": {
+      "version": 1,
+      "source_route_option_id": "route-primary-shangbao-first",
+      "stops": [
+        {
+          "id": "route-primary-shangbao-first:0",
+          "name": "深圳",
+          "gps": [
+            113.938529,
+            22.551291
+          ],
+          "note": "9 月 24 日晚出发",
+          "planned_arrival_date": "2026-09-24",
+          "planned_arrival_period": "morning",
+          "planned_departure_date": "2026-09-24",
+          "planned_departure_period": "afternoon"
+        },
+        {
+          "id": "route-primary-shangbao-first:1",
+          "name": "东山岛",
+          "gps": [
+            117.47261090695848,
+            23.694255382639774
+          ],
+          "note": null,
+          "planned_arrival_date": "2026-09-24",
+          "planned_arrival_period": "evening",
+          "planned_departure_date": "2026-09-26",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:2",
+          "name": "泉州",
+          "gps": [
+            118.575017,
+            24.924571
+          ],
+          "note": "蟳埔为泉州段机位候选，不单列路线站",
+          "planned_arrival_date": "2026-09-26",
+          "planned_arrival_period": "afternoon",
+          "planned_departure_date": "2026-09-28",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:3",
+          "name": "武夷山",
+          "gps": [
+            117.954734,
+            27.659782
+          ],
+          "note": null,
+          "planned_arrival_date": "2026-09-28",
+          "planned_arrival_period": "afternoon",
+          "planned_departure_date": "2026-10-01",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:5",
+          "name": "景德镇",
+          "gps": [
+            117.172714,
+            29.272319
+          ],
+          "note": null,
+          "planned_arrival_date": "2026-10-01",
+          "planned_arrival_period": "afternoon",
+          "planned_departure_date": "2026-10-02",
+          "planned_departure_period": "afternoon"
+        },
+        {
+          "id": "route-primary-shangbao-first:6",
+          "name": "落星墩",
+          "gps": [
+            116.03210314419435,
+            29.435626135151455
+          ],
+          "note": "条件项；水位、岸线或安全条件不成立即跳过",
+          "planned_arrival_date": "2026-10-02",
+          "planned_arrival_period": "afternoon",
+          "planned_departure_date": "2026-10-03",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:7",
+          "name": "南昌",
+          "gps": [
+            115.85307102389159,
+            28.686305729501644
+          ],
+          "note": "休整并一次性确定尾段顺序",
+          "planned_arrival_date": "2026-10-03",
+          "planned_arrival_period": "afternoon",
+          "planned_departure_date": "2026-10-04",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:8",
+          "name": "上堡梯田",
+          "gps": [
+            114.03552810499761,
+            25.755373055837875
+          ],
+          "note": null,
+          "planned_arrival_date": "2026-10-04",
+          "planned_arrival_period": "evening",
+          "planned_departure_date": "2026-10-06",
+          "planned_departure_period": "afternoon"
+        },
+        {
+          "id": "route-primary-shangbao-first:9",
+          "name": "筑峰顶",
+          "gps": [
+            114.36098992225024,
+            26.1092523901194
+          ],
+          "note": null,
+          "planned_arrival_date": "2026-10-06",
+          "planned_arrival_period": "evening",
+          "planned_departure_date": "2026-10-07",
+          "planned_departure_period": "morning"
+        },
+        {
+          "id": "route-primary-shangbao-first:10",
+          "name": "深圳",
+          "gps": [
+            113.938529,
+            22.551291
+          ],
+          "note": "10 月 7 日必须返抵",
+          "planned_arrival_date": "2026-10-07",
+          "planned_arrival_period": "evening",
+          "planned_departure_date": "2026-10-07",
+          "planned_departure_period": "evening"
+        }
+      ]
+    },
+    "pyxis:freeform_active": false
+  }
+}

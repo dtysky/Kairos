@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pyxis" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd_2026-10-04_0000-0400_part-2</name>
+    <trkseg>
+      <trkpt lat="27.0298006" lon="114.9297457">
+        <ele>92.14490291347495</ele>
+        <time>2026-10-03T19:51:46.835Z</time>
+        <speed>0.2978606</speed>
+      </trkpt>
+      <trkpt lat="27.0297729" lon="114.9297527">
+        <ele>92.6963561155449</ele>
+        <time>2026-10-03T19:52:40.835Z</time>
+        <speed>0.32515302</speed>
+      </trkpt>
+      <trkpt lat="27.0297422" lon="114.9297516">
+        <ele>94.18743607449535</ele>
+        <time>2026-10-03T19:54:58.839Z</time>
+        <speed>0.27512044</speed>
+      </trkpt>
+      <trkpt lat="27.029714" lon="114.9297452">
+        <ele>91.20025955634908</ele>
+        <time>2026-10-03T19:55:46.836Z</time>
+        <speed>0.22934186</speed>
+      </trkpt>
+      <trkpt lat="27.029689" lon="114.9297334">
+        <ele>93.83671906179843</ele>
+        <time>2026-10-03T19:57:19.836Z</time>
+        <speed>0.21171246</speed>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

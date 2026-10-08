@@ -1,0 +1,37 @@
+{
+  "updatedAt": "2026-10-08T09:39:11.740Z",
+  "projects": {
+    "中秋国庆闽赣自驾 [Color]": {
+      "projectName": "中秋国庆闽赣自驾 [Color]",
+      "safeProjectName": "Color",
+      "latestSnapshot": {
+        "projectName": "中秋国庆闽赣自驾 [Color]",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/color/resolve-projects/Color/中秋国庆闽赣自驾 [Color].drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/color/resolve-projects/Color/中秋国庆闽赣自驾 [Color].drp",
+        "createdAt": "2026-10-08T09:39:10Z",
+        "mode": "manual",
+        "retention": "latest-only",
+        "action": "manual",
+        "rootId": "root-min-gan-drone",
+        "database": {
+          "DbType": "Disk",
+          "DbName": "Local Database"
+        },
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+      },
+      "snapshots": [
+        {
+          "projectName": "中秋国庆闽赣自驾 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/color/resolve-projects/Color/snapshots/20261008T063935140Z-external-a9288f88.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/color/resolve-projects/Color/中秋国庆闽赣自驾 [Color].drp",
+          "createdAt": "2026-10-08T06:39:35.140Z",
+          "mode": "external",
+          "retention": "archive",
+          "action": "register_external_drp",
+          "detail": "2026-10-08 按用户要求改为 Log × 横竖屏前的完整备份，包含 stills/LUTs。"
+        }
+      ],
+      "updatedAt": "2026-10-08T09:39:11.740Z"
+    }
+  }
+}

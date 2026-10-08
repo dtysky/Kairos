@@ -1,0 +1,126 @@
+{
+  "name": "中秋国庆闽赣自驾",
+  "description": "2026 年中秋国庆闽赣自驾剪辑项目。采用 Pharos「闽赣山海人文弹性自驾」2026-09-24 至 2026-10-07 行程及 canonical 执行记录，时区 Asia/Shanghai。素材按设备/用途分根；raw、ts 照片序列与 merge 中间素材不作为当前剪辑素材扫描。",
+  "createdAt": "2026-10-08T02:47:36.905Z",
+  "mappings": [
+    {
+      "rootId": "root-min-gan-zve1",
+      "rootCode": "zve1",
+      "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/zve1",
+      "rawPath": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/zve1",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1",
+          "rawPath": "D:\\p3-conv\\2026-guoqin\\zve1"
+        }
+      ],
+      "description": "ZV-E1 主机位视频，包含行车、现场口播与旅行记录素材。",
+      "enabled": true,
+      "label": "中秋国庆闽赣/zve1",
+      "priority": 1,
+      "category": "camera",
+      "notes": [
+        "ZV-E1 主机位视频，包含行车、现场口播与旅行记录素材。"
+      ],
+      "color": {
+        "colorSpaceProfile": "slog3",
+        "transformPresetKey": "Sony/SLog3SGamut3.CineToLC-709.cube"
+      }
+    },
+    {
+      "rootId": "root-min-gan-a7r6",
+      "rootCode": "a7r6",
+      "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/a7r6",
+      "rawPath": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/a7r6",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6",
+          "rawPath": "D:\\p3-conv\\2026-guoqin\\a7r6"
+        }
+      ],
+      "description": "A7R6 视频素材。",
+      "enabled": true,
+      "label": "中秋国庆闽赣/a7r6",
+      "priority": 2,
+      "category": "camera",
+      "notes": [
+        "A7R6 视频素材。"
+      ],
+      "color": {
+        "colorSpaceProfile": "slog3",
+        "transformPresetKey": "Sony/SLog3SGamut3.CineToLC-709.cube"
+      }
+    },
+    {
+      "rootId": "root-min-gan-drone",
+      "rootCode": "drone",
+      "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/drone",
+      "rawPath": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/drone",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone",
+          "rawPath": "D:\\p3-conv\\2026-guoqin\\drone"
+        }
+      ],
+      "description": "无人机航拍视频及同名 SRT 遥测 sidecar。",
+      "enabled": true,
+      "label": "中秋国庆闽赣/drone",
+      "priority": 3,
+      "category": "drone",
+      "notes": [
+        "无人机航拍视频及同名 SRT 遥测 sidecar。"
+      ],
+      "color": {
+        "colorSpaceProfile": "dlog",
+        "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
+      }
+    },
+    {
+      "rootId": "root-min-gan-ts-final",
+      "rootCode": "timelapse",
+      "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/ts-final",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\ts-final"
+        }
+      ],
+      "description": "已导出的延时摄影视频；导入后需人工确认原始拍摄日期、时间和时区。",
+      "enabled": true,
+      "label": "中秋国庆闽赣/ts-final",
+      "priority": 4,
+      "notes": [
+        "已导出的延时摄影视频；导入后需人工确认原始拍摄日期、时间和时区。"
+      ],
+      "captureTimePolicy": {
+        "mode": "manual-required",
+        "requiredKinds": [
+          "video"
+        ],
+        "reason": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+      }
+    },
+    {
+      "rootId": "root-min-gan-photos",
+      "rootCode": "photos",
+      "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/photos",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\photos"
+        }
+      ],
+      "description": "处理后的照片。",
+      "enabled": true,
+      "label": "中秋国庆闽赣/photos",
+      "priority": 5,
+      "notes": [
+        "处理后的照片。"
+      ]
+    }
+  ],
+  "pharos": {
+    "includedTripIds": [
+      "trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd"
+    ]
+  },
+  "materialPatternPhrases": []
+}
