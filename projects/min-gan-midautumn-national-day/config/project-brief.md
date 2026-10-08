@@ -9,21 +9,21 @@
 Root代号：zve1
 原始路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/zve1
 备选路径1：F:\vlog-proj\20260924_中秋国庆闽赣自驾\zve1
-原始路径1：D:\p3-conv\2026-guoqin\zve1
+原始路径1：D:\vlog-p3-conv\raw-2026-guoqin\zve1
 说明：ZV-E1 主机位视频，包含行车、现场口播与旅行记录素材。
 
 路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/a7r6
 Root代号：a7r6
 原始路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/a7r6
 备选路径1：F:\vlog-proj\20260924_中秋国庆闽赣自驾\a7r6
-原始路径1：D:\p3-conv\2026-guoqin\a7r6
+原始路径1：D:\vlog-p3-conv\raw-2026-guoqin\a7r6
 说明：A7R6 视频素材。
 
 路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/drone
 Root代号：drone
 原始路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/raw/drone
 备选路径1：F:\vlog-proj\20260924_中秋国庆闽赣自驾\drone
-原始路径1：D:\p3-conv\2026-guoqin\drone
+原始路径1：D:\vlog-p3-conv\raw-2026-guoqin\drone
 说明：无人机航拍视频及同名 SRT 遥测 sidecar。
 
 路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/ts-final

@@ -11,7 +11,7 @@
       "alternatePaths": [
         {
           "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1",
-          "rawPath": "D:\\p3-conv\\2026-guoqin\\zve1"
+          "rawPath": "D:\\vlog-p3-conv\\raw-2026-guoqin\\zve1"
         }
       ],
       "description": "ZV-E1 主机位视频，包含行车、现场口播与旅行记录素材。",
@@ -35,7 +35,7 @@
       "alternatePaths": [
         {
           "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6",
-          "rawPath": "D:\\p3-conv\\2026-guoqin\\a7r6"
+          "rawPath": "D:\\vlog-p3-conv\\raw-2026-guoqin\\a7r6"
         }
       ],
       "description": "A7R6 视频素材。",
@@ -59,7 +59,7 @@
       "alternatePaths": [
         {
           "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone",
-          "rawPath": "D:\\p3-conv\\2026-guoqin\\drone"
+          "rawPath": "D:\\vlog-p3-conv\\raw-2026-guoqin\\drone"
         }
       ],
       "description": "无人机航拍视频及同名 SRT 遥测 sidecar。",
