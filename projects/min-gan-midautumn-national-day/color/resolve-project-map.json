@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-11T15:27:41.312Z",
+  "updatedAt": "2026-10-12T15:26:31.062Z",
   "projects": {
     "中秋国庆闽赣自驾 [Color]": {
       "projectName": "中秋国庆闽赣自驾 [Color]",
@@ -8,11 +8,11 @@
         "projectName": "中秋国庆闽赣自驾 [Color]",
         "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\color\\resolve-projects\\Color\\中秋国庆闽赣自驾 [Color].drp",
         "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\color\\resolve-projects\\Color\\中秋国庆闽赣自驾 [Color].drp",
-        "createdAt": "2026-10-11T15:27:38Z",
+        "createdAt": "2026-10-12T15:26:28Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
-        "rootId": "root-min-gan-zve1",
+        "rootId": "root-min-gan-drone",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -31,7 +31,7 @@
           "detail": "2026-10-08 按用户要求改为 Log × 横竖屏前的完整备份，包含 stills/LUTs。"
         }
       ],
-      "updatedAt": "2026-10-11T15:27:41.312Z"
+      "updatedAt": "2026-10-12T15:26:31.062Z"
     }
   }
 }

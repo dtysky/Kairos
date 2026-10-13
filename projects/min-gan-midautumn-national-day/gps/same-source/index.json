@@ -1,0 +1,1645 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-10-13T02:07:32.552Z",
+  "trackCount": 182,
+  "tracks": [
+    {
+      "id": "sidecar-srt-022cc48f12c30f10",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-022cc48f12c30f10.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003080038_0727_D.SRT",
+      "pointCount": 6205,
+      "startTime": "2026-10-03T00:00:39.000Z",
+      "endTime": "2026-10-03T00:02:22.507Z"
+    },
+    {
+      "id": "sidecar-srt-02ca9e3eb7331eae",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-02ca9e3eb7331eae.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060714_0944_D.SRT",
+      "pointCount": 996,
+      "startTime": "2026-10-05T22:07:15.000Z",
+      "endTime": "2026-10-05T22:07:31.599Z"
+    },
+    {
+      "id": "sidecar-srt-030fde7a13662a8d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-030fde7a13662a8d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060617_0936_D.SRT",
+      "pointCount": 450,
+      "startTime": "2026-10-05T22:06:17.000Z",
+      "endTime": "2026-10-05T22:06:24.490Z"
+    },
+    {
+      "id": "sidecar-srt-049e873533d6e540",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-049e873533d6e540.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003081825_0767_D.SRT",
+      "pointCount": 721,
+      "startTime": "2026-10-03T00:18:25.000Z",
+      "endTime": "2026-10-03T00:18:37.011Z"
+    },
+    {
+      "id": "sidecar-srt-05121281bbaf88b4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-05121281bbaf88b4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060747_0059_D.SRT",
+      "pointCount": 478,
+      "startTime": "2026-09-25T22:07:47.000Z",
+      "endTime": "2026-09-25T22:07:54.955Z"
+    },
+    {
+      "id": "sidecar-srt-054223ec07a6f521",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-054223ec07a6f521.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075200_0703_D.SRT",
+      "pointCount": 506,
+      "startTime": "2026-10-02T23:52:01.000Z",
+      "endTime": "2026-10-02T23:52:09.424Z"
+    },
+    {
+      "id": "sidecar-srt-06b6c63e15729bff",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-06b6c63e15729bff.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925121255_0026_D.SRT",
+      "pointCount": 939,
+      "startTime": "2026-09-25T04:12:55.000Z",
+      "endTime": "2026-09-25T04:13:10.648Z"
+    },
+    {
+      "id": "sidecar-srt-07362936eff74d77",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-07362936eff74d77.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060615_0052_D.SRT",
+      "pointCount": 880,
+      "startTime": "2026-09-25T22:06:15.000Z",
+      "endTime": "2026-09-25T22:06:29.661Z"
+    },
+    {
+      "id": "sidecar-srt-0b28bb5a71de4f8e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0b28bb5a71de4f8e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006072521_0096_D.SRT",
+      "pointCount": 205,
+      "startTime": "2026-10-05T23:25:22.000Z",
+      "endTime": "2026-10-05T23:25:25.402Z"
+    },
+    {
+      "id": "sidecar-srt-0dcae7770a135579",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0dcae7770a135579.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927171813_0236_D.SRT",
+      "pointCount": 410,
+      "startTime": "2026-09-27T09:18:14.000Z",
+      "endTime": "2026-09-27T09:18:20.823Z"
+    },
+    {
+      "id": "sidecar-srt-0e0b0c1a018e7b2a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0e0b0c1a018e7b2a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925125730_0070_D.SRT",
+      "pointCount": 1432,
+      "startTime": "2026-09-25T04:57:30.000Z",
+      "endTime": "2026-09-25T04:57:53.874Z"
+    },
+    {
+      "id": "sidecar-srt-0f7b176c55e7bcb6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0f7b176c55e7bcb6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003080023_0726_D.SRT",
+      "pointCount": 48,
+      "startTime": "2026-10-03T00:00:23.000Z",
+      "endTime": "2026-10-03T00:00:23.783Z"
+    },
+    {
+      "id": "sidecar-srt-101452b6164e614c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-101452b6164e614c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172916_0311_D.SRT",
+      "pointCount": 426,
+      "startTime": "2026-09-27T09:29:17.000Z",
+      "endTime": "2026-09-27T09:29:24.090Z"
+    },
+    {
+      "id": "sidecar-srt-102b062232098a1d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-102b062232098a1d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003080512_0736_D.SRT",
+      "pointCount": 6039,
+      "startTime": "2026-10-03T00:05:12.000Z",
+      "endTime": "2026-10-03T00:06:52.737Z"
+    },
+    {
+      "id": "sidecar-srt-12459ae79a265835",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-12459ae79a265835.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071606_0573_D.SRT",
+      "pointCount": 434,
+      "startTime": "2026-10-02T23:16:06.000Z",
+      "endTime": "2026-10-02T23:16:13.223Z"
+    },
+    {
+      "id": "sidecar-srt-13151e9a7e3fe828",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-13151e9a7e3fe828.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925121158_0022_D.SRT",
+      "pointCount": 682,
+      "startTime": "2026-09-25T04:11:58.000Z",
+      "endTime": "2026-09-25T04:12:09.361Z"
+    },
+    {
+      "id": "sidecar-srt-13e6447fac5339c1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-13e6447fac5339c1.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005084006_0856_D.SRT",
+      "pointCount": 534,
+      "startTime": "2026-10-05T00:40:07.000Z",
+      "endTime": "2026-10-05T00:40:15.891Z"
+    },
+    {
+      "id": "sidecar-srt-191a2b1bf864c3b8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-191a2b1bf864c3b8.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172254_0264_D.SRT",
+      "pointCount": 347,
+      "startTime": "2026-09-27T09:22:55.000Z",
+      "endTime": "2026-09-27T09:23:00.770Z"
+    },
+    {
+      "id": "sidecar-srt-19c82d2b7222d9d2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-19c82d2b7222d9d2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083448_0804_D.SRT",
+      "pointCount": 765,
+      "startTime": "2026-10-05T00:34:48.000Z",
+      "endTime": "2026-10-05T00:35:00.745Z"
+    },
+    {
+      "id": "sidecar-srt-1aca04df0e632670",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1aca04df0e632670.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006072533_0097_D.SRT",
+      "pointCount": 13759,
+      "startTime": "2026-10-05T23:25:33.000Z",
+      "endTime": "2026-10-05T23:29:22.538Z"
+    },
+    {
+      "id": "sidecar-srt-1d135ad6a007fc28",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1d135ad6a007fc28.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072853_0649_D.SRT",
+      "pointCount": 1716,
+      "startTime": "2026-10-02T23:28:54.000Z",
+      "endTime": "2026-10-02T23:29:22.605Z"
+    },
+    {
+      "id": "sidecar-srt-1d475517f5e5b0cf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1d475517f5e5b0cf.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005084130_0869_D.SRT",
+      "pointCount": 422,
+      "startTime": "2026-10-05T00:41:31.000Z",
+      "endTime": "2026-10-05T00:41:38.023Z"
+    },
+    {
+      "id": "sidecar-srt-1d8cdb452653ca2e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1d8cdb452653ca2e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003082304_0772_D.SRT",
+      "pointCount": 435,
+      "startTime": "2026-10-03T00:23:05.000Z",
+      "endTime": "2026-10-03T00:23:12.240Z"
+    },
+    {
+      "id": "sidecar-srt-1da2076f76cd4197",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1da2076f76cd4197.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174344_0178_D.SRT",
+      "pointCount": 749,
+      "startTime": "2026-09-25T09:43:45.000Z",
+      "endTime": "2026-09-25T09:43:57.479Z"
+    },
+    {
+      "id": "sidecar-srt-1fc0d9dfb6f7b7b6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1fc0d9dfb6f7b7b6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075350_0706_D.SRT",
+      "pointCount": 1827,
+      "startTime": "2026-10-02T23:53:51.000Z",
+      "endTime": "2026-10-02T23:54:21.464Z"
+    },
+    {
+      "id": "sidecar-srt-20712c2be871d9dd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-20712c2be871d9dd.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005084348_0889_D.SRT",
+      "pointCount": 824,
+      "startTime": "2026-10-05T00:43:49.000Z",
+      "endTime": "2026-10-05T00:44:02.730Z"
+    },
+    {
+      "id": "sidecar-srt-226f953b01ea56d4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-226f953b01ea56d4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925125602_0063_D.SRT",
+      "pointCount": 1355,
+      "startTime": "2026-09-25T04:56:03.000Z",
+      "endTime": "2026-09-25T04:56:25.589Z"
+    },
+    {
+      "id": "sidecar-srt-2296c2cea3bd5689",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2296c2cea3bd5689.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063014_0004_D.SRT",
+      "pointCount": 977,
+      "startTime": "2026-10-05T22:30:15.000Z",
+      "endTime": "2026-10-05T22:30:31.282Z"
+    },
+    {
+      "id": "sidecar-srt-264096c426ebdf9d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-264096c426ebdf9d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927171930_0244_D.SRT",
+      "pointCount": 1179,
+      "startTime": "2026-09-27T09:19:30.000Z",
+      "endTime": "2026-09-27T09:19:49.648Z"
+    },
+    {
+      "id": "sidecar-srt-2b31efae753097b7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2b31efae753097b7.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929054822_0422_D.SRT",
+      "pointCount": 2111,
+      "startTime": "2026-09-28T21:48:22.000Z",
+      "endTime": "2026-09-28T21:48:57.202Z"
+    },
+    {
+      "id": "sidecar-srt-2d2e451449b80ae2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2d2e451449b80ae2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055439_0459_D.SRT",
+      "pointCount": 1422,
+      "startTime": "2026-09-28T21:54:40.000Z",
+      "endTime": "2026-09-28T21:55:03.707Z"
+    },
+    {
+      "id": "sidecar-srt-2f41dcb0caecc456",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2f41dcb0caecc456.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174040_0141_D.SRT",
+      "pointCount": 1078,
+      "startTime": "2026-09-25T09:40:41.000Z",
+      "endTime": "2026-09-25T09:40:58.968Z"
+    },
+    {
+      "id": "sidecar-srt-3115dd684637e4d8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3115dd684637e4d8.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062538_0515_D.SRT",
+      "pointCount": 829,
+      "startTime": "2026-09-28T22:25:39.000Z",
+      "endTime": "2026-09-28T22:25:52.813Z"
+    },
+    {
+      "id": "sidecar-srt-3204863b68809b2f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3204863b68809b2f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071631_0577_D.SRT",
+      "pointCount": 3597,
+      "startTime": "2026-10-02T23:16:31.000Z",
+      "endTime": "2026-10-02T23:17:30.995Z"
+    },
+    {
+      "id": "sidecar-srt-3490a8c8f4dfccfe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3490a8c8f4dfccfe.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062827_0989_D.SRT",
+      "pointCount": 1865,
+      "startTime": "2026-10-05T22:28:27.000Z",
+      "endTime": "2026-10-05T22:28:58.098Z"
+    },
+    {
+      "id": "sidecar-srt-357068986d579c9d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-357068986d579c9d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925120847_0001_D.SRT",
+      "pointCount": 806,
+      "startTime": "2026-09-25T04:08:47.000Z",
+      "endTime": "2026-09-25T04:09:00.430Z"
+    },
+    {
+      "id": "sidecar-srt-38ccc4bcb90dafeb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-38ccc4bcb90dafeb.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174132_0148_D.SRT",
+      "pointCount": 2392,
+      "startTime": "2026-09-25T09:41:32.000Z",
+      "endTime": "2026-09-25T09:42:11.890Z"
+    },
+    {
+      "id": "sidecar-srt-39c725373f62155c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-39c725373f62155c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006071709_0065_D.SRT",
+      "pointCount": 622,
+      "startTime": "2026-10-05T23:17:09.000Z",
+      "endTime": "2026-10-05T23:17:19.360Z"
+    },
+    {
+      "id": "sidecar-srt-3c979304943fb120",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3c979304943fb120.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929054553_0401_D.SRT",
+      "pointCount": 739,
+      "startTime": "2026-09-28T21:45:53.000Z",
+      "endTime": "2026-09-28T21:46:05.312Z"
+    },
+    {
+      "id": "sidecar-srt-3e529a0c59fa5cb2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3e529a0c59fa5cb2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062936_0996_D.SRT",
+      "pointCount": 776,
+      "startTime": "2026-10-05T22:29:37.000Z",
+      "endTime": "2026-10-05T22:29:49.929Z"
+    },
+    {
+      "id": "sidecar-srt-3f4c200a01bd8a73",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3f4c200a01bd8a73.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062331_0960_D.SRT",
+      "pointCount": 886,
+      "startTime": "2026-10-05T22:23:31.000Z",
+      "endTime": "2026-10-05T22:23:45.764Z"
+    },
+    {
+      "id": "sidecar-srt-4154f85f7ad27d76",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4154f85f7ad27d76.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063353_0031_D.SRT",
+      "pointCount": 818,
+      "startTime": "2026-10-05T22:33:53.000Z",
+      "endTime": "2026-10-05T22:34:06.630Z"
+    },
+    {
+      "id": "sidecar-srt-41807dbacd31996b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-41807dbacd31996b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063619_0048_D.SRT",
+      "pointCount": 1422,
+      "startTime": "2026-10-05T22:36:19.000Z",
+      "endTime": "2026-10-05T22:36:42.707Z"
+    },
+    {
+      "id": "sidecar-srt-41c2e283bc8e8804",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-41c2e283bc8e8804.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925130741_0098_D.SRT",
+      "pointCount": 7175,
+      "startTime": "2026-09-25T05:07:41.000Z",
+      "endTime": "2026-09-25T05:09:40.690Z"
+    },
+    {
+      "id": "sidecar-srt-42bea27133b0f148",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-42bea27133b0f148.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075306_0705_D.SRT",
+      "pointCount": 1124,
+      "startTime": "2026-10-02T23:53:07.000Z",
+      "endTime": "2026-10-02T23:53:25.735Z"
+    },
+    {
+      "id": "sidecar-srt-458a3541b93dcfc3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-458a3541b93dcfc3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071744_0581_D.SRT",
+      "pointCount": 920,
+      "startTime": "2026-10-02T23:17:44.000Z",
+      "endTime": "2026-10-02T23:17:59.331Z"
+    },
+    {
+      "id": "sidecar-srt-4668581e861ae91d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4668581e861ae91d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925131417_0134_D.SRT",
+      "pointCount": 1648,
+      "startTime": "2026-09-25T05:14:18.000Z",
+      "endTime": "2026-09-25T05:14:45.477Z"
+    },
+    {
+      "id": "sidecar-srt-46e8705166d41af5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-46e8705166d41af5.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003080325_0734_D.SRT",
+      "pointCount": 1137,
+      "startTime": "2026-10-03T00:03:25.000Z",
+      "endTime": "2026-10-03T00:03:43.947Z"
+    },
+    {
+      "id": "sidecar-srt-470880bb40ce3e41",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-470880bb40ce3e41.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083909_0850_D.SRT",
+      "pointCount": 498,
+      "startTime": "2026-10-05T00:39:10.000Z",
+      "endTime": "2026-10-05T00:39:18.291Z"
+    },
+    {
+      "id": "sidecar-srt-4d1a0f5f32e77c3b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4d1a0f5f32e77c3b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055716_0011_D.SRT",
+      "pointCount": 33,
+      "startTime": "2026-09-25T21:57:17.000Z",
+      "endTime": "2026-09-25T21:57:17.533Z"
+    },
+    {
+      "id": "sidecar-srt-4dc95ccc3dc4a035",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4dc95ccc3dc4a035.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062948_0552_D.SRT",
+      "pointCount": 667,
+      "startTime": "2026-09-28T22:29:48.000Z",
+      "endTime": "2026-09-28T22:29:59.110Z"
+    },
+    {
+      "id": "sidecar-srt-4f2cae8dd582d22c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4f2cae8dd582d22c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927173515_0347_D.SRT",
+      "pointCount": 1807,
+      "startTime": "2026-09-27T09:35:15.000Z",
+      "endTime": "2026-09-27T09:35:45.130Z"
+    },
+    {
+      "id": "sidecar-srt-4f8e3b22c3431f3e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4f8e3b22c3431f3e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055416_0002_D.SRT",
+      "pointCount": 662,
+      "startTime": "2026-09-25T21:54:16.000Z",
+      "endTime": "2026-09-25T21:54:27.027Z"
+    },
+    {
+      "id": "sidecar-srt-50b2227a14b48bbe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-50b2227a14b48bbe.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060608_0051_D.SRT",
+      "pointCount": 246,
+      "startTime": "2026-09-25T22:06:08.000Z",
+      "endTime": "2026-09-25T22:06:12.085Z"
+    },
+    {
+      "id": "sidecar-srt-52657be0b25a4e40",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-52657be0b25a4e40.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172350_0275_D.SRT",
+      "pointCount": 226,
+      "startTime": "2026-09-27T09:23:50.000Z",
+      "endTime": "2026-09-27T09:23:53.753Z"
+    },
+    {
+      "id": "sidecar-srt-52ec16bd148c43b1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-52ec16bd148c43b1.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925130357_0097_D.SRT",
+      "pointCount": 7951,
+      "startTime": "2026-09-25T05:03:58.000Z",
+      "endTime": "2026-09-25T05:06:10.637Z"
+    },
+    {
+      "id": "sidecar-srt-541ac840c8c94db3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-541ac840c8c94db3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055611_0004_D.SRT",
+      "pointCount": 478,
+      "startTime": "2026-09-25T21:56:11.000Z",
+      "endTime": "2026-09-25T21:56:18.957Z"
+    },
+    {
+      "id": "sidecar-srt-542ab9b304d38aa7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-542ab9b304d38aa7.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174228_0153_D.SRT",
+      "pointCount": 391,
+      "startTime": "2026-09-25T09:42:29.000Z",
+      "endTime": "2026-09-25T09:42:35.506Z"
+    },
+    {
+      "id": "sidecar-srt-57a86ce3355c997a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-57a86ce3355c997a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061649_0486_D.SRT",
+      "pointCount": 1159,
+      "startTime": "2026-09-28T22:16:49.000Z",
+      "endTime": "2026-09-28T22:17:08.319Z"
+    },
+    {
+      "id": "sidecar-srt-583ea64c1d68eb9f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-583ea64c1d68eb9f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055614_0466_D.SRT",
+      "pointCount": 808,
+      "startTime": "2026-09-28T21:56:15.000Z",
+      "endTime": "2026-09-28T21:56:28.463Z"
+    },
+    {
+      "id": "sidecar-srt-58f4d0aa780b1d7d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-58f4d0aa780b1d7d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062608_0974_D.SRT",
+      "pointCount": 530,
+      "startTime": "2026-10-05T22:26:08.000Z",
+      "endTime": "2026-10-05T22:26:16.825Z"
+    },
+    {
+      "id": "sidecar-srt-5c345106bb9bbc5b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5c345106bb9bbc5b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063210_0022_D.SRT",
+      "pointCount": 872,
+      "startTime": "2026-10-05T22:32:11.000Z",
+      "endTime": "2026-10-05T22:32:25.531Z"
+    },
+    {
+      "id": "sidecar-srt-5d8fe910fd1f95d0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5d8fe910fd1f95d0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172016_0249_D.SRT",
+      "pointCount": 649,
+      "startTime": "2026-09-27T09:20:16.000Z",
+      "endTime": "2026-09-27T09:20:26.807Z"
+    },
+    {
+      "id": "sidecar-srt-5ebc8a90f40596bd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ebc8a90f40596bd.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060100_0903_D.SRT",
+      "pointCount": 694,
+      "startTime": "2026-10-05T22:01:00.000Z",
+      "endTime": "2026-10-05T22:01:11.561Z"
+    },
+    {
+      "id": "sidecar-srt-5ebf7e701c0f3967",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ebf7e701c0f3967.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055412_0001_D.SRT",
+      "pointCount": 83,
+      "startTime": "2026-09-25T21:54:13.000Z",
+      "endTime": "2026-09-25T21:54:14.367Z"
+    },
+    {
+      "id": "sidecar-srt-5f188a4040f18c8d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5f188a4040f18c8d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060446_0049_D.SRT",
+      "pointCount": 701,
+      "startTime": "2026-09-25T22:04:47.000Z",
+      "endTime": "2026-09-25T22:04:58.678Z"
+    },
+    {
+      "id": "sidecar-srt-608e07bd6ab45f8b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-608e07bd6ab45f8b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055526_0003_D.SRT",
+      "pointCount": 2598,
+      "startTime": "2026-09-25T21:55:26.000Z",
+      "endTime": "2026-09-25T21:56:09.327Z"
+    },
+    {
+      "id": "sidecar-srt-6281545506ddcc42",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6281545506ddcc42.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060340_0922_D.SRT",
+      "pointCount": 1795,
+      "startTime": "2026-10-05T22:03:40.000Z",
+      "endTime": "2026-10-05T22:04:09.930Z"
+    },
+    {
+      "id": "sidecar-srt-636b95461c21ebf0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-636b95461c21ebf0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925120914_0005_D.SRT",
+      "pointCount": 1101,
+      "startTime": "2026-09-25T04:09:14.000Z",
+      "endTime": "2026-09-25T04:09:32.351Z"
+    },
+    {
+      "id": "sidecar-srt-66133cf8ebe42fce",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-66133cf8ebe42fce.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083753_0842_D.SRT",
+      "pointCount": 578,
+      "startTime": "2026-10-05T00:37:54.000Z",
+      "endTime": "2026-10-05T00:38:03.626Z"
+    },
+    {
+      "id": "sidecar-srt-66360c7e4415a854",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-66360c7e4415a854.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055238_0444_D.SRT",
+      "pointCount": 1580,
+      "startTime": "2026-09-28T21:52:38.000Z",
+      "endTime": "2026-09-28T21:53:04.343Z"
+    },
+    {
+      "id": "sidecar-srt-671c4d967f212da4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-671c4d967f212da4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055313_0448_D.SRT",
+      "pointCount": 849,
+      "startTime": "2026-09-28T21:53:14.000Z",
+      "endTime": "2026-09-28T21:53:28.147Z"
+    },
+    {
+      "id": "sidecar-srt-67b24cf5815a7308",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-67b24cf5815a7308.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083357_0794_D.SRT",
+      "pointCount": 639,
+      "startTime": "2026-10-05T00:33:57.000Z",
+      "endTime": "2026-10-05T00:34:07.643Z"
+    },
+    {
+      "id": "sidecar-srt-67dc48fd00ed9f38",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-67dc48fd00ed9f38.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075440_0707_D.SRT",
+      "pointCount": 811,
+      "startTime": "2026-10-02T23:54:40.000Z",
+      "endTime": "2026-10-02T23:54:53.513Z"
+    },
+    {
+      "id": "sidecar-srt-6858eb9a42acd585",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6858eb9a42acd585.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927173656_0357_D.SRT",
+      "pointCount": 1395,
+      "startTime": "2026-09-27T09:36:56.000Z",
+      "endTime": "2026-09-27T09:37:19.256Z"
+    },
+    {
+      "id": "sidecar-srt-68d6c856aa3c2e11",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-68d6c856aa3c2e11.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060629_0937_D.SRT",
+      "pointCount": 953,
+      "startTime": "2026-10-05T22:06:29.000Z",
+      "endTime": "2026-10-05T22:06:44.882Z"
+    },
+    {
+      "id": "sidecar-srt-68dda4502486dd8e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-68dda4502486dd8e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083140_0779_D.SRT",
+      "pointCount": 1133,
+      "startTime": "2026-10-05T00:31:40.000Z",
+      "endTime": "2026-10-05T00:31:58.885Z"
+    },
+    {
+      "id": "sidecar-srt-697a8f9a84ff3570",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-697a8f9a84ff3570.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925175142_0232_D.SRT",
+      "pointCount": 827,
+      "startTime": "2026-09-25T09:51:43.000Z",
+      "endTime": "2026-09-25T09:51:56.777Z"
+    },
+    {
+      "id": "sidecar-srt-699097fd72536ce0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-699097fd72536ce0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062737_0533_D.SRT",
+      "pointCount": 1644,
+      "startTime": "2026-09-28T22:27:37.000Z",
+      "endTime": "2026-09-28T22:28:04.411Z"
+    },
+    {
+      "id": "sidecar-srt-6a00892fc7aea67c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6a00892fc7aea67c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003073034_0651_D.SRT",
+      "pointCount": 1184,
+      "startTime": "2026-10-02T23:30:34.000Z",
+      "endTime": "2026-10-02T23:30:53.731Z"
+    },
+    {
+      "id": "sidecar-srt-6b712e1fba258ae0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6b712e1fba258ae0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061633_0485_D.SRT",
+      "pointCount": 334,
+      "startTime": "2026-09-28T22:16:33.000Z",
+      "endTime": "2026-09-28T22:16:38.555Z"
+    },
+    {
+      "id": "sidecar-srt-6eb4498c304160cc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6eb4498c304160cc.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061343_0470_D.SRT",
+      "pointCount": 1156,
+      "startTime": "2026-09-28T22:13:44.000Z",
+      "endTime": "2026-09-28T22:14:03.269Z"
+    },
+    {
+      "id": "sidecar-srt-6f7e010a7ed67861",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6f7e010a7ed67861.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083922_0851_D.SRT",
+      "pointCount": 97,
+      "startTime": "2026-10-05T00:39:23.000Z",
+      "endTime": "2026-10-05T00:39:24.600Z"
+    },
+    {
+      "id": "sidecar-srt-6ff246eeaedbcc87",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6ff246eeaedbcc87.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055959_0027_D.SRT",
+      "pointCount": 1530,
+      "startTime": "2026-09-25T21:59:59.000Z",
+      "endTime": "2026-09-25T22:00:24.509Z"
+    },
+    {
+      "id": "sidecar-srt-708fcc5277def493",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-708fcc5277def493.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060057_0034_D.SRT",
+      "pointCount": 990,
+      "startTime": "2026-09-25T22:00:57.000Z",
+      "endTime": "2026-09-25T22:01:13.499Z"
+    },
+    {
+      "id": "sidecar-srt-70bb21513fa0fe85",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-70bb21513fa0fe85.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063431_0032_D.SRT",
+      "pointCount": 1052,
+      "startTime": "2026-10-05T22:34:31.000Z",
+      "endTime": "2026-10-05T22:34:48.534Z"
+    },
+    {
+      "id": "sidecar-srt-753231f0f7263840",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-753231f0f7263840.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061453_0475_D.SRT",
+      "pointCount": 1050,
+      "startTime": "2026-09-28T22:14:53.000Z",
+      "endTime": "2026-09-28T22:15:10.500Z"
+    },
+    {
+      "id": "sidecar-srt-761e3c1420220f25",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-761e3c1420220f25.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061435_0474_D.SRT",
+      "pointCount": 812,
+      "startTime": "2026-09-28T22:14:36.000Z",
+      "endTime": "2026-09-28T22:14:49.530Z"
+    },
+    {
+      "id": "sidecar-srt-7be8cf0f62af8d7f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7be8cf0f62af8d7f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060315_0918_D.SRT",
+      "pointCount": 732,
+      "startTime": "2026-10-05T22:03:16.000Z",
+      "endTime": "2026-10-05T22:03:28.195Z"
+    },
+    {
+      "id": "sidecar-srt-7c2a94b93fb1f6ab",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7c2a94b93fb1f6ab.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075940_0725_D.SRT",
+      "pointCount": 980,
+      "startTime": "2026-10-02T23:59:40.000Z",
+      "endTime": "2026-10-02T23:59:56.333Z"
+    },
+    {
+      "id": "sidecar-srt-7c7c3ad4fd23818b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7c7c3ad4fd23818b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055734_0012_D.SRT",
+      "pointCount": 2565,
+      "startTime": "2026-09-25T21:57:34.000Z",
+      "endTime": "2026-09-25T21:58:16.777Z"
+    },
+    {
+      "id": "sidecar-srt-7ef7a593a6780098",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7ef7a593a6780098.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060137_0038_D.SRT",
+      "pointCount": 654,
+      "startTime": "2026-09-25T22:01:37.000Z",
+      "endTime": "2026-09-25T22:01:47.894Z"
+    },
+    {
+      "id": "sidecar-srt-800a00ea2dab5e46",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-800a00ea2dab5e46.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062654_0526_D.SRT",
+      "pointCount": 749,
+      "startTime": "2026-09-28T22:26:54.000Z",
+      "endTime": "2026-09-28T22:27:06.475Z"
+    },
+    {
+      "id": "sidecar-srt-80aec2cb72cc1ba7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-80aec2cb72cc1ba7.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062744_0985_D.SRT",
+      "pointCount": 1514,
+      "startTime": "2026-10-05T22:27:44.000Z",
+      "endTime": "2026-10-05T22:28:09.242Z"
+    },
+    {
+      "id": "sidecar-srt-834904703897b157",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-834904703897b157.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072805_0648_D.SRT",
+      "pointCount": 1002,
+      "startTime": "2026-10-02T23:28:05.000Z",
+      "endTime": "2026-10-02T23:28:21.696Z"
+    },
+    {
+      "id": "sidecar-srt-83896b18269b3750",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-83896b18269b3750.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063721_0058_D.SRT",
+      "pointCount": 1092,
+      "startTime": "2026-10-05T22:37:21.000Z",
+      "endTime": "2026-10-05T22:37:39.201Z"
+    },
+    {
+      "id": "sidecar-srt-83a3165f283027c6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-83a3165f283027c6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072232_0603_D.SRT",
+      "pointCount": 1592,
+      "startTime": "2026-10-02T23:22:33.000Z",
+      "endTime": "2026-10-02T23:22:59.543Z"
+    },
+    {
+      "id": "sidecar-srt-8623f2f9a1c6c7d2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8623f2f9a1c6c7d2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075837_0723_D.SRT",
+      "pointCount": 461,
+      "startTime": "2026-10-02T23:58:37.000Z",
+      "endTime": "2026-10-02T23:58:44.674Z"
+    },
+    {
+      "id": "sidecar-srt-8688e51fb972fff6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8688e51fb972fff6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062625_0975_D.SRT",
+      "pointCount": 1333,
+      "startTime": "2026-10-05T22:26:25.000Z",
+      "endTime": "2026-10-05T22:26:47.222Z"
+    },
+    {
+      "id": "sidecar-srt-8b6c37cab3f4ad66",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8b6c37cab3f4ad66.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174524_0198_D.SRT",
+      "pointCount": 1013,
+      "startTime": "2026-09-25T09:45:24.000Z",
+      "endTime": "2026-09-25T09:45:40.883Z"
+    },
+    {
+      "id": "sidecar-srt-8ca0ba3719c83e52",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8ca0ba3719c83e52.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063331_0030_D.SRT",
+      "pointCount": 1048,
+      "startTime": "2026-10-05T22:33:31.000Z",
+      "endTime": "2026-10-05T22:33:48.467Z"
+    },
+    {
+      "id": "sidecar-srt-8cfa40818507b84f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8cfa40818507b84f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083228_0783_D.SRT",
+      "pointCount": 586,
+      "startTime": "2026-10-05T00:32:29.000Z",
+      "endTime": "2026-10-05T00:32:38.759Z"
+    },
+    {
+      "id": "sidecar-srt-8dc7006aca9cb540",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8dc7006aca9cb540.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172716_0301_D.SRT",
+      "pointCount": 695,
+      "startTime": "2026-09-27T09:27:16.000Z",
+      "endTime": "2026-09-27T09:27:27.578Z"
+    },
+    {
+      "id": "sidecar-srt-8e24d748ad2c068e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8e24d748ad2c068e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172457_0283_D.SRT",
+      "pointCount": 1164,
+      "startTime": "2026-09-27T09:24:58.000Z",
+      "endTime": "2026-09-27T09:25:17.402Z"
+    },
+    {
+      "id": "sidecar-srt-8e626692dd83d5b4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8e626692dd83d5b4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061833_0495_D.SRT",
+      "pointCount": 287,
+      "startTime": "2026-09-28T22:18:33.000Z",
+      "endTime": "2026-09-28T22:18:37.770Z"
+    },
+    {
+      "id": "sidecar-srt-8e92bfb86d7f79e0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8e92bfb86d7f79e0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072955_0650_D.SRT",
+      "pointCount": 556,
+      "startTime": "2026-10-02T23:29:55.000Z",
+      "endTime": "2026-10-02T23:30:04.258Z"
+    },
+    {
+      "id": "sidecar-srt-8f5d5b1f7364e05a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8f5d5b1f7364e05a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003081600_0766_D.SRT",
+      "pointCount": 706,
+      "startTime": "2026-10-03T00:16:01.000Z",
+      "endTime": "2026-10-03T00:16:12.761Z"
+    },
+    {
+      "id": "sidecar-srt-9003a6f5c33db3a3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9003a6f5c33db3a3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071431_0562_D.SRT",
+      "pointCount": 1033,
+      "startTime": "2026-10-02T23:14:31.000Z",
+      "endTime": "2026-10-02T23:14:48.217Z"
+    },
+    {
+      "id": "sidecar-srt-90a6dcfaa8dd5961",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-90a6dcfaa8dd5961.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926061543_0084_D.SRT",
+      "pointCount": 1470,
+      "startTime": "2026-09-25T22:15:44.000Z",
+      "endTime": "2026-09-25T22:16:08.502Z"
+    },
+    {
+      "id": "sidecar-srt-92ecbda9fc07296d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-92ecbda9fc07296d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062349_0961_D.SRT",
+      "pointCount": 445,
+      "startTime": "2026-10-05T22:23:49.000Z",
+      "endTime": "2026-10-05T22:23:56.407Z"
+    },
+    {
+      "id": "sidecar-srt-95b0e4dc89ba728c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-95b0e4dc89ba728c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926061637_0085_D.SRT",
+      "pointCount": 1006,
+      "startTime": "2026-09-25T22:16:37.000Z",
+      "endTime": "2026-09-25T22:16:53.762Z"
+    },
+    {
+      "id": "sidecar-srt-9688b3b3b862faa6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9688b3b3b862faa6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060232_0911_D.SRT",
+      "pointCount": 640,
+      "startTime": "2026-10-05T22:02:32.000Z",
+      "endTime": "2026-10-05T22:02:42.660Z"
+    },
+    {
+      "id": "sidecar-srt-96c8a01ddf45e338",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-96c8a01ddf45e338.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063036_0005_D.SRT",
+      "pointCount": 1133,
+      "startTime": "2026-10-05T22:30:37.000Z",
+      "endTime": "2026-10-05T22:30:55.885Z"
+    },
+    {
+      "id": "sidecar-srt-98a24f1b3028029b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-98a24f1b3028029b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174934_0229_D.SRT",
+      "pointCount": 646,
+      "startTime": "2026-09-25T09:49:34.000Z",
+      "endTime": "2026-09-25T09:49:44.757Z"
+    },
+    {
+      "id": "sidecar-srt-98e535e8e2e335e0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-98e535e8e2e335e0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925175127_0231_D.SRT",
+      "pointCount": 342,
+      "startTime": "2026-09-25T09:51:28.000Z",
+      "endTime": "2026-09-25T09:51:33.687Z"
+    },
+    {
+      "id": "sidecar-srt-9cd8fe245fc5f92d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9cd8fe245fc5f92d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172310_0268_D.SRT",
+      "pointCount": 554,
+      "startTime": "2026-09-27T09:23:11.000Z",
+      "endTime": "2026-09-27T09:23:20.225Z"
+    },
+    {
+      "id": "sidecar-srt-a0313e6f5c5ba4ff",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a0313e6f5c5ba4ff.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172404_0279_D.SRT",
+      "pointCount": 1727,
+      "startTime": "2026-09-27T09:24:05.000Z",
+      "endTime": "2026-09-27T09:24:33.796Z"
+    },
+    {
+      "id": "sidecar-srt-a5b5937ec9a27094",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a5b5937ec9a27094.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083030_0774_D.SRT",
+      "pointCount": 46,
+      "startTime": "2026-10-05T00:30:30.000Z",
+      "endTime": "2026-10-05T00:30:30.750Z"
+    },
+    {
+      "id": "sidecar-srt-a811e586efeff16b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a811e586efeff16b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927173239_0334_D.SRT",
+      "pointCount": 5567,
+      "startTime": "2026-09-27T09:32:40.000Z",
+      "endTime": "2026-09-27T09:34:12.862Z"
+    },
+    {
+      "id": "sidecar-srt-a83a75ebe09510fc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a83a75ebe09510fc.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062611_0522_D.SRT",
+      "pointCount": 1474,
+      "startTime": "2026-09-28T22:26:11.000Z",
+      "endTime": "2026-09-28T22:26:35.574Z"
+    },
+    {
+      "id": "sidecar-srt-a9de14274eac56d6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a9de14274eac56d6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172032_0250_D.SRT",
+      "pointCount": 179,
+      "startTime": "2026-09-27T09:20:32.000Z",
+      "endTime": "2026-09-27T09:20:34.968Z"
+    },
+    {
+      "id": "sidecar-srt-aa4ea3fa469ce6d9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-aa4ea3fa469ce6d9.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071905_0589_D.SRT",
+      "pointCount": 2344,
+      "startTime": "2026-10-02T23:19:05.000Z",
+      "endTime": "2026-10-02T23:19:44.090Z"
+    },
+    {
+      "id": "sidecar-srt-aaaada6711682b5c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-aaaada6711682b5c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172635_0294_D.SRT",
+      "pointCount": 1328,
+      "startTime": "2026-09-27T09:26:36.000Z",
+      "endTime": "2026-09-27T09:26:58.139Z"
+    },
+    {
+      "id": "sidecar-srt-ad427e28d77caa1a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ad427e28d77caa1a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062851_0544_D.SRT",
+      "pointCount": 511,
+      "startTime": "2026-09-28T22:28:51.000Z",
+      "endTime": "2026-09-28T22:28:59.506Z"
+    },
+    {
+      "id": "sidecar-srt-b09b50da33f90f38",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b09b50da33f90f38.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929054617_0405_D.SRT",
+      "pointCount": 1601,
+      "startTime": "2026-09-28T21:46:17.000Z",
+      "endTime": "2026-09-28T21:46:43.693Z"
+    },
+    {
+      "id": "sidecar-srt-b154d66069d3e1bf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b154d66069d3e1bf.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075902_0724_D.SRT",
+      "pointCount": 1156,
+      "startTime": "2026-10-02T23:59:03.000Z",
+      "endTime": "2026-10-02T23:59:22.269Z"
+    },
+    {
+      "id": "sidecar-srt-b1c2abb284f1eb42",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b1c2abb284f1eb42.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075704_0720_D.SRT",
+      "pointCount": 627,
+      "startTime": "2026-10-02T23:57:04.000Z",
+      "endTime": "2026-10-02T23:57:14.443Z"
+    },
+    {
+      "id": "sidecar-srt-b389837dd6159efc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b389837dd6159efc.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075800_0722_D.SRT",
+      "pointCount": 2013,
+      "startTime": "2026-10-02T23:58:00.000Z",
+      "endTime": "2026-10-02T23:58:33.567Z"
+    },
+    {
+      "id": "sidecar-srt-b405cae0b96e2914",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b405cae0b96e2914.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063112_0009_D.SRT",
+      "pointCount": 1078,
+      "startTime": "2026-10-05T22:31:12.000Z",
+      "endTime": "2026-10-05T22:31:29.968Z"
+    },
+    {
+      "id": "sidecar-srt-b55d0cd5686d5685",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b55d0cd5686d5685.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083806_0843_D.SRT",
+      "pointCount": 1504,
+      "startTime": "2026-10-05T00:38:06.000Z",
+      "endTime": "2026-10-05T00:38:31.075Z"
+    },
+    {
+      "id": "sidecar-srt-b67e85d6f88d9a58",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b67e85d6f88d9a58.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083044_0775_D.SRT",
+      "pointCount": 1230,
+      "startTime": "2026-10-05T00:30:44.000Z",
+      "endTime": "2026-10-05T00:31:04.504Z"
+    },
+    {
+      "id": "sidecar-srt-b6b658c4d8b7726e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b6b658c4d8b7726e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927173015_0318_D.SRT",
+      "pointCount": 2768,
+      "startTime": "2026-09-27T09:30:15.000Z",
+      "endTime": "2026-09-27T09:31:01.164Z"
+    },
+    {
+      "id": "sidecar-srt-b783d782d0a78f04",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b783d782d0a78f04.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005084211_0873_D.SRT",
+      "pointCount": 683,
+      "startTime": "2026-10-05T00:42:11.000Z",
+      "endTime": "2026-10-05T00:42:22.377Z"
+    },
+    {
+      "id": "sidecar-srt-b7d2578733bbc193",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b7d2578733bbc193.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925175022_0230_D.SRT",
+      "pointCount": 1047,
+      "startTime": "2026-09-25T09:50:22.000Z",
+      "endTime": "2026-09-25T09:50:39.450Z"
+    },
+    {
+      "id": "sidecar-srt-bb9150f5f76c99be",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bb9150f5f76c99be.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055909_0023_D.SRT",
+      "pointCount": 1145,
+      "startTime": "2026-09-25T21:59:09.000Z",
+      "endTime": "2026-09-25T21:59:28.085Z"
+    },
+    {
+      "id": "sidecar-srt-bba6138cf8a14460",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bba6138cf8a14460.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072408_0617_D.SRT",
+      "pointCount": 2655,
+      "startTime": "2026-10-02T23:24:08.000Z",
+      "endTime": "2026-10-02T23:24:52.278Z"
+    },
+    {
+      "id": "sidecar-srt-bbc290a11bdcc7f0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bbc290a11bdcc7f0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055339_0452_D.SRT",
+      "pointCount": 1079,
+      "startTime": "2026-09-28T21:53:39.000Z",
+      "endTime": "2026-09-28T21:53:56.984Z"
+    },
+    {
+      "id": "sidecar-srt-bc366f5167a0ed19",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bc366f5167a0ed19.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062533_0973_D.SRT",
+      "pointCount": 568,
+      "startTime": "2026-10-05T22:25:33.000Z",
+      "endTime": "2026-10-05T22:25:42.459Z"
+    },
+    {
+      "id": "sidecar-srt-bde3bedafb5a2b43",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bde3bedafb5a2b43.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003081113_0764_D.SRT",
+      "pointCount": 559,
+      "startTime": "2026-10-03T00:11:14.000Z",
+      "endTime": "2026-10-03T00:11:23.309Z"
+    },
+    {
+      "id": "sidecar-srt-be9775c7d0e7a020",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-be9775c7d0e7a020.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083306_0790_D.SRT",
+      "pointCount": 1464,
+      "startTime": "2026-10-05T00:33:07.000Z",
+      "endTime": "2026-10-05T00:33:31.408Z"
+    },
+    {
+      "id": "sidecar-srt-beb0a6e8511dab0b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-beb0a6e8511dab0b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062410_0962_D.SRT",
+      "pointCount": 370,
+      "startTime": "2026-10-05T22:24:10.000Z",
+      "endTime": "2026-10-05T22:24:16.155Z"
+    },
+    {
+      "id": "sidecar-srt-c028401548bb87b0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c028401548bb87b0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925121047_0012_D.SRT",
+      "pointCount": 1056,
+      "startTime": "2026-09-25T04:10:48.000Z",
+      "endTime": "2026-09-25T04:11:05.601Z"
+    },
+    {
+      "id": "sidecar-srt-c0d6dfba3a52958a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c0d6dfba3a52958a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060004_0899_D.SRT",
+      "pointCount": 869,
+      "startTime": "2026-10-05T22:00:05.000Z",
+      "endTime": "2026-10-05T22:00:19.481Z"
+    },
+    {
+      "id": "sidecar-srt-c26ed4c1481cd6eb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c26ed4c1481cd6eb.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172527_0287_D.SRT",
+      "pointCount": 1336,
+      "startTime": "2026-09-27T09:25:27.000Z",
+      "endTime": "2026-09-27T09:25:49.272Z"
+    },
+    {
+      "id": "sidecar-srt-c2904b80bd681ac3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c2904b80bd681ac3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006062418_0963_D.SRT",
+      "pointCount": 2273,
+      "startTime": "2026-10-05T22:24:18.000Z",
+      "endTime": "2026-10-05T22:24:55.905Z"
+    },
+    {
+      "id": "sidecar-srt-c2bc7dc2b62b7759",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c2bc7dc2b62b7759.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060132_0904_D.SRT",
+      "pointCount": 1637,
+      "startTime": "2026-10-05T22:01:32.000Z",
+      "endTime": "2026-10-05T22:01:59.294Z"
+    },
+    {
+      "id": "sidecar-srt-c342d762d3f9e558",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c342d762d3f9e558.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083957_0855_D.SRT",
+      "pointCount": 223,
+      "startTime": "2026-10-05T00:39:57.000Z",
+      "endTime": "2026-10-05T00:40:00.703Z"
+    },
+    {
+      "id": "sidecar-srt-c650a3e6f8172f07",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c650a3e6f8172f07.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071243_0560_D.SRT",
+      "pointCount": 226,
+      "startTime": "2026-10-02T23:12:43.000Z",
+      "endTime": "2026-10-02T23:12:46.753Z"
+    },
+    {
+      "id": "sidecar-srt-c938152a6b02a989",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c938152a6b02a989.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261005083523_0808_D.SRT",
+      "pointCount": 749,
+      "startTime": "2026-10-05T00:35:23.000Z",
+      "endTime": "2026-10-05T00:35:35.479Z"
+    },
+    {
+      "id": "sidecar-srt-c938a68a016f1918",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c938a68a016f1918.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075137_0702_D.SRT",
+      "pointCount": 913,
+      "startTime": "2026-10-02T23:51:38.000Z",
+      "endTime": "2026-10-02T23:51:53.215Z"
+    },
+    {
+      "id": "sidecar-srt-ca374e95851dfe9d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ca374e95851dfe9d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925131043_0111_D.SRT",
+      "pointCount": 598,
+      "startTime": "2026-09-25T05:10:44.000Z",
+      "endTime": "2026-09-25T05:10:53.959Z"
+    },
+    {
+      "id": "sidecar-srt-d147ae87407d54ba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d147ae87407d54ba.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062807_0534_D.SRT",
+      "pointCount": 687,
+      "startTime": "2026-09-28T22:28:07.000Z",
+      "endTime": "2026-09-28T22:28:18.444Z"
+    },
+    {
+      "id": "sidecar-srt-d16fa6981a12954c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d16fa6981a12954c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071325_0561_D.SRT",
+      "pointCount": 1202,
+      "startTime": "2026-10-02T23:13:26.000Z",
+      "endTime": "2026-10-02T23:13:46.036Z"
+    },
+    {
+      "id": "sidecar-srt-d5615f77ab0a4460",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d5615f77ab0a4460.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075220_0704_D.SRT",
+      "pointCount": 1485,
+      "startTime": "2026-10-02T23:52:20.000Z",
+      "endTime": "2026-10-02T23:52:44.758Z"
+    },
+    {
+      "id": "sidecar-srt-d5d5c943acb27858",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d5d5c943acb27858.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003082331_0773_D.SRT",
+      "pointCount": 1915,
+      "startTime": "2026-10-03T00:23:31.000Z",
+      "endTime": "2026-10-03T00:24:02.932Z"
+    },
+    {
+      "id": "sidecar-srt-d72c07a64fb83fb0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d72c07a64fb83fb0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075130_0701_D.SRT",
+      "pointCount": 59,
+      "startTime": "2026-10-02T23:51:30.000Z",
+      "endTime": "2026-10-02T23:51:30.966Z"
+    },
+    {
+      "id": "sidecar-srt-d7f29ff2107c3926",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d7f29ff2107c3926.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926055853_0019_D.SRT",
+      "pointCount": 133,
+      "startTime": "2026-09-25T21:58:54.000Z",
+      "endTime": "2026-09-25T21:58:56.201Z"
+    },
+    {
+      "id": "sidecar-srt-d81a23fb66ce8e9a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d81a23fb66ce8e9a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075041_0700_D.SRT",
+      "pointCount": 624,
+      "startTime": "2026-10-02T23:50:41.000Z",
+      "endTime": "2026-10-02T23:50:51.393Z"
+    },
+    {
+      "id": "sidecar-srt-d93bc7adf8699b25",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d93bc7adf8699b25.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061803_0491_D.SRT",
+      "pointCount": 988,
+      "startTime": "2026-09-28T22:18:04.000Z",
+      "endTime": "2026-09-28T22:18:20.466Z"
+    },
+    {
+      "id": "sidecar-srt-d9b4cb17ef6af160",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d9b4cb17ef6af160.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925125819_0074_D.SRT",
+      "pointCount": 363,
+      "startTime": "2026-09-25T04:58:19.000Z",
+      "endTime": "2026-09-25T04:58:25.038Z"
+    },
+    {
+      "id": "sidecar-srt-dbca17f8e18ea2fd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dbca17f8e18ea2fd.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006060535_0935_D.SRT",
+      "pointCount": 1046,
+      "startTime": "2026-10-05T22:05:35.000Z",
+      "endTime": "2026-10-05T22:05:52.434Z"
+    },
+    {
+      "id": "sidecar-srt-de26516f633bd27b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-de26516f633bd27b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929054726_0418_D.SRT",
+      "pointCount": 1584,
+      "startTime": "2026-09-28T21:47:26.000Z",
+      "endTime": "2026-09-28T21:47:52.410Z"
+    },
+    {
+      "id": "sidecar-srt-dfd95c56b5fbec58",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dfd95c56b5fbec58.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003080353_0735_D.SRT",
+      "pointCount": 362,
+      "startTime": "2026-10-03T00:03:54.000Z",
+      "endTime": "2026-10-03T00:04:00.022Z"
+    },
+    {
+      "id": "sidecar-srt-e140114b7730bd2e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e140114b7730bd2e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060543_0050_D.SRT",
+      "pointCount": 829,
+      "startTime": "2026-09-25T22:05:43.000Z",
+      "endTime": "2026-09-25T22:05:56.813Z"
+    },
+    {
+      "id": "sidecar-srt-e3fd647145a98723",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e3fd647145a98723.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003082220_0770_D.SRT",
+      "pointCount": 980,
+      "startTime": "2026-10-03T00:22:20.000Z",
+      "endTime": "2026-10-03T00:22:36.333Z"
+    },
+    {
+      "id": "sidecar-srt-e445c23103e2c9f9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e445c23103e2c9f9.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003071838_0588_D.SRT",
+      "pointCount": 766,
+      "startTime": "2026-10-02T23:18:38.000Z",
+      "endTime": "2026-10-02T23:18:50.762Z"
+    },
+    {
+      "id": "sidecar-srt-e9c623cf2ceeade1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e9c623cf2ceeade1.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927171951_0245_D.SRT",
+      "pointCount": 910,
+      "startTime": "2026-09-27T09:19:52.000Z",
+      "endTime": "2026-09-27T09:20:07.161Z"
+    },
+    {
+      "id": "sidecar-srt-ead767dbf8442984",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ead767dbf8442984.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062913_0548_D.SRT",
+      "pointCount": 986,
+      "startTime": "2026-09-28T22:29:14.000Z",
+      "endTime": "2026-09-28T22:29:30.433Z"
+    },
+    {
+      "id": "sidecar-srt-eb0b20b291ca239e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eb0b20b291ca239e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003082123_0769_D.SRT",
+      "pointCount": 2011,
+      "startTime": "2026-10-03T00:21:23.000Z",
+      "endTime": "2026-10-03T00:21:56.534Z"
+    },
+    {
+      "id": "sidecar-srt-eb39e9ee50915e67",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eb39e9ee50915e67.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003081951_0768_D.SRT",
+      "pointCount": 1733,
+      "startTime": "2026-10-03T00:19:51.000Z",
+      "endTime": "2026-10-03T00:20:19.896Z"
+    },
+    {
+      "id": "sidecar-srt-ebe014c317a48e12",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ebe014c317a48e12.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061841_0496_D.SRT",
+      "pointCount": 1697,
+      "startTime": "2026-09-28T22:18:41.000Z",
+      "endTime": "2026-09-28T22:19:09.295Z"
+    },
+    {
+      "id": "sidecar-srt-ed07b751ec07701d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ed07b751ec07701d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925174424_0185_D.SRT",
+      "pointCount": 754,
+      "startTime": "2026-09-25T09:44:24.000Z",
+      "endTime": "2026-09-25T09:44:36.562Z"
+    },
+    {
+      "id": "sidecar-srt-ed0d80e96695fc90",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ed0d80e96695fc90.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261006063235_0023_D.SRT",
+      "pointCount": 2011,
+      "startTime": "2026-10-05T22:32:35.000Z",
+      "endTime": "2026-10-05T22:33:08.534Z"
+    },
+    {
+      "id": "sidecar-srt-ed70602598e5f7ed",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ed70602598e5f7ed.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925125836_0075_D.SRT",
+      "pointCount": 983,
+      "startTime": "2026-09-25T04:58:36.000Z",
+      "endTime": "2026-09-25T04:58:52.383Z"
+    },
+    {
+      "id": "sidecar-srt-ef84c6d747504f51",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ef84c6d747504f51.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260927172039_0251_D.SRT",
+      "pointCount": 3449,
+      "startTime": "2026-09-27T09:20:39.000Z",
+      "endTime": "2026-09-27T09:21:36.511Z"
+    },
+    {
+      "id": "sidecar-srt-f1848b21443a318e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1848b21443a318e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260925131127_0115_D.SRT",
+      "pointCount": 840,
+      "startTime": "2026-09-25T05:11:28.000Z",
+      "endTime": "2026-09-25T05:11:41.997Z"
+    },
+    {
+      "id": "sidecar-srt-f1bebc3ff290c560",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1bebc3ff290c560.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003081132_0765_D.SRT",
+      "pointCount": 1923,
+      "startTime": "2026-10-03T00:11:32.000Z",
+      "endTime": "2026-10-03T00:12:04.066Z"
+    },
+    {
+      "id": "sidecar-srt-f3aa95edf20b65a8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f3aa95edf20b65a8.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260926060406_0045_D.SRT",
+      "pointCount": 256,
+      "startTime": "2026-09-25T22:04:06.000Z",
+      "endTime": "2026-09-25T22:04:10.253Z"
+    },
+    {
+      "id": "sidecar-srt-f5172148f36cfb9f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f5172148f36cfb9f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003075722_0721_D.SRT",
+      "pointCount": 825,
+      "startTime": "2026-10-02T23:57:23.000Z",
+      "endTime": "2026-10-02T23:57:36.747Z"
+    },
+    {
+      "id": "sidecar-srt-f6dadc00aca34505",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f6dadc00aca34505.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072340_0613_D.SRT",
+      "pointCount": 1020,
+      "startTime": "2026-10-02T23:23:40.000Z",
+      "endTime": "2026-10-02T23:23:57.000Z"
+    },
+    {
+      "id": "sidecar-srt-f753bbd704a1d914",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f753bbd704a1d914.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003072033_0590_D.SRT",
+      "pointCount": 1770,
+      "startTime": "2026-10-02T23:20:34.000Z",
+      "endTime": "2026-10-02T23:21:03.513Z"
+    },
+    {
+      "id": "sidecar-srt-f83db6230e80a5fa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f83db6230e80a5fa.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20261003082247_0771_D.SRT",
+      "pointCount": 390,
+      "startTime": "2026-10-03T00:22:48.000Z",
+      "endTime": "2026-10-03T00:22:54.489Z"
+    }
+  ]
+}

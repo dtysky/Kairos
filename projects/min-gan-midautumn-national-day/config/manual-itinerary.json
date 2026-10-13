@@ -1,0 +1,61 @@
+{
+  "prose": "",
+  "segments": [],
+  "captureTimeOverrides": [
+    {
+      "rootRef": "root-min-gan-ts-final",
+      "sourcePath": "20260926_东山岛金銮湾日出.mp4",
+      "currentCapturedAt": "2026-10-07T17:12:53.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-09-26",
+      "correctedTime": "06:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+    },
+    {
+      "rootRef": "root-min-gan-ts-final",
+      "sourcePath": "20260927_泉州珞珈寺日落月升.mp4",
+      "currentCapturedAt": "2026-10-08T04:25:26.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-09-27",
+      "correctedTime": "18:20:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+    },
+    {
+      "rootRef": "root-min-gan-ts-final",
+      "sourcePath": "20260929_武夷山齐云峰日出云海1.mp4",
+      "currentCapturedAt": "2026-10-07T20:18:36.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-09-29",
+      "correctedTime": "06:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+    },
+    {
+      "rootRef": "root-min-gan-ts-final",
+      "sourcePath": "20260929_武夷山齐云峰日出云海2.mp4",
+      "currentCapturedAt": "2026-10-08T00:12:01.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-09-29",
+      "correctedTime": "06:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+    },
+    {
+      "rootRef": "root-min-gan-ts-final",
+      "sourcePath": "20261006_上犹筑峰顶日出.mp4",
+      "currentCapturedAt": "2026-10-08T04:27:27.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-10-06",
+      "correctedTime": "06:10:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时导出文件的容器时间不作为原始拍摄时间，需人工确认。"
+    }
+  ]
+}

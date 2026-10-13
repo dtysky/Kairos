@@ -23,6 +23,12 @@
         "ZV-E1 主机位视频，包含行车、现场口播与旅行记录素材。"
       ],
       "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        },
         "colorSpaceProfile": "slog3",
         "transformPresetKey": "Sony/SLog3SGamut3.CineToLC-709.cube"
       }
@@ -47,6 +53,12 @@
         "A7R6 视频素材。"
       ],
       "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        },
         "colorSpaceProfile": "slog3",
         "transformPresetKey": "Sony/SLog3SGamut3.CineToLC-709.cube"
       }
@@ -71,6 +83,12 @@
         "无人机航拍视频及同名 SRT 遥测 sidecar。"
       ],
       "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 40000
+        },
         "colorSpaceProfile": "dlog",
         "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
       }

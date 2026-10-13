@@ -1,0 +1,2723 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-10-13T16:25:48.959Z",
+  "sourcePath": "H:\\SacredGrove\\Pharos\\carta\\shots\\trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd\\field-guide.json",
+  "sourceSnapshot": "analysis/transcript-glossary-sources/b0f8cda01474d86cddaede8683d38546fd39b935a3e591dc38d0476fd87b3fa2.json",
+  "sourceSha256": "b0f8cda01474d86cddaede8683d38546fd39b935a3e591dc38d0476fd87b3fa2",
+  "tripId": "trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd",
+  "revision": 5,
+  "title": "闽赣山海人文创作资料包",
+  "pothosRef": "Pothos:research/20260910-min-gan-creative-field-guide.md; research/20260929-wuyishan-dahongpao-xiamei-field-dossier.md",
+  "policy": "post-ASR context only; curated factual-section spellings; no aliases, ASR hints or automatic substitutions; research is not execution evidence",
+  "terms": [
+    {
+      "canonical": "东山岛",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-erosion",
+        "src-dongshan-wind-climate",
+        "src-dongshan-coral"
+      ]
+    },
+    {
+      "canonical": "金銮湾",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-erosion",
+        "src-dongshan-wind-climate",
+        "src-dongshan-coral"
+      ]
+    },
+    {
+      "canonical": "南门湾",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-erosion",
+        "src-dongshan-wind-climate",
+        "src-dongshan-coral"
+      ]
+    },
+    {
+      "canonical": "南屿",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-erosion",
+        "src-dongshan-wind-climate",
+        "src-dongshan-coral"
+      ]
+    },
+    {
+      "canonical": "乌礁湾",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-erosion",
+        "src-dongshan-wind-climate",
+        "src-dongshan-coral"
+      ]
+    },
+    {
+      "canonical": "澳角",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "澳角湾",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "澳仔山",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "苏峰山",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "台湾海峡",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "樟塘溪",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "铜陵镇",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-geomorphology",
+        "src-dongshan-aojiao",
+        "src-dongshan-wind-climate",
+        "src-dongshan-wind-farm",
+        "src-dongshan-port-wind",
+        "src-dongshan-offshore-wind",
+        "src-dongshan-double-sea",
+        "src-dongshan-beach-dynamics",
+        "src-dongshan-nanmen"
+      ]
+    },
+    {
+      "canonical": "铜山古城",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "顶街",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "关帝庙",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "九仙山",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "澳雅头",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "岵嵝山",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "营前大街",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "铜山水寨",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "西门澳",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "剪瓷雕",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-waterworks",
+        "src-dongshan-tongshan-history",
+        "src-dongshan-tongshan-trade",
+        "src-dongshan-guandi-history",
+        "src-dongshan-guandi-present"
+      ]
+    },
+    {
+      "canonical": "铜钵村",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-5",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-family-letters",
+        "src-dongshan-widow-village"
+      ]
+    },
+    {
+      "canonical": "康美镇",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-5",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-family-letters",
+        "src-dongshan-widow-village"
+      ]
+    },
+    {
+      "canonical": "赤山林场",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-afforestation",
+        "src-dongshan-chishan-forest",
+        "src-dongshan-aojiao"
+      ]
+    },
+    {
+      "canonical": "木麻黄",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-afforestation",
+        "src-dongshan-chishan-forest",
+        "src-dongshan-aojiao"
+      ]
+    },
+    {
+      "canonical": "谷文昌",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-afforestation",
+        "src-dongshan-chishan-forest",
+        "src-dongshan-aojiao"
+      ]
+    },
+    {
+      "canonical": "小管",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "巴浪鱼",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "肖米",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "烧腱灵",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "金钱肉",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "四进士汤",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "鱼脯",
+      "placeId": "dongshan-island",
+      "sectionId": "place-dongshan-island-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-dongshan-food-overview",
+        "src-dongshan-sijinshi-detail",
+        "src-dongshan-shaojianling",
+        "src-dongshan-sijinshi-cctv"
+      ]
+    },
+    {
+      "canonical": "开元寺",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "西街",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "天后宫",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "德济门",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "聚宝街",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "顺济庙",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "顺济桥",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "晋江",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "妈祖",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-kaiyuan",
+        "src-quanzhou-west-street",
+        "src-quanzhou-south-port",
+        "src-quanzhou-jubao"
+      ]
+    },
+    {
+      "canonical": "面线糊",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "烧肉粽",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "牛肉羹",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "土笋冻",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "醋肉",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "姜母鸭",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-overview",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-food",
+        "src-quanzhou-ginger-duck"
+      ]
+    },
+    {
+      "canonical": "润饼菜",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-runbing"
+      ]
+    },
+    {
+      "canonical": "四果汤",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-four-fruit-soup"
+      ]
+    },
+    {
+      "canonical": "石花膏",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-four-fruit-soup"
+      ]
+    },
+    {
+      "canonical": "阿达子",
+      "placeId": "quanzhou-old-city",
+      "sectionId": "place-quanzhou-old-city-2-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-four-fruit-soup"
+      ]
+    },
+    {
+      "canonical": "泉州湾",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "洛阳江",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "石狮",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "祥芝",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "大坠岛",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "小坠岛",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-quanzhou-bay-transgression"
+      ]
+    },
+    {
+      "canonical": "晋江大桥",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jinjiang-bridge",
+        "src-xunpu-profile",
+        "src-quanzhou-bay-road-bridge",
+        "src-quanzhou-bay-rail-bridge"
+      ]
+    },
+    {
+      "canonical": "泉州湾跨海大桥",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jinjiang-bridge",
+        "src-xunpu-profile",
+        "src-quanzhou-bay-road-bridge",
+        "src-quanzhou-bay-rail-bridge"
+      ]
+    },
+    {
+      "canonical": "蚶江",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jinjiang-bridge",
+        "src-xunpu-profile",
+        "src-quanzhou-bay-road-bridge",
+        "src-quanzhou-bay-rail-bridge"
+      ]
+    },
+    {
+      "canonical": "秀涂",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jinjiang-bridge",
+        "src-xunpu-profile",
+        "src-quanzhou-bay-road-bridge",
+        "src-quanzhou-bay-rail-bridge"
+      ]
+    },
+    {
+      "canonical": "张坂",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jinjiang-bridge",
+        "src-xunpu-profile",
+        "src-quanzhou-bay-road-bridge",
+        "src-quanzhou-bay-rail-bridge"
+      ]
+    },
+    {
+      "canonical": "祥芝角灯塔",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-xiangzhi-profile",
+        "src-xiangzhi-navigation",
+        "src-xiangzhi-port",
+        "src-gufu-laver"
+      ]
+    },
+    {
+      "canonical": "古浮湾",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-xiangzhi-profile",
+        "src-xiangzhi-navigation",
+        "src-xiangzhi-port",
+        "src-gufu-laver"
+      ]
+    },
+    {
+      "canonical": "古浮紫菜",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-quanzhou-bay-morphology",
+        "src-xiangzhi-profile",
+        "src-xiangzhi-navigation",
+        "src-xiangzhi-port",
+        "src-gufu-laver"
+      ]
+    },
+    {
+      "canonical": "黄金海岸",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shishi-golden-coast",
+        "src-luojia-tide"
+      ]
+    },
+    {
+      "canonical": "洛伽寺",
+      "placeId": "quanzhou-bay-xiangzhi",
+      "sectionId": "place-quanzhou-bay-xiangzhi-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shishi-golden-coast",
+        "src-luojia-tide"
+      ]
+    },
+    {
+      "canonical": "蟳埔",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "蟳埔女",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "大裾衫",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "阔脚裤",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "簪花围",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "蚵壳厝",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-standard",
+        "src-xunpu-dress-labor",
+        "src-xunpu-current-tourism"
+      ]
+    },
+    {
+      "canonical": "海蛎煎",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "炣海蛎",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "蚵仔粥",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "西施舌",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "红蟳饭",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "菜头粿",
+      "placeId": "xunpu-village",
+      "sectionId": "place-xunpu-village-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xunpu-oyster",
+        "src-xunpu-cuisine",
+        "src-quanzhou-caitouguo",
+        "src-minnan-ke-seafood",
+        "src-xunpu-red-crab-rice"
+      ]
+    },
+    {
+      "canonical": "武夷山",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-chongan-traces",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "崇安组",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-chongan-traces",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "大王峰",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-chongan-traces",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "九曲溪",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "桐木关",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "星村",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "武夷宫",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "崇阳溪",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "建溪",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "闽江",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "黄岗山",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "建阳",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "建瓯",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-jiuqu-inscriptions",
+        "src-wuyi-geomorphology",
+        "src-wuyi-park-profile",
+        "src-wuyi-chongyang"
+      ]
+    },
+    {
+      "canonical": "白云禅寺",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "白云岩",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "白云庵",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "齐云峰",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "齐云庵",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "天游峰",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "云窝",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "茶洞",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "胡麻涧",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "晒布岩",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-jiuqu-gazetteer",
+        "src-wuyi-baiyun-review",
+        "src-wuyi-tianyou",
+        "src-wuyi-palace",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "朱熹",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-unesco",
+        "src-wuyi-park-profile",
+        "src-wuyi-zhu-xi",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "武夷精舍",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-unesco",
+        "src-wuyi-park-profile",
+        "src-wuyi-zhu-xi",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "九曲棹歌",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-unesco",
+        "src-wuyi-park-profile",
+        "src-wuyi-zhu-xi",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "闽越",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-unesco",
+        "src-wuyi-park-profile",
+        "src-wuyi-zhu-xi",
+        "src-wuyi-jiuqu-inscriptions"
+      ]
+    },
+    {
+      "canonical": "武夷岩茶",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-5",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-shanchang",
+        "src-tea-unesco",
+        "src-xiamei-protection-plan",
+        "src-xiamei-tea-trade",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "下梅",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-5",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-shanchang",
+        "src-tea-unesco",
+        "src-xiamei-protection-plan",
+        "src-xiamei-tea-trade",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "万里茶道",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-5",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-shanchang",
+        "src-tea-unesco",
+        "src-xiamei-protection-plan",
+        "src-xiamei-tea-trade",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "岚谷",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "岚谷熏鹅",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "文公菜",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "崇安膀蹄",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "五夫",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "崇安粿仔",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "山粉包",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "武夷光饼",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "五夫酥饼",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "朱子孝母饼",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "金骏眉",
+      "placeId": "wuyishan",
+      "sectionId": "place-wuyishan-1-6",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-food",
+        "src-wuyi-food-detail",
+        "src-wuyi-smoked-goose",
+        "src-wuyi-wengong-gov",
+        "src-wuyi-food-products",
+        "src-wuyi-local-dishes"
+      ]
+    },
+    {
+      "canonical": "九龙窠",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-geomorphology",
+        "src-wuyi-shanchang",
+        "src-wuyi-rock-aroma"
+      ]
+    },
+    {
+      "canonical": "岩韵",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-geomorphology",
+        "src-wuyi-shanchang",
+        "src-wuyi-rock-aroma"
+      ]
+    },
+    {
+      "canonical": "岩骨花香",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-park-profile",
+        "src-wuyi-geomorphology",
+        "src-wuyi-shanchang",
+        "src-wuyi-rock-aroma"
+      ]
+    },
+    {
+      "canonical": "大红袍",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-tea-ritual",
+        "src-wuyi-mother-tree-protection",
+        "src-wuyi-rock-tea-standard",
+        "src-wuyi-dahongpao-meanings"
+      ]
+    },
+    {
+      "canonical": "名丛",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-tea-ritual",
+        "src-wuyi-mother-tree-protection",
+        "src-wuyi-rock-tea-standard",
+        "src-wuyi-dahongpao-meanings"
+      ]
+    },
+    {
+      "canonical": "肉桂",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-tea-ritual",
+        "src-wuyi-mother-tree-protection",
+        "src-wuyi-rock-tea-standard",
+        "src-wuyi-dahongpao-meanings"
+      ]
+    },
+    {
+      "canonical": "水仙",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-tea-ritual",
+        "src-wuyi-mother-tree-protection",
+        "src-wuyi-rock-tea-standard",
+        "src-wuyi-dahongpao-meanings"
+      ]
+    },
+    {
+      "canonical": "奇种",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-tea-ritual",
+        "src-wuyi-mother-tree-protection",
+        "src-wuyi-rock-tea-standard",
+        "src-wuyi-dahongpao-meanings"
+      ]
+    },
+    {
+      "canonical": "复式萎凋",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-tea-craft",
+        "src-wuyi-tea-season",
+        "src-wuyi-eco-tea-management"
+      ]
+    },
+    {
+      "canonical": "做青",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-tea-craft",
+        "src-wuyi-tea-season",
+        "src-wuyi-eco-tea-management"
+      ]
+    },
+    {
+      "canonical": "走水返阳",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-tea-craft",
+        "src-wuyi-tea-season",
+        "src-wuyi-eco-tea-management"
+      ]
+    },
+    {
+      "canonical": "双炒双揉",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-tea-craft",
+        "src-wuyi-tea-season",
+        "src-wuyi-eco-tea-management"
+      ]
+    },
+    {
+      "canonical": "焙火",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-tea-craft",
+        "src-wuyi-tea-season",
+        "src-wuyi-eco-tea-management"
+      ]
+    },
+    {
+      "canonical": "水帘洞",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "流香涧",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "慧苑坑",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "慧苑寺",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "鹰嘴岩",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "章堂涧",
+      "placeId": "wuyishan-dahongpao-jiulongke",
+      "sectionId": "place-wuyishan-dahongpao-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-wuyi-rock-aroma-trail",
+        "src-wuyi-huiyuan-temple",
+        "src-wuyi-water-curtain",
+        "src-wuyi-geomorphology"
+      ]
+    },
+    {
+      "canonical": "遇林亭",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-park",
+        "src-yulinting-gazetteer"
+      ]
+    },
+    {
+      "canonical": "遇林亭窑址",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-park",
+        "src-yulinting-gazetteer"
+      ]
+    },
+    {
+      "canonical": "莲花峰",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-park",
+        "src-yulinting-gazetteer"
+      ]
+    },
+    {
+      "canonical": "龙窑",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-park",
+        "src-yulinting-gazetteer"
+      ]
+    },
+    {
+      "canonical": "匣钵",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-park",
+        "src-yulinting-gazetteer"
+      ]
+    },
+    {
+      "canonical": "建窑",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-national-protection",
+        "src-yulinting-park",
+        "src-yulinting-npm"
+      ]
+    },
+    {
+      "canonical": "水吉",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-national-protection",
+        "src-yulinting-park",
+        "src-yulinting-npm"
+      ]
+    },
+    {
+      "canonical": "黑釉",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-national-protection",
+        "src-yulinting-park",
+        "src-yulinting-npm"
+      ]
+    },
+    {
+      "canonical": "青白釉",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-national-protection",
+        "src-yulinting-park",
+        "src-yulinting-npm"
+      ]
+    },
+    {
+      "canonical": "兔毫",
+      "placeId": "wuyishan-yulinting-kiln-site",
+      "sectionId": "place-wuyishan-yulinting-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-yulinting-national-protection",
+        "src-yulinting-park",
+        "src-yulinting-npm"
+      ]
+    },
+    {
+      "canonical": "下梅村",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-protection-plan",
+        "src-xiamei-waterway",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "梅溪",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-protection-plan",
+        "src-xiamei-waterway",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "当溪",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-protection-plan",
+        "src-xiamei-waterway",
+        "src-xiamei-tea-road"
+      ]
+    },
+    {
+      "canonical": "邹氏",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "景隆号",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "邹氏大夫第",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "邹氏家祠",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "赤石",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "恰克图",
+      "placeId": "wuyishan-xiamei-village",
+      "sectionId": "place-wuyishan-xiamei-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-xiamei-tea-road",
+        "src-xiamei-trade-revival",
+        "src-xiamei-buildings"
+      ]
+    },
+    {
+      "canonical": "景德镇",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-hutian",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-smithsonian",
+        "src-pilgrim-art"
+      ]
+    },
+    {
+      "canonical": "湖田窑",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-hutian",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-smithsonian",
+        "src-pilgrim-art"
+      ]
+    },
+    {
+      "canonical": "高岭土",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-hutian",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-smithsonian",
+        "src-pilgrim-art"
+      ]
+    },
+    {
+      "canonical": "青白瓷",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-hutian",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-smithsonian",
+        "src-pilgrim-art"
+      ]
+    },
+    {
+      "canonical": "青花瓷",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-hutian",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-smithsonian",
+        "src-pilgrim-art"
+      ]
+    },
+    {
+      "canonical": "利坯",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-imperial-kiln",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-modern-industry"
+      ]
+    },
+    {
+      "canonical": "御窑厂",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-imperial-kiln",
+        "src-jingdezhen-unesco",
+        "src-jingdezhen-modern-industry"
+      ]
+    },
+    {
+      "canonical": "陶阳里",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-taoyangli",
+        "src-jingdezhen-sculpture-factory",
+        "src-jingdezhen-taoxichuan",
+        "src-jingdezhen-sanbao"
+      ]
+    },
+    {
+      "canonical": "雕塑瓷厂",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-taoyangli",
+        "src-jingdezhen-sculpture-factory",
+        "src-jingdezhen-taoxichuan",
+        "src-jingdezhen-sanbao"
+      ]
+    },
+    {
+      "canonical": "陶溪川",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-taoyangli",
+        "src-jingdezhen-sculpture-factory",
+        "src-jingdezhen-taoxichuan",
+        "src-jingdezhen-sanbao"
+      ]
+    },
+    {
+      "canonical": "三宝",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-taoyangli",
+        "src-jingdezhen-sculpture-factory",
+        "src-jingdezhen-taoxichuan",
+        "src-jingdezhen-sanbao"
+      ]
+    },
+    {
+      "canonical": "宇宙瓷厂",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-taoyangli",
+        "src-jingdezhen-sculpture-factory",
+        "src-jingdezhen-taoxichuan",
+        "src-jingdezhen-sanbao"
+      ]
+    },
+    {
+      "canonical": "冷粉",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "饺子粑",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "油条包麻糍",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "碱水粑",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "磻溪发糕",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "清汤泡糕",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "安苗粿",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "苦槠豆腐",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "知四肉",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "浮梁",
+      "placeId": "jingdezhen",
+      "sectionId": "place-jingdezhen-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-jingdezhen-cold-noodles",
+        "src-jingdezhen-jiaoziba",
+        "src-jingdezhen-youtiao-maci",
+        "src-jingdezhen-jianshuiba",
+        "src-jingdezhen-panxi-fagao",
+        "src-jingdezhen-qingtang-paogao",
+        "src-jingdezhen-anmiao",
+        "src-jingdezhen-kuzhu",
+        "src-jingdezhen-zhisirou",
+        "src-jingdezhen-fuliang-tea-banquet"
+      ]
+    },
+    {
+      "canonical": "鄱阳湖",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "赣江",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "抚河",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "信江",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "饶河",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "修河",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-poyang-system",
+        "src-poyang-river-lake",
+        "src-poyang-geography"
+      ]
+    },
+    {
+      "canonical": "落星墩",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-luoxingdun",
+        "src-luoxing-history",
+        "src-luoxing-heritage"
+      ]
+    },
+    {
+      "canonical": "落星寺",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-luoxingdun",
+        "src-luoxing-history",
+        "src-luoxing-heritage"
+      ]
+    },
+    {
+      "canonical": "庐山市",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-luoxingdun",
+        "src-luoxing-history",
+        "src-luoxing-heritage"
+      ]
+    },
+    {
+      "canonical": "星子",
+      "placeId": "luoxingdun-poyang",
+      "sectionId": "place-luoxingdun-poyang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-luoxingdun",
+        "src-luoxing-history",
+        "src-luoxing-heritage"
+      ]
+    },
+    {
+      "canonical": "南昌拌粉",
+      "placeId": "nanchang",
+      "sectionId": "place-nanchang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-nanchang-food",
+        "src-nanchang-food-list",
+        "src-nanchang-soup",
+        "src-nanchang-soup-craft"
+      ]
+    },
+    {
+      "canonical": "瓦罐煨汤",
+      "placeId": "nanchang",
+      "sectionId": "place-nanchang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-nanchang-food",
+        "src-nanchang-food-list",
+        "src-nanchang-soup",
+        "src-nanchang-soup-craft"
+      ]
+    },
+    {
+      "canonical": "白糖糕",
+      "placeId": "nanchang",
+      "sectionId": "place-nanchang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-nanchang-food",
+        "src-nanchang-food-list",
+        "src-nanchang-soup",
+        "src-nanchang-soup-craft"
+      ]
+    },
+    {
+      "canonical": "藜蒿炒腊肉",
+      "placeId": "nanchang",
+      "sectionId": "place-nanchang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-nanchang-food",
+        "src-nanchang-food-list",
+        "src-nanchang-soup",
+        "src-nanchang-soup-craft"
+      ]
+    },
+    {
+      "canonical": "鳜鱼煮粉",
+      "placeId": "nanchang",
+      "sectionId": "place-nanchang-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-nanchang-food",
+        "src-nanchang-food-list",
+        "src-nanchang-soup",
+        "src-nanchang-soup-craft"
+      ]
+    },
+    {
+      "canonical": "上堡梯田",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "罗霄山脉",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "诸广山脉",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "章江",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "丰州",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "思顺",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-icid",
+        "src-fao-terraces-proposal",
+        "src-fao-terraces"
+      ]
+    },
+    {
+      "canonical": "八卦田",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-sites",
+        "src-muzipai-farming",
+        "src-shangbao-cooperative"
+      ]
+    },
+    {
+      "canonical": "木梓排",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-sites",
+        "src-muzipai-farming",
+        "src-shangbao-cooperative"
+      ]
+    },
+    {
+      "canonical": "大禾米",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangbao-sites",
+        "src-muzipai-farming",
+        "src-shangbao-cooperative"
+      ]
+    },
+    {
+      "canonical": "崇义",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-chongyi-food-list",
+        "src-shangbao-living-food",
+        "src-chongyi-nine-layer",
+        "src-chongyi-nine-layer-heritage",
+        "src-muzipai-farming",
+        "src-huangyuan-craft"
+      ]
+    },
+    {
+      "canonical": "九层皮",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-chongyi-food-list",
+        "src-shangbao-living-food",
+        "src-chongyi-nine-layer",
+        "src-chongyi-nine-layer-heritage",
+        "src-muzipai-farming",
+        "src-huangyuan-craft"
+      ]
+    },
+    {
+      "canonical": "黄元米果",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-chongyi-food-list",
+        "src-shangbao-living-food",
+        "src-chongyi-nine-layer",
+        "src-chongyi-nine-layer-heritage",
+        "src-muzipai-farming",
+        "src-huangyuan-craft"
+      ]
+    },
+    {
+      "canonical": "黄元柴",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-chongyi-food-list",
+        "src-shangbao-living-food",
+        "src-chongyi-nine-layer",
+        "src-chongyi-nine-layer-heritage",
+        "src-muzipai-farming",
+        "src-huangyuan-craft"
+      ]
+    },
+    {
+      "canonical": "上堡水酒",
+      "placeId": "shangbao-terraces",
+      "sectionId": "place-shangbao-terraces-1-4",
+      "stance": "fact",
+      "sourceIds": [
+        "src-chongyi-food-list",
+        "src-shangbao-living-food",
+        "src-chongyi-nine-layer",
+        "src-chongyi-nine-layer-heritage",
+        "src-muzipai-farming",
+        "src-huangyuan-craft"
+      ]
+    },
+    {
+      "canonical": "筑峰顶",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "上犹",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "双溪草山",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "双溪乡",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "遂川",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "上犹江",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-1",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-geography",
+        "src-shangyou-grassland",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "仙鹅塘风电场",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-2",
+      "stance": "fact",
+      "sourceIds": [
+        "src-zhufeng-wind-approval",
+        "src-zhufeng-wind-farm",
+        "src-zhufeng-road",
+        "src-zhufeng-people"
+      ]
+    },
+    {
+      "canonical": "包米果",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-food",
+        "src-shangyou-products",
+        "src-shangyou-banquet",
+        "src-shangyou-baomiguo"
+      ]
+    },
+    {
+      "canonical": "阳明湖",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-food",
+        "src-shangyou-products",
+        "src-shangyou-banquet",
+        "src-shangyou-baomiguo"
+      ]
+    },
+    {
+      "canonical": "九狮拜象宴",
+      "placeId": "zhufengding",
+      "sectionId": "place-zhufengding-1-3",
+      "stance": "fact",
+      "sourceIds": [
+        "src-shangyou-food",
+        "src-shangyou-products",
+        "src-shangyou-banquet",
+        "src-shangyou-baomiguo"
+      ]
+    }
+  ]
+}
