@@ -321,6 +321,7 @@ export {
   loadTranscriptGlossary,
   loadTranscriptDomainGlossary,
   loadEffectiveTranscriptGlossary,
+  loadProjectTranscriptGlossary,
   saveTranscriptGlossary,
   normalizeTranscriptGlossary,
   computeTranscriptGlossaryHash,

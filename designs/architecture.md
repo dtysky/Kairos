@@ -7,9 +7,27 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.25 2026-10-14 Pharos 研究词表与审查续接
+
+人工字幕审查允许将最终文本明确清空并接受，表示删除该句字幕。草稿保存、刷新及提交必须保留空字符串，不得回填建议或原文。提交只清空对应 segment 的文字，保留原时间与分段；若该候选已无任何有效文字，按独立取消口播的视觉保留规则转为 visual。部分删除保留其它句子及其时间，并按剩余文字更新口播范围与覆盖率。原始 ASR、asset reports 和素材画面不变；空文本决定保存在统一审查审计中。Agent 自动建议仍要求非空文字。
+
+项目研究词表是字幕审查的标准前置步骤，不再等待用户逐项目要求。进入 `kairos-speech-review` 后先核对项目与纳入的 trip，按稳定 trip ID 查找 `../Pharos/carta/shots/<tripId>/field-guide.json` 及其已确认研究报告，读取原文后生成或核对项目词表和来源审计，再开始逐句审查。只有计划/研究委托不算读过调研报告；没有对应研究资料时明确记录缺席，沿用可用词表，不编造词条。已明确指定却无法读取的资料仍按缺失输入规则阻塞。
+
+词表提取由 Agent 完成，代码不从地名列表自动发明语境。第一次审查若词表在 span-builder 准备候选后新增，使用 `refreshProjectTranscriptReviewGlossary` 校验候选 artifact SHA-256、旧 effective glossary、normalization、trip 和 segment 引用，再更新候选审查的词表 hash；不改 spans，也不重新构建候选。一旦已有统一审查则该入口拒绝覆盖，必须使用 `continueProjectSpeechTranscriptReview`，仅补充词条并复核未决且未经人工改写的行。Console 复制指令、自动生成 handoff 与 workflow/speech-review skill 均要求这个顺序。
+
+已复核当前 Pharos 七份设计文档，组合哈希 `ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84`。Atlas / Argo、只读 `field-guide.json`、active route、route progress、地点局部日和 Pyxis 派生地图均不扩大 Kairos canonical Ingest 输入；现有 `plan.json / record.json / gpx/*.gpx` 白名单与匹配实现无需改变。此结论取代下文 10 月 13 日的历史基线说明。
+
+Agent 在字幕审查前必须检查 Pharos 已发布的 field guide，并据此提取或核对项目 `config/transcript-glossary.json`，每项仍只含 `canonical + context`。源文件快照、trip ID、revision、SHA-256 和逐词章节出处保存在独立来源审计中，不混入 canonical Pharos 镜像、素材时间或 chronology。研究只提供专名拼写与适用语境，计划地点不证明实际到访，推断与创作提示不作为事实。
+
+post-ASR effective glossary 按内置领域、工作区、项目三层合并，同名时更具体的后一层语境优先。项目文件缺失兼容旧流程，文件损坏则阻塞审查。项目词表不进入 ASR 或自动文字替换规则。新审查与 handoff 使用三层词表；已有 pending 审查通过显式词表续接入口核对旧 hash、完整审查版本、baseline spans、normalization 和 trip hash，归档旧审查及新词表快照后只更新审查配置 hash。所有人工文字、状态、窗口动作和分组原样保留；不写 spans，不重新 stage 全项目。续接后 Agent 仅复核仍未决条目，可靠改正作为待提交建议，不确定项继续听音。完整提交仍必须校验当前三层词表 hash。
+
+## 0.24 2026-10-13 Pharos 基线收敛（历史）
+
+当前兄弟仓库 `../Pharos` 的 `master/origin/master` 设计集回到此前已审核的五份协议文档，组合哈希为 `0653a38ae92f5a7e577d713fed48428e1debd0669caac585bb4ce2690630fe59`。Atlas / Argo、`field-guide.json` 与路线推进扩展不在当前基线中；Kairos 仍只镜像 canonical `plan.json / record.json / gpx/*.gpx`。该变化不扩大输入面，也不改变 source fingerprint、素材匹配、chronology 或 Ingest 实现，因此无需代码变更。
+
 ## 0.23 2026-10-08 Pharos 协议兼容性复核
 
-本轮上游新增 Atlas / Argo 文档、`field-guide.json` 只读研究旁路、`pharos:active_route` 与 `pyxis:route_progress` 路线扩展、地点局部日关联，以及 Pyxis GPS 停滞恢复。Kairos 继续只镜像 canonical `plan.json / record.json / gpx/*.gpx`；Atlas / Argo、field guide、研究会话、地图缓存和 `record-import.json` 不进入项目输入。路线计划、完成/跳过状态和地点 `DAYn` 不替代绝对日期、执行时间或 GPX，不推导素材缺口。
+本轮上游新增 Atlas / Argo 文档、`field-guide.json` 只读研究旁路、`pharos:active_route` 与 `pyxis:route_progress` 路线扩展、地点局部日关联，以及 Pyxis GPS 停滞恢复。Kairos 继续只镜像 canonical `plan.json / record.json / gpx/*.gpx`；Atlas / Argo、field guide、研究会话、地图缓存和 `record-import.json` 不进入 canonical Ingest 输入。字幕审查前置研究词表旁路见 0.25。路线计划、完成/跳过状态和地点 `DAYn` 不替代绝对日期、执行时间或 GPX，不推导素材缺口。
 
 `src/modules/pharos/context.ts` 已只枚举上述 canonical 文件，读取已排期 Day shots 与 `record.extra_shots[]`，忽略未知规划/展示扩展；没有已排期 shots 的弹性行程仍可完整读取 canonical extra events。因此本轮协议差异不需要代码变更。正式 GPX 镜像保留原始字节及上游补建估算标记；上游历史匹配建议不覆盖 Kairos 既有的精确 actual-time 与 GPX 空间合同。
 
@@ -65,15 +83,15 @@ Console 在 0.19 深色重构后继续统一文字与容器的比例，避免出
 post span-builder 审查现在是单一的项目闸门：`candidate spans -> Agent 生成建议 -> 用户在 /chronology 审查 -> 原子提交 -> fresh spans`。Agent 阶段不得直接把裁切、取消口播或非正字归一的文本修改写入 `store/spans.json`。
 
 - 结构化事实为 `analysis/speech-transcript-reviews/<inputsHash>.json`，包含 immutable baseline 引用、Agent 建议、用户选择和审计状态；Markdown 仅由同一 JSON 生成，按类别输出独立表格。
-- 正式类别有七个：字幕的 `auto-normalized / suggested-correction / needs-listening`，口播窗口的 `suggested-trim / suggested-cancel`，组级 `speech-take-needs-choice`，以及跨素材 `duplicateGroups`。无变化项完全省略。窗口 Agent 的 `needs-human` 表示没有足够把握提出动作，程序按 keep 处理并省略审查项；旧 `speech-window-needs-listening` 在读取时按 keep 丢弃，不再阻塞人工审查。同一窗口的重起检查只允许在现有 segment 边界上保留一个连续范围。跨素材 take group 必须由 Agent 基于修正后 capture-time 中相邻的视频素材、主题等价和表达完整度声明；程序校验成员唯一、视频相邻和视觉召回。明确最佳版本把其余成员转换为默认接受的 `suggested-cancel`，多个完整版本无明确胜负时生成未决 `speech-take-needs-choice`，提交前必须选择唯一 span。
+- 正式类别有七个：字幕的 `auto-normalized / suggested-correction / needs-listening`，口播窗口的 `suggested-trim / suggested-cancel`，组级 `speech-take-needs-choice`，以及跨素材 `duplicateGroups`。无变化项完全省略。窗口 Agent 的 `needs-human` 表示没有足够把握提出动作，程序按 keep 处理并省略审查项；旧 `speech-window-needs-listening` 在读取时按 keep 丢弃，不再阻塞人工审查。同一窗口的重起检查只允许在现有 segment 边界上保留一个连续范围。跨素材 take group 必须由 Agent 基于修正后 capture-time 中相邻的视频素材、主题等价和表达完整度声明；程序校验成员唯一、视频相邻，以及提交后被淘汰候选已从索引移除。明确最佳版本把其余成员转换为默认接受的 `suggested-cancel`，多个完整版本无明确胜负时生成未决 `speech-take-needs-choice`，提交前必须选择唯一 span。
 - 统一审查 artifact 新写为 schema `1.1`，继续兼容读取 `1.0`。Agent 只需额外返回紧凑 `takeDecisions[]`：`groupId / spanIds / action / preferredSpanId? / confidence / reason / evidence`。服务端从 baseline spans 和 assets 派生组内素材名、原文与试听区间并写入 `takeCandidates[]`，UI 草稿只保存 `selectedSpanId`；客户端不得自行声明成员或改写候选事实。
 - 跨素材重复组是独立审查项：只比较明确同功能且可互相替代的口播，默认采用 Agent 推荐的最佳 1 项，内容互补时最多 2 项，用户可改选或拒绝分组；接受后未选候选从正式 spans 索引删除，原始素材、asset reports、ASR 和审计保持不变。相邻同次录制的 take group 优先处理，其全部成员不得再进入 duplicate group，提交时验证两类分组互斥。 artifact 同时保留 take 审查项和 duplicateGroups；旧版本缺失 duplicateGroups 时按空数组读取。
 - 字幕 `needs-listening` 行通过只读 `GET /api/projects/:projectId/speech-transcript-review/audio/:assetId?startMs=&endMs=` 获取区间音频。客户端在正式审查区间前后各扩展 `1000ms`，起点不早于素材 `0ms`，终点由服务端按素材时长截断；试听余量不得写回字幕、speech window 或审查结果。服务端只允许从该项目 `store/assets.json` 与 ingest roots 解析素材，使用工作区 ffmpeg 转码并缓存到项目 `.tmp/chronology/speech-review-audio/`；客户端不传文件路径，缓存不改变任何分析或审查事实。
 - 确定性简体中文正字归一和 `config/transcript-normalization.json` 的精确替换规则可以在准备审查时写入 candidate spans，同时保留原文、命中规则和修正审计。精确替换采用一次、不级联的最长优先匹配；同一句在归一后仍作为 Agent 输入，不会因自动修正而跳过其他错字审查。其余 suggestion 初始 `accepted=true`，但只代表 UI 默认选择；用户改成不接受后，最终提交保留 baseline。字幕人工听音项以 `unresolved / completed` 表达审查状态，UI 只显示单个 `审查完成` Radio，结果由可编辑 `finalText` 决定。旧 `accepted / rejected` 字幕听音草稿在读取或保存时折叠到完成状态，rejected 的最终文本取原文。
-- 窗口裁切只引用原有 segment id/范围；取消口播清除该 speech candidate 的 transcript truth 和 `有口播语音` tag，但必须保留重叠 visual span。缺少合法视觉事实时取消建议无效。重复组是独立的跨素材排除合同：Agent 只对明显同功能且可互相替代的 speech/mixed spans 分组，默认保留 1 项、互补时最多 2 项；用户拒绝分组时全部保留，接受时未保留 spans 从正式索引删除，但原始素材与分析事实不变。
-- 服务端批量提交是唯一正式写入口：它重新加载 baseline spans，校验 inputs/effective-glossary/normalization/trip hashes、segment 覆盖、建议边界、重复引用、视觉保留、重复组成员唯一性和每组 1–2 个保留项，然后一次写入 review、spans 与 meta。任一失败均保持原文件与 `pending-speech-review`。
+- 窗口裁切只引用原有 segment id/范围。独立的取消口播建议清除该 speech candidate 的 transcript truth 和 `有口播语音` tag，保留视觉召回；缺少合法视觉事实时该建议无效。take group 淘汰的是整个口播版本：接受取消建议或完成单选后，将被淘汰的候选 span 从正式索引删除，不转为 visual，也不要求该版本有视觉事实；拒绝取消建议则保留该版本。已有独立 visual spans、原始媒体、asset reports、ASR 和审计保持不变。已有 schema 1.1 草稿直接按 `takeGroupId / preferredSpanId / takeCandidates` 识别此语义，无需重建或清空人工选择。提交先验证淘汰候选已移除，再重分配 span id。重复组是独立的跨素材排除合同：Agent 只对明显同功能且可互相替代的 speech/mixed spans 分组，默认保留 1 项、互补时最多 2 项；用户拒绝分组时全部保留，接受时未保留 spans 从正式索引删除，但原始素材与分析事实不变。
+- 服务端批量提交是唯一正式写入口：它重新加载 baseline spans，校验 inputs/effective-glossary/normalization/trip hashes、segment 覆盖、建议边界、重复引用、take 淘汰候选已移除、独立取消后的视觉保留、重复组成员唯一性和每组 1–2 个保留项，然后一次写入 review、spans 与 meta。任一失败均保持原文件与 `pending-speech-review`。
 - `PUT /api/projects/:projectId/speech-transcript-review/draft` 只更新审查 artifact 中的选择、文本、裁切范围和重复组保留项，并重写同源 Markdown；它必须复核 baseline/effective-glossary/normalization/trip hashes，不得修改 spans。Console 对用户修改做短延迟自动保存并显示持久化状态，刷新后从 artifact 恢复。
-- effective glossary 由只读内置 `resources/transcript-glossaries/*.json` 与工作区 `config/transcript-glossary.json` 合并，同名时工作区语境覆盖内置语境。摄影/视频稳定术语进入内置领域表，人名、地名、菜名、设备型号和个人用语进入工作区表。glossary v3 条目固定为 `canonical + context`；v1/v2 只兼容读取，下一次保存迁移到 v3。两层词表只供 post-ASR Agent 判断，不进入 ASR prompt。
+- effective glossary 依次合并只读内置 `resources/transcript-glossaries/*.json`、工作区和项目 `config/transcript-glossary.json`，同名时后一层语境优先。摄影/视频稳定术语进入内置领域表，人名、地名、菜名、设备型号和个人用语进入工作区表。glossary v3 条目固定为 `canonical + context`；v1/v2 只兼容读取，下一次保存迁移到 v3。三层词表只供 post-ASR Agent 判断，不进入 ASR prompt。
 
 ## 0.18 2026-08-31 Pharos 弹性行程与 record import 协议同步
 

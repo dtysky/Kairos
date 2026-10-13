@@ -10,6 +10,20 @@ import {
 afterEach(cleanup);
 
 describe('transcript review UI', () => {
+  it('preserves an explicitly cleared subtitle after refresh and submits the empty final text', () => {
+    const onSubmit = vi.fn();
+    const review = { inputsHash: 'cleared', updatedAt: '2026-10-14T00:00:00Z', status: 'pending-human', items: [
+      { id: 'clear-1', category: 'transcript-needs-listening', selection: 'accepted', assetId: 'C1', spanIds: ['C1_speech'],
+        startMs: 0, endMs: 1000, originalText: '误识原文', suggestedText: '旧建议', finalText: '', reason: '用户清空' },
+    ] };
+    const { rerender } = render(<SpeechTranscriptReviewPanel projectId="trip" review={review} onSubmit={onSubmit} />);
+    expect(screen.getByLabelText('clear-1 最终文本')).toHaveValue('');
+    rerender(<SpeechTranscriptReviewPanel projectId="trip" review={{ ...review, updatedAt: '2026-10-14T00:01:00Z' }} onSubmit={onSubmit} />);
+    expect(screen.getByLabelText('clear-1 最终文本')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: '提交整轮审查' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ resolutions: [expect.objectContaining({ itemId: 'clear-1', selection: 'accepted', finalText: '' })] }));
+  });
+
   it('edits glossary entries in a drawer-backed compact table', () => {
     function Harness() {
       const [config, setConfig] = React.useState({ schemaVersion: '3.0', entries: [] });
@@ -58,6 +72,7 @@ describe('transcript review UI', () => {
       items: [
         { id: 'text-1', category: 'transcript-suggested-correction', selection: 'accepted', assetId: 'C1', spanIds: ['C1_speech'], startMs: 0, endMs: 1000, originalText: '顺光', suggestedText: '瞬光', reason: '词表语境匹配' },
         { id: 'window-1', category: 'speech-window-suggested-cancel', selection: 'accepted', assetId: 'C2', spanIds: ['C2_speech'], startMs: 0, endMs: 2000, originalText: '背景歌词', reason: '非人物口播' },
+        { id: 'take-cancel-1', category: 'speech-window-suggested-cancel', selection: 'accepted', assetId: 'C4', spanIds: ['C4_speech'], startMs: 0, endMs: 2000, originalText: '未完成的介绍', reason: '同次口播重录', takeGroupId: 'intro', preferredSpanId: 'C5_speech', takeCandidates: [{ spanId: 'C4_speech', assetId: 'C4' }, { spanId: 'C5_speech', assetId: 'C5', assetDisplayName: 'C5.mp4' }] },
         { id: 'trim-1', category: 'speech-window-suggested-trim', selection: 'accepted', assetId: 'C3', spanIds: ['C3_speech'], startMs: 0, endMs: 2000, retainStartMs: 0, retainEndMs: 1000, originalText: '保留这一句 删除这一句', suggestedText: '保留这一句', transcriptSegments: [{ startMs: 0, endMs: 1000, text: '保留这一句' }, { startMs: 1000, endMs: 2000, text: '删除这一句' }], reason: '移除尾部噪声' },
       ],
     };
@@ -66,17 +81,21 @@ describe('transcript review UI', () => {
     expect(screen.getByRole('heading', { name: '口播窗口｜建议取消' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '口播窗口｜建议裁切' })).toBeInTheDocument();
     expect(screen.getByText('裁切后口播')).toBeInTheDocument();
+    expect(screen.getByText('取消口播属性和字幕，保留视觉素材召回')).toBeInTheDocument();
+    expect(screen.getByText('整段排除该口播版本，不保留为视觉候选；同组保留 C5.mp4')).toBeInTheDocument();
     expect(screen.queryByText('保持原文')).not.toBeInTheDocument();
     expect(screen.getByLabelText('text-1 最终文本').tagName).toBe('TEXTAREA');
     const checkboxes = screen.getAllByRole('checkbox');
     for (const checkbox of checkboxes) expect(checkbox).toBeChecked();
     fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[3]);
     fireEvent.click(screen.getByRole('button', { name: '提交整轮审查' }));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       inputsHash: 'hash',
       resolutions: expect.arrayContaining([
         expect.objectContaining({ itemId: 'text-1', selection: 'rejected' }),
         expect.objectContaining({ itemId: 'window-1', selection: 'accepted' }),
+        expect.objectContaining({ itemId: 'take-cancel-1', selection: 'rejected' }),
       ]),
     }));
   });
@@ -216,6 +235,7 @@ describe('transcript review UI', () => {
     };
     render(<SpeechTranscriptReviewPanel projectId="trip" review={review} onSaveDraft={onSaveDraft} onSubmit={onSubmit} />);
     expect(screen.getByRole('heading', { name: '口播版本｜待选择' })).toBeInTheDocument();
+    expect(screen.getByText('提交后只保留选中的口播版本，其余版本整段排除。原始素材和已有独立视觉片段保留。')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: '循环播放' })).toHaveLength(2);
     const submit = screen.getByRole('button', { name: '提交整轮审查' });
     expect(submit).toBeDisabled();

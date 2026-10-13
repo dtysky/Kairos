@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,10 +12,12 @@ import {
   applyProjectTranscriptAgentDecisions,
   commitProjectSpeechTranscriptReview,
   prepareProjectTranscriptReview,
+  refreshProjectTranscriptReviewGlossary,
   readSpeechTranscriptReviewArtifact,
   resolveTranscriptCorrectionReview,
   saveProjectSpeechTranscriptReviewDraft,
   stageProjectSpeechTranscriptReview,
+  continueProjectSpeechTranscriptReview,
 } from '../../src/modules/media/transcript-review.js';
 import {
   getSpansPath,
@@ -37,6 +40,154 @@ afterEach(async () => {
 });
 
 describe('post-ASR transcript review', () => {
+  it('commits human-cleared subtitles without restoring text, changing segment timing, or losing visuals', async () => {
+    const fixture = await createFixture();
+    const empty = createSpan('span-empty', '误识整句');
+    const partial = IKtepSpan.parse({ ...createSpan('span-partial', '误识开头 保留这句话'), sourceInMs: 3000, sourceOutMs: 5000,
+      transcriptSegments: [{ startMs: 3000, endMs: 3500, text: '误识开头' }, { startMs: 3500, endMs: 5000, text: '保留这句话' }] });
+    const prepared = await prepareProjectTranscriptReview({ ...fixture, assets: [fixture.asset], reports: [fixture.report],
+      spans: [empty, partial], speechCandidates: [empty, partial], inputsHash: 'human-delete', generatedAt: '2026-10-14T00:00:00Z' });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'human-delete', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({ ...fixture, inputsHash: 'human-delete',
+      transcriptDecisions: prepared.artifact.items.map(item => ({ itemId: item.id, inputsHash: 'human-delete', originalTextHash: item.originalTextHash,
+        startMs: item.startMs, endMs: item.endMs, action: item.originalText.startsWith('误识') ? 'needs-human' as const : 'keep-original' as const,
+        suggestedText: item.originalText, confidence: 0.5, containsProperNoun: false, evidence: [] })),
+      windowDecisions: [empty, partial].map(span => ({ spanId: span.id, inputsHash: 'human-delete', action: 'keep' as const,
+        confidence: 1, reason: '保留画面及其它口播', evidence: [] })) });
+    const before = await readFile(getSpansPath(fixture.projectRoot), 'utf8');
+    const resolutions = staged.artifact.items.filter(item => item.category === 'transcript-needs-listening')
+      .map(item => ({ itemId: item.id, selection: 'accepted' as const, finalText: '' }));
+    expect(resolutions).toHaveLength(2);
+    const draft = await saveProjectSpeechTranscriptReviewDraft({ ...fixture, inputsHash: 'human-delete', resolutions });
+    expect(draft.items.every(item => item.finalText === '')).toBe(true);
+    expect(await readFile(getSpansPath(fixture.projectRoot), 'utf8')).toBe(before);
+    const completed = await commitProjectSpeechTranscriptReview({ ...fixture, inputsHash: 'human-delete' });
+    const spans = await loadSpans(fixture.projectRoot);
+    expect(spans).toHaveLength(2);
+    expect(spans.find(span => span.sourceInMs === 1000)).toMatchObject({ semanticKind: 'visual', sourceOutMs: 2000, visualObservation: empty.visualObservation });
+    expect(spans.find(span => span.sourceInMs === 1000)?.transcriptSegments).toBeUndefined();
+    expect(spans.find(span => span.sourceInMs === 1000)?.materialPatterns[3]).toBe('无口播语音');
+    expect(spans.find(span => span.sourceInMs === 3000)).toMatchObject({ semanticKind: 'speech', sourceOutMs: 5000,
+      transcript: '保留这句话', effectiveSpeechStartMs: 3500, effectiveSpeechEndMs: 5000, speechCoverage: 0.75,
+      transcriptSegments: [{ startMs: 3000, endMs: 3500, text: '' }, { startMs: 3500, endMs: 5000, text: '保留这句话' }] });
+    expect(completed.items.every(item => item.finalText === '' && item.selection === 'accepted')).toBe(true);
+    expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('fresh');
+  });
+
+  it('binds research glossary before the first review without rebuilding candidates, and refuses restaging human work', async () => {
+    const fixture = await createFixture();
+    const span = createSpan('span-initial-glossary', '到了寻埔。');
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture, assets: [fixture.asset], reports: [fixture.report], spans: [span], speechCandidates: [span],
+      inputsHash: 'initial-glossary', generatedAt: '2026-10-14T00:00:00Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'initial-glossary', prepared.artifactPath);
+    const raw = await readFile(prepared.artifactPath, 'utf8');
+    const spansBefore = await readFile(getSpansPath(fixture.projectRoot), 'utf8');
+    const args = {
+      ...fixture, inputsHash: 'initial-glossary', expectedArtifactHash: createHash('sha256').update(raw).digest('hex'),
+      previousGlossary: { schemaVersion: '3.0' as const, entries: [] },
+    };
+    await saveTranscriptGlossary(fixture.projectRoot, { schemaVersion: '3.0', entries: [{ canonical: '蟳埔', context: '泉州村落介绍' }] });
+    await expect(refreshProjectTranscriptReviewGlossary({ ...args, expectedArtifactHash: 'stale' })).rejects.toThrow(/candidate review changed/);
+    const wrongSpans = [{ ...span, transcriptSegments: [{ startMs: 1001, endMs: 2000, text: '到了寻埔。' }] }];
+    await writeJson(getSpansPath(fixture.projectRoot), wrongSpans);
+    await expect(refreshProjectTranscriptReviewGlossary(args)).rejects.toThrow(/immutable transcript changed/);
+    await writeJson(getSpansPath(fixture.projectRoot), prepared.spans);
+    const refreshed = await refreshProjectTranscriptReviewGlossary(args);
+    expect(refreshed.items).toEqual(prepared.artifact.items);
+    expect(refreshed.autoNormalizations).toEqual(prepared.artifact.autoNormalizations);
+    expect(refreshed.glossaryHash).not.toBe(prepared.artifact.glossaryHash);
+    expect(await readFile(getSpansPath(fixture.projectRoot), 'utf8')).toBe(spansBefore);
+    expect(await readdir(join(fixture.projectRoot, 'analysis', 'transcript-reviews', 'context-updates'))).toHaveLength(1);
+    const item = refreshed.items[0]!;
+    const stageInput = {
+      ...fixture, inputsHash: 'initial-glossary',
+      transcriptDecisions: [{
+        itemId: item.id, inputsHash: 'initial-glossary', originalTextHash: item.originalTextHash,
+        startMs: item.startMs, endMs: item.endMs, action: 'auto-apply' as const,
+        finalText: '到了蟳埔。', confidence: 0.98, containsProperNoun: true,
+        evidence: [{ source: 'glossary' as const, value: '蟳埔', ref: '泉州村落介绍' }],
+      }],
+      windowDecisions: [{ spanId: span.id, inputsHash: 'initial-glossary', action: 'keep' as const, confidence: 1, reason: '完整', evidence: [] }],
+    };
+    const staged = await stageProjectSpeechTranscriptReview(stageInput);
+    expect(staged.artifact.items[0]).toMatchObject({ category: 'transcript-suggested-correction', selection: 'accepted' });
+    await saveProjectSpeechTranscriptReviewDraft({ ...fixture, inputsHash: 'initial-glossary', resolutions: [{
+      itemId: staged.artifact.items[0]!.id, selection: 'accepted', finalText: '我们到了蟳埔。',
+    }] });
+    const saved = await readFile(staged.artifactPath, 'utf8');
+    await expect(stageProjectSpeechTranscriptReview(stageInput)).rejects.toThrow(/unified review already exists/);
+    const updatedRaw = await readFile(prepared.artifactPath, 'utf8');
+    await expect(refreshProjectTranscriptReviewGlossary({
+      ...args, expectedArtifactHash: createHash('sha256').update(updatedRaw).digest('hex'),
+      previousGlossary: { schemaVersion: '3.0', entries: [{ canonical: '蟳埔', context: '泉州村落介绍' }] },
+    })).rejects.toThrow(/continueProjectSpeechTranscriptReview/);
+    expect(await readFile(staged.artifactPath, 'utf8')).toBe(saved);
+    expect(await readFile(getSpansPath(fixture.projectRoot), 'utf8')).toBe(spansBefore);
+  });
+  it('continues only untouched unresolved subtitles with additive glossary context, preserving human work and baseline bytes', async () => {
+    const fixture = await createFixture();
+    const span = createSpan('span-continuation', '到了寻埔。');
+    span.transcriptSegments = [
+      { startMs: 1000, endMs: 1400, text: '第一句。' },
+      { startMs: 1500, endMs: 2000, text: '到了寻埔。' },
+    ];
+    span.transcript = '第一句。 到了寻埔。';
+    const prepared = await prepareProjectTranscriptReview({
+      ...fixture, assets: [fixture.asset], reports: [fixture.report], spans: [span], speechCandidates: [span],
+      inputsHash: 'continuation', generatedAt: '2026-10-14T00:00:00Z',
+    });
+    await seedPendingReview(fixture.projectRoot, prepared.spans, 'continuation', prepared.artifactPath);
+    const staged = await stageProjectSpeechTranscriptReview({
+      ...fixture, inputsHash: 'continuation',
+      transcriptDecisions: prepared.artifact.items.map(item => ({
+        itemId: item.id, inputsHash: 'continuation', originalTextHash: item.originalTextHash,
+        startMs: item.startMs, endMs: item.endMs, action: 'needs-human',
+        suggestedText: item.originalText, confidence: 0.6, containsProperNoun: true, evidence: [],
+      })),
+      windowDecisions: [{ spanId: span.id, inputsHash: 'continuation', action: 'keep', confidence: 1, reason: '完整口播', evidence: [] }],
+    });
+    const human = staged.artifact.items[0]!;
+    const target = staged.artifact.items[1]!;
+    const edited = await saveProjectSpeechTranscriptReviewDraft({
+      ...fixture, inputsHash: 'continuation', resolutions: [{ itemId: human.id, selection: 'unresolved', finalText: '我手动改过但尚未提交。' }],
+    });
+    const beforeSpans = await readFile(getSpansPath(fixture.projectRoot), 'utf8');
+    const beforeRaw = await readFile(staged.artifactPath, 'utf8');
+    const args = {
+      ...fixture, inputsHash: 'continuation', expectedArtifactHash: createHash('sha256').update(beforeRaw).digest('hex'),
+      previousGlossary: { schemaVersion: '3.0' as const, entries: [] },
+    };
+    const decision = {
+      itemId: target.id, inputsHash: 'continuation', originalTextHash: target.originalTextHash!,
+      startMs: target.startMs, endMs: target.endMs, action: 'auto-apply' as const,
+      finalText: '到了蟳埔。', confidence: 0.98, containsProperNoun: true,
+      evidence: [{ source: 'glossary' as const, value: '蟳埔', ref: '泉州村落介绍' }],
+    };
+    await saveTranscriptGlossary(fixture.projectRoot, { schemaVersion: '3.0', entries: [{ canonical: '蟳埔', context: '泉州村落介绍' }] });
+    await expect(continueProjectSpeechTranscriptReview({ ...args, expectedArtifactHash: 'stale' })).rejects.toThrow(/draft changed/);
+    await expect(continueProjectSpeechTranscriptReview({ ...args, transcriptDecisions: [{ ...decision, itemId: human.id }] })).rejects.toThrow(/reviewed or edited/);
+    await expect(continueProjectSpeechTranscriptReview({ ...args, transcriptDecisions: [{ ...decision, startMs: 1501 }] })).rejects.toThrow(/immutable segment timing/);
+    expect(await readFile(staged.artifactPath, 'utf8')).toBe(beforeRaw);
+    const next = await continueProjectSpeechTranscriptReview({ ...args, transcriptDecisions: [decision] });
+    expect(next.items[0]).toEqual(edited.items[0]);
+    expect(next.duplicateGroups).toEqual(edited.duplicateGroups);
+    expect(next.items[1]).toMatchObject({ category: 'transcript-suggested-correction', selection: 'accepted', finalText: '到了蟳埔。' });
+    expect(next.baselineSpansHash).toBe(edited.baselineSpansHash);
+    expect(await readFile(getSpansPath(fixture.projectRoot), 'utf8')).toBe(beforeSpans);
+    expect((await loadSpansMeta(fixture.projectRoot))?.status).toBe('pending-speech-review');
+    const audits = await readdir(join(fixture.projectRoot, 'analysis', 'speech-transcript-reviews', 'context-updates'));
+    expect(audits).toHaveLength(1);
+    await expect(saveProjectSpeechTranscriptReviewDraft({ ...fixture, inputsHash: 'continuation', resolutions: [] })).resolves.toMatchObject({ glossaryHash: next.glossaryHash });
+    // Removing previously reviewed context cannot be hidden by refreshing the hash.
+    const latest = await readFile(staged.artifactPath, 'utf8');
+    await saveTranscriptGlossary(fixture.projectRoot, { schemaVersion: '3.0', entries: [] });
+    await expect(continueProjectSpeechTranscriptReview({
+      ...args, expectedArtifactHash: createHash('sha256').update(latest).digest('hex'),
+      previousGlossary: { schemaVersion: '3.0', entries: [{ canonical: '蟳埔', context: '泉州村落介绍' }] },
+    })).rejects.toThrow(/additive glossary context/);
+  });
   it('applies exact text normalization before Agent review and keeps the normalized sentence reviewable', async () => {
     const fixture = await createFixture();
     await saveTranscriptNormalization(fixture.workspaceRoot, {
@@ -910,8 +1061,8 @@ describe('post-ASR transcript review', () => {
     await writeJson(staged.artifactPath, saved);
     await commitProjectSpeechTranscriptReview(commitInput);
     const committed = await loadSpans(fixture.projectRoot);
-    expect(committed).toHaveLength(3);
-    expect(committed.find(span => span.assetId === 'asset-1')?.semanticKind).toBe('visual');
+    expect(committed).toHaveLength(2);
+    expect(committed.some(span => span.assetId === 'asset-1')).toBe(false);
     expect(committed.find(span => span.assetId === 'asset-2')?.semanticKind).toBe('speech');
     expect(committed.some(span => span.assetId === 'asset-3')).toBe(false);
     expect(committed.find(span => span.assetId === 'asset-4')?.semanticKind).toBe('speech');
@@ -966,7 +1117,12 @@ describe('post-ASR transcript review', () => {
     });
   });
 
-  it('turns inferior adjacent takes into default cancel suggestions and names the retained take', async () => {
+  it.each([
+    { selection: 'accepted' as const, visual: true, independentVisual: false, legacy: true },
+    { selection: 'accepted' as const, visual: false, independentVisual: false, legacy: false },
+    { selection: 'accepted' as const, visual: true, independentVisual: true, legacy: false },
+    { selection: 'rejected' as const, visual: true, independentVisual: false, legacy: false },
+  ])('excludes inferior takes only when accepted: $selection, visual=$visual, independent=$independentVisual, legacy=$legacy', async ({ selection, visual, independentVisual, legacy }) => {
     const fixture = await createFixture();
     const secondAsset = IKtepAsset.parse({
       ...fixture.asset,
@@ -977,6 +1133,7 @@ describe('post-ASR transcript review', () => {
     });
     const failedTake = IKtepSpan.parse({
       ...createSpan('take-failed', '今天这个机位，我重新说。'),
+      visualObservation: visual ? '人物在镜头前说话' : undefined,
       transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '今天这个机位，我重新说。' }],
     });
     const completeTake = IKtepSpan.parse({
@@ -985,14 +1142,24 @@ describe('post-ASR transcript review', () => {
       transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '今天这个机位能看见完整的山谷和日落。' }],
     });
     const assets = [fixture.asset, secondAsset];
-    const spans = [failedTake, completeTake];
+    const visualSpan = IKtepSpan.parse({
+      ...failedTake,
+      id: 'independent-visual',
+      semanticKind: 'visual',
+      transcript: undefined,
+      transcriptSegments: undefined,
+      speechCoverage: undefined,
+      materialPatterns: failedTake.materialPatterns.map(pattern => pattern === '有口播语音' ? '无口播语音' : pattern),
+    });
+    const speechCandidates = [failedTake, completeTake];
+    const spans = independentVisual ? [...speechCandidates, visualSpan] : speechCandidates;
     await writeJson(join(fixture.projectRoot, 'store', 'assets.json'), assets);
     const prepared = await prepareProjectTranscriptReview({
       ...fixture,
       assets,
       reports: [fixture.report],
       spans,
-      speechCandidates: spans,
+      speechCandidates,
       inputsHash: 'inputs-take-winner',
       generatedAt: '2026-09-06T04:00:00.000Z',
     });
@@ -1002,7 +1169,7 @@ describe('post-ASR transcript review', () => {
       projectRoot: fixture.projectRoot,
       inputsHash: 'inputs-take-winner',
       transcriptDecisions: keepTranscriptDecisions(prepared.artifact.items, 'inputs-take-winner'),
-      windowDecisions: spans.map(span => ({
+      windowDecisions: speechCandidates.map(span => ({
         spanId: span.id,
         inputsHash: 'inputs-take-winner',
         action: 'keep' as const,
@@ -1030,7 +1197,37 @@ describe('post-ASR transcript review', () => {
       preferredSpanId: completeTake.id,
     });
     const report = await readFile(staged.reportPath, 'utf-8');
+    expect(report).toContain('整段排除该口播版本，不保留为视觉候选');
     expect(report).toContain('同组保留 asset-2.mp4');
+    expect(await loadSpans(fixture.projectRoot)).toEqual(prepared.spans);
+    if (independentVisual) {
+      await writeJson(staged.artifactPath, {
+        ...staged.artifact,
+        items: staged.artifact.items.map(item => item.id === cancel.id ? { ...item, spanIds: [visualSpan.id] } : item),
+      });
+      await expect(commitProjectSpeechTranscriptReview({
+        workspaceRoot: fixture.workspaceRoot,
+        projectRoot: fixture.projectRoot,
+        inputsHash: 'inputs-take-winner',
+        resolutions: [],
+      })).rejects.toThrow(/non-preferred candidate/u);
+      expect(await loadSpans(fixture.projectRoot)).toEqual(prepared.spans);
+      await writeJson(staged.artifactPath, staged.artifact);
+    }
+    if (legacy) {
+      await writeJson(staged.artifactPath, {
+        ...staged.artifact,
+        items: staged.artifact.items.map(item => item.id === cancel.id ? { ...item, visualSpanIds: [failedTake.id] } : item),
+      });
+    }
+    const saved = await saveProjectSpeechTranscriptReviewDraft({
+      workspaceRoot: fixture.workspaceRoot,
+      projectRoot: fixture.projectRoot,
+      inputsHash: 'inputs-take-winner',
+      resolutions: [{ itemId: cancel.id, selection }],
+    });
+    expect(saved.items.find(item => item.id === cancel.id)?.selection).toBe(selection);
+    expect(await loadSpans(fixture.projectRoot)).toEqual(prepared.spans);
     await commitProjectSpeechTranscriptReview({
       workspaceRoot: fixture.workspaceRoot,
       projectRoot: fixture.projectRoot,
@@ -1038,7 +1235,13 @@ describe('post-ASR transcript review', () => {
       resolutions: [],
     });
     const committed = await loadSpans(fixture.projectRoot);
-    expect(committed.find(span => span.assetId === fixture.asset.id)?.semanticKind).toBe('visual');
+    expect(committed).toHaveLength((selection === 'accepted' ? 1 : 2) + Number(independentVisual));
+    expect(committed.some(span => span.transcript === failedTake.transcript)).toBe(selection === 'rejected');
+    if (independentVisual) {
+      expect(committed.find(span => span.semanticKind === 'visual')).toEqual({ ...visualSpan, id: expect.any(String) });
+    } else {
+      expect(committed.some(span => span.semanticKind === 'visual')).toBe(false);
+    }
     expect(committed.find(span => span.assetId === secondAsset.id)?.semanticKind).toBe('speech');
   });
 
@@ -1051,9 +1254,13 @@ describe('post-ASR transcript review', () => {
       displayName: 'asset-2.mp4',
       capturedAt: '2026-07-01T00:00:10.000Z',
     });
-    const firstTake = createSpan('take-first', '这里能完整看到山谷和日落。');
+    const firstTake = IKtepSpan.parse({
+      ...createSpan('take-first', '这里能完整看到山谷和日落。'),
+      visualObservation: undefined,
+    });
     const secondTake = IKtepSpan.parse({
       ...createSpan('take-second', '从这个机位可以完整看到山谷和日落。'),
+      visualObservation: undefined,
       assetId: 'asset-2',
       transcriptSegments: [{ startMs: 1000, endMs: 2000, text: '从这个机位可以完整看到山谷和日落。' }],
     });
@@ -1096,6 +1303,7 @@ describe('post-ASR transcript review', () => {
     const choice = staged.artifact.items.find(item => item.category === 'speech-take-needs-choice')!;
     expect(choice).toMatchObject({ selection: 'unresolved', takeGroupId: 'take-equal-intro' });
     expect(choice.takeCandidates).toHaveLength(2);
+    expect(await readFile(staged.reportPath, 'utf-8')).toContain('其余版本将整段排除，不保留为视觉候选');
     await expect(commitProjectSpeechTranscriptReview({
       workspaceRoot: fixture.workspaceRoot,
       projectRoot: fixture.projectRoot,
@@ -1121,7 +1329,8 @@ describe('post-ASR transcript review', () => {
       resolutions: [],
     });
     const committed = await loadSpans(fixture.projectRoot);
-    expect(committed.find(span => span.assetId === fixture.asset.id)?.semanticKind).toBe('visual');
+    expect(committed).toHaveLength(1);
+    expect(committed.some(span => span.assetId === fixture.asset.id)).toBe(false);
     expect(committed.find(span => span.assetId === secondAsset.id)?.semanticKind).toBe('speech');
   });
 

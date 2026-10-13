@@ -91,7 +91,7 @@ export async function prepareProjectTranscriptReview(input: {
 }): Promise<IPrepareTranscriptReviewResult> {
   const [brief, glossary, normalization, manualItinerary] = await Promise.all([
     loadProjectBriefConfig(input.projectRoot),
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptNormalization(input.workspaceRoot),
     loadManualItineraryConfig(input.projectRoot),
   ]);
@@ -204,6 +204,84 @@ export async function prepareProjectTranscriptReview(input: {
   };
 }
 
+/** Bind a newly prepared glossary before the first Agent review, without rebuilding spans. */
+export async function refreshProjectTranscriptReviewGlossary(input: {
+  workspaceRoot: string;
+  projectRoot: string;
+  inputsHash: string;
+  expectedArtifactHash: string;
+  previousGlossary: ITranscriptGlossaryConfig;
+  now?: string;
+}): Promise<TTranscriptReviewArtifact> {
+  const artifactPath = getTranscriptReviewArtifactPath(input.projectRoot, input.inputsHash);
+  const original = await readFile(artifactPath, 'utf-8');
+  if (hashText(original) !== input.expectedArtifactHash) throw new Error('candidate review changed before glossary preparation');
+  const artifact = ITranscriptReviewArtifact.parse(JSON.parse(original));
+  const meta = await loadSpansMeta(input.projectRoot);
+  if (!meta || meta.inputsHash !== input.inputsHash || meta.status !== 'pending-speech-review'
+    || meta.speechReview?.phase === 'human' || artifact.inputsHash !== input.inputsHash
+    || artifact.status !== 'pending-agent' || artifact.items.some(item => item.status !== 'pending-agent')) {
+    throw new Error('initial glossary preparation requires an unreviewed pending-agent candidate; use continueProjectSpeechTranscriptReview for a staged review');
+  }
+  await assertNoStagedSpeechTranscriptReview(input.projectRoot, input.inputsHash);
+  const [glossary, normalization, spans] = await Promise.all([
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
+    loadTranscriptNormalization(input.workspaceRoot),
+    loadSpans(input.projectRoot),
+  ]);
+  assertTranscriptReviewConfiguration(artifact, input.previousGlossary, normalization, 'Agent');
+  assertAdditiveTranscriptGlossary(input.previousGlossary, glossary);
+  await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
+  const spanById = new Map(spans.map(span => [span.id, span]));
+  for (const item of artifact.items) {
+    for (const spanId of item.spanIds) {
+      const span = spanById.get(spanId);
+      const text = item.syntheticSegment ? span?.transcript : span?.transcriptSegments?.find(segment => (
+        segment.startMs === item.startMs && segment.endMs === item.endMs
+      ))?.text;
+      if (!text || hashText(text.trim()) !== item.originalTextHash) {
+        throw new Error(`candidate span or immutable transcript changed before glossary preparation: ${item.id}`);
+      }
+    }
+  }
+  const glossaryHash = computeTranscriptGlossaryHash(glossary);
+  if (glossaryHash === artifact.glossaryHash) return artifact;
+  const now = input.now ?? new Date().toISOString();
+  const next = ITranscriptReviewArtifact.parse({ ...artifact, glossaryHash, updatedAt: now });
+  await writeJson(join(input.projectRoot, 'analysis', 'transcript-reviews', 'context-updates',
+    `${hashJson({ before: input.expectedArtifactHash, after: next })}.json`), {
+    schemaVersion: '1.0', inputsHash: input.inputsHash, updatedAt: now,
+    beforeArtifactHash: input.expectedArtifactHash, before: JSON.parse(original),
+    previousGlossary: input.previousGlossary, effectiveGlossary: glossary,
+    baselineSpansHash: hashJson(spans), afterArtifactHash: hashJson(next),
+  });
+  await assertNoStagedSpeechTranscriptReview(input.projectRoot, input.inputsHash);
+  if (hashText(await readFile(artifactPath, 'utf-8')) !== input.expectedArtifactHash
+    || hashJson(await loadSpansMeta(input.projectRoot)) !== hashJson(meta)
+    || hashJson(await loadSpans(input.projectRoot)) !== hashJson(spans)) {
+    throw new Error('candidate review changed during glossary preparation; reload before retrying');
+  }
+  assertTranscriptReviewConfiguration(next,
+    await loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
+    await loadTranscriptNormalization(input.workspaceRoot), 'Agent');
+  await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
+  await writeJson(artifactPath, next);
+  await writeSpansMeta(input.projectRoot, {
+    ...meta, speechReview: { ...meta.speechReview, glossaryHash, updatedAt: now },
+  });
+  return next;
+}
+
+async function assertNoStagedSpeechTranscriptReview(projectRoot: string, inputsHash: string): Promise<void> {
+  try {
+    await readFile(getSpeechTranscriptReviewArtifactPath(projectRoot, inputsHash));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  throw new Error('unified review already exists; use continueProjectSpeechTranscriptReview to preserve human work');
+}
+
 export async function applyProjectTranscriptAgentDecisions(input: {
   workspaceRoot: string;
   projectRoot: string;
@@ -219,7 +297,7 @@ export async function applyProjectTranscriptAgentDecisions(input: {
     throw new Error('transcript review inputsHash is stale; rerun span-rebuild before applying Agent decisions');
   }
   const [glossary, normalization] = await Promise.all([
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptNormalization(input.workspaceRoot),
   ]);
   assertTranscriptReviewConfiguration(artifact, glossary, normalization, 'Agent');
@@ -380,7 +458,7 @@ export async function resolveTranscriptCorrectionReview(input: {
     throw new Error('transcript review is stale; spans meta no longer matches the review inputsHash');
   }
   const [glossary, workspaceGlossary, normalization] = await Promise.all([
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptGlossary(input.workspaceRoot),
     loadTranscriptNormalization(input.workspaceRoot),
   ]);
@@ -402,7 +480,7 @@ export async function resolveTranscriptCorrectionReview(input: {
   await writeJson(review.transcriptCorrection.artifactPath, completedArtifact);
   if (promotedGlossary) await saveTranscriptGlossary(input.workspaceRoot, promotedGlossary);
   const finalEffectiveGlossary = promotedGlossary
-    ? await loadEffectiveTranscriptGlossary(input.workspaceRoot)
+    ? await loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot)
     : glossary;
   await saveReviewQueue(input.projectRoot, nextQueue);
   await writeSpansMeta(input.projectRoot, {
@@ -452,6 +530,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
   now?: string;
 }): Promise<IStageSpeechTranscriptReviewResult> {
   const now = input.now ?? new Date().toISOString();
+  await assertNoStagedSpeechTranscriptReview(input.projectRoot, input.inputsHash);
   const meta = await loadSpansMeta(input.projectRoot);
   if (!meta || meta.inputsHash !== input.inputsHash || meta.status !== 'pending-speech-review') {
     throw new Error('speech/transcript review inputsHash is stale; rerun span-rebuild');
@@ -460,7 +539,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
     getTranscriptReviewArtifactPath(input.projectRoot, input.inputsHash),
   );
   const [glossary, normalization] = await Promise.all([
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptNormalization(input.workspaceRoot),
   ]);
   assertTranscriptReviewConfiguration(candidateArtifact, glossary, normalization, 'Agent');
@@ -663,9 +742,6 @@ export async function stageProjectSpeechTranscriptReview(input: {
       for (const spanId of decision.spanIds.filter(candidate => candidate !== decision.preferredSpanId)) {
         const span = normalizedSpanById.get(spanId)!;
         const visualSpanIds = findVisualRecallSpans(spansAfterNormalization, span);
-        if (!span.visualObservation?.trim() && visualSpanIds.length === 0) {
-          throw new Error(`take group ${decision.groupId} cannot cancel ${span.id} without retained visual evidence`);
-        }
         reviewItems.push({
           id: `speech-take-cancel-${hashText(`${input.inputsHash}:${decision.groupId}:${span.id}`).slice(0, 20)}`,
           category: 'speech-window-suggested-cancel',
@@ -683,19 +759,13 @@ export async function stageProjectSpeechTranscriptReview(input: {
           confidence: decision.confidence,
           containsProperNoun: false,
           windowEvidence: decision.evidence,
-          visualSpanIds: visualSpanIds.length > 0 ? visualSpanIds : [span.id],
+          visualSpanIds,
           takeGroupId: decision.groupId,
           preferredSpanId: decision.preferredSpanId,
           takeCandidates,
         });
       }
       continue;
-    }
-    for (const spanId of decision.spanIds) {
-      const span = normalizedSpanById.get(spanId)!;
-      if (!span.visualObservation?.trim() && findVisualRecallSpans(spansAfterNormalization, span).length === 0) {
-        throw new Error(`take group ${decision.groupId} cannot offer a choice that may cancel ${span.id} without retained visual evidence`);
-      }
     }
     const first = normalizedSpanById.get(decision.spanIds[0]!)!;
     reviewItems.push({
@@ -714,8 +784,7 @@ export async function stageProjectSpeechTranscriptReview(input: {
       windowEvidence: decision.evidence,
       visualSpanIds: decision.spanIds.flatMap(spanId => {
         const span = normalizedSpanById.get(spanId)!;
-        const visualSpanIds = findVisualRecallSpans(spansAfterNormalization, span);
-        return visualSpanIds.length > 0 ? visualSpanIds : [span.id];
+        return findVisualRecallSpans(spansAfterNormalization, span);
       }),
       takeGroupId: decision.groupId,
       takeCandidates,
@@ -772,6 +841,101 @@ export async function stageProjectSpeechTranscriptReview(input: {
   return { artifact, artifactPath, reportPath, spans: spansAfterNormalization };
 }
 
+/** Continue an existing review without restaging spans or resetting human work. */
+export async function continueProjectSpeechTranscriptReview(input: {
+  workspaceRoot: string;
+  projectRoot: string;
+  inputsHash: string;
+  expectedArtifactHash: string;
+  previousGlossary: ITranscriptGlossaryConfig;
+  transcriptDecisions?: TTranscriptAgentDecision[];
+  now?: string;
+}): Promise<TSpeechTranscriptReviewArtifact> {
+  const now = input.now ?? new Date().toISOString();
+  const artifactPath = getSpeechTranscriptReviewArtifactPath(input.projectRoot, input.inputsHash);
+  const original = await readFile(artifactPath, 'utf-8');
+  if (hashText(original) !== input.expectedArtifactHash) throw new Error('review draft changed before continuation');
+  const artifact = ISpeechTranscriptReviewArtifact.parse(JSON.parse(original));
+  const meta = await loadSpansMeta(input.projectRoot);
+  if (!meta || meta.inputsHash !== input.inputsHash || meta.status !== 'pending-speech-review'
+    || artifact.inputsHash !== input.inputsHash || artifact.status !== 'pending-human') {
+    throw new Error('only the current pending speech/transcript review can be continued');
+  }
+  const [glossary, normalization, spans, assets] = await Promise.all([
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
+    loadTranscriptNormalization(input.workspaceRoot),
+    loadSpans(input.projectRoot),
+    loadAssets(input.projectRoot),
+  ]);
+  assertTranscriptReviewConfiguration(artifact, input.previousGlossary, normalization, 'Agent');
+  await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
+  if (hashJson(spans) !== artifact.baselineSpansHash) throw new Error('candidate spans changed during speech/transcript review');
+  validateStagedTakeReviewItems(artifact.items, spans, assets, artifact.duplicateGroups);
+  assertAdditiveTranscriptGlossary(input.previousGlossary, glossary);
+  const decisions = z.array(ITranscriptAgentDecision).parse(input.transcriptDecisions ?? []);
+  const items = artifact.items.map(item => ({ ...item }));
+  const seen = new Set<string>();
+  for (const decision of decisions) {
+    if (seen.has(decision.itemId)) throw new Error(`duplicate continuation decision: ${decision.itemId}`);
+    seen.add(decision.itemId);
+    const item = items.find(row => row.id === decision.itemId);
+    if (!item || item.category !== 'transcript-needs-listening' || item.selection !== 'unresolved'
+      || item.resolvedAt || (item.finalText !== undefined && item.finalText !== (item.suggestedText ?? item.originalText))) {
+      throw new Error(`continuation cannot overwrite reviewed or edited item: ${decision.itemId}`);
+    }
+    if (!item.originalText || !item.originalTextHash) throw new Error(`missing original transcript: ${item.id}`);
+    validateAgentDecision({ ...item, originalText: item.originalText, originalTextHash: item.originalTextHash }, artifact, decision, glossary);
+    if (decision.action === 'keep-original') continue;
+    const proposedText = requireText(decision.finalText ?? decision.suggestedText, `decision ${item.id} suggestedText`);
+    // These are staged suggestions only, including action=auto-apply. Formal text and
+    // timing remain in the baseline until the user submits the entire review.
+    Object.assign(item, {
+      category: decision.action === 'auto-apply' ? 'transcript-suggested-correction' : 'transcript-needs-listening',
+      selection: decision.action === 'auto-apply' ? 'accepted' : 'unresolved',
+      suggestedText: proposedText,
+      finalText: proposedText,
+      reason: summarizeTranscriptDecisionReason(decision),
+      evidence: decision.evidence,
+      confidence: decision.confidence,
+      containsProperNoun: decision.containsProperNoun,
+    });
+  }
+  const next = ISpeechTranscriptReviewArtifact.parse({
+    ...artifact, glossaryHash: computeTranscriptGlossaryHash(glossary), updatedAt: now, items,
+  });
+  const auditPath = join(input.projectRoot, 'analysis', 'speech-transcript-reviews', 'context-updates',
+    `${hashJson({ before: input.expectedArtifactHash, after: next })}.json`);
+  await writeJson(auditPath, {
+    schemaVersion: '1.0', updatedAt: now, inputsHash: input.inputsHash,
+    beforeArtifactHash: input.expectedArtifactHash, before: JSON.parse(original),
+    previousGlossary: input.previousGlossary, effectiveGlossary: glossary,
+    decisions, afterArtifactHash: hashJson(next),
+  });
+  if (hashText(await readFile(artifactPath, 'utf-8')) !== input.expectedArtifactHash
+    || hashJson(await loadSpansMeta(input.projectRoot)) !== hashJson(meta)) {
+    throw new Error('review draft changed during continuation; reload before retrying');
+  }
+  assertTranscriptReviewConfiguration(next,
+    await loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
+    await loadTranscriptNormalization(input.workspaceRoot), 'Agent');
+  await assertTranscriptTripContextHash(input.projectRoot, artifact.tripContextHash);
+  if (hashJson(await loadSpans(input.projectRoot)) !== artifact.baselineSpansHash) {
+    throw new Error('candidate spans changed during speech/transcript review');
+  }
+  await writeJson(artifactPath, next);
+  await writeSpeechTranscriptReviewReport(next.reportPath, next);
+  await writeSpansMeta(input.projectRoot, {
+    ...meta,
+    speechReview: {
+      ...meta.speechReview, glossaryHash: next.glossaryHash, updatedAt: now,
+      pendingCorrectionCount: items.filter(item => item.selection === 'unresolved').length,
+      suggestedCorrectionCount: countReviewCategory(items, 'transcript-suggested-correction'),
+      needsListeningCount: countReviewCategory(items, 'transcript-needs-listening'),
+    },
+  });
+  return next;
+}
+
 export async function saveProjectSpeechTranscriptReviewDraft(input: {
   workspaceRoot: string;
   projectRoot: string;
@@ -789,7 +953,7 @@ export async function saveProjectSpeechTranscriptReviewDraft(input: {
   }
   if (artifact.status !== 'pending-human') throw new Error('speech/transcript review draft is not editable');
   const [glossary, normalization] = await Promise.all([
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptNormalization(input.workspaceRoot),
   ]);
   assertTranscriptReviewConfiguration(artifact, glossary, normalization, 'human');
@@ -871,7 +1035,7 @@ export async function commitProjectSpeechTranscriptReview(input: {
     throw new Error('speech/transcript review is stale; rerun span-rebuild');
   }
   const [glossary, normalization] = await Promise.all([
-    loadEffectiveTranscriptGlossary(input.workspaceRoot),
+    loadEffectiveTranscriptGlossary(input.workspaceRoot, input.projectRoot),
     loadTranscriptNormalization(input.workspaceRoot),
   ]);
   assertTranscriptReviewConfiguration(artifact, glossary, normalization, 'human');
@@ -926,6 +1090,8 @@ export async function commitProjectSpeechTranscriptReview(input: {
     finalize: true,
   });
   spans = applyAcceptedDuplicateGroups(spans, duplicateGroups);
+  spans = reconcileClearedTranscriptSpans(spans, resolvedItems);
+  validateExcludedSpeechTakes(spans, resolvedItems);
   spans = assignUniqueMaterialSpanIds(spans);
   const completedArtifact = ISpeechTranscriptReviewArtifact.parse({
     ...artifact,
@@ -1084,6 +1250,17 @@ function applyConfiguredTranscriptNormalizations(input: {
   return { spans, items };
 }
 
+function assertAdditiveTranscriptGlossary(previous: ITranscriptGlossaryConfig, current: ITranscriptGlossaryConfig): void {
+  // Reviewed evidence must retain its exact spelling and usage context.
+  const currentTerms = new Map(current.entries.map(entry => [normalizeGlossaryLookupKey(entry.canonical), entry]));
+  for (const entry of normalizeTranscriptGlossary(previous).entries) {
+    const term = currentTerms.get(normalizeGlossaryLookupKey(entry.canonical));
+    if (!term || hashJson(term) !== hashJson(entry)) {
+      throw new Error(`review continuation requires additive glossary context: ${entry.canonical}`);
+    }
+  }
+}
+
 function assertTranscriptReviewConfiguration(
   artifact: Pick<TTranscriptReviewArtifact | TSpeechTranscriptReviewArtifact, 'glossaryHash' | 'normalizationHash'>,
   glossary: ITranscriptGlossaryConfig,
@@ -1091,7 +1268,7 @@ function assertTranscriptReviewConfiguration(
   phase: 'Agent' | 'human',
 ): void {
   if (computeTranscriptGlossaryHash(glossary) !== artifact.glossaryHash) {
-    throw new Error(`transcript glossary changed during ${phase} review; rerun span-rebuild`);
+    throw new Error(`transcript glossary changed during ${phase} review; explicitly continue the pending review with verified glossary context`);
   }
   if (
     artifact.normalizationHash
@@ -1437,7 +1614,8 @@ function validateStagedTakeReviewItems(
     }
     preferredSpanIdByGroup.set(groupId, item.preferredSpanId);
     const cancelledSpanId = item.spanIds[0];
-    if (item.spanIds.length !== 1 || !cancelledSpanId || cancelledSpanId === item.preferredSpanId) {
+    if (item.spanIds.length !== 1 || !cancelledSpanId || cancelledSpanId === item.preferredSpanId
+      || !candidates.some(candidate => candidate.spanId === cancelledSpanId)) {
       throw new Error(`take group ${groupId} cancel item must reference one non-preferred candidate`);
     }
     const cancelled = cancelSpanIdsByGroup.get(groupId) ?? new Set<string>();
@@ -1498,7 +1676,7 @@ function resolveUnifiedReviewItem(
     return { ...item, selection: 'rejected', resolvedWindowAction: 'keep', resolvedAt: now };
   }
   if (item.category.startsWith('transcript-')) {
-    const finalText = requireText(resolution.finalText ?? item.suggestedText, `review ${item.id} finalText`);
+    const finalText = humanReviewText(resolution.finalText ?? item.finalText ?? item.suggestedText, item.id);
     return { ...item, selection: 'accepted', finalText, resolvedAt: now };
   }
   const windowAction = item.category === 'speech-window-suggested-trim'
@@ -1588,7 +1766,7 @@ function applyDraftResolution(
     return {
       ...item,
       selection: 'accepted',
-      finalText: requireText(resolution.finalText ?? item.finalText ?? item.suggestedText, `review ${item.id} finalText`),
+      finalText: humanReviewText(resolution.finalText ?? item.finalText ?? item.suggestedText, item.id),
       resolvedAt: undefined,
     };
   }
@@ -1612,7 +1790,7 @@ function applyUnifiedTranscriptCorrection(
   spans: IKtepSpan[],
   item: ISpeechTranscriptReviewItem,
 ): IKtepSpan[] {
-  const finalText = requireText(item.finalText ?? item.suggestedText, `review ${item.id} finalText`);
+  const finalText = humanReviewText(item.finalText ?? item.suggestedText, item.id);
   let matches = 0;
   const next = spans.map(span => {
     if (!item.spanIds.includes(span.id)) return span;
@@ -1641,6 +1819,36 @@ function applyUnifiedTranscriptCorrection(
       : span;
   });
   if (matches === 0) throw new Error(`review ${item.id} no longer references any transcript segment`);
+  return next;
+}
+
+function humanReviewText(value: string | undefined, itemId: string): string {
+  if (typeof value !== 'string') throw new Error(`review ${itemId} finalText is required`);
+  return value.trim();
+}
+
+function reconcileClearedTranscriptSpans(spans: IKtepSpan[], items: ISpeechTranscriptReviewItem[]): IKtepSpan[] {
+  const clearItems = items.filter(item => item.selection === 'accepted'
+    && item.category.startsWith('transcript-') && item.finalText !== undefined && !item.finalText.trim());
+  const bySpanId = new Map(clearItems.flatMap(item => item.spanIds.map(id => [id, item] as const)));
+  let next = spans;
+  for (const span of spans) {
+    const item = bySpanId.get(span.id);
+    if (!item) continue;
+    if (!span.transcript?.trim()) {
+      next = applyUnifiedWindowCancel(next, { ...item, spanIds: [span.id], takeGroupId: undefined });
+      continue;
+    }
+    const spoken = (span.transcriptSegments ?? []).filter(segment => segment.text.trim());
+    if (!spoken.length) continue;
+    const sourceDurationMs = Math.max(1, (span.sourceOutMs ?? item.endMs) - (span.sourceInMs ?? item.startMs));
+    next = next.map(candidate => candidate.id !== span.id ? candidate : {
+      ...candidate,
+      effectiveSpeechStartMs: spoken[0]!.startMs,
+      effectiveSpeechEndMs: spoken[spoken.length - 1]!.endMs,
+      speechCoverage: Math.min(1, spoken.reduce((sum, segment) => sum + Math.max(0, segment.endMs - segment.startMs), 0) / sourceDurationMs),
+    });
+  }
   return next;
 }
 
@@ -1673,6 +1881,10 @@ function applyUnifiedWindowCancel(spans: IKtepSpan[], item: ISpeechTranscriptRev
   let matches = 0;
   const next = spans.flatMap(span => {
     if (!item.spanIds.includes(span.id)) return span;
+    if (item.takeGroupId) {
+      matches += 1;
+      return [];
+    }
     if (!span.visualObservation?.trim()) {
       if (findVisualRecallSpans(spans, span).length === 0) {
         throw new Error(`review ${item.id} cannot preserve visual recall because visualObservation is missing`);
@@ -1727,6 +1939,20 @@ function withSpeechPattern(patterns: string[], hasSpeech: boolean): string[] {
   return next;
 }
 
+function validateExcludedSpeechTakes(spans: IKtepSpan[], items: ISpeechTranscriptReviewItem[]): void {
+  // Check the staged identities before final material IDs are reassigned.
+  const retainedIds = new Set(spans.map(span => span.id));
+  for (const item of items) {
+    if (!item.takeGroupId || item.selection !== 'accepted') continue;
+    const excludedIds = item.category === 'speech-take-needs-choice'
+      ? (item.takeCandidates ?? []).filter(candidate => candidate.spanId !== item.selectedSpanId).map(candidate => candidate.spanId)
+      : item.spanIds;
+    for (const spanId of excludedIds) {
+      if (retainedIds.has(spanId)) throw new Error(`excluded speech take ${spanId} remains in the candidate index`);
+    }
+  }
+}
+
 function validateFinalSpeechTranscriptReview(
   spans: IKtepSpan[],
   artifact: TSpeechTranscriptReviewArtifact,
@@ -1747,6 +1973,7 @@ function validateFinalSpeechTranscriptReview(
   }
   for (const item of artifact.items.filter(candidate => (
     candidate.selection === 'accepted'
+    && !candidate.takeGroupId
     && (candidate.category === 'speech-window-suggested-cancel'
       || candidate.resolvedWindowAction === 'cancel')
   ))) {
@@ -1758,21 +1985,6 @@ function validateFinalSpeechTranscriptReview(
       && (span.sourceInMs ?? 0) < item.endMs
     ));
     if (!retainedVisual) throw new Error(`cancelled speech window ${item.id} lost visual recall`);
-  }
-  for (const item of artifact.items.filter(candidate => (
-    candidate.selection === 'accepted' && candidate.category === 'speech-take-needs-choice'
-  ))) {
-    for (const candidate of item.takeCandidates ?? []) {
-      if (candidate.spanId === item.selectedSpanId) continue;
-      const retainedVisual = spans.some(span => (
-        span.assetId === candidate.assetId
-        && span.semanticKind === 'visual'
-        && Boolean(span.visualObservation?.trim())
-        && (span.sourceOutMs ?? span.sourceInMs ?? 0) > candidate.startMs
-        && (span.sourceInMs ?? 0) < candidate.endMs
-      ));
-      if (!retainedVisual) throw new Error(`take choice ${item.id} lost visual recall for ${candidate.spanId}`);
-    }
   }
 }
 
@@ -1815,7 +2027,7 @@ async function writeSpeechTranscriptReviewReport(
     if (entry.kind === 'transcript') {
       lines.push('| 状态 | 素材 | 段 | 时间 | 原文 | 建议文本 | 依据 |', '|---|---|---|---|---|---|---|');
       for (const item of items) {
-        lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.assetDisplayName ?? item.assetId)} | ${md(item.spanIds.join(', '))} | ${formatReviewRange(item.startMs, item.endMs)} | ${md(item.originalText)} | ${md(item.finalText ?? item.suggestedText)} | ${md(item.reason)} |`);
+        lines.push(`| ${reviewSelectionLabel(item)} | ${md(item.assetDisplayName ?? item.assetId)} | ${md(item.spanIds.join(', '))} | ${formatReviewRange(item.startMs, item.endMs)} | ${md(item.originalText)} | ${md(item.finalText === '' ? '（删除字幕，保留画面）' : item.finalText ?? item.suggestedText)} | ${md(item.reason)} |`);
       }
     } else if (entry.kind === 'window') {
       lines.push('| 状态 | 素材 | 窗口 | 时间 | 原内容 | 建议结果 | 依据 |', '|---|---|---|---|---|---|---|');
@@ -1876,8 +2088,8 @@ function formatWindowSuggestion(item: ISpeechTranscriptReviewItem): string {
       ? item.takeCandidates?.find(candidate => candidate.spanId === item.preferredSpanId)
       : undefined;
     const retained = preferred ? preferred.assetDisplayName ?? preferred.assetId : item.preferredSpanId;
-    return retained
-      ? `取消口播属性和字幕，保留视觉素材召回；同组保留 ${retained}`
+    return item.takeGroupId
+      ? `整段排除该口播版本，不保留为视觉候选；同组保留 ${retained}`
       : '取消口播属性和字幕，保留视觉素材召回';
   }
   if (action === 'keep') return item.category === 'speech-window-needs-listening' ? '不调整' : '保持原窗口';
@@ -1891,9 +2103,9 @@ function formatTakeCandidates(item: ISpeechTranscriptReviewItem): string {
 }
 
 function formatSelectedTake(item: ISpeechTranscriptReviewItem): string {
-  if (!item.selectedSpanId) return '未选择';
+  if (!item.selectedSpanId) return '待单选保留版本；其余版本将整段排除，不保留为视觉候选';
   const candidate = item.takeCandidates?.find(entry => entry.spanId === item.selectedSpanId);
-  return candidate?.assetDisplayName ?? candidate?.assetId ?? item.selectedSpanId;
+  return `保留 ${candidate?.assetDisplayName ?? candidate?.assetId ?? item.selectedSpanId}；其余版本整段排除，不保留为视觉候选`;
 }
 
 function retainedTranscriptText(span: IKtepSpan, startMs?: number, endMs?: number): string | undefined {
@@ -1923,8 +2135,8 @@ function md(value: string | undefined): string {
 }
 
 function validateAgentDecision(
-  item: ITranscriptReviewItem,
-  artifact: TTranscriptReviewArtifact,
+  item: Pick<ITranscriptReviewItem, 'id' | 'originalText' | 'originalTextHash' | 'startMs' | 'endMs' | 'contextEvents'>,
+  artifact: Pick<TTranscriptReviewArtifact, 'inputsHash'>,
   decision: TTranscriptAgentDecision,
   glossary: ITranscriptGlossaryConfig,
 ): void {

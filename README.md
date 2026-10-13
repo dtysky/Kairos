@@ -1,5 +1,9 @@
 # Kairos
 
+字幕审查中清空最终文本并接受表示删除该句字幕；保存和刷新保留空值，提交保留画面及原始 ASR，仅在候选全部字幕清空时取消其口播属性。
+
+口播审查可使用项目 `config/transcript-glossary.json`：在内置与工作区词表之后合并，只提供 post-ASR 标准写法和使用语境。每次字幕审查前必须先检查项目纳入的 Pharos trip 及已发布调研资料，生成/核对项目词表并独立记录来源；无资料时明确记录缺席。首次审查使用 `refreshProjectTranscriptReviewGlossary` 接入新词表。已有审查通过 `continueProjectSpeechTranscriptReview` 接入新增词表并复核未决项，保留所有人工文字与选择；不重跑分析，也不在完整提交前写入正式 spans。
+
 > *καιρός — the decisive moment.*
 
 AI-powered post-production toolkit for travel filmmakers.
@@ -47,7 +51,7 @@ Current stable pipeline:
   - `/project` 只提供 Qwen3 / Whisper 两项 ASR 全局选择，`/analyze` 展示自动发现的实际后端、模型、对齐器、运行可用性和 blocker；配置与实际执行后端不一致时同样视为阻塞
   - `/analyze` 不生成 `store/spans.json` 或 `media/chronology.json`；它只产出 / 刷新 `analysis/asset-reports/*.json`。历史 speech-boundary 响度分析仅保留为诊断工具，不能覆盖 Qwen aligned timing 或正式口播取源范围
   - `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页；先显式点击 `生成候选素材片段与模式` 运行 `span-rebuild` span-builder，由本地 qwen 文本 LM 生成 provisional `materialPatterns[]`。若存在 speech/mixed candidate span，meta 标为 `pending-speech-review`，Codex Agent 按 handoff 生成统一“口播与字幕审查”，Console 分别显示字幕自动正字归一、建议修正、需人工听音，窗口建议裁切、建议取消，多完整版本待选择，以及跨素材重复候选七个审查区。窗口内较早残句被后续完整重说覆盖时，Agent 应按现有 segment 边界建议保留完整连续范围；连续相邻素材若是同一次口播的多次尝试，唯一明显完整版本直接保留并建议取消其余版本，多个完整版本没有明确优劣时才进入单选表。建议项默认接受，用户只需取消不接受的项；字幕需人工听音和多完整版本选择默认未决，窗口无法可靠提出动作时保持原窗口且不进入人工审查。全部处理并提交后 meta 才变为 `fresh`，随后可运行 `chronology-build`
-  - 统一审查不改 `analysis/asset-reports/*.json`、ASR 原文、segment 时间或分段。简体中文正字归一和 `config/transcript-normalization.json` 的无条件精确替换先进入 candidate spans 并记录自动修正，Agent 仍审查归一后的完整句子；其余字幕和 speech-window 变更只先写 `analysis/speech-transcript-reviews/<inputsHash>.json`。只读 `resources/transcript-glossaries/*.json` 收录摄影/视频等内置领域术语，工作区 `config/transcript-glossary.json` 保留个性词条；两者 v3 每项都只有唯一“正确写法”和必填“使用语境”，合并后只供 post-ASR Agent 结合上下文判断，不进入 ASR prompt、hotwords 或 Qwen context。取消口播必须保留视觉召回
+  - 统一审查不改 `analysis/asset-reports/*.json`、ASR 原文、segment 时间或分段。简体中文正字归一和 `config/transcript-normalization.json` 的无条件精确替换先进入 candidate spans 并记录自动修正，Agent 仍审查归一后的完整句子；其余字幕和 speech-window 变更只先写 `analysis/speech-transcript-reviews/<inputsHash>.json`。只读 `resources/transcript-glossaries/*.json` 收录摄影/视频等内置领域术语，工作区 `config/transcript-glossary.json` 保留个性词条，项目同名配置保存调研专名；三层 v3 每项都只有唯一“正确写法”和必填“使用语境”，合并后只供 post-ASR Agent 结合上下文判断，不进入 ASR prompt、hotwords 或 Qwen context。独立取消口播保留视觉召回；take group 淘汰的版本整段移出正式候选索引，不转为视觉素材。已有独立 visual spans、原始媒体和分析事实保持不变，排除仍等用户提交后应用
   - 跨素材重复组是独立审查项：只比较明确同功能且可互相替代的口播，默认采用 Agent 推荐的最佳 1 项，内容互补时最多 2 项，用户可改选或拒绝分组；接受后未选候选从正式 spans 索引删除，原始素材、asset reports、ASR 和审计保持不变。相邻同次录制的 take group 优先处理，其全部成员不得再进入 duplicate group，提交时验证两类分组互斥。
   - `chronology-build` 的事件归属先看 Pharos 单点事件真实时间窗：span 与 `expected / unexpected` 的非 `continuous` actual window 存在有意义重叠时可直接归入该事件；多个 Pharos 单点事件时间窗重叠时，先用 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本猜测语义；Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 时间 / summary 上下文，不把多个事件间 route 强行合并，且 `深圳 → 南宁 全程` 这类 route prose 不得写入 `event.location / route.from / route.to`
   - Chronology V2 的 route/event 地名来自 GPS reverse geocode：route 按自身 `startAt/endAt` 各取实际 GPS 端点，普通非 Pharos event 按 midpoint 取单点，优先读取 `gps/reverse-geocode-cache.json`，未命中时串行限速调用 provider；Pharos point event 自带地点仍是人工事实，只有缺失时才用 actual-window GPS 反查兜底

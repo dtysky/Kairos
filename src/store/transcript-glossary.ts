@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdir } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
@@ -80,15 +80,30 @@ export async function saveTranscriptGlossary(
 
 export async function loadEffectiveTranscriptGlossary(
   workspaceRoot: string,
+  projectRoot?: string,
 ): Promise<TTranscriptGlossaryConfig> {
-  const [domain, workspace] = await Promise.all([
+  const [domain, workspace, project] = await Promise.all([
     loadTranscriptDomainGlossary(workspaceRoot),
     loadTranscriptGlossary(workspaceRoot),
+    projectRoot ? loadProjectTranscriptGlossary(projectRoot) : undefined,
   ]);
   const entries = new Map<string, ITranscriptGlossaryEntry>();
   for (const entry of domain.entries) entries.set(normalizeGlossaryLookupKey(entry.canonical), entry);
   for (const entry of workspace.entries) entries.set(normalizeGlossaryLookupKey(entry.canonical), entry);
+  for (const entry of project?.entries ?? []) entries.set(normalizeGlossaryLookupKey(entry.canonical), entry);
   return normalizeTranscriptGlossary({ schemaVersion: '3.0', entries: [...entries.values()] });
+}
+
+export async function loadProjectTranscriptGlossary(projectRoot: string): Promise<TTranscriptGlossaryConfig> {
+  let text: string;
+  try {
+    text = await readFile(getTranscriptGlossaryPath(projectRoot), 'utf-8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { schemaVersion: '3.0', entries: [] };
+    throw error;
+  }
+  // A present but damaged project context must never silently disappear from review.
+  return normalizeTranscriptGlossary(ITranscriptGlossaryConfig.parse(JSON.parse(text)));
 }
 
 export async function loadTranscriptDomainGlossary(

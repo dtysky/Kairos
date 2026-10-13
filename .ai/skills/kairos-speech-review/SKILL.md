@@ -10,15 +10,27 @@ description: >-
 
 这个阶段位于 `span-rebuild` 之后、`chronology-build` 之前。它只审查候选 speech/mixed spans，不重跑 ASR、VLM、fine-scan 或 span-builder。
 
+## 必做前置：调研资料与项目词表
+
+每次首次审查或续接审查都先执行，不等待用户另行要求。
+
+1. 核对 handoff、项目 ID、inputsHash、meta 与当前审查产物。读取项目 brief 的 `pharos.includedTripIds`；未显式筛选时，以项目 `pharos/` 下有效 plan 的 trip ID 为范围，不扫描其它行程生成词条。按 `.ai/rules/pharos-protocol-sync.mdc` 校验协议。
+2. 按这些稳定 trip ID 查找 `../Pharos/carta/shots/<tripId>/field-guide.json`，结合 `research-request.md` 的发布状态和 `pothos_ref` 定位已确认调研。读取已发布 field guide 正文即可作为研究来源；计划、研究委托和未确认讨论不能冒充报告原文。多个纳入 trip 分别检查并记录。没有对应报告时记录检查范围及缺席原因，使用已有有效词表继续；用户明确指定的报告缺失或文件损坏则按缺失输入规则处理。跨设备只有来源快照时，明确注明快照与无法核验上游新版，不宣称已同步最新报告。
+3. 修改词表前保存当前 `loadEffectiveTranscriptGlossary(workspaceRoot, projectRoot)` 快照。Agent 从事实章节提取地名、人名、菜名、工艺及专业名词，逐项写明适用语境；不确定拼写不加入，不把观点、传说或计划当实际事实。写项目 `config/transcript-glossary.json`（v3，每项仅 `canonical + context`），保留已有条目和用户语境，不写 alias、近音自动替换或 ASR 提示。已开始审查时只允许增补；旧语境冲突需留给单独复核，不能为通过 hash 校验覆盖旧证据。
+4. 来源审计写项目 `config/transcript-glossary.sources.json`，记录每个来源的 trip ID、revision、原路径、SHA-256、不可变快照路径，以及每个词的章节/出处引用。快照保存于 `analysis/transcript-glossary-sources/`。保留已有来源，不把新文件写进 canonical `pharos/` 镜像。检查结论（可用来源、缺席来源、词表是否变化）写 `.tmp/chronology/speech-review-glossary-preflight.json`。
+5. 若 effective glossary hash 未变，直接审查。若首次候选仍为 `pending-agent` 且尚无统一审查，调用 `refreshProjectTranscriptReviewGlossary({workspaceRoot, projectRoot, inputsHash, expectedArtifactHash, previousGlossary})`；`expectedArtifactHash` 是当前候选 artifact 原始 UTF-8 字节的 SHA-256。若已有统一审查，调用 `continueProjectSpeechTranscriptReview`，使用统一 artifact 的 SHA-256 与修改前词表；禁止重新 stage 或构建 spans。这两个入口均只更新审查上下文并保存审计。
+6. 在逐句审查前读取三层 effective glossary 和来源语境。词条必须同时符合完整句子、相邻口播和当前时间段行程；发现一个地名近音并不足以自动替换。使用 `{source:"glossary", value:<canonical>, ref:<exact context>}` 留下依据。字幕之外仍完成本 skill 的窗口、take 与 duplicate 审查。
+
 ## 输入与不变量
 
 - 读取 `.tmp/chronology/speech-window-agent-handoff.md`、当前 candidate review artifact、`store/spans.json`、`store/spans.meta.json`、内置 `resources/transcript-glossaries/*.json`、工作区 `config/transcript-glossary.json`、`config/transcript-normalization.json` 和当前时间段行程上下文。
 - `analysis/asset-reports/*.json`、raw ASR、segment 起止时间及 segment 边界不可修改。
 - 字幕审查只能建议替换 `transcriptSegments[].text`；窗口审查只能保持、按现有 segment 边界连续裁切或取消。Agent 必须检查窗口内按时间排列的 segments：较早残句、卡顿或重新起句被后续完整表达覆盖，且去掉前后无效内容后仍能保留一个连续范围时，建议从完整表达的 segment 边界开始或结束。无法可靠提出窗口动作时保持原窗口并省略人工任务。
 - 对 capture-time 顺序中连续、分别属于不同视频素材的 speech/mixed spans，Agent 可声明同一次机位介绍的 take group。只有一个版本明显完整时保留该版本并建议取消其余版本；多个版本都完整且没有明确优劣时必须输出组级 `needs-choice`，交给用户试听后单选。完整度看信息覆盖、表达是否完整、是否卡顿或重起；不得简单选择最长素材。无法确认主题等价时不得成组。
-- 取消 speech window 时保留同范围的视觉召回和 `visualObservation`，不得删除、缩短或切碎已有 visual span。
+- take group 中被接受取消或未被单选保留的版本，提交时从正式 spans 索引整段排除，不转换为 visual；不要求被淘汰版本有视觉事实。拒绝取消建议则保留该版本。报告必须明确说明整段排除。独立的取消 speech window 仍只清除口播属性和字幕，保留视觉召回和 `visualObservation`。两类操作都不得删除、缩短或切碎已有独立 visual span，原始媒体、asset reports、ASR 和审计不变。
 - 跨素材重复组是独立审查项：只比较明确同功能且可互相替代的口播，默认采用 Agent 推荐的最佳 1 项，内容互补时最多 2 项，用户可改选或拒绝分组；接受后未选候选从正式 spans 索引删除，原始素材、asset reports、ASR 和审计保持不变。相邻同次录制的 take group 优先处理，其全部成员不得再进入 duplicate group，提交时验证两类分组互斥。
-- effective glossary 合并只读内置领域词表和工作区个性词表，同名时工作区语境优先。每项只包含唯一 `canonical` 和必填 `context`。只有完整句子、相邻口播及当前时间段行程符合语境时，才能把词条用作修改依据；它不进入 ASR prompt。
+- effective glossary 依次合并只读内置领域词表、工作区个性词表和项目 `config/transcript-glossary.json`，同名时后一层语境优先。每项只包含唯一 `canonical` 和必填 `context`。只有完整句子、相邻口播及当前时间段行程符合语境时，才能把词条用作修改依据；它不进入 ASR prompt。
+- 已有 pending 审查使用 `continueProjectSpeechTranscriptReview` 校验旧 effective glossary、完整草稿 SHA-256、baseline、normalization 和 trip 后归档旧产物；仅允许新增词表语境，旧条目须原样保留。不得重置用户文字或选择，也不得重跑 stage/span-builder。接入后只复核仍为 unresolved 且没有人工改写的字幕；用统一审查 item ID 返回少量 transcriptDecisions，`auto-apply` 在该入口仅变成默认接受的建议，不写 spans。任何已选择、已完成或已改写的行都拒绝覆盖。
 
 ## Agent 输出
 
@@ -53,7 +65,9 @@ Console 的所有人工改动必须通过 draft API 自动保存到审查 artifa
 
 ## 提交
 
+- 用户明确清空并接受最终字幕时，空字符串表示删除该句文字，不得用原文或建议回填。保留其原始时间与分段；全部字幕清空的候选按独立取消口播规则保留视觉召回，部分删除保留其它句子。自动 Agent 建议仍不可用空文本绕过听音审查。
+
 - Console `/chronology` 是正式审查入口。
-- 提交时调用 `commitProjectSpeechTranscriptReview`。服务端必须重新读取 baseline spans，并校验 inputs、effective glossary / normalization / trip hash、原文 hash、segment 时间、连续裁切边界、take group 成员相邻性与唯一性、组内单选值、重复引用、取消后的视觉保留、duplicate group 成员与 1–2 个保留项，以及 take / duplicate 分组成员互斥。
+- 提交时调用 `commitProjectSpeechTranscriptReview`。服务端必须重新读取 baseline spans，并校验 inputs、effective glossary / normalization / trip hash、原文 hash、segment 时间、连续裁切边界、take group 成员相邻性与唯一性、组内单选值、重复引用、take 淘汰候选已移除、独立取消后的视觉保留、duplicate group 成员与 1–2 个保留项，以及 take / duplicate 分组成员互斥。
 - 任一字幕听音或多完整版本选择未决、或任一校验失败，都保持 `pending-speech-review`，不得部分应用建议。
 - 校验通过后一次写入 reviewed spans、审计 artifact 和 meta，最后将 meta 标记为 `fresh`，随后才可运行 `chronology-build`。

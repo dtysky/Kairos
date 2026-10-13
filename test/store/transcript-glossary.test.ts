@@ -8,6 +8,7 @@ import {
   loadTranscriptDomainGlossary,
   normalizeTranscriptGlossary,
   saveTranscriptGlossary,
+  computeTranscriptGlossaryHash,
 } from '../../src/store/transcript-glossary.js';
 
 const roots: string[] = [];
@@ -17,6 +18,24 @@ afterEach(async () => {
 });
 
 describe('transcript glossary', () => {
+  it('isolates optional project terms and gives project context precedence without changing legacy hashes', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'kairos-glossary-project-'));
+    roots.push(root);
+    await saveTranscriptGlossary(root, { schemaVersion: '3.0', entries: [{ canonical: '水仙', context: '花卉' }] });
+    const project = join(root, 'projects', 'one');
+    const legacy = await loadEffectiveTranscriptGlossary(root);
+    expect(computeTranscriptGlossaryHash(await loadEffectiveTranscriptGlossary(root, project)))
+      .toBe(computeTranscriptGlossaryHash(legacy));
+    await saveTranscriptGlossary(project, { schemaVersion: '3.0', entries: [
+      { canonical: '水仙', context: '武夷岩茶品种' }, { canonical: '蟳埔', context: '泉州村落' },
+    ] });
+    expect((await loadEffectiveTranscriptGlossary(root, project)).entries).toEqual([
+      { canonical: '水仙', context: '武夷岩茶品种' }, { canonical: '蟳埔', context: '泉州村落' },
+    ]);
+    expect(await loadEffectiveTranscriptGlossary(root, join(root, 'projects', 'two'))).toEqual(legacy);
+    await writeFile(join(project, 'config', 'transcript-glossary.json'), '{broken', 'utf8');
+    await expect(loadEffectiveTranscriptGlossary(root, project)).rejects.toThrow();
+  });
   it('loads the shipped photography glossary as a validated domain resource', async () => {
     const glossary = await loadTranscriptDomainGlossary(process.cwd());
     expect(glossary.entries.length).toBeGreaterThanOrEqual(100);

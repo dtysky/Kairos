@@ -149,7 +149,7 @@ const projectRoot = await initWorkspaceProject(
 - 新项目启动后应明确提醒用户：`projects/<projectId>/pharos/` 已经建好，后续只需要把 `trip_id/plan.json + record.json? + gpx/` 镜像放进去
 - 从 Pharos/Carta 本地 trip 目录建立镜像时，只复制 canonical `plan.json`、可选 canonical `record.json` 与 `gpx/*.gpx`；`record-import.json`、路线报告、旅行记、review 和重建说明都不是 Kairos 输入
 - 对 `trip_kind: "freeform"`，允许 `days[]` 稀疏或为空；初始化不把未排期 route/shot options 转写成 Day、执行记录或素材缺口
-- `field-guide.json`、研究委托、Atlas / Argo 资料和路线地图缓存不属于 Kairos 输入，不随 trip 镜像复制。`active_route / route_progress / route_stop_day` 不替代实际日期或执行记录；没有已排期 shots 时，仍可从 canonical `record.extra_shots[]` 读取实际事件。
+- `field-guide.json`、研究委托、Atlas / Argo 资料不随 canonical trip 镜像复制。字幕审查阶段应检查已发布 field guide 并独立提取 post-ASR 项目词表，保存来源审计，但不进入 Ingest fingerprint 或素材匹配。`active_route / route_progress / route_stop_day` 不替代实际日期或执行记录；没有已排期 shots 时，仍可从 canonical `record.extra_shots[]` 读取实际事件。
 - 上游正式 `gpx/*.gpx` 按原始字节复制，保留已归档补建轨迹内的估算、来源与质量标记；不要复制重建过程目录、备份或导出合集造成重复轨迹，也不要把补建点密度解释成实测精度。
 - Pyxis 无记录任务时抑制 GPS 健康告警属于移动端策略，不改变镜像输入；历史 GPX 不证明当前正在记录，告警缺席不作为轨迹或素材缺口依据。
 

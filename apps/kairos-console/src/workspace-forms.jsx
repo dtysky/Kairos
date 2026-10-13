@@ -3139,7 +3139,7 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
         selection: legacyRejectedTranscript ? 'accepted' : item.selection,
         finalText: legacyRejectedTranscript
           ? item.originalText || ''
-          : item.finalText || item.suggestedText || item.originalText || '',
+          : item.finalText ?? item.suggestedText ?? item.originalText ?? '',
         retainStartMs: item.retainStartMs,
         retainEndMs: item.retainEndMs,
         windowAction: item.resolvedWindowAction || '',
@@ -3267,11 +3267,12 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
         title: '建议文本',
         key: 'suggestedText',
         render: (_, item) => item.selection === 'applied'
-          ? item.finalText || item.suggestedText
+          ? item.finalText ?? item.suggestedText
           : (
             <textarea
               className="speech-review-textarea"
               aria-label={`${item.id} 最终文本`}
+              placeholder="清空并接受将删除该句字幕，保留画面"
               rows={3}
               value={drafts[item.id]?.finalText ?? item.suggestedText ?? ''}
               onChange={event => updateDraft(item.id, { finalText: event.target.value })}
@@ -3305,8 +3306,8 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
               ? (item.takeCandidates || []).find(candidate => candidate.spanId === item.preferredSpanId)
               : null;
             const retained = preferred?.assetDisplayName || preferred?.assetId || item.preferredSpanId;
-            return retained
-              ? `取消口播属性和字幕，保留视觉素材召回；同组保留 ${retained}`
+            return item.takeGroupId
+              ? `整段排除该口播版本，不保留为视觉候选；同组保留 ${retained}`
               : '取消口播属性和字幕，保留视觉素材召回';
           }
           if (action === 'trim') {
@@ -3396,6 +3397,7 @@ export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, on
         return (
           <section className="speech-review-section" key={section.category}>
             <h3>{section.title}</h3>
+            {section.kind === 'take' ? <p className="muted">提交后只保留选中的口播版本，其余版本整段排除。原始素材和已有独立视觉片段保留。</p> : null}
             <Table
               rowKey="id"
               size="small"
