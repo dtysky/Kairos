@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-10-14T10:26:41.614Z",
+  "updatedAt": "2026-10-14T15:58:16.137Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-14T10:26:40Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-10-14T15:58:14Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,7 +19,7 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [],
-      "updatedAt": "2026-10-14T10:26:41.614Z"
+      "updatedAt": "2026-10-14T15:58:16.137Z"
     }
   }
 }
