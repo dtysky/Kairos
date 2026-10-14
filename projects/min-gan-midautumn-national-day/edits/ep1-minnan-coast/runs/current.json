@@ -1,0 +1,255 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "ep1-minnan-coast",
+  "updatedAt": "2026-10-14T09:26:24.142Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-framework-ep1-minnan-coast-20261014",
+      "editId": "ep1-minnan-coast",
+      "flowPlanId": "edit-flow-ep1-minnan-coast-vlog-20261014",
+      "flowPlanHash": "741077647bea86eba28d09c5835d962b3341e629b373755f7960b6156f34cf11",
+      "stepId": "edit-framework-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-10-14T07:25:23.202Z",
+      "updatedAt": "2026-10-14T08:56:54.759Z",
+      "completedAt": "2026-10-14T07:37:51.312Z",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-clean-context-subagent",
+        "scope": {
+          "startAt": "2026-09-24T08:42:11.240Z",
+          "endAt": "2026-09-28T06:03:47.400Z",
+          "eventCount": 24,
+          "assignedSpanCount": 772,
+          "supplementalSpanCount": 7,
+          "totalSpanCount": 779,
+          "assetCount": 680,
+          "nextEpisodeFirstEvent": "泉州前往武夷山高速沿途"
+        },
+        "sourceHashes": {
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.json": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep1-minnan-coast/config/edit-unit.json": "fddc0fe4a71bcedf998d78acef29ad8ec9f7920e5e770800dc44a2e26b19ea15",
+          "config/edit-rules/travel-vlog.md": "0748d3df434eaec8a0b4daa659fff545f0214f730cd97bddc0fcb33a8e322efc",
+          "pharos/trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd/plan.json": "a3217bfdf3f7d619d15aae505888bd9ac854132ac293555ae1d3a330672b2371",
+          "pharos/trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd/record.json": "daf1e41f22510f10cbba7a4cb08b8c3d0c5592d4649ed5b344a0a3e4e83bfeab",
+          "../Pharos/carta/plans/20260924-闽赣-山海人文弹性自驾.md": "08d76d9f4392fd1f27cf424584484eea4219998c2e3056a7be552e5ac9558b52"
+        },
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "chronologyEventCount",
+            "maxPerShard": 150,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "shardCount": 1,
+        "subagentTask": "/root/minnan_framework"
+      },
+      "outputPaths": [
+        "edits/ep1-minnan-coast/planning/edit-framework.md"
+      ],
+      "summary": {
+        "stage": "framework_confirmed",
+        "chapterCount": 5,
+        "frameworkRowCount": 89,
+        "candidateSpanCount": 779,
+        "coveredSpanCount": 779,
+        "supplementalPhotoCount": 7,
+        "zeroSpanAssetCount": 18,
+        "frameworkHash": "876b0c2379944e03263b46aac33b6c97b7eca64f44859456ecceeb6447559181",
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep1-minnan-coast/framework/validation.json",
+        "nextStep": "material-recall-v1",
+        "reviewedFrameworkHash": "c52e75f1738e064029959e60dd5e94f997ebb2281e4d7d33a32c6eed1aa3e46b"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-10-14T08:56:54.759Z",
+        "confirmedBy": "user",
+        "note": "用户在收到完整框架和审查门说明后明确要求“推进到下一步”，确认本版框架进入素材召回。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-recall-ep1-minnan-coast-20261014",
+      "editId": "ep1-minnan-coast",
+      "flowPlanId": "edit-flow-ep1-minnan-coast-vlog-20261014",
+      "flowPlanHash": "741077647bea86eba28d09c5835d962b3341e629b373755f7960b6156f34cf11",
+      "stepId": "material-recall-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-10-14T08:56:54.759Z",
+      "updatedAt": "2026-10-14T09:12:54.842Z",
+      "completedAt": "2026-10-14T09:10:04.594Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "sourceHashes": {
+          "store/spans.json": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "edits/ep1-minnan-coast/planning/edit-framework.md": "876b0c2379944e03263b46aac33b6c97b7eca64f44859456ecceeb6447559181",
+          "edits/ep1-minnan-coast/planning/flow-plan.json": "4e5dc0a8c78c1eb1938b75cfa499570618cd4246a92d302af322ea2d3b4f1d5c",
+          "edits/ep1-minnan-coast/config/edit-unit.json": "fddc0fe4a71bcedf998d78acef29ad8ec9f7920e5e770800dc44a2e26b19ea15"
+        },
+        "frameworkHash": "876b0c2379944e03263b46aac33b6c97b7eca64f44859456ecceeb6447559181",
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "materialRefCount",
+            "maxPerShard": 2000,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "shardCount": 1,
+        "candidateSpanCount": 779,
+        "assetCount": 680,
+        "subagentTask": "/root/minnan_recall"
+      },
+      "outputPaths": [
+        "edits/ep1-minnan-coast/script/material-slots.json"
+      ],
+      "summary": {
+        "stage": "material_recall_confirmed",
+        "frameworkRowCount": 89,
+        "candidateSpanCount": 779,
+        "chosenSpanCount": 748,
+        "excludedSpanCount": 31,
+        "speechProtectedChosen": 393,
+        "speechProtectedDropped": 0,
+        "photoChosen": 243,
+        "aerialChosen": 43,
+        "timelapseChosen": 2,
+        "longSilentDriveCount": 13,
+        "requestedWindowEstimateMs": 8491975,
+        "requestedSpeedEstimateMs": 7299117.75,
+        "timingStatus": "estimate_only_no_resolve_timeline",
+        "artifactHash": "7582c0b3c0808fc3f0a16d364396f0ae961a1cac5f6e2c4d31258ea8699f3a77",
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep1-minnan-coast/recall/validation.json",
+        "selectionAuditPath": ".tmp/edit-flow/ep1-minnan-coast/recall/selection-audit.json",
+        "reviewPath": ".tmp/edit-flow/ep1-minnan-coast/recall/review.md"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-10-14T09:12:54.842Z",
+        "confirmedBy": "user",
+        "note": "用户收到748段选材与审查摘要后要求“推进下一步”，确认进入独立闽南正文粗剪生成。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-ep1-minnan-coast-20261014",
+      "editId": "ep1-minnan-coast",
+      "flowPlanId": "edit-flow-ep1-minnan-coast-vlog-20261014",
+      "flowPlanHash": "741077647bea86eba28d09c5835d962b3341e629b373755f7960b6156f34cf11",
+      "stepId": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-10-14T09:14:18.069Z",
+      "updatedAt": "2026-10-14T09:26:24.142Z",
+      "completedAt": "2026-10-14T09:26:24.142Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 闽南海岸 [ep1-minnan-coast]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "materialSlotsHash": "7582c0b3c0808fc3f0a16d364396f0ae961a1cac5f6e2c4d31258ea8699f3a77",
+        "targetProject": "中秋国庆闽赣自驾 [Edit]",
+        "targetTimeline": "闽南海岸 [ep1-minnan-coast]",
+        "expectedClipCount": 748,
+        "width": 3840,
+        "height": 2160,
+        "fps": 30,
+        "stillDurationMs": 1000,
+        "targetPreflight": ".tmp/edit-flow/ep1-minnan-coast/timeline/resolve-preflight.json",
+        "resumePreflight": ".tmp/edit-flow/ep1-minnan-coast/timeline/resume-preflight.json"
+      },
+      "outputPaths": [
+        ".tmp/edit-flow/ep1-minnan-coast/timeline/current.json",
+        ".tmp/edit-flow/ep1-minnan-coast/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp"
+      ],
+      "summary": {
+        "stage": "rough_cut_generated_awaiting_human_review",
+        "resolveProjectName": "中秋国庆闽赣自驾 [Edit]",
+        "timelineName": "闽南海岸 [ep1-minnan-coast]",
+        "clipCount": 748,
+        "audioItemCount": 503,
+        "actualDurationMs": 8479767,
+        "fps": 30,
+        "playbackFps": 30,
+        "subtitleCueCount": 845,
+        "subtitleImported": false,
+        "speedAppliedCount": 0,
+        "speedPendingCount": 29,
+        "photoCount": 243,
+        "photoDurationMs": 1000,
+        "timelapseCount": 2,
+        "sourceRangeValidation": "passed",
+        "timelinePlacementValidation": "passed",
+        "timelineGapCount": 0,
+        "clipColorValidation": "passed",
+        "visualGroupValidation": "passed",
+        "drpBackupStatus": "saved",
+        "drpRetention": "latest-only",
+        "validationPath": ".tmp/edit-flow/ep1-minnan-coast/timeline/artifact-validation.json",
+        "resolveReadbackPath": ".tmp/edit-flow/ep1-minnan-coast/timeline/resolve-final-readback.json",
+        "nextStep": "body-intro-lock-v1"
+      },
+      "review": {
+        "status": "pending",
+        "note": "正文粗剪与独立原声 SRT 已生成并校验；等待人工审看和正文精剪，片头在正文基本定稿后设计，尚未锁片。"
+      }
+    }
+  ]
+}

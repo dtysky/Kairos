@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "1.0",
+  "plannerPolicyVersion": "codex-agent-v1",
+  "materialIdPolicyVersion": "human-source-v1",
+  "materialTimePolicyVersion": "normalized-captured-at-v1",
+  "id": "edit-flow-ep1-minnan-coast-vlog-20261014",
+  "projectId": "min-gan-midautumn-national-day",
+  "editId": "ep1-minnan-coast",
+  "editRuleCategory": "travel-vlog",
+  "editRuleHash": "0748d3df434eaec8a0b4daa659fff545f0214f730cd97bddc0fcb33a8e322efc",
+  "generatedAt": "2026-10-14T07:25:04.263Z",
+  "updatedAt": "2026-10-14T07:25:04.263Z",
+  "status": "confirmed",
+  "confirmedAt": "2026-10-14T07:25:04.263Z",
+  "summary": "闽南海岸专题：完整正文粗剪 → 人工精剪 → 约30秒短片头 → 航拍/延时按需旁白 → 最终字幕与收尾。先生成框架供人工审查，再召回素材，不提前按成片时长删减。",
+  "assumptions": [
+    "本轮用户已指定三个专题均使用 VLOG 规则，并明确要求“推进闽南”；据此登记本集执行计划，产物的人工审查门保持独立，不代表用户已确认框架或素材选择。",
+    "本集范围为闽南海岸：深圳出发与抵达东山、东山岛、蟳埔、泉州老城及石狮海岸、泉州清晨与驶离；真实顺序先蟳埔后老城，不能照搬计划路线排序。",
+    "起点为 2026-09-24 16:42:11，末端为 2026-09-28 14:03:47，均为 Asia/Shanghai；从泉州往武夷山的高速转场及后续内容留给第二专题。",
+    "Pharos 三组是采集边界而非预写结论，框架以实际拍到的画面和现场声音为据；不强造人物、采访、情节或主题。",
+    "20—30 分钟是专题成片目标，不能作为粗剪自动删减、抽样或段落预算依据。",
+    "本集 24 个已确认事件含 772 段，另有 7 张未挂入事件的同时间范围照片，共 779 个候选、680 个素材；补充照片进入框架核对，不回写项目编年史。",
+    "项目共享素材池已同步，素材导入独立于本计划；不生成 resolve.media_sync step。时间线生成前仍须验证实际共享池。",
+    "不需要独立事件表、素材档案或前置逐镜脚本，因此不添加 trip.event_table / material.archive / script.generate。",
+    "本 edit unit 未选择 styleCategory，当前规则未要求风格层；不借用默认风格档案。"
+  ],
+  "steps": [
+    {
+      "id": "edit-framework-v1",
+      "capabilityId": "edit.framework",
+      "title": "闽南海岸：正文剪辑框架",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        }
+      },
+      "gate": "human",
+      "notes": [
+        "按当前 VLOG 规则附录生成全片章节、分段操作稿、不可用 / 缺口、人工审查点。",
+        "按自然日连续打包，以约 150 个事件为阈值；本集 24 个事件在一个 SubAgent 包内完整读取，使用 high reasoning、clean context、不 fork 当前对话。",
+        "素材范围限本集；真实顺序为出发、东山、蟳埔、泉州老城及石狮海岸、泉州清晨与驶离。7 张未挂事件的本集照片仍应逐条理解，合理置于真实时间附近；不擅自改编年史或制造地点事实。",
+        "按天、重点时间、行车、航拍和关键事件组织，尽可能覆盖有效片段，不因成片目标时长、框架版面或审查便利过度剔除。",
+        "全片章节仅作宏观概览，分段操作稿是唯一可执行 handoff，每行有稳定 FW-xx-xx id；不另设 beat 边界索引。",
+        "事件 / 时间 / spans / 叙事 只写可快速审查的概况，不写 chronology/event/route/gap/span/asset id 或具体素材主键。",
+        "spans 列写准确类型数量与视频语音拆分，例如共28段：行车13（有语音5/无语音8）、航拍7、普通视频4（有语音2/无语音2）、照片4；不要使用高密度、多段、少量、含口播等模糊概括。",
+        "叙事列只写客观画面/声音总结，不写保留、优先、插入、加速、静音等后续处理指令；现场口述观点须与可确认事实区分。",
+        "行车重复窗口中无人机跟车优先于无口播第一视角行车；行车之外同一事件航拍成组放入普通视频之间，照片在事件末尾成组。此规则进入后续召回，不在叙事列写命令。",
+        "框架完成后进入人工审查；未确认框架不得开始素材召回。"
+      ]
+    },
+    {
+      "id": "material-recall-v1",
+      "capabilityId": "material.recall",
+      "title": "按已审框架召回闽南素材",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        }
+      },
+      "gate": "human",
+      "notes": [
+        "只消费已确认框架的分段操作稿、store/spans.json、store/assets.json 与本 step notes，不把完整编年史或 asset reports 作为语义召回接口。",
+        "按自然日连续打包，以约 2000 个 span 为阈值，clean-context high reasoning SubAgent；本集初始 779 个候选可作为一个包，仍需按框架定稿校验范围。",
+        "尽可能纳入有效片段；不发明数量上限、代表抽样、全局压缩比例或成片时长删减规则。",
+        "大致保持真实时间顺序；同一时间窗口无人机跟车与无口播行车重复时优先无人机跟车；同事件航拍成组插入普通视频中，照片在末尾成组。",
+        "口播与纯视觉窗口重叠时优先口播；不改写现有 span 的源时间范围，时间线按既定 IoU 合同作兼容防线。",
+        "同一原始素材的无口播行车先按画面语义去重，最多保留三段；此数量限制仅用于该类素材。",
+        "所有无口播行车直接静音；超过 5 秒的静音行车按整数倍加速到 10 秒以内，最大 4 倍。若 4 倍仍超 10 秒，不得为了达标擅自删掉有效内容，应在审查中列为需人工处理；脚本不能实现加速时可在现有交互剪辑中通过 ComputerUse 完成。",
+        "chosenSpanIds 是选择真相；treatments 为稀疏覆盖表，默认 audio:0/speed:1 不写，照片显式 audio:-100；speed 仅允许 1..4 的整数且用于 drive/aerial。",
+        "被选非照片、非航拍有 transcript/transcriptSegments、speech/mixed 或 有口播语音 的片段不得静音；航拍音轨统一关闭。",
+        "未选 speech-backed 非照片素材必须在 coverageAudit 明示；不靠后续时间线自动补入未选素材。",
+        "人工审查召回结果后才生成正文粗剪。"
+      ]
+    },
+    {
+      "id": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "title": "生成闽南正文粗剪及原声 SRT",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 闽南海岸 [ep1-minnan-coast]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "runner": "deterministic",
+      "execution": {
+        "mode": "deterministic",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "按已审 material-slots 的 segment/slot/chosenSpanIds 顺序落片；只从共享池选用本集素材，任何时间线修改前校验池内必需项。",
+        "先核对项目 中秋国庆闽赣自驾 [Edit] 与本集独立时间线 闽南海岸 [ep1-minnan-coast]，不修改其他专题的时间线。",
+        "同事件照片在尾部成组，默认每张 1000ms；航拍音轨强制关闭，非照片非航拍口播不能静音。",
+        "有声语音片段取有效 transcriptSegments 首末时间，仅在两端各加一次 250ms；同源视觉重叠遵循既有 IoU>=0.5 扣除与 >=15s remainder 合同，不漂移 clip 编号。",
+        "按正式合同写入并回读 clip color（照片 Blue、延时 Purple、行车 Brown、航拍 Teal、其余可听 Orange）及照片/延时 Resolve Groups。",
+        "只落片一次，回读 Resolve 实际帧范围后生成辅助 source-speech SRT；SRT 仅供用户导入，不宣称已导入。字幕句界遵循 36 文本单位与既定标点/间隙合同，source-speech SRT 保留句界句号。",
+        "当前脚本可能不应用 speed，须明确记录 pending/ignored，在后续人工/ComputerUse 剪辑中完成最大四倍的静音行车加速，不冒充已应用。",
+        "成功后尝试项目级 latest-only DRP 备份，失败只报 warning，不回滚时间线。"
+      ]
+    },
+    {
+      "id": "body-intro-lock-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "title": "正文精剪、短片头与完整时间线确认",
+      "inputRefs": [
+        "DaVinci Resolve Timeline: 闽南海岸 [ep1-minnan-coast]",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/intro-plan.md",
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "runner": "manual",
+      "execution": {
+        "mode": "manual",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "人工与 LLM 交互修改正文，正文基本定稿并经人工确认后，才设计短片头。",
+        "片头从正文实际入选内容提炼精彩预告，约 30 秒为参考，不强凑时长；兼顾代表性风光高点和现场经历，简短交代本集特点并自然接入正文。",
+        "片头可跨时间精选并复用正文素材，正文保持真实经历顺序。Agent 在 intro-plan.md 中列可定位素材（正文时间码或源文件入出点）、建议顺序、预计时长、原声/旁白安排和接入正文位置。",
+        "片头属于现有人工与 LLM 交互剪辑环节，不是自动片头 capability；片头新增旁白只覆盖航拍/延时，不能盖过已有口播。",
+        "片头及衔接完成后由人工确认完整时间线，才登记 locked-rough-cut.json；不得把用户要求推进本集当作锁片确认。"
+      ]
+    },
+    {
+      "id": "optional-narration-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "按需补充航拍与延时旁白",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "DaVinci Resolve Timeline: 闽南海岸 [ep1-minnan-coast]",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/narration-review.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "完整时间线人工确认后，按实际需要为航拍/延时提供背景、连接或事后认识，允许留白。",
+        "片头与正文新增旁白只用于航拍、延时，不覆盖地面游览、人物交流、生活片段或已有口播。",
+        "只对需要旁白的段落给实际时间范围与简短文案，依据最终片段可用时长、visualObservation、真实经历与已核实事实；不创建全片逐镜 narration-framework.md。",
+        "没有新增旁白需求时记录无需旁白，后续不生成空洞的旁白字幕；有文案则先交人工审查定稿。"
+      ]
+    },
+    {
+      "id": "subtitles-finish-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "最终字幕同步、缺口补齐与收尾",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "edits/<editId>/subtitles/narration-review.md",
+        "DaVinci Resolve Timeline: 闽南海岸 [ep1-minnan-coast]",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/source-speech-missing.srt",
+        "edits/<editId>/subtitles/narration.srt",
+        "edits/<editId>/subtitles/final-subtitle-audit.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "由用户完成照片音效补齐和非全屏素材背景模糊效果；Agent 可按现有交互剪辑协助，并记录实际完成状态。",
+        "片头插入或正文调整后，按最终时间线实际片段位置与源范围复核已有字幕同步；不能沿用片头插入前的时间。",
+        "仅为实际保留现场语音却缺少字幕的片段生成 source-speech-missing.srt；纯视觉且未配旁白的片段无字幕不算遗漏。无缺口时在审计记录并跳过空 SRT。",
+        "已审新增旁白按最终时间线单独生成 narration.srt 供用户导入，与现场语音补字幕分开；没有旁白则跳过该输出。",
+        "最终审计明确原声字幕缺口、已有字幕错位修正、旁白独立输出或跳过状态；不声称执行了未做的 Resolve 导入或自动收尾。"
+      ]
+    }
+  ]
+}

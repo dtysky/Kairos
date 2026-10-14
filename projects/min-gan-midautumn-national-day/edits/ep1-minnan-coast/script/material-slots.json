@@ -1,0 +1,4150 @@
+{
+  "id": "material-recall-ep1-minnan-coast-20261014",
+  "projectId": "min-gan-midautumn-national-day",
+  "generatedAt": "2026-10-14T09:06:43.189751Z",
+  "status": "current",
+  "segments": [
+    {
+      "segmentId": "FW-01-01",
+      "slots": [
+        {
+          "id": "FW-01-01-materials",
+          "query": "车内自我介绍说明中秋国庆假期的出行打算，路边已挂起国旗。南坪快速排队、天色从白天转暗，口述从出发时的期待转为堵车耗时与终于出城的感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "深圳出发与出城拥堵"
+          ],
+          "chosenSpanIds": [
+            "C3846_zve1_day1_drive_speech_s2-34",
+            "C3847_zve1_day1_drive_speech_s2-11",
+            "C3848_zve1_day1_drive_speech_s0-14",
+            "C3848_zve1_day1_drive_speech_s16-17",
+            "C3849_zve1_day1_drive_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-02",
+      "slots": [
+        {
+          "id": "FW-01-02-materials",
+          "query": "夜间车流、并线和隧道路段交替出现；车内对疑似事故占道、交替通行和其他车辆的驾驶行为有急促反应及粗口。另有对明洞外观的辨认与往次旅途联想，具体事故经过并未完整拍摄。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间高速与路况反应"
+          ],
+          "chosenSpanIds": [
+            "C3850_zve1_day1_drive_speech_s9-13",
+            "C3850_zve1_day1_drive_visual_s27-51",
+            "C3850_zve1_day1_drive_speech_s50-108",
+            "C3851_zve1_day1_drive_speech_s0-15"
+          ],
+          "treatments": {
+            "C3850_zve1_day1_drive_visual_s27-51": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-03",
+      "slots": [
+        {
+          "id": "FW-01-03-materials",
+          "query": "车灯照着路边人物，附近有锥桶和停靠车辆；两段短促对话是同行者间的催促与玩笑。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间临时停车"
+          ],
+          "chosenSpanIds": [
+            "C3852_zve1_day1_broll_speech_s0-6",
+            "C3852_zve1_day1_broll_speech_s14-22"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-04",
+      "slots": [
+        {
+          "id": "FW-01-04-materials",
+          "query": "车辆穿过东山收费站，沿亮灯道路和路口继续行驶。口述已开了九个多小时、终于到达，随后是问路、迎宾大道反应与短段英文演唱声。",
+          "requirement": "required",
+          "targetBundles": [
+            "凌晨抵达东山"
+          ],
+          "chosenSpanIds": [
+            "C3853_zve1_day1_drive_speech_s11-23",
+            "C3853_zve1_day1_drive_visual_s14-65",
+            "C3853_zve1_day1_drive_speech_s28-30",
+            "C3853_zve1_day1_drive_speech_s35-37",
+            "C3853_zve1_day1_drive_speech_s48-50",
+            "C3854_zve1_day1_drive_speech_s0-10",
+            "C3855_zve1_day1_drive_speech_s0-16"
+          ],
+          "treatments": {
+            "C3853_zve1_day1_drive_visual_s14-65": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-01",
+      "slots": [
+        {
+          "id": "FW-02-01-materials",
+          "query": "沿海道路一侧是海，风机沿岸分布。抵达渔港后，岸边可见泊船与石堆；现场谈起捕鱼、运输和眼前人少的感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿海公路到澳角渔港"
+          ],
+          "chosenSpanIds": [
+            "C3856_zve1_day1_drive_visual_s29-91",
+            "C3857_zve1_day1_broll_speech_s0-12"
+          ],
+          "treatments": {
+            "C3856_zve1_day1_drive_visual_s29-91": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-02",
+      "slots": [
+        {
+          "id": "FW-02-02-materials",
+          "query": "空中视角展开防波堤、密集泊船、水面成片养殖设施及沿岸村落，远处丘陵与风机同时入画。镜头从港湾整体移向外侧水域与养殖区。",
+          "requirement": "required",
+          "targetBundles": [
+            "澳角港湾航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260925120847_0001_D_drone_aerial_s0-14",
+            "DJI_20260925120914_0005_D_drone_aerial_s0-19",
+            "DJI_20260925121047_0012_D_drone_aerial_s0-18",
+            "DJI_20260925121158_0022_D_drone_aerial_s0-12",
+            "DJI_20260925121255_0026_D_drone_aerial_s0-16"
+          ],
+          "treatments": {
+            "DJI_20260925120847_0001_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20260925120914_0005_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20260925121047_0012_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20260925121158_0022_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20260925121255_0026_D_drone_aerial_s0-16": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-03",
+      "slots": [
+        {
+          "id": "FW-02-03-materials",
+          "query": "地面观察木船、钢船、发动机、缆绳与红色吊机，同行者在码头边活动。口述介绍当天沿岛行程，谈到渔业、护船信仰及海岸风貌；木船用途与价格、吊机工作方式多为现场推测，也提到感冒后暂不走向远处小灯塔。",
+          "requirement": "required",
+          "targetBundles": [
+            "码头木船、吊机与澳角口述"
+          ],
+          "chosenSpanIds": [
+            "C3858_zve1_day1_broll_speech_s1-25",
+            "C3860_zve1_day1_broll_speech_s1-2",
+            "C3861_zve1_day1_broll_speech_s0-17",
+            "C3862_zve1_day1_broll_speech_s0-13",
+            "C3863_zve1_day1_broll_speech_s4-6",
+            "C3864_zve1_day1_broll_speech_s0-63",
+            "C3865_zve1_day1_broll_speech_s0-10",
+            "C3866_zve1_day1_broll_speech_s0-23",
+            "C3867_zve1_day1_broll_speech_s0-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-04",
+      "slots": [
+        {
+          "id": "FW-02-04-materials",
+          "query": "车辆穿过街道、乡村与海岸道路，风机逐渐集中。车内谈起小村冷清、沿岸风电及道路通行，导航声贯穿其中。",
+          "requirement": "required",
+          "targetBundles": [
+            "从澳角驶向风机海岸"
+          ],
+          "chosenSpanIds": [
+            "C3868_zve1_day1_drive_visual_s0-3",
+            "C3868_zve1_day1_drive_speech_s1-73"
+          ],
+          "treatments": {
+            "C3868_zve1_day1_drive_visual_s0-3": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-05",
+      "slots": [
+        {
+          "id": "FW-02-05-materials",
+          "query": "空中镜头沿岸展开风机群、道路和绿色坡地，转向沙滩与层层推近的浪花；岸边可见车辆和临海设施。",
+          "requirement": "required",
+          "targetBundles": [
+            "风机、沙滩与海浪航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260925125602_0063_D_drone_aerial_s0-23",
+            "DJI_20260925125730_0070_D_drone_aerial_s0-24",
+            "DJI_20260925125819_0074_D_drone_aerial_s0-7",
+            "DJI_20260925125836_0075_D_drone_aerial_s0-17"
+          ],
+          "treatments": {
+            "DJI_20260925125602_0063_D_drone_aerial_s0-23": {
+              "audio": -100
+            },
+            "DJI_20260925125730_0070_D_drone_aerial_s0-24": {
+              "audio": -100
+            },
+            "DJI_20260925125819_0074_D_drone_aerial_s0-7": {
+              "audio": -100
+            },
+            "DJI_20260925125836_0075_D_drone_aerial_s0-17": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-06",
+      "slots": [
+        {
+          "id": "FW-02-06-materials",
+          "query": "车内指出正在经过的乌桥湾风机群，画面有海岸公路、风机、沙滩与黄色车辆行进。地面道路与外部车辆视角相互补充。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿风机群继续北行"
+          ],
+          "chosenSpanIds": [
+            "C3869_zve1_day1_drive_speech_s0-16",
+            "C3869_zve1_day1_drive_s15-17",
+            "DJI_20260925130357_0097_D_drone_drive_s0-133",
+            "DJI_20260925130741_0098_D_drone_drive_visual_s29-108"
+          ],
+          "treatments": {
+            "C3869_zve1_day1_drive_s15-17": {
+              "audio": -100
+            },
+            "DJI_20260925130357_0097_D_drone_drive_s0-133": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260925130741_0098_D_drone_drive_visual_s29-108": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-07",
+      "slots": [
+        {
+          "id": "FW-02-07-materials",
+          "query": "浪花绕过近岸旧平台和立柱，俯视可见浅水、沙滩与岸边构筑物；随后展开相邻海岸道路和风机。平台的年代与用途没有确认。",
+          "requirement": "required",
+          "targetBundles": [
+            "浅海平台与海岸线航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260925131043_0111_D_drone_aerial_s0-10",
+            "DJI_20260925131127_0115_D_drone_aerial_s0-15",
+            "DJI_20260925131417_0134_D_drone_aerial_s0-28"
+          ],
+          "treatments": {
+            "DJI_20260925131043_0111_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20260925131127_0115_D_drone_aerial_s0-15": {
+              "audio": -100
+            },
+            "DJI_20260925131417_0134_D_drone_aerial_s0-28": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-08",
+      "slots": [
+        {
+          "id": "FW-02-08-materials",
+          "query": "沿海路转入更密集的街区，路旁出现棕榈树、商铺和多层传统式建筑。车内有对过往游客数量的比较、到景区距离的估计、交通反应及抵达导航。",
+          "requirement": "required",
+          "targetBundles": [
+            "驶向铜陵与风动石景区"
+          ],
+          "chosenSpanIds": [
+            "C3870_zve1_day1_drive_visual_s28-60",
+            "C3870_zve1_day1_drive_speech_s59-104",
+            "C3871_zve1_day1_drive_speech_s0-18",
+            "C3872_zve1_day1_drive_speech_s1-16",
+            "C3873_zve1_day1_drive_visual_s0-3",
+            "C3873_zve1_day1_drive_speech_s1-44",
+            "C3873_zve1_day1_drive_visual_s58-66"
+          ],
+          "treatments": {
+            "C3870_zve1_day1_drive_visual_s28-60": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3873_zve1_day1_drive_visual_s0-3": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3873_zve1_day1_drive_visual_s58-66": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-09",
+      "slots": [
+        {
+          "id": "FW-02-09-materials",
+          "query": "照片包括船上人物、蓝色渔船、码头吊机与车辆、港湾养殖设施、海岸风机、沙滩人物、浅海平台和沿海行车。港湾、岸线及同行者的活动均有静态记录。",
+          "requirement": "required",
+          "targetBundles": [
+            "澳角与风机海岸照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC09973_photos_photo",
+            "DSC01922-2_photos_photo",
+            "DJI_20260925120936_0006_D-HDR_photos_photo",
+            "DJI_20260925121236_0023_D-HDR_photos_photo",
+            "DJI_20260925121329_0027_D-HDR_photos_photo",
+            "DJI_20260925121356_0033_D-HDR_photos_photo",
+            "DJI_20260925121606_0042_D-HDR_photos_photo",
+            "DJI_20260925121637_0048_D-HDR_photos_photo",
+            "DJI_20260925121735_0060_D-HDR_photos_photo",
+            "DSC09976_photos_photo",
+            "DSC09979_photos_photo",
+            "DSC09982_photos_photo",
+            "DSC09983_photos_photo",
+            "DSC01928_photos_photo",
+            "DSC01930_photos_photo",
+            "DSC01932-2_photos_photo",
+            "DSC09987_photos_photo",
+            "DSC09988_photos_photo",
+            "DSC09991_photos_photo",
+            "DJI_20260925130149_0094_D-HDR_photos_photo",
+            "DJI_20260925130957_0099_D-HDR_photos_photo",
+            "DJI_20260925131147_0116_D-HDR_photos_photo",
+            "DJI_20260925131241_0119_D-HDR_photos_photo",
+            "DJI_20260925131411_0131_D-HDR_photos_photo",
+            "DJI_20260925131548_0138_D-HDR_photos_photo"
+          ],
+          "treatments": {
+            "DSC09973_photos_photo": {
+              "audio": -100
+            },
+            "DSC01922-2_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925120936_0006_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121236_0023_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121329_0027_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121356_0033_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121606_0042_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121637_0048_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925121735_0060_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09976_photos_photo": {
+              "audio": -100
+            },
+            "DSC09979_photos_photo": {
+              "audio": -100
+            },
+            "DSC09982_photos_photo": {
+              "audio": -100
+            },
+            "DSC09983_photos_photo": {
+              "audio": -100
+            },
+            "DSC01928_photos_photo": {
+              "audio": -100
+            },
+            "DSC01930_photos_photo": {
+              "audio": -100
+            },
+            "DSC01932-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC09987_photos_photo": {
+              "audio": -100
+            },
+            "DSC09988_photos_photo": {
+              "audio": -100
+            },
+            "DSC09991_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925130149_0094_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925130957_0099_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925131147_0116_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925131241_0119_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925131411_0131_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925131548_0138_D-HDR_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-10",
+      "slots": [
+        {
+          "id": "FW-02-10-materials",
+          "query": "从售票后广场走向关帝文化园，商铺、祈福装置和楼梯依次出现。口述比较对方声称的步行耗时与导航结果，随后发现室外扶梯，对推销说法有不满和玩笑。",
+          "requirement": "required",
+          "targetBundles": [
+            "入园、推销插曲与上山扶梯"
+          ],
+          "chosenSpanIds": [
+            "C3875_zve1_day1_broll_speech_s1-18",
+            "C3876_zve1_day1_talking-head_speech_s0-19",
+            "C3877_zve1_day1_broll_speech_s0-15",
+            "C3878_zve1_day1_broll_speech_s1-14",
+            "C3879_zve1_day1_broll_speech_s0-14",
+            "C3880_zve1_day1_broll_speech_s0-3",
+            "C3881_zve1_day1_broll_speech_s0-16",
+            "C3882_zve1_day1_broll_speech_s2-6",
+            "C3883_zve1_day1_broll_speech_s1-17",
+            "C3884_zve1_day1_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-11",
+      "slots": [
+        {
+          "id": "FW-02-11-materials",
+          "query": "树荫小路、岸边白花、风动石、红色门架、转盘和博饼摊位相继出现。口述观察巨石支点，转述重量与抗倭传说；同行者玩转盘，对景区活动设施和游客数量作即时评论。",
+          "requirement": "required",
+          "targetBundles": [
+            "园内树荫、风动石与祈福设施"
+          ],
+          "chosenSpanIds": [
+            "C3885_zve1_day1_broll_speech_s0-8",
+            "C3886_zve1_day1_broll_speech_s0-15",
+            "C3887_zve1_day1_broll_speech_s0-11",
+            "C3888_zve1_day1_broll_speech_s1-22",
+            "C3889_zve1_day1_broll_speech_s0-24",
+            "C3890_zve1_day1_broll_speech_s0-8",
+            "C3891_zve1_day1_broll_speech_s0-18",
+            "C3892_zve1_day1_broll_speech_s1-58",
+            "C3893_zve1_day1_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-12",
+      "slots": [
+        {
+          "id": "FW-02-12-materials",
+          "query": "寺庙屋脊、龙形装饰、供桌、香炉和参拜者构成这一段。口述辨认宝智寺与关帝庙、转述建庙背景，观察掷筊、供品、雕饰、井和祈愿牌；历史及信仰解释来自现场讲述。",
+          "requirement": "required",
+          "targetBundles": [
+            "宝智寺、关帝庙与香火细节"
+          ],
+          "chosenSpanIds": [
+            "C3894_zve1_day1_broll_speech_s1-3",
+            "C3895_zve1_day1_broll_speech_s0-6",
+            "C3896_zve1_day1_broll_speech_s0-15",
+            "C3897_zve1_day1_broll_speech_s1-22",
+            "C3898_zve1_day1_broll_speech_s0-6",
+            "C3899_zve1_day1_broll_speech_s0-1",
+            "C3900_zve1_day1_broll_speech_s1-8",
+            "C3901_zve1_day1_broll_speech_s1-3",
+            "C3902_zve1_day1_broll_speech_s0-4",
+            "C3903_zve1_day1_broll_speech_s8-20",
+            "C3904_zve1_day1_broll_speech_s1-5",
+            "C3905_zve1_day1_broll_visual_s0-3",
+            "C3906_zve1_day1_broll_speech_s1-13",
+            "C3907_zve1_day1_broll_speech_s8-10",
+            "C3908_zve1_day1_broll_speech_s0-6",
+            "C3909_zve1_day1_broll_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-13",
+      "slots": [
+        {
+          "id": "FW-02-13-materials",
+          "query": "同行者坐下喝椰子，随后沿红色木栈道看海。清澈海水、礁石、船只、远处灯塔和岸边小狗入画；口述谈到炎热、身体状态、当天天气与海水颜色。",
+          "requirement": "required",
+          "targetBundles": [
+            "椰子休息与临海步道"
+          ],
+          "chosenSpanIds": [
+            "C3910_zve1_day1_talking-head_speech_s0-17",
+            "C3911_zve1_day1_broll_speech_s1-22",
+            "C3911_zve1_day1_broll_speech_s24-28",
+            "C3912_zve1_day1_broll_speech_s0-13",
+            "C0075_a7r6_broll_speech_s0-6",
+            "C3913_zve1_day1_broll_speech_s0-37",
+            "C3914_zve1_day1_broll_speech_s1-4"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-14",
+      "slots": [
+        {
+          "id": "FW-02-14-materials",
+          "query": "沿台阶返回景区入口，经过以三国人物命名的店铺，最后驶向停车出口。口述回顾实际步行体验，并对停车费用作反应。",
+          "requirement": "required",
+          "targetBundles": [
+            "回到入口与离场"
+          ],
+          "chosenSpanIds": [
+            "C3915_zve1_day1_broll_speech_s0-26",
+            "C3916_zve1_day1_broll_speech_s0-11",
+            "C3917_zve1_day1_drive_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-15",
+      "slots": [
+        {
+          "id": "FW-02-15-materials",
+          "query": "照片记录台阶、大树和白花、风动石、庙宇屋顶与香火、海面灯塔、小狗、浅水中的人物影子和停车处车辆。建筑细节、游览人物与海岸近景均有对应记录。",
+          "requirement": "required",
+          "targetBundles": [
+            "铜陵寺庙与临海步道照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC09994_photos_photo",
+            "DSC09997_photos_photo",
+            "DSC00001_photos_photo",
+            "DSC00002_photos_photo",
+            "DSC01939_photos_photo",
+            "DSC00004_photos_photo",
+            "DSC00005_photos_photo",
+            "DSC00006_photos_photo",
+            "DSC00008_photos_photo",
+            "DSC00010_photos_photo",
+            "DSC00011_photos_photo",
+            "DSC00013_photos_photo",
+            "DSC00016_photos_photo",
+            "DSC00018_photos_photo",
+            "DSC00021_photos_photo",
+            "DSC00023_photos_photo",
+            "DSC00024_photos_photo",
+            "DSC00027_photos_photo",
+            "DSC00030_photos_photo",
+            "DSC00031_photos_photo",
+            "DSC00035_photos_photo",
+            "DSC00038_photos_photo"
+          ],
+          "treatments": {
+            "DSC09994_photos_photo": {
+              "audio": -100
+            },
+            "DSC09997_photos_photo": {
+              "audio": -100
+            },
+            "DSC00001_photos_photo": {
+              "audio": -100
+            },
+            "DSC00002_photos_photo": {
+              "audio": -100
+            },
+            "DSC01939_photos_photo": {
+              "audio": -100
+            },
+            "DSC00004_photos_photo": {
+              "audio": -100
+            },
+            "DSC00005_photos_photo": {
+              "audio": -100
+            },
+            "DSC00006_photos_photo": {
+              "audio": -100
+            },
+            "DSC00008_photos_photo": {
+              "audio": -100
+            },
+            "DSC00010_photos_photo": {
+              "audio": -100
+            },
+            "DSC00011_photos_photo": {
+              "audio": -100
+            },
+            "DSC00013_photos_photo": {
+              "audio": -100
+            },
+            "DSC00016_photos_photo": {
+              "audio": -100
+            },
+            "DSC00018_photos_photo": {
+              "audio": -100
+            },
+            "DSC00021_photos_photo": {
+              "audio": -100
+            },
+            "DSC00023_photos_photo": {
+              "audio": -100
+            },
+            "DSC00024_photos_photo": {
+              "audio": -100
+            },
+            "DSC00027_photos_photo": {
+              "audio": -100
+            },
+            "DSC00030_photos_photo": {
+              "audio": -100
+            },
+            "DSC00031_photos_photo": {
+              "audio": -100
+            },
+            "DSC00035_photos_photo": {
+              "audio": -100
+            },
+            "DSC00038_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-16",
+      "slots": [
+        {
+          "id": "FW-02-16-materials",
+          "query": "从停车处走向岸边摊位、石堤和沙滩，浅水中已有游人。口述谈到停车与船家招揽，并面对说明牌解释双面海沙洲和潮汐现象；此处是现场转述，画面直接可见的是连接岸边的沙地与两侧海水。",
+          "requirement": "required",
+          "targetBundles": [
+            "南屿岸边与双面海入口"
+          ],
+          "chosenSpanIds": [
+            "C3918_zve1_day1_broll_speech_s1-7",
+            "C3919_zve1_day1_broll_speech_s1-6",
+            "C3920_zve1_day1_broll_speech_s0-13",
+            "C3921_zve1_day1_broll_speech_s0-8",
+            "C3922_zve1_day1_broll_speech_s0-3",
+            "C3923_zve1_day1_broll_speech_s0-18",
+            "C3924_zve1_day1_broll_speech_s0-16",
+            "C3925_zve1_day1_broll_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-17",
+      "slots": [
+        {
+          "id": "FW-02-17-materials",
+          "query": "孩子挖沙，游人在湿沙上走动，落日把水面和沙面照暖。镜头逐渐走向南屿礁石和东兴寺，出现入口、碑记及从高处望向海滩的视角；口述围绕沙质、潮水、寺庙与眼前景色。",
+          "requirement": "required",
+          "targetBundles": [
+            "沙滩游人、湿沙反光与东兴寺"
+          ],
+          "chosenSpanIds": [
+            "C3926_zve1_day1_broll_speech_s0-6",
+            "C3927_zve1_day1_broll_speech_s0-4",
+            "C3928_zve1_day1_broll_speech_s0-6",
+            "C3929_zve1_day1_broll_speech_s0-10",
+            "C3930_zve1_day1_broll_speech_s0-4",
+            "C3931_zve1_day1_broll_speech_s0-8",
+            "C3932_zve1_day1_broll_speech_s0-14",
+            "C3933_zve1_day1_broll_speech_s0-14",
+            "C3934_zve1_day1_broll_speech_s0-11",
+            "C3935_zve1_day1_broll_speech_s0-9",
+            "C3936_zve1_day1_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-18",
+      "slots": [
+        {
+          "id": "FW-02-18-materials",
+          "query": "空中视角围绕礁石小岛、灯塔和连接沙滩展开，海边人群、船只、快艇尾迹与岸上楼群同时可见。夕阳在水面形成金色反光，远近岸线与岛屿逐渐铺开。",
+          "requirement": "required",
+          "targetBundles": [
+            "南屿与海岸城镇黄昏航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260925174040_0141_D_drone_aerial_s0-19",
+            "DJI_20260925174132_0148_D_drone_aerial_s0-40",
+            "DJI_20260925174228_0153_D_drone_aerial_s0-7",
+            "DJI_20260925174344_0178_D_drone_aerial_s0-13",
+            "DJI_20260925174424_0185_D_drone_aerial_s0-13",
+            "DJI_20260925174524_0198_D_drone_aerial_s0-17",
+            "DJI_20260925175022_0230_D_drone_aerial_s0-18"
+          ],
+          "treatments": {
+            "DJI_20260925174040_0141_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20260925174132_0148_D_drone_aerial_s0-40": {
+              "audio": -100
+            },
+            "DJI_20260925174228_0153_D_drone_aerial_s0-7": {
+              "audio": -100
+            },
+            "DJI_20260925174344_0178_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20260925174424_0185_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20260925174524_0198_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20260925175022_0230_D_drone_aerial_s0-18": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-19",
+      "slots": [
+        {
+          "id": "FW-02-19-materials",
+          "query": "两座不同颜色的灯塔分处近岸与远处礁石，游人和摄影者仍在海边活动，同行者蹲下在沙上写字。天光渐暗，口述比较这里与先前景区的人流，并表达对东山风光的个人感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "灯塔地面视角与海滩收尾"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260925174934_0229_D_drone_broll_s0-11",
+            "DJI_20260925175127_0231_D_drone_broll_s0-6",
+            "DJI_20260925175142_0232_D_drone_broll_s0-14",
+            "C0076_a7r6_broll_speech_s11-12",
+            "C3937_zve1_day1_broll_visual_s0-3",
+            "C3938_zve1_day1_talking-head_speech_s1-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-20",
+      "slots": [
+        {
+          "id": "FW-02-20-materials",
+          "query": "照片从海湾城镇、堤上人物和挖沙游人，延伸到礁石上的同行者、灯塔与小岛航拍、楼群落日、快艇尾迹、沙滩剪影和月亮。地面与空中角度记录了同一场黄昏的空间及光线变化。",
+          "requirement": "required",
+          "targetBundles": [
+            "南屿黄昏照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00045_photos_photo",
+            "DSC00046_photos_photo",
+            "DSC00047_photos_photo",
+            "DSC00048_photos_photo",
+            "DSC00050_photos_photo",
+            "DSC00061_photos_photo",
+            "DSC00064_photos_photo",
+            "DSC00065_photos_photo",
+            "DSC00067_photos_photo",
+            "DSC00069_photos_photo",
+            "DSC00077_photos_photo",
+            "DSC00089_photos_photo",
+            "DSC00093_photos_photo",
+            "DJI_20260925174106_0144_D-HDR_photos_photo",
+            "DJI_20260925174118_0145_D-HDR_photos_photo",
+            "DJI_20260925174222_0150_D-HDR_photos_photo",
+            "DJI_20260925174248_0157_D-HDR_photos_photo",
+            "DJI_20260925174314_0166_D-HDR_photos_photo",
+            "DJI_20260925174337_0177_D-HDR_photos_photo",
+            "DJI_20260925174400_0181_D-HDR_photos_photo",
+            "DJI_20260925174454_0191_D-HDR_photos_photo",
+            "DJI_20260925174518_0197_D-HDR_photos_photo",
+            "DJI_20260925174554_0201_D-HDR_photos_photo",
+            "DJI_20260925174617_0204_D-HDR_photos_photo",
+            "DJI_20260925174639_0207_D-HDR_photos_photo",
+            "DJI_20260925174715_0210_D-HDR_photos_photo",
+            "DJI_20260925174752_0216_D-HDR_photos_photo",
+            "DJI_20260925174918_0225_D-HDR_photos_photo",
+            "DJI_20260925174929_0228_D-HDR_photos_photo",
+            "DSC00095_photos_photo",
+            "DSC00115_photos_photo",
+            "DSC00120_photos_photo",
+            "DSC00124_photos_photo"
+          ],
+          "treatments": {
+            "DSC00045_photos_photo": {
+              "audio": -100
+            },
+            "DSC00046_photos_photo": {
+              "audio": -100
+            },
+            "DSC00047_photos_photo": {
+              "audio": -100
+            },
+            "DSC00048_photos_photo": {
+              "audio": -100
+            },
+            "DSC00050_photos_photo": {
+              "audio": -100
+            },
+            "DSC00061_photos_photo": {
+              "audio": -100
+            },
+            "DSC00064_photos_photo": {
+              "audio": -100
+            },
+            "DSC00065_photos_photo": {
+              "audio": -100
+            },
+            "DSC00067_photos_photo": {
+              "audio": -100
+            },
+            "DSC00069_photos_photo": {
+              "audio": -100
+            },
+            "DSC00077_photos_photo": {
+              "audio": -100
+            },
+            "DSC00089_photos_photo": {
+              "audio": -100
+            },
+            "DSC00093_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174106_0144_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174118_0145_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174222_0150_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174248_0157_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174314_0166_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174337_0177_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174400_0181_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174454_0191_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174518_0197_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174554_0201_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174617_0204_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174639_0207_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174715_0210_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174752_0216_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174918_0225_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260925174929_0228_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC00095_photos_photo": {
+              "audio": -100
+            },
+            "DSC00115_photos_photo": {
+              "audio": -100
+            },
+            "DSC00120_photos_photo": {
+              "audio": -100
+            },
+            "DSC00124_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-21",
+      "slots": [
+        {
+          "id": "FW-02-21-materials",
+          "query": "锥桶和临时路面之后是亮灯街巷、餐馆、小吃摊及来往电动车。同行者寻找晚饭，口述说四进士汤难找，并根据问到的线索继续找店。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间绕路与寻找晚饭"
+          ],
+          "chosenSpanIds": [
+            "C3939_zve1_day1_drive_speech_s1-14",
+            "C3939_zve1_day1_drive_visual_s12-34",
+            "C3940_zve1_day1_broll_speech_s2-4",
+            "C3941_zve1_day1_broll_speech_s1-20",
+            "C3942_zve1_day1_broll_speech_s0-2",
+            "C3943_zve1_day1_talking-head_speech_s1-8",
+            "C3944_zve1_day1_talking-head_speech_s1-13"
+          ],
+          "treatments": {
+            "C3939_zve1_day1_drive_visual_s12-34": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-22",
+      "slots": [
+        {
+          "id": "FW-02-22-materials",
+          "query": "桌上出现肉卷、蘸料、米饭和小管，人物用筷子逐一试吃并观察食物结构。口述比较烧腱灵与香肠的口味，描述小管的新鲜感、内部组织与口感，食材辨认存在现场口误。",
+          "requirement": "required",
+          "targetBundles": [
+            "烧腱灵与小管试吃"
+          ],
+          "chosenSpanIds": [
+            "C3947_zve1_day1_broll_speech_s0-19",
+            "C3948_zve1_day1_talking-head_speech_s1-5",
+            "C3949_zve1_day1_broll_speech_s0-1",
+            "C3949_zve1_day1_broll_speech_s6-24",
+            "C3950_zve1_day1_broll_speech_s0-14",
+            "C3951_zve1_day1_broll_speech_s1-42",
+            "C3952_zve1_day1_broll_speech_s0-18",
+            "C3953_zve1_day1_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-23",
+      "slots": [
+        {
+          "id": "FW-02-23-materials",
+          "query": "汤碗和人物用餐画面承接等待后的最后一道菜，口述介绍所见食材与味道，并比较几道菜的价格和个人喜好。关于汤的名称、宴席用途及形成背景，是现场听说或个人猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "四进士汤与餐后感受"
+          ],
+          "chosenSpanIds": [
+            "C3954_zve1_day1_broll_speech_s0-15",
+            "C3955_zve1_day1_broll_speech_s2-41",
+            "C3956_zve1_day1_talking-head_speech_s1-2",
+            "C3958_zve1_day1_talking-head_speech_s0-21",
+            "C3959_zve1_day1_talking-head_speech_s0-6",
+            "C3960_zve1_day1_talking-head_speech_s1-31"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-24",
+      "slots": [
+        {
+          "id": "FW-02-24-materials",
+          "query": "夜间走过摊位与茶铺，柜台上摆有配料，随后出现四果汤和海石花甜品。人物边吃边讨论味道和食材名称，夜市规模是当晚所见。",
+          "requirement": "required",
+          "targetBundles": [
+            "南门湾夜市与四果汤"
+          ],
+          "chosenSpanIds": [
+            "C3961_zve1_day1_broll_speech_s0-1",
+            "C3962_zve1_day1_broll_speech_s0-9",
+            "C3963_zve1_day1_broll_speech_s0-7",
+            "C3964_zve1_day1_broll_speech_s0-9",
+            "C3965_zve1_day1_broll_speech_s0-4",
+            "C3966_zve1_day1_broll_speech_s0-2",
+            "C3967_zve1_day1_broll_speech_s0-6",
+            "C3968_zve1_day1_broll_speech_s2-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-25",
+      "slots": [
+        {
+          "id": "FW-02-25-materials",
+          "query": "夜间商铺灯光、来往电动车和停车处的黄色车辆构成两张记录；后一张为晚饭事件之后同晚拍摄的补充照片。",
+          "requirement": "required",
+          "targetBundles": [
+            "晚饭后街巷与车辆照片"
+          ],
+          "chosenSpanIds": [
+            "DSC00130_photos_photo",
+            "DSC01971_photos_photo"
+          ],
+          "treatments": {
+            "DSC00130_photos_photo": {
+              "audio": -100
+            },
+            "DSC01971_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-01",
+      "slots": [
+        {
+          "id": "FW-03-01-materials",
+          "query": "凌晨已营业的早餐摊之后，人物走下海滩；灯光映在湿沙上，远方海面仍有点点亮光。口述寻找镜面沙滩、观察小生物痕迹，并说晨光开始泛红。",
+          "requirement": "required",
+          "targetBundles": [
+            "天未亮的金銮湾"
+          ],
+          "chosenSpanIds": [
+            "C3969_zve1_day2_broll_speech_s0-9",
+            "C3970_zve1_day2_broll_speech_s2-4",
+            "C3971_zve1_day2_broll_speech_s0-22",
+            "C3973_zve1_day2_broll_speech_s0-7",
+            "C3974_zve1_day2_broll_s0-2",
+            "C3975_zve1_day2_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-02",
+      "slots": [
+        {
+          "id": "FW-03-02-materials",
+          "query": "地面、空中和一段延时记录人群在浅水与湿沙间等待，同行者和三脚架进入画面。镜头展开海浪、岸线与远方船只，天光逐渐变亮；拍摄时间是清晨。",
+          "requirement": "required",
+          "targetBundles": [
+            "晨光中的镜面沙滩"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260926055412_0001_D_drone_broll_s0-2",
+            "DJI_20260926055526_0003_D_drone_broll_s0-44",
+            "DJI_20260926055611_0004_D_drone_broll_s0-8",
+            "DJI_20260926055716_0011_D_drone_broll_s0-1",
+            "DJI_20260926055734_0012_D_drone_broll_s0-43",
+            "20260926_东山岛金銮湾日出_timelapse_timelapse_s0-30",
+            "DJI_20260926055416_0002_D_drone_aerial_s0-12",
+            "DJI_20260926055853_0019_D_drone_aerial_s0-3",
+            "DJI_20260926055909_0023_D_drone_aerial_s0-20",
+            "DJI_20260926055959_0027_D_drone_aerial_s0-26",
+            "DJI_20260926060057_0034_D_drone_aerial_s0-17",
+            "DJI_20260926060137_0038_D_drone_aerial_s0-11",
+            "DJI_20260926060406_0045_D_drone_aerial_s0-5",
+            "DJI_20260926060446_0049_D_drone_aerial_s0-12"
+          ],
+          "treatments": {
+            "DJI_20260926055416_0002_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20260926055853_0019_D_drone_aerial_s0-3": {
+              "audio": -100
+            },
+            "DJI_20260926055909_0023_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20260926055959_0027_D_drone_aerial_s0-26": {
+              "audio": -100
+            },
+            "DJI_20260926060057_0034_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20260926060137_0038_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20260926060406_0045_D_drone_aerial_s0-5": {
+              "audio": -100
+            },
+            "DJI_20260926060446_0049_D_drone_aerial_s0-12": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-03",
+      "slots": [
+        {
+          "id": "FW-03-03-materials",
+          "query": "太阳贴近海面时，人群和同行者形成剪影，金色倒影落在湿沙上。人物总结镜面沙滩体验，认为没有出现期待的浓烈朝霞，并交代当天前往泉州；随后早餐摊上煮面，口述提到沙茶面价格。",
+          "requirement": "required",
+          "targetBundles": [
+            "日出、现场总结与早餐"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260926061543_0084_D_drone_aerial_s0-25",
+            "DJI_20260926060543_0050_D_drone_broll_s0-14",
+            "DJI_20260926060608_0051_D_drone_broll_s0-5",
+            "DJI_20260926060615_0052_D_drone_broll_s0-15",
+            "DJI_20260926060747_0059_D_drone_broll_s0-8",
+            "DJI_20260926061637_0085_D_drone_broll_s0-17",
+            "C3977_zve1_day2_broll_speech_s0-71",
+            "C3978_zve1_day2_broll_speech_s0-6"
+          ],
+          "treatments": {
+            "DJI_20260926061543_0084_D_drone_aerial_s0-25": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-04",
+      "slots": [
+        {
+          "id": "FW-03-04-materials",
+          "query": "照片从蓝调海面灯光、浅水人物剪影，逐渐转为泛红天际、太阳、浪线与金色镜面；包含空中岸线、同行者和等待日出的人群。",
+          "requirement": "required",
+          "targetBundles": [
+            "金銮湾日出照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC06734_photos_photo",
+            "DSC06965_photos_photo",
+            "DSC07053_photos_photo",
+            "DJI_20260926055837_0018_D-HDR_photos_photo",
+            "DJI_20260926055902_0020_D-HDR_photos_photo",
+            "DJI_20260926060051_0033_D-HDR_photos_photo",
+            "DSC00150_photos_photo",
+            "DJI_20260926060426_0048_D-HDR_photos_photo",
+            "DSC07201_photos_photo",
+            "DSC00154_photos_photo",
+            "DJI_20260926060759_0062_D-HDR_photos_photo",
+            "DSC00156_photos_photo",
+            "DJI_20260926061002_0068_D-HDR_photos_photo",
+            "DSC07294_photos_photo",
+            "DSC00164_photos_photo",
+            "DSC00165_photos_photo",
+            "DSC07343_photos_photo",
+            "DSC00170_photos_photo",
+            "DSC00174_photos_photo",
+            "DSC07428_photos_photo"
+          ],
+          "treatments": {
+            "DSC06734_photos_photo": {
+              "audio": -100
+            },
+            "DSC06965_photos_photo": {
+              "audio": -100
+            },
+            "DSC07053_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926055837_0018_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926055902_0020_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926060051_0033_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC00150_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926060426_0048_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC07201_photos_photo": {
+              "audio": -100
+            },
+            "DSC00154_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926060759_0062_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC00156_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260926061002_0068_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC07294_photos_photo": {
+              "audio": -100
+            },
+            "DSC00164_photos_photo": {
+              "audio": -100
+            },
+            "DSC00165_photos_photo": {
+              "audio": -100
+            },
+            "DSC07343_photos_photo": {
+              "audio": -100
+            },
+            "DSC00170_photos_photo": {
+              "audio": -100
+            },
+            "DSC00174_photos_photo": {
+              "audio": -100
+            },
+            "DSC07428_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-05",
+      "slots": [
+        {
+          "id": "FW-03-05-materials",
+          "query": "车内回顾东山的海岸与港口印象，驶过收费站时道别。口述涉及寡妇村及离散历史联想，也明确说这次没有时间到相关博物馆。",
+          "requirement": "required",
+          "targetBundles": [
+            "告别东山岛"
+          ],
+          "chosenSpanIds": [
+            "C3979_zve1_day2_drive_speech_s1-48",
+            "C3980_zve1_day2_drive_speech_s6-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-06",
+      "slots": [
+        {
+          "id": "FW-03-06-materials",
+          "query": "高速穿过绿色山丘、桥下和沿途建筑，画面有路牌、货车及连续车流。车内辨认景区标识、谈到植被变化和驾驶遭遇，也有零碎闲聊与对沿途房屋的个人比较。",
+          "requirement": "required",
+          "targetBundles": [
+            "前往泉州的高速路"
+          ],
+          "chosenSpanIds": [
+            "C3981_zve1_day2_drive_speech_s1-24",
+            "C3982_zve1_day2_drive_speech_s2-16",
+            "C3983_zve1_day2_drive_speech_s0-12",
+            "C3984_zve1_day2_drive_speech_s1-6",
+            "C3984_zve1_day2_drive_visual_s5-12",
+            "C3985_zve1_day2_drive_speech_s0-8",
+            "C3986_zve1_day2_drive_speech_s1-3",
+            "C3986_zve1_day2_drive_speech_s5-10",
+            "C3986_zve1_day2_drive_visual_s5-16",
+            "C3986_zve1_day2_drive_speech_s17-19"
+          ],
+          "treatments": {
+            "C3984_zve1_day2_drive_visual_s5-12": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3986_zve1_day2_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-07",
+      "slots": [
+        {
+          "id": "FW-03-07-materials",
+          "query": "车辆经过收费站、大桥、城市楼群和摩天轮，随后在蟳埔附近找停车位置。人物比较停车处，最终从水边停车区经地下通道步行进村。",
+          "requirement": "required",
+          "targetBundles": [
+            "到达泉州与寻找蟳埔停车处"
+          ],
+          "chosenSpanIds": [
+            "C3987_zve1_day2_drive_speech_s0-30",
+            "C3988_zve1_day2_drive_speech_s0-16",
+            "C3989_zve1_day2_drive_speech_s1-3",
+            "C3989_zve1_day2_drive_speech_s5-8",
+            "C3989_zve1_day2_drive_speech_s11-27",
+            "C3989_zve1_day2_drive_visual_s16-69",
+            "C3989_zve1_day2_drive_speech_s48-50",
+            "C3990_zve1_day2_drive_speech_s0-59",
+            "C3991_zve1_day2_broll_speech_s0-18",
+            "C3992_zve1_day2_broll_speech_s0-11",
+            "C3993_zve1_day2_broll_speech_s0-10"
+          ],
+          "treatments": {
+            "C3989_zve1_day2_drive_visual_s16-69": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-08",
+      "slots": [
+        {
+          "id": "FW-03-08-materials",
+          "query": "街面有密集簪花店、装扮游人、电动车及正在聚集的人群，镜头抵达装饰鲜明的妈祖庙。口述观察屋脊、龙形浮雕和重建碑记，并表达对街区商业氛围的第一印象。",
+          "requirement": "required",
+          "targetBundles": [
+            "簪花街巷与妈祖庙"
+          ],
+          "chosenSpanIds": [
+            "C3994_zve1_day2_broll_speech_s0-24",
+            "C3995_zve1_day2_broll_speech_s1-4",
+            "C3996_zve1_day2_broll_speech_s0-60",
+            "C3997_zve1_day2_broll_speech_s1-18",
+            "C3998_zve1_day2_broll_speech_s0-18",
+            "C3999_zve1_day2_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-09",
+      "slots": [
+        {
+          "id": "FW-03-09-materials",
+          "query": "窄巷挂有壳饰和灯笼，人物触摸成片蚵壳墙，观察红砖窗框与房顶；街边有人处理带壳食材，之后进入展陈空间看工具和红金色家具。口述对墙体结构、使用方式与民俗物件作现场辨认。",
+          "requirement": "required",
+          "targetBundles": [
+            "蚵壳墙、街边劳作与展陈"
+          ],
+          "chosenSpanIds": [
+            "C4000_zve1_day2_broll_speech_s0-13",
+            "C4001_zve1_day2_talking-head_speech_s0-46",
+            "C4002_zve1_day2_broll_speech_s1-4",
+            "C4003_zve1_day2_broll_speech_s0-17",
+            "C4004_zve1_day2_broll_speech_s0-12",
+            "C4005_zve1_day2_broll_speech_s0-14",
+            "C4006_zve1_day2_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-10",
+      "slots": [
+        {
+          "id": "FW-03-10-materials",
+          "query": "展陈中的花饰与人物图像引出一段关于簪花、劳动和旅游生计的个人讨论。之后再看壳墙、街头器物、坐在巷中的居民与成筐贝壳；真花假花、装饰墙用途及贝类名称均是当时观察或猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "簪花话题与社区细节"
+          ],
+          "chosenSpanIds": [
+            "C4007_zve1_day2_broll_speech_s0-82",
+            "C4008_zve1_day2_broll_speech_s2-16",
+            "C4009_zve1_day2_broll_speech_s0-13",
+            "C4010_zve1_day2_broll_speech_s0-3",
+            "C4011_zve1_day2_broll_speech_s0-9",
+            "C4012_zve1_day2_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-11",
+      "slots": [
+        {
+          "id": "FW-03-11-materials",
+          "query": "照片记录头戴花饰的人群、街边活动、店铺与单车、妈祖庙屋脊、大树和红灯笼、生活巷道、蚵壳墙窗框、展陈家具及坐在巷边的老人。",
+          "requirement": "required",
+          "targetBundles": [
+            "蟳埔社区照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00177_photos_photo",
+            "DSC00178_photos_photo",
+            "DSC00180_photos_photo",
+            "DSC00182_photos_photo",
+            "DSC00185_photos_photo",
+            "DSC00186_photos_photo",
+            "DSC00188_photos_photo",
+            "DSC00189_photos_photo",
+            "DSC00193_photos_photo",
+            "DSC00194_photos_photo",
+            "DSC00195_photos_photo",
+            "DSC00196_photos_photo",
+            "DSC00198_photos_photo",
+            "DSC00200_photos_photo",
+            "DSC01997_photos_photo",
+            "DSC01998-2_photos_photo",
+            "DSC00203_photos_photo"
+          ],
+          "treatments": {
+            "DSC00177_photos_photo": {
+              "audio": -100
+            },
+            "DSC00178_photos_photo": {
+              "audio": -100
+            },
+            "DSC00180_photos_photo": {
+              "audio": -100
+            },
+            "DSC00182_photos_photo": {
+              "audio": -100
+            },
+            "DSC00185_photos_photo": {
+              "audio": -100
+            },
+            "DSC00186_photos_photo": {
+              "audio": -100
+            },
+            "DSC00188_photos_photo": {
+              "audio": -100
+            },
+            "DSC00189_photos_photo": {
+              "audio": -100
+            },
+            "DSC00193_photos_photo": {
+              "audio": -100
+            },
+            "DSC00194_photos_photo": {
+              "audio": -100
+            },
+            "DSC00195_photos_photo": {
+              "audio": -100
+            },
+            "DSC00196_photos_photo": {
+              "audio": -100
+            },
+            "DSC00198_photos_photo": {
+              "audio": -100
+            },
+            "DSC00200_photos_photo": {
+              "audio": -100
+            },
+            "DSC01997_photos_photo": {
+              "audio": -100
+            },
+            "DSC01998-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC00203_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-12",
+      "slots": [
+        {
+          "id": "FW-03-12-materials",
+          "query": "人物走过店铺街道后坐下试吃土笋冻，透明碗中可见切块食物。口述谈起此前食用经历、这次的腥味感受与价格，对原料的说法来自现场表达。",
+          "requirement": "required",
+          "targetBundles": [
+            "街头小吃：土笋冻"
+          ],
+          "chosenSpanIds": [
+            "C4013_zve1_day2_broll_speech_s1-4",
+            "C4014_zve1_day2_broll_speech_s0-15",
+            "C4015_zve1_day2_broll_speech_s0-8",
+            "C4016_zve1_day2_broll_speech_s0-7",
+            "C4017_zve1_day2_broll_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-13",
+      "slots": [
+        {
+          "id": "FW-03-13-materials",
+          "query": "摊主为同行者调整花饰，随后合影、看手机并走向水边。对话确认这次使用真花，人物用玩笑比较花饰耗时、价格与自己理解的传统；码头边另有游人拍照。",
+          "requirement": "required",
+          "targetBundles": [
+            "一场简短簪花与水边游人"
+          ],
+          "chosenSpanIds": [
+            "C4018_zve1_day2_broll_speech_s0-11",
+            "C4019_zve1_day2_broll_speech_s0-6",
+            "C4019_zve1_day2_broll_speech_s16-22",
+            "C4020_zve1_day2_talking-head_speech_s0-25",
+            "C4021_zve1_day2_broll_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-14",
+      "slots": [
+        {
+          "id": "FW-03-14-materials",
+          "query": "照片包括花饰店铺街景、写有蟳埔字样的临水建筑及阳台人物、停车场的黄色车辆。后三张是此段结束后数分钟内拍摄的补充照片。",
+          "requirement": "required",
+          "targetBundles": [
+            "蟳埔街巷与离场照片"
+          ],
+          "chosenSpanIds": [
+            "DSC00205_photos_photo",
+            "DSC02008_photos_photo",
+            "DSC02009_photos_photo",
+            "DSC02010-2_photos_photo"
+          ],
+          "treatments": {
+            "DSC00205_photos_photo": {
+              "audio": -100
+            },
+            "DSC02008_photos_photo": {
+              "audio": -100
+            },
+            "DSC02009_photos_photo": {
+              "audio": -100
+            },
+            "DSC02010-2_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-15",
+      "slots": [
+        {
+          "id": "FW-03-15-materials",
+          "query": "车流驶上桥面，特色桥塔与城市楼群出现在傍晚逆光里。车内辨认晋江大桥、描述牌坊般的外形，并讨论桥两岸的位置与拍摄视野。",
+          "requirement": "required",
+          "targetBundles": [
+            "穿过晋江大桥"
+          ],
+          "chosenSpanIds": [
+            "C4022_zve1_day2_drive_speech_s1-11",
+            "C4022_zve1_day2_drive_visual_s34-103",
+            "C4022_zve1_day2_drive_speech_s45-69",
+            "C4022_zve1_day2_drive_speech_s88-133",
+            "C4023_zve1_day2_drive_speech_s1-8",
+            "C4023_zve1_day2_drive_visual_s5-20"
+          ],
+          "treatments": {
+            "C4022_zve1_day2_drive_visual_s34-103": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4023_zve1_day2_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-16",
+      "slots": [
+        {
+          "id": "FW-03-16-materials",
+          "query": "背着相机和脚架的人物走入草地，眼前是露出的滩面及远方城市。现场向人询问水位，随后拿出折叠椅；口述说原先想拍水面延时，眼前地貌与预想不同。",
+          "requirement": "required",
+          "targetBundles": [
+            "临时找到河岸机位"
+          ],
+          "chosenSpanIds": [
+            "C4024_zve1_day2_broll_speech_s1-23",
+            "C4024_zve1_day2_broll_speech_s33-70",
+            "C4024_zve1_day2_broll_speech_s78-95",
+            "C4024_zve1_day2_broll_speech_s99-115",
+            "C4025_zve1_day2_broll_speech_s3-16",
+            "C4026_zve1_day2_broll_s0-1",
+            "C4027_zve1_day2_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-17",
+      "slots": [
+        {
+          "id": "FW-03-17-materials",
+          "query": "月亮升过楼群，晋江大桥和摩天轮陆续亮灯，余晖在城市上方变淡。人物站在草地上介绍所见桥形和月色；关于月相数值、低水位原因与小动物的判断是个人现场说法。",
+          "requirement": "required",
+          "targetBundles": [
+            "月升、亮灯与桥塔夜色"
+          ],
+          "chosenSpanIds": [
+            "C0077_a7r6_broll_speech_s0-11",
+            "C0079_a7r6_broll_speech_s0-8",
+            "C4028_zve1_day2_broll_speech_s0-43",
+            "C4030_zve1_day2_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-18",
+      "slots": [
+        {
+          "id": "FW-03-18-materials",
+          "query": "车辆沿亮灯楼群和施工围挡行驶，路口与多车道道路展开。口述谈到商务区外观与修路情况，伴随导航提示。",
+          "requirement": "required",
+          "targetBundles": [
+            "滨江夜间接驳"
+          ],
+          "chosenSpanIds": [
+            "C4031_zve1_day2_drive_speech_s2-7",
+            "C4031_zve1_day2_drive_speech_s14-23",
+            "C4031_zve1_day2_drive_visual_s17-45"
+          ],
+          "treatments": {
+            "C4031_zve1_day2_drive_visual_s17-45": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-19",
+      "slots": [
+        {
+          "id": "FW-03-19-materials",
+          "query": "照片包括露出泥面的岸线、桥梁、持相机与站在草地上的人物、月亮特写、行经草地的人群，以及桥塔、摩天轮和城市灯光。",
+          "requirement": "required",
+          "targetBundles": [
+            "河岸、月亮与城市照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00211_photos_photo",
+            "DSC00213_photos_photo",
+            "DSC00233_photos_photo",
+            "DSC00236_photos_photo",
+            "DSC00241_photos_photo",
+            "DSC00252_photos_photo",
+            "DSC00263_photos_photo",
+            "DSC02011_photos_photo",
+            "DSC00264_photos_photo",
+            "DSC00266_photos_photo",
+            "DSC00267_photos_photo",
+            "DSC02016_photos_photo",
+            "DSC00273_photos_photo",
+            "DSC00279_photos_photo"
+          ],
+          "treatments": {
+            "DSC00211_photos_photo": {
+              "audio": -100
+            },
+            "DSC00213_photos_photo": {
+              "audio": -100
+            },
+            "DSC00233_photos_photo": {
+              "audio": -100
+            },
+            "DSC00236_photos_photo": {
+              "audio": -100
+            },
+            "DSC00241_photos_photo": {
+              "audio": -100
+            },
+            "DSC00252_photos_photo": {
+              "audio": -100
+            },
+            "DSC00263_photos_photo": {
+              "audio": -100
+            },
+            "DSC02011_photos_photo": {
+              "audio": -100
+            },
+            "DSC00264_photos_photo": {
+              "audio": -100
+            },
+            "DSC00266_photos_photo": {
+              "audio": -100
+            },
+            "DSC00267_photos_photo": {
+              "audio": -100
+            },
+            "DSC02016_photos_photo": {
+              "audio": -100
+            },
+            "DSC00273_photos_photo": {
+              "audio": -100
+            },
+            "DSC00279_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-20",
+      "slots": [
+        {
+          "id": "FW-03-20-materials",
+          "query": "排队停车后，人物在水边与红砖建筑间走动，灯笼倒映在水里；随后查看多语言地图并找到姜母鸭餐馆。有关五店市起源与建筑规模的说法来自现场口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "五店市停车与夜游找店"
+          ],
+          "chosenSpanIds": [
+            "C4032_zve1_day2_drive_speech_s1-17",
+            "C4033_zve1_day2_broll_speech_s1-20",
+            "C4034_zve1_day2_broll_s0-2",
+            "C4036_zve1_day2_broll_speech_s0-8",
+            "C4038_zve1_day2_broll_speech_s0-12",
+            "C4039_zve1_day2_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-21",
+      "slots": [
+        {
+          "id": "FW-03-21-materials",
+          "query": "砂锅鸭肉、鱼汤和炸醋肉上桌，人物逐一描述软嫩、鲜味及蘸酱口感。餐后回到层叠红砖屋顶和灯光之间，口述评价味道、分量与价格。",
+          "requirement": "required",
+          "targetBundles": [
+            "姜母鸭、鱼汤与醋肉晚饭"
+          ],
+          "chosenSpanIds": [
+            "C4040_zve1_day2_broll_speech_s0-6",
+            "C4041_zve1_day2_broll_speech_s0-7",
+            "C4042_zve1_day2_broll_speech_s0-29",
+            "C4043_zve1_day2_broll_speech_s0-34",
+            "C4044_zve1_day2_broll_speech_s0-10",
+            "C4045_zve1_day2_talking-head_speech_s0-35",
+            "C4046_zve1_day2_talking-head_speech_s1-9",
+            "C4047_zve1_day2_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-22",
+      "slots": [
+        {
+          "id": "FW-03-22-materials",
+          "query": "照片包括停车场车辆、水边亮灯红砖建筑和坐在石墙上的两个人；后一张为餐后紧接着拍摄的补充照片，远处可见现代楼群。",
+          "requirement": "required",
+          "targetBundles": [
+            "五店市夜间照片"
+          ],
+          "chosenSpanIds": [
+            "DSC02018_photos_photo",
+            "DSC00280_photos_photo",
+            "DSC00282_photos_photo"
+          ],
+          "treatments": {
+            "DSC02018_photos_photo": {
+              "audio": -100
+            },
+            "DSC00280_photos_photo": {
+              "audio": -100
+            },
+            "DSC00282_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-23",
+      "slots": [
+        {
+          "id": "FW-03-23-materials",
+          "query": "车辆再次跨过亮灯的晋江大桥，城市路口与远方灯光连续出现。口述感受桥塔夜景、说中秋快乐，并在行车途中辨认路边建筑，夹有导航声。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间返回泉州"
+          ],
+          "chosenSpanIds": [
+            "C4048_zve1_day2_drive_speech_s0-20",
+            "C4048_zve1_day2_drive_speech_s37-39",
+            "C4048_zve1_day2_drive_speech_s45-82",
+            "C4048_zve1_day2_drive_visual_s107-112",
+            "C4049_zve1_day2_drive_speech_s0-18"
+          ],
+          "treatments": {
+            "C4048_zve1_day2_drive_visual_s107-112": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-01",
+      "slots": [
+        {
+          "id": "FW-04-01-materials",
+          "query": "城市道路转入传统街区，路口有排队车辆和电动车。车内谈到当天天气与游览期待，随后注意到一支很长的街上队伍，对其性质尚不清楚。",
+          "requirement": "required",
+          "targetBundles": [
+            "前往老城与街上队伍"
+          ],
+          "chosenSpanIds": [
+            "C4050_zve1_day3_drive_visual_s13-15",
+            "C4051_zve1_day3_drive_speech_s2-16",
+            "C4051_zve1_day3_drive_visual_s18-76",
+            "C4051_zve1_day3_drive_speech_s26-29",
+            "C4052_zve1_day3_drive_speech_s0-11",
+            "C4052_zve1_day3_drive_visual_s9-29",
+            "C4053_zve1_day3_drive_speech_s1-16",
+            "C4054_zve1_day3_drive_speech_s4-6",
+            "C4054_zve1_day3_drive_speech_s12-26"
+          ],
+          "treatments": {
+            "C4050_zve1_day3_drive_visual_s13-15": {
+              "audio": -100
+            },
+            "C4051_zve1_day3_drive_visual_s18-76": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4052_zve1_day3_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-02",
+      "slots": [
+        {
+          "id": "FW-04-02-materials",
+          "query": "照片记录多人搬抬带花饰的大型木制物件，旁边有骑警和摩托车；活动的名称与具体缘由未确认。",
+          "requirement": "required",
+          "targetBundles": [
+            "老城路口队伍照片"
+          ],
+          "chosenSpanIds": [
+            "DSC00288_photos_photo"
+          ],
+          "treatments": {
+            "DSC00288_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-03",
+      "slots": [
+        {
+          "id": "FW-04-03-materials",
+          "query": "停车后穿过狭巷，沿途是花木、民居和小庙，随后到达较热闹的西街。冬瓜茶摊和手中饮料进入画面，口述讨论街区印象与准备寻找的小吃。",
+          "requirement": "required",
+          "targetBundles": [
+            "甲第巷到西街"
+          ],
+          "chosenSpanIds": [
+            "C4055_zve1_day3_broll_speech_s0-13",
+            "C4056_zve1_day3_broll_speech_s1-6",
+            "C4057_zve1_day3_drive_speech_s7-26",
+            "C4058_zve1_day3_broll_speech_s0-7",
+            "C4059_zve1_day3_broll_speech_s4-12",
+            "C4060_zve1_day3_drive_speech_s1-30",
+            "C4061_zve1_day3_broll_speech_s1-4",
+            "C4062_zve1_day3_broll_speech_s0-6",
+            "C4063_zve1_day3_broll_speech_s0-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-04",
+      "slots": [
+        {
+          "id": "FW-04-04-materials",
+          "query": "从树荫外墙进入寺内，石塔、浮雕、石兽、门洞和人物龛像依次被观察。口述转述建寺传说，比较雕刻神态，对年代、色彩修补及造型作个人判断。",
+          "requirement": "required",
+          "targetBundles": [
+            "开元寺入口与仁寿塔细看"
+          ],
+          "chosenSpanIds": [
+            "C4064_zve1_day3_broll_speech_s1-8",
+            "C4065_zve1_day3_broll_speech_s1-23",
+            "C4066_zve1_day3_broll_speech_s2-40",
+            "C4067_zve1_day3_broll_speech_s0-9",
+            "C4068_zve1_day3_broll_speech_s1-21",
+            "C4069_zve1_day3_broll_speech_s0-23",
+            "C4070_zve1_day3_broll_speech_s2-14",
+            "C4071_zve1_day3_broll_speech_s0-14",
+            "C4072_zve1_day3_broll_speech_s0-31",
+            "C4073_zve1_day3_broll_speech_s1-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-05",
+      "slots": [
+        {
+          "id": "FW-04-05-materials",
+          "query": "庭院里有古树、碑刻、石灯、香炉和来往游人，殿内可见佛像与灯光。人物读牌、观察鸟和树上附生物，也注意到管理告示；树种、树龄及植物用途没有在素材中核实。",
+          "requirement": "required",
+          "targetBundles": [
+            "寺院庭院、主殿与大树"
+          ],
+          "chosenSpanIds": [
+            "C4074_zve1_day3_broll_speech_s2-19",
+            "C4075_zve1_day3_broll_speech_s0-11",
+            "C4076_zve1_day3_broll_speech_s0-20",
+            "C4076_zve1_day3_broll_s19-21",
+            "C4077_zve1_day3_broll_speech_s0-8",
+            "C4078_zve1_day3_broll_speech_s0-8",
+            "C4079_zve1_day3_broll_speech_s1-7",
+            "C4080_zve1_day3_broll_speech_s0-2",
+            "C4081_zve1_day3_broll_speech_s0-6",
+            "C4082_zve1_day3_broll_speech_s0-7",
+            "C4083_zve1_day3_broll_speech_s0-10",
+            "C4084_zve1_day3_broll_speech_s0-7",
+            "C4085_zve1_day3_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-06",
+      "slots": [
+        {
+          "id": "FW-04-06-materials",
+          "query": "人物转向另一座石塔，细看门口和雕饰，注意到拿长棍拍照的游客，随后谈起自己也完成了一次战斗场景式拍摄。有关塔史、抗震与游戏原型的内容是现场讲述，画面包含人物和石塔。",
+          "requirement": "required",
+          "targetBundles": [
+            "镇国塔与游戏联想"
+          ],
+          "chosenSpanIds": [
+            "C4086_zve1_day3_broll_speech_s0-31",
+            "C4087_zve1_day3_broll_speech_s0-2",
+            "C4088_zve1_day3_broll_speech_s0-14",
+            "C4089_zve1_day3_broll_speech_s0-19",
+            "C4090_zve1_day3_talking-head_speech_s1-9",
+            "C4092_zve1_day3_talking-head_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-07",
+      "slots": [
+        {
+          "id": "FW-04-07-materials",
+          "query": "从街道走到面线糊店，菜单、锅具、加料和成碗食物依次出现。人物谈起海蛎、醋肉、大肠和油条的组合，并描述入口后的温度与味道。",
+          "requirement": "required",
+          "targetBundles": [
+            "西街面线糊午饭"
+          ],
+          "chosenSpanIds": [
+            "C4093_zve1_day3_broll_speech_s2-27",
+            "C4094_zve1_day3_broll_speech_s0-7",
+            "C4095_zve1_day3_broll_speech_s0-6",
+            "C4096_zve1_day3_broll_speech_s0-12",
+            "C4097_zve1_day3_broll_speech_s0-13",
+            "C4098_zve1_day3_broll_speech_s7-25"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-08",
+      "slots": [
+        {
+          "id": "FW-04-08-materials",
+          "query": "照片包括巷中日常、三角梅与小庙、石塔和浮雕、香火与游人、塔上鸟、树上附生物及持长棍面对石塔的人物。植物细节不据识别文本确定物种。",
+          "requirement": "required",
+          "targetBundles": [
+            "开元寺与西街照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00290_photos_photo",
+            "DSC00291_photos_photo",
+            "DSC00293_photos_photo",
+            "DSC00294_photos_photo",
+            "DSC00295_photos_photo",
+            "DSC00300_photos_photo",
+            "DSC00303_photos_photo",
+            "DSC00311_photos_photo",
+            "DSC00315_photos_photo",
+            "DSC00316_photos_photo",
+            "DSC00322_photos_photo",
+            "DSC00323_photos_photo",
+            "DSC00324-2_photos_photo",
+            "DSC00325_photos_photo",
+            "DSC02048-2_photos_photo",
+            "DSC02051_photos_photo",
+            "DSC00332_photos_photo"
+          ],
+          "treatments": {
+            "DSC00290_photos_photo": {
+              "audio": -100
+            },
+            "DSC00291_photos_photo": {
+              "audio": -100
+            },
+            "DSC00293_photos_photo": {
+              "audio": -100
+            },
+            "DSC00294_photos_photo": {
+              "audio": -100
+            },
+            "DSC00295_photos_photo": {
+              "audio": -100
+            },
+            "DSC00300_photos_photo": {
+              "audio": -100
+            },
+            "DSC00303_photos_photo": {
+              "audio": -100
+            },
+            "DSC00311_photos_photo": {
+              "audio": -100
+            },
+            "DSC00315_photos_photo": {
+              "audio": -100
+            },
+            "DSC00316_photos_photo": {
+              "audio": -100
+            },
+            "DSC00322_photos_photo": {
+              "audio": -100
+            },
+            "DSC00323_photos_photo": {
+              "audio": -100
+            },
+            "DSC00324-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC00325_photos_photo": {
+              "audio": -100
+            },
+            "DSC02048-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC02051_photos_photo": {
+              "audio": -100
+            },
+            "DSC00332_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-09",
+      "slots": [
+        {
+          "id": "FW-04-09-materials",
+          "query": "从面线糊店出来，镜头扫过白色钟楼与小白车。人物说难以叫到小白车，决定打车前往清净寺。",
+          "requirement": "required",
+          "targetBundles": [
+            "钟楼与老城接驳"
+          ],
+          "chosenSpanIds": [
+            "C4099_zve1_day3_talking-head_speech_s2-11",
+            "C4100_zve1_day3_broll_speech_s1-8",
+            "C4101_zve1_day3_drive_speech_s0-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-10",
+      "slots": [
+        {
+          "id": "FW-04-10-materials",
+          "query": "石质院落、立柱、建筑残件、植物、彩色几何花纹玻璃和带阿拉伯文字的墙面依次出现。口述转述商贸与建寺背景、穹顶损毁及礼拜用途，并观察与其他寺庙不同的空间和装饰。",
+          "requirement": "required",
+          "targetBundles": [
+            "清净寺院落与建筑细节"
+          ],
+          "chosenSpanIds": [
+            "C4102_zve1_day3_broll_speech_s0-22",
+            "C4103_zve1_day3_broll_speech_s1-22",
+            "C4104_zve1_day3_broll_speech_s0-5",
+            "C4104_zve1_day3_broll_speech_s12-20",
+            "C4105_zve1_day3_broll_speech_s0-13",
+            "C4106_zve1_day3_broll_speech_s1-8",
+            "C4107_zve1_day3_broll_speech_s1-28",
+            "C4108_zve1_day3_broll_speech_s2-6",
+            "C4109_zve1_day3_broll_speech_s0-13",
+            "C4110_zve1_day3_broll_speech_s0-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-11",
+      "slots": [
+        {
+          "id": "FW-04-11-materials",
+          "query": "沿江武巷、天后路方向走过灯笼、金饰、音响和风水用品店，接着出现旧楼、快递门店、鞋店、肉菜摊及学校门口。对话关注楼上居住、楼下营业的街区生活，也辨认路边树果。",
+          "requirement": "required",
+          "targetBundles": [
+            "通往天后宫的老街生活"
+          ],
+          "chosenSpanIds": [
+            "C4111_zve1_day3_drive_speech_s0-22",
+            "C4112_zve1_day3_broll_speech_s0-16",
+            "C4113_zve1_day3_broll_speech_s0-18",
+            "C4114_zve1_day3_broll_speech_s0-9",
+            "C4114_zve1_day3_broll_s8-10",
+            "C4115_zve1_day3_broll_speech_s0-16",
+            "C4116_zve1_day3_broll_speech_s0-4",
+            "C4117_zve1_day3_broll_speech_s0-12",
+            "C4118_zve1_day3_broll_s0-7",
+            "C4119_zve1_day3_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-12",
+      "slots": [
+        {
+          "id": "FW-04-12-materials",
+          "query": "店前排队，柜台工作人员分装配料，点餐后拿到号码牌，桌上有四果汤、饮品和石花类甜品。人物比较前一天的甜品，表达对质地和味道的个人感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "秉正堂排队与甜品"
+          ],
+          "chosenSpanIds": [
+            "C4120_zve1_day3_broll_speech_s0-17",
+            "C4121_zve1_day3_broll_speech_s0-5",
+            "C4122_zve1_day3_broll_speech_s0-8",
+            "C4123_zve1_day3_broll_speech_s0-7",
+            "C4124_zve1_day3_broll_speech_s0-8",
+            "C4125_zve1_day3_talking-head_speech_s0-21",
+            "C4125_zve1_day3_talking-head_speech_s30-36"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-13",
+      "slots": [
+        {
+          "id": "FW-04-13-materials",
+          "query": "从天后宫入口进入，红毯、屋脊、壁画、盘龙柱、香炉和后院建筑逐渐展开。池里有鱼和龟，人物追着它们的动作说笑；关于宫庙规模、关系与出海习俗，是未在本片材料内验证的口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "天后宫前后院与池中小动物"
+          ],
+          "chosenSpanIds": [
+            "C4126_zve1_day3_broll_speech_s1-33",
+            "C4127_zve1_day3_broll_speech_s1-6",
+            "C4127_zve1_day3_broll_speech_s10-23",
+            "C4128_zve1_day3_broll_speech_s0-15",
+            "C4129_zve1_day3_broll_speech_s1-13",
+            "C4130_zve1_day3_broll_speech_s0-5",
+            "C4131_zve1_day3_broll_speech_s0-26",
+            "C0080_a7r6_broll_speech_s0-12",
+            "C0081_a7r6_broll_speech_s0-6",
+            "C4132_zve1_day3_broll_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-14",
+      "slots": [
+        {
+          "id": "FW-04-14-materials",
+          "query": "巷中出现老楼、施工围挡、遗址标记、捐助告示和小庙，随后走到有树荫、教堂及商铺的聚宝街。口述把眼前菜肉与小吃生意同想象中的旧时商贸比较，含读牌、玩笑和个人推断。",
+          "requirement": "required",
+          "targetBundles": [
+            "宫塔巷、新桥遗迹与聚宝街"
+          ],
+          "chosenSpanIds": [
+            "C4133_zve1_day3_broll_speech_s0-11",
+            "C4134_zve1_day3_broll_speech_s0-16",
+            "C4135_zve1_day3_broll_speech_s0-14",
+            "C4136_zve1_day3_broll_speech_s0-14",
+            "C4137_zve1_day3_broll_speech_s2-24",
+            "C4137_zve1_day3_broll_speech_s27-39",
+            "C4138_zve1_day3_broll_speech_s0-6",
+            "C4139_zve1_day3_drive_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-15",
+      "slots": [
+        {
+          "id": "FW-04-15-materials",
+          "query": "照片从钟楼、清净寺石柱与院落，延伸到沿街商铺、电动车、树果、灯笼、市场、天后宫建筑，以及施工巷道、阳台晾衣和教堂外观。",
+          "requirement": "required",
+          "targetBundles": [
+            "老城下午照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00338_photos_photo",
+            "DSC00339_photos_photo",
+            "DSC00345_photos_photo",
+            "DSC00348_photos_photo",
+            "DSC00351_photos_photo",
+            "DSC00354_photos_photo",
+            "DSC00355_photos_photo",
+            "DSC00357_photos_photo",
+            "DSC00358_photos_photo",
+            "DSC00359_photos_photo",
+            "DSC00360_photos_photo",
+            "DSC00361_photos_photo",
+            "DSC00362_photos_photo",
+            "DSC00370_photos_photo",
+            "DSC00372_photos_photo",
+            "DSC00376_photos_photo",
+            "DSC00377_photos_photo",
+            "DSC00379_photos_photo",
+            "DSC00381_photos_photo"
+          ],
+          "treatments": {
+            "DSC00338_photos_photo": {
+              "audio": -100
+            },
+            "DSC00339_photos_photo": {
+              "audio": -100
+            },
+            "DSC00345_photos_photo": {
+              "audio": -100
+            },
+            "DSC00348_photos_photo": {
+              "audio": -100
+            },
+            "DSC00351_photos_photo": {
+              "audio": -100
+            },
+            "DSC00354_photos_photo": {
+              "audio": -100
+            },
+            "DSC00355_photos_photo": {
+              "audio": -100
+            },
+            "DSC00357_photos_photo": {
+              "audio": -100
+            },
+            "DSC00358_photos_photo": {
+              "audio": -100
+            },
+            "DSC00359_photos_photo": {
+              "audio": -100
+            },
+            "DSC00360_photos_photo": {
+              "audio": -100
+            },
+            "DSC00361_photos_photo": {
+              "audio": -100
+            },
+            "DSC00362_photos_photo": {
+              "audio": -100
+            },
+            "DSC00370_photos_photo": {
+              "audio": -100
+            },
+            "DSC00372_photos_photo": {
+              "audio": -100
+            },
+            "DSC00376_photos_photo": {
+              "audio": -100
+            },
+            "DSC00377_photos_photo": {
+              "audio": -100
+            },
+            "DSC00379_photos_photo": {
+              "audio": -100
+            },
+            "DSC00381_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-16",
+      "slots": [
+        {
+          "id": "FW-04-16-materials",
+          "query": "白色车辆和公交车行经桥面、多车道道路，远方城市建筑与桥梁形成短暂的行程连接。",
+          "requirement": "required",
+          "targetBundles": [
+            "泉州前往石狮接驳"
+          ],
+          "chosenSpanIds": [
+            "C4140_zve1_day3_drive_visual_s7-19"
+          ],
+          "treatments": {
+            "C4140_zve1_day3_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-17",
+      "slots": [
+        {
+          "id": "FW-04-17-materials",
+          "query": "车辆经过主干道与旗帜路段，随后进入树冠遮蔽的道路，阳光透过枝叶。车内对驾驶行为有抱怨，也观察绿色隧道般的树荫，并注意到海上观音方向。",
+          "requirement": "required",
+          "targetBundles": [
+            "驶向黄金海岸"
+          ],
+          "chosenSpanIds": [
+            "C4141_zve1_day3_drive_speech_s0-16",
+            "C4141_zve1_day3_drive_speech_s19-21",
+            "C4142_zve1_day3_drive_speech_s3-9",
+            "C4142_zve1_day3_drive_visual_s4-15",
+            "C4142_zve1_day3_drive_speech_s12-14",
+            "C4143_zve1_day3_drive_visual_s17-72",
+            "C4143_zve1_day3_drive_visual_s62-78",
+            "C4144_zve1_day3_drive_speech_s1-12",
+            "C4144_zve1_day3_drive_visual_s15-41",
+            "C4145_zve1_day3_drive_speech_s0-5"
+          ],
+          "treatments": {
+            "C4142_zve1_day3_drive_visual_s4-15": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4143_zve1_day3_drive_visual_s17-72": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4143_zve1_day3_drive_visual_s62-78": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4144_zve1_day3_drive_visual_s15-41": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-18",
+      "slots": [
+        {
+          "id": "FW-04-18-materials",
+          "query": "人物携摄影器材走向黄金海岸，远处洛伽寺被夕阳照暖，附近可见大型观音像、礁石、潮沟和滩上游人。架起相机后，口述说明想等月亮从寺庙上方升起。",
+          "requirement": "required",
+          "targetBundles": [
+            "洛伽寺海滩与等待月升"
+          ],
+          "chosenSpanIds": [
+            "C4146_zve1_day3_broll_speech_s2-17",
+            "C4147_zve1_day3_broll_speech_s0-7",
+            "C4148_zve1_day3_broll_speech_s0-22",
+            "C0085_a7r6_talking-head_speech_s0-27"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-19",
+      "slots": [
+        {
+          "id": "FW-04-19-materials",
+          "query": "航拍围绕黄墙红顶寺院、礁石和海面展开，岸上楼群、远处设施与近岸大型白色船形景物同时出现。俯视可见寺院周围的游人、潮池和连接岸边的空间。",
+          "requirement": "required",
+          "targetBundles": [
+            "洛伽寺与周边岸线航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260927171813_0236_D_drone_aerial_s0-7",
+            "DJI_20260927171930_0244_D_drone_aerial_s0-20",
+            "DJI_20260927171951_0245_D_drone_aerial_s0-16",
+            "DJI_20260927172016_0249_D_drone_aerial_s0-11",
+            "DJI_20260927172032_0250_D_drone_aerial_s0-3",
+            "DJI_20260927172039_0251_D_drone_aerial_s0-58",
+            "DJI_20260927172254_0264_D_drone_aerial_s0-6",
+            "DJI_20260927172310_0268_D_drone_aerial_s0-10",
+            "DJI_20260927172350_0275_D_drone_aerial_s0-4",
+            "DJI_20260927172404_0279_D_drone_aerial_s0-29",
+            "DJI_20260927172457_0283_D_drone_aerial_s0-20",
+            "DJI_20260927172527_0287_D_drone_aerial_s0-23",
+            "DJI_20260927172635_0294_D_drone_aerial_s0-23",
+            "DJI_20260927172716_0301_D_drone_aerial_s0-12"
+          ],
+          "treatments": {
+            "DJI_20260927171813_0236_D_drone_aerial_s0-7": {
+              "audio": -100
+            },
+            "DJI_20260927171930_0244_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20260927171951_0245_D_drone_aerial_s0-16": {
+              "audio": -100
+            },
+            "DJI_20260927172016_0249_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20260927172032_0250_D_drone_aerial_s0-3": {
+              "audio": -100
+            },
+            "DJI_20260927172039_0251_D_drone_aerial_s0-58": {
+              "audio": -100
+            },
+            "DJI_20260927172254_0264_D_drone_aerial_s0-6": {
+              "audio": -100
+            },
+            "DJI_20260927172310_0268_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20260927172350_0275_D_drone_aerial_s0-4": {
+              "audio": -100
+            },
+            "DJI_20260927172404_0279_D_drone_aerial_s0-29": {
+              "audio": -100
+            },
+            "DJI_20260927172457_0283_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20260927172527_0287_D_drone_aerial_s0-23": {
+              "audio": -100
+            },
+            "DJI_20260927172635_0294_D_drone_aerial_s0-23": {
+              "audio": -100
+            },
+            "DJI_20260927172716_0301_D_drone_aerial_s0-12": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-20",
+      "slots": [
+        {
+          "id": "FW-04-20-materials",
+          "query": "地面及一段已登记为空中类型的镜头记录同行者在礁石、浅水间活动，背景有大型白色船形景物。天空渐呈粉色，入夜后湿沙反射灯光，现场传来歌声。",
+          "requirement": "required",
+          "targetBundles": [
+            "礁石人物与粉色晚霞"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260927173239_0334_D_drone_aerial_s0-93",
+            "DJI_20260927172916_0311_D_drone_broll_s0-8",
+            "DJI_20260927173015_0318_D_drone_broll_s0-47",
+            "DJI_20260927173515_0347_D_drone_broll_s0-31",
+            "DJI_20260927173656_0357_D_drone_broll_s0-24",
+            "C0087_a7r6_broll_speech_s0-6",
+            "C0088_a7r6_broll_speech_s0-27"
+          ],
+          "treatments": {
+            "DJI_20260927173239_0334_D_drone_aerial_s0-93": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-21",
+      "slots": [
+        {
+          "id": "FW-04-21-materials",
+          "query": "一段延时及夜间画面记录海边寺院、月亮和灯光。人物说云层时而遮住月亮，拍到了一些画面但不完全如预期；随后离开沙滩，谈到准备去永宁寻找烧塔仔活动，并观察商业区中的彩色高架装置。",
+          "requirement": "required",
+          "targetBundles": [
+            "寺上月亮、云层与离场"
+          ],
+          "chosenSpanIds": [
+            "20260927_泉州珞珈寺日落月升_timelapse_timelapse_s0-42",
+            "C4149_zve1_day3_broll_speech_s0-2",
+            "C4150_zve1_day3_broll_speech_s0-15",
+            "C4151_zve1_day3_broll_speech_s1-3",
+            "C4152_zve1_day3_talking-head_speech_s1-19",
+            "C4153_zve1_day3_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-22",
+      "slots": [
+        {
+          "id": "FW-04-22-materials",
+          "query": "照片包括海滩、礁石、摄影机位、人物、寺院不同角度、白色船形景物、晚霞和寺上月亮；补充的一张在稍晚时间记录亮灯建筑与水面倒影，具体机位没有进一步确认。",
+          "requirement": "required",
+          "targetBundles": [
+            "洛伽寺黄昏与月升照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC00387_photos_photo",
+            "DSC00388_photos_photo",
+            "DSC07437_photos_photo",
+            "DSC00391_photos_photo",
+            "DSC00392_photos_photo",
+            "DSC00397_photos_photo",
+            "DJI_20260927171913_0238_D-HDR_photos_photo",
+            "DJI_20260927172011_0246_D-HDR_photos_photo",
+            "DJI_20260927172201_0255_D-HDR_photos_photo",
+            "DJI_20260927172231_0258_D-HDR_photos_photo",
+            "DJI_20260927172304_0265_D-HDR_photos_photo",
+            "DJI_20260927172324_0269_D-HDR_photos_photo",
+            "DJI_20260927172451_0280_D-HDR_photos_photo",
+            "DJI_20260927172556_0288_D-HDR_photos_photo",
+            "DJI_20260927172626_0291_D-HDR_photos_photo",
+            "DJI_20260927172701_0295_D-HDR_photos_photo",
+            "DJI_20260927172730_0302_D-HDR_photos_photo",
+            "DJI_20260927173638_0356_D-HDR_photos_photo",
+            "DJI_20260927173732_0363_D-HDR_photos_photo",
+            "DJI_20260927173905_0385_D-HDR_photos_photo",
+            "DJI_20260927173945_0399_D-HDR_photos_photo",
+            "DSC00405_photos_photo",
+            "DSC08123_photos_photo",
+            "DSC08332_photos_photo",
+            "DSC08344_photos_photo",
+            "DSC00412_photos_photo"
+          ],
+          "treatments": {
+            "DSC00387_photos_photo": {
+              "audio": -100
+            },
+            "DSC00388_photos_photo": {
+              "audio": -100
+            },
+            "DSC07437_photos_photo": {
+              "audio": -100
+            },
+            "DSC00391_photos_photo": {
+              "audio": -100
+            },
+            "DSC00392_photos_photo": {
+              "audio": -100
+            },
+            "DSC00397_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927171913_0238_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172011_0246_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172201_0255_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172231_0258_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172304_0265_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172324_0269_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172451_0280_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172556_0288_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172626_0291_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172701_0295_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927172730_0302_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927173638_0356_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927173732_0363_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927173905_0385_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260927173945_0399_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC00405_photos_photo": {
+              "audio": -100
+            },
+            "DSC08123_photos_photo": {
+              "audio": -100
+            },
+            "DSC08332_photos_photo": {
+              "audio": -100
+            },
+            "DSC08344_photos_photo": {
+              "audio": -100
+            },
+            "DSC00412_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-23",
+      "slots": [
+        {
+          "id": "FW-04-23-materials",
+          "query": "亮灯城墙、拱门和卡通形象之后，镜头走入窄街、小庙与台前空地。有人坐在塑料椅上看屏幕，现场传来演唱声；人物读到补财库告示，对卫城历史和所见设施作口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "永宁卫城城门与夜间街巷"
+          ],
+          "chosenSpanIds": [
+            "C4154_zve1_day3_broll_speech_s0-12",
+            "C4155_zve1_day3_drive_speech_s1-66",
+            "C4156_zve1_day3_broll_speech_s0-5",
+            "C4157_zve1_day3_broll_speech_s2-18",
+            "C4157_zve1_day3_broll_speech_s28-34",
+            "C4158_zve1_day3_broll_speech_s0-17",
+            "C4159_zve1_day3_broll_speech_s1-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-24",
+      "slots": [
+        {
+          "id": "FW-04-24-materials",
+          "query": "镜头来到较大的庙前广场，看灯光、石雕、香炉和植物。人物说庙已关、未找到烧塔仔，随后谈论问询经历与对当地商业和宗教的个人印象；这些评价只代表当次体验。",
+          "requirement": "required",
+          "targetBundles": [
+            "庙前广场、寻访扑空与感受"
+          ],
+          "chosenSpanIds": [
+            "C4160_zve1_day3_broll_speech_s0-21",
+            "C4161_zve1_day3_broll_speech_s0-30",
+            "C4162_zve1_day3_broll_speech_s0-19",
+            "C4163_zve1_day3_talking-head_speech_s0-35",
+            "C4164_zve1_day3_broll_speech_s0-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-25",
+      "slots": [
+        {
+          "id": "FW-04-25-materials",
+          "query": "照片记录城门、卡通骑像、坐着看屏幕的人群、灯笼与庙宇屋顶；最后一张补充照片是亮灯城墙前停车处的车辆。",
+          "requirement": "required",
+          "targetBundles": [
+            "永宁夜游照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC02075_photos_photo",
+            "DSC00417_photos_photo",
+            "DSC02076_photos_photo",
+            "DSC00419_photos_photo",
+            "DSC00422_photos_photo",
+            "DSC00423_photos_photo",
+            "DSC00425_photos_photo",
+            "DSC00427_photos_photo",
+            "DSC00428_photos_photo",
+            "DSC00430_photos_photo"
+          ],
+          "treatments": {
+            "DSC02075_photos_photo": {
+              "audio": -100
+            },
+            "DSC00417_photos_photo": {
+              "audio": -100
+            },
+            "DSC02076_photos_photo": {
+              "audio": -100
+            },
+            "DSC00419_photos_photo": {
+              "audio": -100
+            },
+            "DSC00422_photos_photo": {
+              "audio": -100
+            },
+            "DSC00423_photos_photo": {
+              "audio": -100
+            },
+            "DSC00425_photos_photo": {
+              "audio": -100
+            },
+            "DSC00427_photos_photo": {
+              "audio": -100
+            },
+            "DSC00428_photos_photo": {
+              "audio": -100
+            },
+            "DSC00430_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-26",
+      "slots": [
+        {
+          "id": "FW-04-26-materials",
+          "query": "人物介绍并品尝拳头母，桌面可见食物与蘸料；之后拍到街边三只狗互动，伴随同行者的玩笑。现有画面不足以展开一顿完整晚饭。",
+          "requirement": "required",
+          "targetBundles": [
+            "石狮晚饭与街边小狗"
+          ],
+          "chosenSpanIds": [
+            "C4165_zve1_day3_broll_speech_s0-9",
+            "C4166_zve1_day3_broll_speech_s4-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-27",
+      "slots": [
+        {
+          "id": "FW-04-27-materials",
+          "query": "城市车流与电动车之后，车辆再次驶过灯光中的晋江大桥。口述抱怨路况、辨认城市标语，并以当晚的心情向晋江道别。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间返回泉州"
+          ],
+          "chosenSpanIds": [
+            "C4167_zve1_day3_drive_speech_s1-17",
+            "C4168_zve1_day3_drive_speech_s0-29",
+            "C4168_zve1_day3_drive_visual_s20-81",
+            "C4168_zve1_day3_drive_speech_s33-48",
+            "C4168_zve1_day3_drive_speech_s78-87"
+          ],
+          "treatments": {
+            "C4168_zve1_day3_drive_visual_s20-81": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-01",
+      "slots": [
+        {
+          "id": "FW-05-01-materials",
+          "query": "天未亮时从沿海大通道旁走下，沿杂草、水沟和石块找到望向大桥的位置。厚云间露出太阳，人物总结预期悬日与实际拍摄差异，听到鸟叫，并决定继续去观鸟处看看。",
+          "requirement": "required",
+          "targetBundles": [
+            "清晨找机位与云缝中的太阳"
+          ],
+          "chosenSpanIds": [
+            "C4170_zve1_day4_broll_speech_s1-41",
+            "C4171_zve1_day4_broll_speech_s0-20",
+            "C4172_zve1_day4_broll_s0-34",
+            "C0089_a7r6_broll_speech_s0-30",
+            "C0090_a7r6_broll_speech_s0-12",
+            "C4173_zve1_day4_broll_speech_s0-5",
+            "C4174_zve1_day4_talking-head_speech_s1-37"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-02",
+      "slots": [
+        {
+          "id": "FW-05-02-materials",
+          "query": "返回途中观察地面花草、带桶工具行走的人、小螃蟹和叶间小动物，远方桥梁与晨光仍在画面里。桥下水流和泥滩成为近景，最后回到道路旁；有关桥梁名称、功能与建设的说法是现场口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "湿地返程与小螃蟹"
+          ],
+          "chosenSpanIds": [
+            "C4175_zve1_day4_broll_speech_s0-15",
+            "C4176_zve1_day4_broll_speech_s0-4",
+            "C4177_zve1_day4_broll_speech_s0-10",
+            "C0092_a7r6_broll_speech_s2-20",
+            "C0093_a7r6_broll_speech_s0-5",
+            "C4178_zve1_day4_broll_speech_s0-11",
+            "C4179_zve1_day4_broll_speech_s0-12",
+            "C4180_zve1_day4_broll_s0-3",
+            "C4181_zve1_day4_talking-head_speech_s1-34"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-03",
+      "slots": [
+        {
+          "id": "FW-05-03-materials",
+          "query": "鸟类观测设施、鸟形雕像、石径及绿树依次出现，镜头记录枝头和叶间的小鸟、飞动姿态与红黄色花。人物边观察边猜鸟种，回到车内后说鸟太小或太远，现有焦段难以拍清。",
+          "requirement": "required",
+          "targetBundles": [
+            "观测塔、鸟与拍摄感受"
+          ],
+          "chosenSpanIds": [
+            "C4182_zve1_day4_broll_speech_s0-25",
+            "C4183_zve1_day4_broll_speech_s0-9",
+            "C4184_zve1_day4_broll_speech_s2-5",
+            "C4185_zve1_day4_broll_speech_s0-14",
+            "C0095_a7r6_broll_s0-2",
+            "C0096_a7r6_broll_speech_s0-7",
+            "C0097_a7r6_broll_s0-2",
+            "C0098_a7r6_broll_speech_s1-9",
+            "C0099_a7r6_broll_speech_s0-14",
+            "C4186_zve1_day4_broll_speech_s0-13",
+            "C4187_zve1_day4_talking-head_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-04",
+      "slots": [
+        {
+          "id": "FW-05-04-materials",
+          "query": "车辆与电动车驶过晨光中的桥面，城市楼群在前方展开。人物笑称这才是真正最后一次跨桥，与昨晚的道别形成实际经历上的呼应。",
+          "requirement": "required",
+          "targetBundles": [
+            "晨间再次跨过晋江大桥"
+          ],
+          "chosenSpanIds": [
+            "C4188_zve1_day4_drive_speech_s0-31"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-05",
+      "slots": [
+        {
+          "id": "FW-05-05-materials",
+          "query": "照片包括桥上方太阳、相机机位、地面花草与水沟、泥滩行人、小螃蟹和叶下小动物、观测塔、枝头鸟与飞动瞬间，以及路旁车辆。生物只按可见形态描述，未确定具体种名。",
+          "requirement": "required",
+          "targetBundles": [
+            "晨光、湿地与观鸟照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC08681_photos_photo",
+            "DSC00436_photos_photo",
+            "DSC00438_photos_photo",
+            "DSC00440_photos_photo",
+            "DSC00441_photos_photo",
+            "DSC00443_photos_photo",
+            "DSC00444_photos_photo",
+            "DSC00445_photos_photo",
+            "DSC00448_photos_photo",
+            "DSC00452_photos_photo",
+            "DSC00459_photos_photo",
+            "DSC00460_photos_photo",
+            "DSC00461_photos_photo",
+            "DSC00467_photos_photo",
+            "DSC02081_photos_photo",
+            "DSC00469_photos_photo",
+            "DSC00474_photos_photo",
+            "DSC02084_photos_photo",
+            "DSC02085_photos_photo",
+            "DSC00475_photos_photo",
+            "DSC00476_photos_photo",
+            "DSC00479_photos_photo",
+            "DSC00484_photos_photo",
+            "DSC00489_photos_photo",
+            "DSC00490_photos_photo",
+            "DSC00492_photos_photo",
+            "DSC00493_photos_photo",
+            "DSC00510_photos_photo",
+            "DSC00511_photos_photo",
+            "DSC02086_photos_photo"
+          ],
+          "treatments": {
+            "DSC08681_photos_photo": {
+              "audio": -100
+            },
+            "DSC00436_photos_photo": {
+              "audio": -100
+            },
+            "DSC00438_photos_photo": {
+              "audio": -100
+            },
+            "DSC00440_photos_photo": {
+              "audio": -100
+            },
+            "DSC00441_photos_photo": {
+              "audio": -100
+            },
+            "DSC00443_photos_photo": {
+              "audio": -100
+            },
+            "DSC00444_photos_photo": {
+              "audio": -100
+            },
+            "DSC00445_photos_photo": {
+              "audio": -100
+            },
+            "DSC00448_photos_photo": {
+              "audio": -100
+            },
+            "DSC00452_photos_photo": {
+              "audio": -100
+            },
+            "DSC00459_photos_photo": {
+              "audio": -100
+            },
+            "DSC00460_photos_photo": {
+              "audio": -100
+            },
+            "DSC00461_photos_photo": {
+              "audio": -100
+            },
+            "DSC00467_photos_photo": {
+              "audio": -100
+            },
+            "DSC02081_photos_photo": {
+              "audio": -100
+            },
+            "DSC00469_photos_photo": {
+              "audio": -100
+            },
+            "DSC00474_photos_photo": {
+              "audio": -100
+            },
+            "DSC02084_photos_photo": {
+              "audio": -100
+            },
+            "DSC02085_photos_photo": {
+              "audio": -100
+            },
+            "DSC00475_photos_photo": {
+              "audio": -100
+            },
+            "DSC00476_photos_photo": {
+              "audio": -100
+            },
+            "DSC00479_photos_photo": {
+              "audio": -100
+            },
+            "DSC00484_photos_photo": {
+              "audio": -100
+            },
+            "DSC00489_photos_photo": {
+              "audio": -100
+            },
+            "DSC00490_photos_photo": {
+              "audio": -100
+            },
+            "DSC00492_photos_photo": {
+              "audio": -100
+            },
+            "DSC00493_photos_photo": {
+              "audio": -100
+            },
+            "DSC00510_photos_photo": {
+              "audio": -100
+            },
+            "DSC00511_photos_photo": {
+              "audio": -100
+            },
+            "DSC02086_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-06",
+      "slots": [
+        {
+          "id": "FW-05-06-materials",
+          "query": "医院外观之后，人物口述此行临时因眼部不适就医；稍晚手持药盒，转述检查结果和开药情况。这是旅途中个人状态的记录。",
+          "requirement": "required",
+          "targetBundles": [
+            "临时就医与药品记录"
+          ],
+          "chosenSpanIds": [
+            "C4189_zve1_day4_broll_s0-1",
+            "C4190_zve1_day4_broll_speech_s0-13",
+            "C4191_zve1_day4_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-07",
+      "slots": [
+        {
+          "id": "FW-05-07-materials",
+          "query": "主路上的交通反应之后，车辆跟随导航进入狭窄街巷，沿途有商铺、施工围挡、摩托车与会车困难。人物不断确认能否转弯、通行，最后讨论倒车。",
+          "requirement": "required",
+          "targetBundles": [
+            "为午饭驶入窄巷"
+          ],
+          "chosenSpanIds": [
+            "C4192_zve1_day4_drive_speech_s0-16",
+            "C4193_zve1_day4_drive_speech_s0-5",
+            "C4193_zve1_day4_drive_speech_s10-41",
+            "C4193_zve1_day4_drive_visual_s36-109",
+            "C4193_zve1_day4_drive_speech_s47-62",
+            "C4193_zve1_day4_drive_speech_s73-99",
+            "C4193_zve1_day4_drive_speech_s113-137",
+            "C4194_zve1_day4_drive_speech_s12-37",
+            "C4194_zve1_day4_drive_speech_s45-75",
+            "C4194_zve1_day4_drive_speech_s80-87"
+          ],
+          "treatments": {
+            "C4193_zve1_day4_drive_visual_s36-109": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-08",
+      "slots": [
+        {
+          "id": "FW-05-08-materials",
+          "query": "下车画面有车辆与路边石墩，也有方向盘近景；随后继续穿过小巷、商铺和停放车辆。口述说出口受阻、再次找路，直到回到较宽道路，并回顾封路与导航绕行的经过。",
+          "requirement": "required",
+          "targetBundles": [
+            "受阻、绕行与重返主路"
+          ],
+          "chosenSpanIds": [
+            "C4195_zve1_day4_broll_speech_s0-2",
+            "C4196_zve1_day4_broll_speech_s1-8",
+            "C4197_zve1_day4_broll_s0-78",
+            "C4198_zve1_day4_broll_s0-2",
+            "C4199_zve1_day4_drive_s0-169",
+            "C4200_zve1_day4_drive_s0-272",
+            "C4201_zve1_day4_broll_s0-23",
+            "C4202_zve1_day4_drive_speech_s0-11",
+            "C4203_zve1_day4_drive_s0-3",
+            "C4204_zve1_day4_drive_speech_s0-19",
+            "C4204_zve1_day4_drive_speech_s27-50",
+            "C4204_zve1_day4_drive_visual_s30-94",
+            "C4204_zve1_day4_drive_speech_s102-115",
+            "C4205_zve1_day4_drive_speech_s0-7",
+            "C4206_zve1_day4_drive_speech_s1-18"
+          ],
+          "treatments": {
+            "C4199_zve1_day4_drive_s0-169": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4200_zve1_day4_drive_s0-272": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4203_zve1_day4_drive_s0-3": {
+              "audio": -100
+            },
+            "C4204_zve1_day4_drive_visual_s30-94": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-09",
+      "slots": [
+        {
+          "id": "FW-05-09-materials",
+          "query": "从店铺外观和抵达感叹进入用餐，人物夹起牛肉燕面试吃。餐后谈到价格、分量与独特口感，也表达没有完全符合期待的个人评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "终于吃到牛肉燕面"
+          ],
+          "chosenSpanIds": [
+            "C4207_zve1_day4_broll_s0-2",
+            "C4208_zve1_day4_broll_speech_s0-9",
+            "C4209_zve1_day4_broll_speech_s0-25",
+            "C4211_zve1_day4_talking-head_speech_s1-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-10",
+      "slots": [
+        {
+          "id": "FW-05-10-materials",
+          "query": "车辆沿城市边缘道路驶离，口述回顾海岸、日出和月升拍摄中的遗憾，并说以后仍可再来。人物也讲述在蟳埔问询和拍照时不愉快的个人经历，对整座城市的延伸评价属于主观感受；最后交代接下来前往武夷山。",
+          "requirement": "required",
+          "targetBundles": [
+            "离开泉州与这一段旅程的回顾"
+          ],
+          "chosenSpanIds": [
+            "C4212_zve1_day4_drive_speech_s8-32",
+            "C4212_zve1_day4_drive_visual_s20-38",
+            "C4212_zve1_day4_drive_speech_s36-56",
+            "C4214_zve1_day4_drive_speech_s2-83"
+          ],
+          "treatments": {
+            "C4212_zve1_day4_drive_visual_s20-38": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "coverageAudit": {
+    "generatedAt": "2026-10-14T09:06:43.189751Z",
+    "byType": [
+      {
+        "key": "aerial",
+        "label": "aerial",
+        "available": 43,
+        "chosen": 43,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "broll",
+        "label": "broll",
+        "available": 332,
+        "chosen": 310,
+        "dropped": 22,
+        "droppedSpanIds": [
+          "C3877_zve1_day1_broll_s0-1",
+          "C3886_zve1_day1_broll_s0-1",
+          "C3893_zve1_day1_broll_s0-1",
+          "C3909_zve1_day1_broll_s0-1",
+          "C3963_zve1_day1_broll_s0-1",
+          "C4003_zve1_day2_broll_s0-1",
+          "C4004_zve1_day2_broll_s0-1",
+          "C4044_zve1_day2_broll_s0-1",
+          "C4055_zve1_day3_broll_s0-1",
+          "C4062_zve1_day3_broll_s0-1",
+          "C4067_zve1_day3_broll_s0-1",
+          "C4071_zve1_day3_broll_s0-1",
+          "C4084_zve1_day3_broll_s0-1",
+          "C4085_zve1_day3_broll_s0-1",
+          "C4094_zve1_day3_broll_s0-1",
+          "C4109_zve1_day3_broll_s0-1",
+          "C4136_zve1_day3_broll_s0-1",
+          "C4138_zve1_day3_broll_s0-1",
+          "C4147_zve1_day3_broll_s6-8",
+          "C4175_zve1_day4_broll_s0-1",
+          "C0096_a7r6_broll_s6-7",
+          "C4186_zve1_day4_broll_s0-1"
+        ]
+      },
+      {
+        "key": "drive",
+        "label": "drive",
+        "available": 133,
+        "chosen": 124,
+        "dropped": 9,
+        "droppedSpanIds": [
+          "C3856_zve1_day1_drive_visual_s106-109",
+          "C3870_zve1_day1_drive_visual_s128-130",
+          "C4031_zve1_day2_drive_visual_s32-39",
+          "C4031_zve1_day2_drive_visual_s49-52",
+          "C4051_zve1_day3_drive_visual_s49-53",
+          "C4139_zve1_day3_drive_s0-1",
+          "C4140_zve1_day3_drive_visual_s15-17",
+          "C4143_zve1_day3_drive_visual_s41-45",
+          "C4144_zve1_day3_drive_visual_s30-34"
+        ]
+      },
+      {
+        "key": "photo",
+        "label": "photo",
+        "available": 243,
+        "chosen": 243,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "talking-head",
+        "label": "talking-head",
+        "available": 26,
+        "chosen": 26,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "timelapse",
+        "label": "timelapse",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byDay": [
+      {
+        "key": "2026-09-24",
+        "label": "2026-09-24",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-09-25",
+        "label": "2026-09-25",
+        "available": 238,
+        "chosen": 231,
+        "dropped": 7,
+        "droppedSpanIds": [
+          "C3856_zve1_day1_drive_visual_s106-109",
+          "C3870_zve1_day1_drive_visual_s128-130",
+          "C3877_zve1_day1_broll_s0-1",
+          "C3886_zve1_day1_broll_s0-1",
+          "C3893_zve1_day1_broll_s0-1",
+          "C3909_zve1_day1_broll_s0-1",
+          "C3963_zve1_day1_broll_s0-1"
+        ]
+      },
+      {
+        "key": "2026-09-26",
+        "label": "2026-09-26",
+        "available": 182,
+        "chosen": 177,
+        "dropped": 5,
+        "droppedSpanIds": [
+          "C4003_zve1_day2_broll_s0-1",
+          "C4004_zve1_day2_broll_s0-1",
+          "C4031_zve1_day2_drive_visual_s32-39",
+          "C4031_zve1_day2_drive_visual_s49-52",
+          "C4044_zve1_day2_broll_s0-1"
+        ]
+      },
+      {
+        "key": "2026-09-27",
+        "label": "2026-09-27",
+        "available": 251,
+        "chosen": 235,
+        "dropped": 16,
+        "droppedSpanIds": [
+          "C4051_zve1_day3_drive_visual_s49-53",
+          "C4055_zve1_day3_broll_s0-1",
+          "C4062_zve1_day3_broll_s0-1",
+          "C4067_zve1_day3_broll_s0-1",
+          "C4071_zve1_day3_broll_s0-1",
+          "C4084_zve1_day3_broll_s0-1",
+          "C4085_zve1_day3_broll_s0-1",
+          "C4094_zve1_day3_broll_s0-1",
+          "C4109_zve1_day3_broll_s0-1",
+          "C4136_zve1_day3_broll_s0-1",
+          "C4138_zve1_day3_broll_s0-1",
+          "C4139_zve1_day3_drive_s0-1",
+          "C4140_zve1_day3_drive_visual_s15-17",
+          "C4143_zve1_day3_drive_visual_s41-45",
+          "C4144_zve1_day3_drive_visual_s30-34",
+          "C4147_zve1_day3_broll_s6-8"
+        ]
+      },
+      {
+        "key": "2026-09-28",
+        "label": "2026-09-28",
+        "available": 97,
+        "chosen": 94,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4175_zve1_day4_broll_s0-1",
+          "C0096_a7r6_broll_s6-7",
+          "C4186_zve1_day4_broll_s0-1"
+        ]
+      }
+    ],
+    "byEvent": [
+      {
+        "key": "FW-01-01",
+        "label": "深圳出发与出城拥堵",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-02",
+        "label": "夜间高速与路况反应",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-03",
+        "label": "夜间临时停车",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-04",
+        "label": "凌晨抵达东山",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-01",
+        "label": "沿海公路到澳角渔港",
+        "available": 3,
+        "chosen": 2,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3856_zve1_day1_drive_visual_s106-109"
+        ]
+      },
+      {
+        "key": "FW-02-02",
+        "label": "澳角港湾航拍",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-03",
+        "label": "码头木船、吊机与澳角口述",
+        "available": 9,
+        "chosen": 9,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-04",
+        "label": "从澳角驶向风机海岸",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-05",
+        "label": "风机、沙滩与海浪航拍",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-06",
+        "label": "沿风机群继续北行",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-07",
+        "label": "浅海平台与海岸线航拍",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-08",
+        "label": "驶向铜陵与风动石景区",
+        "available": 8,
+        "chosen": 7,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3870_zve1_day1_drive_visual_s128-130"
+        ]
+      },
+      {
+        "key": "FW-02-09",
+        "label": "澳角与风机海岸照片组",
+        "available": 25,
+        "chosen": 25,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-10",
+        "label": "入园、推销插曲与上山扶梯",
+        "available": 11,
+        "chosen": 10,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3877_zve1_day1_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-02-11",
+        "label": "园内树荫、风动石与祈福设施",
+        "available": 11,
+        "chosen": 9,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C3886_zve1_day1_broll_s0-1",
+          "C3893_zve1_day1_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-02-12",
+        "label": "宝智寺、关帝庙与香火细节",
+        "available": 17,
+        "chosen": 16,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3909_zve1_day1_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-02-13",
+        "label": "椰子休息与临海步道",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-14",
+        "label": "回到入口与离场",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-15",
+        "label": "铜陵寺庙与临海步道照片组",
+        "available": 22,
+        "chosen": 22,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-16",
+        "label": "南屿岸边与双面海入口",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-17",
+        "label": "沙滩游人、湿沙反光与东兴寺",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-18",
+        "label": "南屿与海岸城镇黄昏航拍",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-19",
+        "label": "灯塔地面视角与海滩收尾",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-20",
+        "label": "南屿黄昏照片组",
+        "available": 33,
+        "chosen": 33,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-21",
+        "label": "夜间绕路与寻找晚饭",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-22",
+        "label": "烧腱灵与小管试吃",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-23",
+        "label": "四进士汤与餐后感受",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-24",
+        "label": "南门湾夜市与四果汤",
+        "available": 9,
+        "chosen": 8,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3963_zve1_day1_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-02-25",
+        "label": "晚饭后街巷与车辆照片",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-01",
+        "label": "天未亮的金銮湾",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-02",
+        "label": "晨光中的镜面沙滩",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-03",
+        "label": "日出、现场总结与早餐",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-04",
+        "label": "金銮湾日出照片组",
+        "available": 20,
+        "chosen": 20,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-05",
+        "label": "告别东山岛",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-06",
+        "label": "前往泉州的高速路",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-07",
+        "label": "到达泉州与寻找蟳埔停车处",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-08",
+        "label": "簪花街巷与妈祖庙",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-09",
+        "label": "蚵壳墙、街边劳作与展陈",
+        "available": 9,
+        "chosen": 7,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4003_zve1_day2_broll_s0-1",
+          "C4004_zve1_day2_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-03-10",
+        "label": "簪花话题与社区细节",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-11",
+        "label": "蟳埔社区照片组",
+        "available": 17,
+        "chosen": 17,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-12",
+        "label": "街头小吃：土笋冻",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-13",
+        "label": "一场简短簪花与水边游人",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-14",
+        "label": "蟳埔街巷与离场照片",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-15",
+        "label": "穿过晋江大桥",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-16",
+        "label": "临时找到河岸机位",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-17",
+        "label": "月升、亮灯与桥塔夜色",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-18",
+        "label": "滨江夜间接驳",
+        "available": 5,
+        "chosen": 3,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4031_zve1_day2_drive_visual_s32-39",
+          "C4031_zve1_day2_drive_visual_s49-52"
+        ]
+      },
+      {
+        "key": "FW-03-19",
+        "label": "河岸、月亮与城市照片组",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-20",
+        "label": "五店市停车与夜游找店",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-21",
+        "label": "姜母鸭、鱼汤与醋肉晚饭",
+        "available": 9,
+        "chosen": 8,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4044_zve1_day2_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-03-22",
+        "label": "五店市夜间照片",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-23",
+        "label": "夜间返回泉州",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-01",
+        "label": "前往老城与街上队伍",
+        "available": 10,
+        "chosen": 9,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4051_zve1_day3_drive_visual_s49-53"
+        ]
+      },
+      {
+        "key": "FW-04-02",
+        "label": "老城路口队伍照片",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-03",
+        "label": "甲第巷到西街",
+        "available": 11,
+        "chosen": 9,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4055_zve1_day3_broll_s0-1",
+          "C4062_zve1_day3_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-04",
+        "label": "开元寺入口与仁寿塔细看",
+        "available": 12,
+        "chosen": 10,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4067_zve1_day3_broll_s0-1",
+          "C4071_zve1_day3_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-05",
+        "label": "寺院庭院、主殿与大树",
+        "available": 15,
+        "chosen": 13,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4084_zve1_day3_broll_s0-1",
+          "C4085_zve1_day3_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-06",
+        "label": "镇国塔与游戏联想",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-07",
+        "label": "西街面线糊午饭",
+        "available": 7,
+        "chosen": 6,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4094_zve1_day3_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-08",
+        "label": "开元寺与西街照片组",
+        "available": 17,
+        "chosen": 17,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-09",
+        "label": "钟楼与老城接驳",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-10",
+        "label": "清净寺院落与建筑细节",
+        "available": 11,
+        "chosen": 10,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4109_zve1_day3_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-11",
+        "label": "通往天后宫的老街生活",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-12",
+        "label": "秉正堂排队与甜品",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-13",
+        "label": "天后宫前后院与池中小动物",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-14",
+        "label": "宫塔巷、新桥遗迹与聚宝街",
+        "available": 11,
+        "chosen": 8,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4136_zve1_day3_broll_s0-1",
+          "C4138_zve1_day3_broll_s0-1",
+          "C4139_zve1_day3_drive_s0-1"
+        ]
+      },
+      {
+        "key": "FW-04-15",
+        "label": "老城下午照片组",
+        "available": 19,
+        "chosen": 19,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-16",
+        "label": "泉州前往石狮接驳",
+        "available": 2,
+        "chosen": 1,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4140_zve1_day3_drive_visual_s15-17"
+        ]
+      },
+      {
+        "key": "FW-04-17",
+        "label": "驶向黄金海岸",
+        "available": 12,
+        "chosen": 10,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4143_zve1_day3_drive_visual_s41-45",
+          "C4144_zve1_day3_drive_visual_s30-34"
+        ]
+      },
+      {
+        "key": "FW-04-18",
+        "label": "洛伽寺海滩与等待月升",
+        "available": 5,
+        "chosen": 4,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4147_zve1_day3_broll_s6-8"
+        ]
+      },
+      {
+        "key": "FW-04-19",
+        "label": "洛伽寺与周边岸线航拍",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-20",
+        "label": "礁石人物与粉色晚霞",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-21",
+        "label": "寺上月亮、云层与离场",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-22",
+        "label": "洛伽寺黄昏与月升照片组",
+        "available": 26,
+        "chosen": 26,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-23",
+        "label": "永宁卫城城门与夜间街巷",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-24",
+        "label": "庙前广场、寻访扑空与感受",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-25",
+        "label": "永宁夜游照片组",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-26",
+        "label": "石狮晚饭与街边小狗",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-27",
+        "label": "夜间返回泉州",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-01",
+        "label": "清晨找机位与云缝中的太阳",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-02",
+        "label": "湿地返程与小螃蟹",
+        "available": 10,
+        "chosen": 9,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4175_zve1_day4_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-05-03",
+        "label": "观测塔、鸟与拍摄感受",
+        "available": 13,
+        "chosen": 11,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C0096_a7r6_broll_s6-7",
+          "C4186_zve1_day4_broll_s0-1"
+        ]
+      },
+      {
+        "key": "FW-05-04",
+        "label": "晨间再次跨过晋江大桥",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-05",
+        "label": "晨光、湿地与观鸟照片组",
+        "available": 30,
+        "chosen": 30,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-06",
+        "label": "临时就医与药品记录",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-07",
+        "label": "为午饭驶入窄巷",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-08",
+        "label": "受阻、绕行与重返主路",
+        "available": 15,
+        "chosen": 15,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-09",
+        "label": "终于吃到牛肉燕面",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-10",
+        "label": "离开泉州与这一段旅程的回顾",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "speechProtected": {
+      "available": 393,
+      "chosen": 393,
+      "dropped": 0,
+      "droppedSpanIds": []
+    },
+    "notes": [
+      "完整覆盖packet内779条；byDay按Asia/Shanghai下已修正asset.capturedAt+sourceInMs统计。",
+      "byEvent仅以已确认框架FW分段统计，key是框架行号，不是chronology event id；没有读取完整chronology。",
+      "所有393条受保护语音候选均保留；同源文字相同但源时间不包含的候选没有自动删减。",
+      "照片沿已确认框架的事件末尾照片行成包；同事件航拍成组，FW-03-02末尾航拍与FW-03-03起首航拍相接，FW-04-19航拍与FW-04-20起首航拍相接。",
+      "默认audio=0和speed=1省略；无口播行车超过5秒采用最小非默认整数倍2..4以争取10秒内，4倍仍超10秒的完整候选保留供人工审查。"
+    ]
+  }
+}
