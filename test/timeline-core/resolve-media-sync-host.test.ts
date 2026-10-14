@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -16,6 +17,7 @@ async function inspectMediaSync(payload: Record<string, unknown>) {
 import importlib.util
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 host_path = sys.argv[1]
@@ -189,6 +191,26 @@ prepared_entries, summary = module.sync_namespace_clips(
     cleanup_empty_folders=bool(payload.get("cleanupEmptyFolders")),
 )
 
+repeat_summary = None
+progress = []
+if payload.get("repeatThroughProjectEntry"):
+    class FakeProject:
+        def GetMediaPool(self): return media_pool
+    class FakeResolve:
+        def GetMediaStorage(self): return media_storage
+    module.ensure_project = lambda resolve, name: FakeProject()
+    module.save_project = lambda project, resolve: None
+    original_write_progress = module.write_rough_cut_media_progress
+    def record_progress(request, *args, **kwargs):
+        original_write_progress(request, *args, **kwargs)
+        progress.append(json.loads(Path(request["progressPath"]).read_text(encoding="utf-8")))
+    module.write_rough_cut_media_progress = record_progress
+    with tempfile.TemporaryDirectory() as temporary:
+        repeat_summary = module.sync_rough_cut_media(FakeResolve(), {
+            "resolveProjectName": "Trip [Edit]", "clips": payload["clipRequests"],
+            "jobId": "media-job", "progressPath": str(Path(temporary) / "progress.json"),
+        })["hostSummary"]
+
 print(json.dumps({
     "summary": summary,
     "preparedCount": len(prepared_entries),
@@ -196,6 +218,8 @@ print(json.dumps({
     "imports": media_pool.import_calls,
     "moves": media_pool.move_calls,
     "deletes": media_pool.delete_calls,
+    "repeatSummary": repeat_summary,
+    "progress": progress,
 }, ensure_ascii=False))
 `;
 
@@ -223,11 +247,13 @@ print(json.dumps({
     imports: unknown[];
     moves: Array<{ path: string; from: string; to: string }>;
     deletes: string[];
+    repeatSummary: { imported: number; reused: number; moved: number; mediaItemCount: number };
+    progress: Array<{ phaseKey: string; current: number; total: number; extra: { jobId: string } }>;
   };
 }
 
 function fixturePath(name: string): string {
-  return join(tmpdir(), 'kairos-resolve-media-sync-host-test', name);
+  return join(realpathSync(tmpdir()), 'kairos-resolve-media-sync-host-test', name);
 }
 
 async function inspectRoughCutAppendInfo() {
@@ -1215,5 +1241,60 @@ describe('Resolve rough-cut clip color marking', () => {
     expect(result.timelapseCalls).toEqual([['SetClipColor', 'Purple']]);
     expect(result.driveCalls).toEqual([['SetClipColor', 'Brown']]);
     expect(result.aerialCalls).toEqual([['SetClipColor', 'Teal']]);
+  });
+});
+
+describe('project media preparation and timeline preflight', () => {
+  it('reuses imported media on a project-level retry and writes job-scoped file progress', async () => {
+    const result = await inspectMediaSync({
+      repeatThroughProjectEntry: true,
+      clipRequests: [{ assetId: 'a', assetKind: 'video', sourceAbsolutePath: fixturePath('A.mp4'),
+        rawRelativePath: 'Sunrise/A.mp4', sourceStem: 'A' }],
+    });
+    expect(result.imports).toHaveLength(1);
+    expect(result.repeatSummary).toMatchObject({ imported: 0, reused: 1, moved: 0, mediaItemCount: 1 });
+    expect(result.progress.map(item => [item.phaseKey, item.current])).toEqual([
+      ['scan', 0], ['import', 0], ['import', 1], ['save', 1],
+    ]);
+    expect(result.progress.every(item => item.total === 1 && item.extra.jobId === 'media-job')).toBe(true);
+  });
+
+  it.each([false, true])('rejects missing pool media before touching any timeline (namespace exists: %s)', async namespaceExists => {
+    const code = `
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("host", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+mutations = []
+class Folder:
+    def __init__(self, name): self.name = name
+    def GetName(self): return self.name
+    def GetClipList(self): return []
+    def GetSubFolderList(self):
+        return [Folder("Kairos Project Media")] if self.name == "Root" and sys.argv[2] == "true" else []
+class Pool:
+    def GetRootFolder(self): return Folder("Root")
+class Project:
+    def GetName(self): return "Trip [Edit]"
+    def GetMediaPool(self): return Pool()
+class Manager:
+    def GetCurrentProject(self): return Project()
+class Resolve:
+    def GetProjectManager(self): return Manager()
+for name in ["ensure_namespace_folder", "rename_legacy_timeline_if_needed", "apply_project_timeline_spec_before_create", "ensure_timeline", "clear_timeline_items"]:
+    setattr(module, name, lambda *args, **kwargs: mutations.append("mutation"))
+try:
+    module.create_rough_cut_timeline(Resolve(), {
+        "resolveProjectName": "Trip [Edit]", "timelineName": "Episode 2", "clips": [{
+            "clipId": "clip-00001", "assetId": "a", "sourceAbsolutePath": "/media/missing.mp4",
+            "timelineInMs": 0, "timelineOutMs": 1000, "audioGainDb": 0, "speed": 1,
+        }],
+    })
+    raise AssertionError("expected missing media failure")
+except module.HostError as error:
+    print(json.dumps({"error": str(error), "mutations": mutations}, ensure_ascii=False))
+`;
+    const { stdout } = await exec(pythonPath, ['-c', code, hostPath, String(namespaceExists)], { encoding: 'utf8' });
+    expect(JSON.parse(stdout)).toEqual({ error: expect.stringContaining('准备剪辑素材池'), mutations: [] });
   });
 });

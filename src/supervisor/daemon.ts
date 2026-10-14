@@ -21,6 +21,7 @@ import {
   loadIngestRoots,
   loadEditRulesConfig,
   loadEditUnitConfig,
+  listEditUnitConfigs,
   loadEditFlowRunRecords,
   loadEditResolveProjectMap,
   loadProject,
@@ -104,13 +105,14 @@ import {
   synthesizeResolveVolcVoiceoverTsv,
   type IResolveVoiceoverJobInput,
 } from '../modules/voiceover/index.js';
-import { getMlServiceStatus, startMlService, stopMlService } from './runtime.js';
+import { getMlServiceStatus, killPid, startMlService, stopMlService } from './runtime.js';
 import type { IKtepAsset, IProjectChronology, IMediaRoot } from '../protocol/schema.js';
 import {
   getSupervisorJobRoot,
   listJobRecords,
   loadJobRecord,
   progressBelongsToSupervisorJob,
+  assertMediaPreparationJobAvailable,
   writeJobRecord,
   writeServiceRecord,
   type ISupervisorJobRecord,
@@ -262,6 +264,7 @@ async function routeRequest(
 	        { jobType: 'spatial-refresh', executionMode: 'deterministic', supported: true, note: 'refreshes existing Analyze GPS / Pharos report fields and marks spans/chronology stale without running ML' },
         { jobType: 'span-rebuild', executionMode: 'deterministic', supported: true, note: 'deterministically builds candidate spans, then uses the local qwen text LM to generate provisional Chinese materialPatterns; speech/mixed candidates require Codex Agent speech-window review before chronology-build' },
         { jobType: 'chronology-build', executionMode: 'deterministic', supported: true, note: 'requires fresh spans and rebuilds draft Chronology V2 for review' },
+        { jobType: 'resolve-media-sync', executionMode: 'deterministic', supported: true, note: 'project-level Resolve media preparation after confirmed chronology; independent of Edit Unit and Flow Plan' },
 	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports relink_media / prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / relink_all_roots / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -296,6 +299,7 @@ async function routeRequest(
       project,
       editFlowPlan,
       editFlowRuns,
+      editUnits,
     ] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
@@ -315,6 +319,7 @@ async function routeRequest(
       loadProject(projectRoot),
       loadEditFlowPlanReadOnly(options.workspaceRoot, projectRoot, editId),
       loadEditFlowRunRecords(projectRoot, editId),
+      listEditUnitConfigs(projectRoot),
     ]);
     const editResolveProjectName = deriveResolveRoughCutProjectName(project.name, project.id);
     const colorWorkspace = buildColorWorkspaceState({
@@ -337,6 +342,7 @@ async function routeRequest(
       projectBrief,
       manualItinerary,
       editUnit,
+      editUnits,
       scriptBrief,
       ingestRoots,
       colorCurrent: colorWorkspace.colorCurrent,
@@ -492,6 +498,7 @@ async function routeRequest(
   const editDrpSnapshotMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-project-snapshot$/u);
   if (editDrpSnapshotMatch && method === 'POST') {
     const projectId = decodeURIComponent(editDrpSnapshotMatch[1]!);
+    assertMediaPreparationJobAvailable('resolve-maintenance', projectId, await listJobRecords(options.workspaceRoot));
     const payload = await readJsonBody(request).catch(() => ({}));
     const editId = typeof payload?.editId === 'string' && payload.editId.trim()
       ? payload.editId.trim()
@@ -546,6 +553,7 @@ async function routeRequest(
   const editMediaRelinkMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-media-relink$/u);
   if (editMediaRelinkMatch && method === 'POST') {
     const projectId = decodeURIComponent(editMediaRelinkMatch[1]!);
+    assertMediaPreparationJobAvailable('resolve-maintenance', projectId, await listJobRecords(options.workspaceRoot));
     const payload = await readJsonBody(request).catch(() => ({}));
     const editId = typeof payload?.editId === 'string' && payload.editId.trim()
       ? payload.editId.trim()
@@ -835,7 +843,8 @@ async function routeRequest(
     sendJson(response, 200, {
       ...job,
       progress: await readJobProgressForStatus(job),
-      result: job.status === 'awaiting_agent' ? await readJsonFile(job.resultPath) : undefined,
+      result: job.status === 'awaiting_agent' || (job.jobType === 'resolve-media-sync' && job.status === 'completed')
+        ? await readJsonFile(job.resultPath) : undefined,
     });
     return;
   }
@@ -859,7 +868,12 @@ async function routeRequest(
     if (action === 'stop') {
       if (current.pid) {
         try {
-          process.kill(current.pid, 'SIGTERM');
+          if (current.jobType === 'resolve-media-sync' && process.platform === 'win32') {
+            // Windows does not deliver SIGTERM to Node handlers; stop its Python child too.
+            await killPid(current.pid);
+          } else {
+            process.kill(current.pid, 'SIGTERM');
+          }
         } catch {
           // ignore
         }
@@ -928,7 +942,18 @@ async function routeRequest(
   await serveConsoleAsset(options.workspaceRoot, pathname, response);
 }
 
-async function startJob(
+// Serialize admission so simultaneous clicks cannot start two Resolve imports.
+let jobAdmission = Promise.resolve();
+async function startJob(workspaceRoot: string, payload: Parameters<typeof startJobUnlocked>[1]): Promise<ISupervisorJobRecord> {
+  const previous = jobAdmission;
+  let release!: () => void;
+  jobAdmission = new Promise<void>(resolve => { release = resolve; });
+  await previous;
+  try { return await startJobUnlocked(workspaceRoot, payload); }
+  finally { release(); }
+}
+
+async function startJobUnlocked(
   workspaceRoot: string,
   payload: {
     jobType: string;
@@ -938,6 +963,10 @@ async function startJob(
   },
 ): Promise<ISupervisorJobRecord> {
   await reconcileInterruptedJobs(workspaceRoot);
+  assertMediaPreparationJobAvailable(payload.jobType, payload.projectId, await listJobRecords(workspaceRoot));
+  if (payload.jobType === 'resolve-media-sync') {
+    await loadProject(join(workspaceRoot, 'projects', payload.projectId!));
+  }
   if (payload.jobType === 'edit-flow') {
     throw new Error('edit-flow jobs have been removed; initialize /edit and let Codex Agent maintain Flow Plan artifacts directly');
   }
@@ -976,6 +1005,8 @@ async function startJob(
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'chronology')
     : payload.jobType === 'color' && payload.projectId
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
+    : payload.jobType === 'resolve-media-sync' && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'resolve-media-sync')
     : payload.jobType === 'style-analysis'
       ? getWorkspaceStyleAnalysisProgressPath(
         workspaceRoot,
@@ -986,7 +1017,13 @@ async function startJob(
   const configSnapshotPath = join(jobRoot, 'config-snapshot.json');
   await writeFileSafe(inputSnapshotPath, JSON.stringify(payload.args ?? {}, null, 2));
 
-  if (payload.projectId) {
+  if (payload.projectId && payload.jobType === 'resolve-media-sync') {
+    const projectRoot = join(workspaceRoot, 'projects', payload.projectId);
+    await writeFileSafe(configSnapshotPath, JSON.stringify({
+      projectBrief: await loadProjectBriefConfig(projectRoot),
+      ingestRoots: await loadIngestRoots(projectRoot),
+    }, null, 2));
+  } else if (payload.projectId) {
     const projectRoot = join(workspaceRoot, 'projects', payload.projectId);
     const editId = normalizeEditId(typeof payload.args?.editId === 'string' ? payload.args.editId : undefined);
     await writeFileSafe(configSnapshotPath, JSON.stringify({
@@ -1260,7 +1297,8 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
   const hydrated = await Promise.all(jobs.map(async job => ({
     ...job,
     progress: await readJobProgressForStatus(job),
-    result: job.status === 'awaiting_agent' ? await readJsonFile(job.resultPath) : undefined,
+    result: job.status === 'awaiting_agent' || (job.jobType === 'resolve-media-sync' && job.status === 'completed')
+      ? await readJsonFile(job.resultPath) : undefined,
   })));
   return hydrated;
 }
@@ -1277,7 +1315,8 @@ async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {
   const jobs = await listJobRecords(workspaceRoot);
   await Promise.all(
     jobs
-      .filter(job => job.status === 'running' && typeof job.pid === 'number' && !isPidAlive(job.pid))
+      .filter(job => (job.status === 'running' || (job.jobType === 'resolve-media-sync' && job.status === 'queued'))
+        && typeof job.pid === 'number' && !isPidAlive(job.pid))
       .map(job => markJobInterrupted(workspaceRoot, job)),
   );
 }

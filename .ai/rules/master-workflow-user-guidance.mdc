@@ -47,15 +47,16 @@ Kairos 的标准顺序是：
 - 素材主键协议是 `materialIdPolicyVersion=human-source-v1`：root 必须有稳定 `rootCode`，新资产和 span 不得再使用随机 UUID，也不得使用 `asset__` / `span__` namespace 前缀；审查、report、chronology、material-slots 和 timeline 都以短 source locator 作为正式外键
 - 第五步进入 `/chronology`：先显式生成 fresh `store/spans.json`，再生成确定性 Chronology V2 候选；随后复制 UI 指令交给 Codex Agent 做事件语义归并，归并完成后才进行人工审查并确认 Chronology V2。Agent 可以合并相邻普通事件，也可以让 confirmed Pharos 事件吸收两侧属于同一行程的普通事件；后者保留 Pharos id、标题、地点与确认状态。跨自然日零点仍可归入同一事件，但 route、gap 和另一个 Pharos event 不可跨越。素材时间真值是已修正的 `asset.capturedAt`，Chronology 的 `sortCapturedAt` 只是兼容镜像；Edit Flow 先以 `schemaVersion=2.0` 且 `status=confirmed` 的 chronology 为入口，后续 step 只按 confirmed Flow Plan 的 `inputRefs` 要求消费 spans / assets / asset reports
 - 第六步在 `/edit` 进入 Edit Flow：
-  - 初始化 Edit Unit：选择/创建 `editId`，选择 workspace `editRuleCategory`，可选选择 `styleCategory`，写入 `edits/<editId>/config/edit-unit.json`
-  - Flow Plan、剪辑框架、素材召回等产物由 Codex Agent 直接在仓库内生成和维护；`/edit` 只读展示，不提供生成 Flow、确认 Flow、运行 step、运行下一步或确认 gate 的按钮
+  - 先在页面顶部运行项目级素材池准备；需要 fresh spans、confirmed chronology、本机可读素材和 Resolve，不需要 Edit Unit / Flow Plan，不改动时间线。进度关联真实 `resolve-media-sync` job；新计划不含 `resolve.media_sync`，旧条目只读保留为历史。
+  - 初始化 Edit Unit：从已有剪辑单元列表选择，或用单独的新建入口创建 `editId`，选择 workspace `editRuleCategory`，可选选择 `styleCategory`，写入 `edits/<editId>/config/edit-unit.json`；选择按项目在浏览器记忆，单纯切换只加载该单元的规则、计划和运行记录，不写配置或推进流程，未保存草稿应保护切换
+  - Flow Plan、剪辑框架、素材召回等产物由 Codex Agent 直接在仓库内生成和维护；`/edit` 对这些产物只读展示，不提供生成 Flow、确认 Flow、运行 step、运行下一步或确认 gate 的按钮
   - Flow Plan 使用 `plannerPolicyVersion=codex-agent-v1`，只选择剪辑规则明确要求或后续执行必需的最小 capability 集合；不要把 capability registry 当成固定阶段链
   - 剪辑规则中适用于某个 capability 的人工规则必须写入对应 Flow Plan step 的 `notes`，并进入 Agent/SubAgent packet；不要依赖固定章节名或让下游关键词解析原始 markdown
   - `trip.event_table` / `material.archive` 只在剪辑规则明确要求独立事件表、行程表、素材档案、素材库文档或单独人工审查产物时出现
   - `edit.framework` 只做剪辑 handoff：`全片章节` 是宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界，不输出 `beat 边界索引`；全文不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观素材总结；系统规则不规定固定的素材召回提示章节名
   - Codex Agent 按 confirmed Flow Plan 的 capability steps 逐步运行和写产物；人工审查通过产物本身完成，不通过 Console runner
   - 中间产物由每个 capability 的 `outputRefs` 决定；不要要求固定 `script/current.json`、固定 beat 或固定 `Script -> Timeline` 顺序
-  - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；重复运行时复用已有 MediaPoolItem，事件目录一致则跳过，不一致则移动到新目录并清理空事件目录；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
+  - 项目级 `resolve-media-sync` 任务 在编年史确认后从 `/edit` 顶部独立同步达芬奇 Media Pool，无需 Edit Unit 或 Flow Plan；重复运行时复用已有 MediaPoolItem，事件目录一致则跳过，不一致则移动到新目录并清理空事件目录；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
   - `timeline.generate` 的照片静帧默认是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 明确提及时才可覆盖，不能从旧默认或 Resolve 偏好猜成 `5s`
   - `timeline.generate` 会自动写 Resolve clip color 批处理标记：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`，没有视觉分类颜色的普通有声 video item 为 `Orange`，剩余可听 linked audio item 仍为 `Orange`；航拍 linked audio 会强制 disabled
 - 第七步在目标 NLE 和导出目录明确后执行 Export
@@ -92,7 +93,7 @@ Kairos 的标准顺序是：
 - 有 confirmed chronology，但缺少 `edits/<editId>/config/edit-unit.json` 或其中没有 `editRuleCategory`：先进入 `/edit` 初始化 Edit Unit
 - 有 Edit Unit 但缺少 confirmed `edits/<editId>/planning/flow-plan.json`：由 Codex Agent 生成/更新 Flow Plan；如果后续 capability 声明需要 fresh spans，再由该 step 精确阻塞
 - 有 confirmed Flow Plan 但缺少当前 `plannerPolicyVersion=codex-agent-v1` 或 `materialIdPolicyVersion=human-source-v1`：视为旧计划，由 Codex Agent 重新生成
-- 有 confirmed Flow Plan：继续由 Codex Agent 处理下一个未完成或待审 capability step
+- 有 confirmed Flow Plan：跳过仅供历史保留的 `resolve.media_sync` 条目，继续由 Codex Agent 处理下一个未完成或待审 capability step
 - Flow Plan 已完成且存在正式时间线 / NLE 输出产物：进入 `Export`、Resolve timeline 交互修改或迭代修改
 
 如果用户是追加素材，不要回到全新项目口径；应按：
@@ -112,7 +113,7 @@ Kairos 的标准顺序是：
 - 如果 root 声明了 `captureTimePolicy.mode=manual-required`，对应素材的时间阻塞必须要求用户显式填写 `正确日期 / 正确时间 / 时区`；不能用当前文件时间或建议日期自动代填后继续 Analyze
 - 如果用户刚更新了项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
 - 如果用户只是需要让旧 `asset-reports` 采用新的 GPS / Pharos 空间结果，应引导到 `/chronology` 的空间刷新入口；它不会补扫新素材或新 sidecar，完成后还需要重新生成 spans / chronology
-- 在 `Edit Flow` 前，如果 chronology 不是已确认 Chronology V2，必须先把用户引导到 `/chronology`；fresh spans 只在 Flow Plan step 的 `inputRefs` 明确声明时阻塞，`trip.event_table` 这类事件组织能力不得因为 spans stale 而停下
+- 在 `Edit Flow` 前，如果 chronology 不是已确认 Chronology V2，必须先把用户引导到 `/chronology`；fresh spans 在项目素材池准备时必需，各集 Flow Plan step 则仅按 `inputRefs` 精确阻塞，`trip.event_table` 这类事件组织能力不得因为 spans stale 而停下
 - Edit Flow 的 `sharded-agent` step 必须按 confirmed `step.execution.shardPacking` 做连续天打包，并在 handoff 中写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`；不要按 route 做默认一级分片，也不要让正式 packet 携带完整 `spans.json` / `chronology.json`
 - 在 `Edit Flow` 前，如果用户没有明确指定 workspace 剪辑规则分类，必须停下确认
 - 如果剪辑规则要求使用风格层，但用户没有选择 `styleCategory`，或选择的是 legacy 非 layered-v1 档案，必须先引导用户在 `/edit` 选择 / 重跑 `/style`，不能继续执行 Edit Flow step

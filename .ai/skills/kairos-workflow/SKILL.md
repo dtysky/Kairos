@@ -100,7 +100,7 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 
 `剪辑规则` 是 Edit Flow 的正式流程定义输入，存放在 `<workspaceRoot>/config/edit-rules/*.md`。规则正文只来自这些人工维护的 markdown；分类通过 frontmatter / 文件名扫描得到，不能由风格分析自动生成。
 
-每个 edit unit 必须先在 `/edit` 初始化 `edits/<editId>/config/edit-unit.json`，保存 `editId / editRuleCategory / styleCategory`。Flow Plan 由 Codex Agent 读取 raw edit-rule markdown、项目上下文和 capability registry 后直接在仓库内生成/维护；代码只校验和消费 confirmed `capabilityId / inputRefs / outputRefs / gate / runner`，不关键词解析 markdown 正文。
+编年史确认后先在 `/edit` 顶部准备共享素材池，该项目级动作不依赖 Edit Unit 或 Flow Plan，不创建/修改时间线。各专题随后分别使用 editId；每个 edit unit 在 `/edit` 初始化 `edits/<editId>/config/edit-unit.json`，保存 `editId / editRuleCategory / styleCategory`。Flow Plan 由 Codex Agent 读取 raw edit-rule markdown、项目上下文和 capability registry 后直接在仓库内生成/维护；代码只校验和消费 confirmed `capabilityId / inputRefs / outputRefs / gate / runner`，不关键词解析 markdown 正文。
 
 Style Analysis 当前是 **可选 layered-v1 分层风格档案**。它从用户历史成片中按分类提取 `literary / artistic / editingTechnical` 三层：文学表达、影像审美、剪辑技法观察。它不生成正式剪辑规则；只有剪辑规则自由正文经 Codex Agent 写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才可读取被授权的层。
 
@@ -127,7 +127,8 @@ Style Analysis 产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-an
 **重要规则**：
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断剪辑规则。
 - 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Edit Flow 之前，先向用户确认。
-- 如果当前 edit unit 没有初始化配置，Workflow 必须先进入 `/edit` 保存 Edit Unit；如果没有 confirmed 且 hash 未过期的 Flow Plan，必须停在 Edit Flow 之前，由 Codex Agent 生成/更新，不通过 Console runner。
+- 项目级素材池准备独立运行，需要 fresh spans、confirmed chronology、可读素材和 Resolve；不能被缺少 Edit Unit、规则或 Flow Plan 阻塞。
+- 对各集后续剪辑，如果当前 edit unit 没有初始化配置，Workflow 必须先进入 `/edit` 保存 Edit Unit；如果没有 confirmed 且 hash 未过期的 Flow Plan，必须停在 Edit Flow 之前，由 Codex Agent 生成/更新，不通过 Console runner。
 - 缺少 `styleCategory` 默认不阻塞粗剪；但如果剪辑规则要求使用风格层，Flow Plan 不能确认，Edit Flow 必须阻塞到用户选择 / 重跑可用的 `layered-v1` 档案。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能被 Workflow 隐式触发。
 - `kairos-style-analysis` 当前正式是 `Supervisor deterministic prep -> awaiting_agent -> Agent final profile`，不能再被描述成“UI 上能点但 runner 还没接上”的占位状态
@@ -351,7 +352,7 @@ Chronology 审查：
 
 产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、Resolve timeline、`.tmp/edit-flow/<editId>/timeline/current.srt`、`locked-rough-cut.json` 或字幕/旁白草稿；`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时审计。
 
-前置条件：Chronology V2 confirmed。每个 capability 再按自己的 `inputRefs` 精确阻塞，例如 `trip.event_table` 只依赖 `media/chronology.json`，素材归档 / 召回类 step 才进入 spans 与 asset reports。
+前置条件：Chronology V2 confirmed。先运行独立项目素材池准备（还需要 fresh spans、本机可读素材与 Resolve），再进入各集计划；新计划移除 `resolve.media_sync`，旧条目只作历史保留。每个 capability 再按自己的 `inputRefs` 精确阻塞，例如 `trip.event_table` 只依赖 `media/chronology.json`，素材归档 / 召回类 step 才进入 spans 与 asset reports。
 
 **重要规则**：
 - 不存在固定 `Script -> Timeline` 用户流程。
@@ -360,7 +361,7 @@ Chronology 审查：
 - 剪辑规则中适用于某个 capability 的人工规则必须通过 confirmed Flow Plan 当前 step 的 `notes` 传递给下游 packet；skill 不硬编码项目特定规则，runner 也不临时关键词解析原始 markdown。
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
 - `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片非航拍 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音；航拍视频原音一律由 `timeline.generate` 强制禁用；同一 chronology event 内照片作为尾部照片包，非照片保持事件内顺序；`speed` 只能写 `1..5` 的整数倍。
-- `resolve.media_sync` 是 deterministic Resolve Media Pool 同步步骤；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
+- 项目级 `resolve-media-sync` 任务 是编年史确认后的独立项目素材准备任务，不依赖 Edit Unit 或 Flow Plan；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
 - `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology` 并从已同步 Media Pool 选择素材；同一 chronology event 内选中的照片必须在非照片之后形成尾部照片包；不能要求 `script/current.json` 或 `segment-plan.json`，也不能重新导入素材或清空 `Kairos Project Media` namespace。
 - `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；`.tmp/edit-flow/<editId>/timeline/current.srt` 是同步生成的 source-speech SRT，供用户手动导入 Resolve；航拍视频强制静音且不进入该 source-speech SRT；Resolve 不可用时不能作为成功兜底。
 - `edits/<editId>/runs/current.json` 只保存轻量 run truth；`timeline.generate` 不得把完整 timeline/KTEP/clip 明细、source subtitle text 或 `hostSummary.clips` 内联进 run record。

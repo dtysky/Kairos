@@ -35,6 +35,7 @@ import {
 } from './state.js';
 import { ensureMlServiceRunning, stopMlService } from './runtime.js';
 import { loadOrBuildProjectPharosContext } from '../modules/pharos/context.js';
+import { syncProjectResolveMedia } from '../modules/timeline-core/project-timeline.js';
 
 class BlockedJobError extends Error {
   constructor(public blockers: string[]) {
@@ -70,6 +71,9 @@ async function main(): Promise<void> {
   });
 
   let shouldStopMlAfterRun = false;
+  const mediaAbort = new AbortController();
+  const stopMediaSync = () => mediaAbort.abort();
+  if (record.jobType === 'resolve-media-sync') process.once('SIGTERM', stopMediaSync);
   try {
     const shouldManageMl = await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId);
     if (shouldManageMl) {
@@ -84,7 +88,9 @@ async function main(): Promise<void> {
       record.args,
       record.jobId,
       record.progressPath,
+      mediaAbort.signal,
     );
+    mediaAbort.signal.throwIfAborted();
     const resultPath = record.resultPath ?? join(getSupervisorJobRoot(workspaceRoot, record.jobId), 'result.json');
     await writeJson(resultPath, execution.result ?? { ok: true });
     await writeJobRecord(workspaceRoot, {
@@ -97,6 +103,13 @@ async function main(): Promise<void> {
       blockers: [],
     });
   } catch (error) {
+    if (mediaAbort.signal.aborted) {
+      await writeJobRecord(workspaceRoot, {
+        ...record, status: 'stopped', startedAt, finishedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    }
     if (error instanceof BlockedJobError) {
       await writeJobFailureProgress(record, 'blocked', error.message).catch(() => undefined);
       await writeJobRecord(workspaceRoot, {
@@ -126,6 +139,7 @@ async function main(): Promise<void> {
     });
     throw error;
   } finally {
+    process.removeListener('SIGTERM', stopMediaSync);
     if (shouldStopMlAfterRun) {
       await stopMlService(workspaceRoot).catch(() => undefined);
     }
@@ -139,8 +153,16 @@ async function runJob(
   args: Record<string, unknown>,
   jobId?: string,
   progressPath?: string,
+  signal?: AbortSignal,
 ): Promise<IJobExecutionResult> {
   switch (jobType) {
+    case 'resolve-media-sync': {
+      if (!projectId) throw new BlockedJobError(['素材池准备需要 projectId']);
+      return { result: await syncProjectResolveMedia({
+        projectRoot: resolveWorkspaceProjectRoot(workspaceRoot, projectId),
+        jobId, progressPath, signal,
+      }) };
+    }
     case 'project-init': {
       if (!projectId) {
         throw new BlockedJobError(['project-init requires projectId']);

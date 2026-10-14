@@ -1,7 +1,8 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as resolveRunner from '../src/modules/timeline-core/resolve-rough-cut.js';
 import type {
   IChronologyEvent,
   IMaterialSlotsDocument,
@@ -9,6 +10,7 @@ import type {
 import {
   buildDeterministicTimeline,
   buildProjectTimeline,
+  syncProjectResolveMedia,
 } from '../src/modules/timeline-core/project-timeline.js';
 import type { IBuildConfig } from '../src/modules/timeline-core/timeline-builder.js';
 import {
@@ -33,8 +35,52 @@ const cTempRoots: string[] = [];
 const CNOW = '2026-04-18T00:00:00.000Z';
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(cTempRoots.splice(0).map(root =>
     rm(root, { recursive: true, force: true })));
+});
+
+describe('project-level Resolve media preparation', () => {
+  it('imports all chronology media without any edit artifacts and ignores legacy edit context', async () => {
+    const fixture = await createTimelineProjectFixture();
+    await rm(join(fixture.projectRoot, 'edits'), { recursive: true, force: true });
+    for (const asset of fixture.assets) {
+      asset.sourcePath = join(fixture.projectRoot, `${asset.id}.mp4`);
+      await writeFile(asset.sourcePath, 'fixture media');
+    }
+    await writeJson(getAssetsPath(fixture.projectRoot), fixture.assets);
+    const host = vi.spyOn(resolveRunner, 'syncResolveRoughCutMedia').mockResolvedValue({
+      resolveProjectName: 'Timeline Fixture [Edit]', namespace: 'Kairos Project Media',
+      createdAt: CNOW, hostSummary: { imported: 2, mediaItemCount: 2 },
+    });
+    const controller = new AbortController();
+    const result = await syncProjectResolveMedia({
+      projectRoot: fixture.projectRoot, workspaceRoot: '/nonexistent-workspace',
+      editId: 'nonexistent-episode', editRuleCategory: 'missing-rule',
+      jobId: 'media-job', signal: controller.signal,
+    });
+    expect(result.resolveProjectName).toBe('Timeline Fixture [Edit]');
+    expect(host).toHaveBeenCalledOnce();
+    expect(host.mock.calls[0][0]).toMatchObject({
+      namespace: 'Kairos Project Media', jobId: 'media-job',
+      clips: fixture.assets.map(asset => ({ assetId: asset.id, sourceAbsolutePath: asset.sourcePath })),
+    });
+    expect(host.mock.calls[0][1]?.signal).toBe(controller.signal);
+    await syncProjectResolveMedia({ projectRoot: fixture.projectRoot, editId: 'another-episode' });
+    expect(host.mock.calls[1][0].resolveProjectName).toBe(result.resolveProjectName);
+  });
+
+  it('blocks missing source files and unconfirmed chronology before contacting Resolve', async () => {
+    const fixture = await createTimelineProjectFixture();
+    const host = vi.spyOn(resolveRunner, 'syncResolveRoughCutMedia');
+    await expect(syncProjectResolveMedia({ projectRoot: fixture.projectRoot })).rejects.toThrow('源文件缺失');
+    await writeChronology(fixture.projectRoot, createProjectChronology([], {
+      status: 'draft',
+      events: fixture.events.map(event => ({ ...event, reviewStatus: 'pending' })),
+    }));
+    await expect(syncProjectResolveMedia({ projectRoot: fixture.projectRoot })).rejects.toThrow(/confirm|review|pending/u);
+    expect(host).not.toHaveBeenCalled();
+  });
 });
 
 describe('project timeline generation', () => {

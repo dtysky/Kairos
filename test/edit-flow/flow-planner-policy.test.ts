@@ -31,6 +31,19 @@ afterEach(async () => {
 });
 
 describe('Codex-agent Edit Flow policy', () => {
+  it('accepts timeline plans without media_sync and preserves legacy media steps as stored history', async () => {
+    const { workspaceRoot, projectRoot, editRuleHash } = await createWorkspaceProject('项目共享素材池。');
+    const plan = buildConfirmedPlan(editRuleHash);
+    const timeline = { ...plan.steps[0], id: 'timeline', capabilityId: 'timeline.generate' };
+    for (const steps of [[timeline], [{ ...timeline, id: 'legacy-media', capabilityId: 'resolve.media_sync' }, timeline]]) {
+      await writeEditFlowPlan(projectRoot, { ...plan, steps });
+      const accepted = await assertConfirmedEditFlowPlan({ workspaceRoot, projectRoot,
+        editRuleCategory: 'travel-doc', requiredCapabilityIds: ['timeline.generate'] });
+      expect(accepted.steps).toEqual(steps);
+      expect((await loadEditFlowPlanReadOnly(workspaceRoot, projectRoot))?.steps).toEqual(steps);
+    }
+  });
+
   it('accepts confirmed Codex-authored plans with current policy versions', async () => {
     const { workspaceRoot, projectRoot, editRuleHash } = await createWorkspaceProject('由 Codex Agent 生成 Flow Plan。');
     await writeEditFlowPlan(projectRoot, buildConfirmedPlan(editRuleHash));

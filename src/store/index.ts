@@ -157,6 +157,7 @@ export {
 export {
   getEditUnitConfigPath,
   loadEditUnitConfig,
+  listEditUnitConfigs,
   saveEditUnitConfig,
   markEditUnitDependentArtifactsStale,
 } from './edit-unit-store.js';

@@ -21,13 +21,16 @@ describe('Supervisor API compatibility', () => {
     );
   });
 
-  it('keeps the existing job payload shape', async () => {
+  it.each([
+    ['ingest', { force: true }],
+    ['resolve-media-sync', {}],
+  ])('keeps the existing project job payload shape for %s', async (jobType, args) => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ jobId: 'j1' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    await startJob('trip', 'ingest', { force: true });
+    await startJob('trip', jobType, args);
     expect(fetchMock).toHaveBeenCalledWith('/api/jobs', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ jobType: 'ingest', projectId: 'trip', args: { force: true } }),
+      body: JSON.stringify({ jobType, projectId: 'trip', args }),
     }));
   });
 

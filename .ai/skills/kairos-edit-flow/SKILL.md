@@ -2,7 +2,7 @@
 name: kairos-edit-flow
 description: >-
   Edit-rule-driven atomic capability flow after Chronology. Use when selecting
-  edit rules, initializing edit units, reviewing Codex-maintained Flow Plans,
+  edit rules, preparing shared Resolve media, initializing edit units, reviewing Codex-maintained Flow Plans,
   running material recall, assembling rough cuts, locking Resolve rough cuts,
   or producing post-lock subtitles/narration.
 ---
@@ -16,10 +16,11 @@ Chronology 之后的正式剪辑入口是 `/edit`。Edit Flow 由用户维护的
 - `config/edit-rules/*.md` 是用户维护的剪辑规则源；Codex Agent 不得为适配 Flow Plan、skill、schema 或测试自动改写规则内容。
 - 规则与系统合同冲突时，只能标记产物 stale、阻塞，或请求用户确认规则变更。
 - `edits/<editId>/config/edit-unit.json` 是 Edit Unit 初始化真相，保存 `editId / editRuleCategory / styleCategory`。
+- `/edit` 的已有剪辑单元列表来自已保存的 `edit-unit.json`，未初始化的 `main` 占位目录不算单元；当前选择按项目保存在浏览器。Agent 初始化多单元后，核对页面能列出并切换各单元的规则、计划和运行记录；单纯切换不保存配置或推进剪辑。新建入口单独维护草稿，未保存修改应保护单元和项目切换。
 - `edits/<editId>/planning/flow-plan.json` 是唯一可执行计划；必须 confirmed，且使用当前 `plannerPolicyVersion / materialIdPolicyVersion / materialTimePolicyVersion`。
 - 只执行 confirmed Flow Plan 中声明的 `capabilityId / inputRefs / outputRefs / gate / runner / execution / notes`。
 - 不要从剪辑规则 markdown 关键词解析隐藏阶段、默认时长、默认素材权重、默认章节或额外筛选规则；Codex Agent 只在生成 Flow Plan 时解释规则。
-- `/edit` 只做 Edit Unit 初始化和只读展示；Supervisor 没有 `edit-flow` job，也不负责确认、运行或推进 step。
+- `/edit` 提供项目素材池准备、Edit Unit 初始化和只读计划展示；Supervisor 有独立 `resolve-media-sync` job，但没有 `edit-flow` job，也不负责确认、运行或推进 step。
 - Agent/SubAgent step 由 Codex Agent 直接执行。`sharded-agent` 必须使用 confirmed Flow Plan 的分片字段，并只给 subagent 有界 step/shard 上下文。
 - 不得为了控制输出长度、审查便利或执行便利，向 Agent/SubAgent 额外添加剪辑规则没有写明的数量上限、代表抽样、段落预算或隐性删除条件。
 - 剪辑规则中适用于某个 capability 的人工规则，必须进入对应 Flow Plan step 的 `notes`，并随 step context 进入 Agent/SubAgent packet；不得只留在原始 markdown，也不得把项目特定规则硬编码进 skill。
@@ -29,11 +30,12 @@ Chronology 之后的正式剪辑入口是 `/edit`。Edit Flow 由用户维护的
 ## Standard Flow
 
 1. 确认 `/chronology` 已有 confirmed Chronology V2。
-2. 在 `/edit` 初始化 Edit Unit。
-3. Codex Agent 读取 Edit Unit、剪辑规则、项目事实和 capability registry，生成或更新 Flow Plan。
-4. 只按 confirmed Flow Plan 运行 step；human gate 未确认时，不推进依赖 step。
-5. 每个 step 写 declared outputs，并更新 `runs/current.json`。
-6. Export 只消费 confirmed Flow Plan 产物中的正式时间线、字幕或 NLE 目标。
+2. 在 `/edit` 顶部准备项目共享素材池；需要 fresh spans、confirmed chronology、本机可读素材和 Resolve，不需要 Edit Unit 或 Flow Plan，也不创建/改动任何时间线。
+3. 分别初始化各专题的 Edit Unit。
+4. Codex Agent 读取 Edit Unit、剪辑规则、项目事实和 capability registry，生成或更新 Flow Plan。
+5. 只按 confirmed Flow Plan 运行 step；human gate 未确认时，不推进依赖 step。
+6. 每个 step 写 declared outputs，并更新 `runs/current.json`。
+7. Export 只消费 confirmed Flow Plan 产物中的正式时间线、字幕或 NLE 目标。
 
 ## Capabilities
 
@@ -44,7 +46,6 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `edit.framework`
 - `material.recall`
 - `script.generate`
-- `resolve.media_sync`
 - `timeline.generate`
 - `resolve.lock_rough_cut`
 - `postlock.subtitle_narration`
@@ -106,9 +107,12 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 执行前读取 `kairos-script` skill。
 - 不得把 `/script`、`script/current.json` 或旧脚本阶段解释成新流程必经入口。
 
-### `resolve.media_sync`
+### 项目级素材池准备（独立于 capability）
 
-- deterministic runner。
+- `/edit` 顶部启动 Supervisor `resolve-media-sync` job，调用 `syncProjectResolveMedia({projectRoot})`；不读取 Edit Unit、剪辑规则或 Flow Plan，不写各集 run record，不创建或清空时间线。
+- 新 Flow Plan 不再声明 `resolve.media_sync`；旧计划/运行记录中的同名条目保留为历史，不作为待执行前置，不要求改写旧计划。
+- 进度写入 `.tmp/resolve-media-sync/progress.json`，必须以 `extra.jobId` 关联真实 Supervisor job；上次成功不代表当前池完整。任务中心提供日志与停止，失败后可从项目级入口重试。
+- `timeline.generate` 只要求本集计划含该 capability；在任何时间线创建、改名、清空或帧率修改前校验共享池，缺素材时指向项目级入口。
 - 用 confirmed chronology 组织 Resolve Media Pool 工程归档。
 - chronology 只用于 Resolve bin/path/context，不参与 `material.recall` 语义选择。
 - 不新增 `media-archive.json`；达芬奇 Media Pool 是素材归档真相。
@@ -148,6 +152,8 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 粗剪锁定必须由人工确认。
 - 锁定后才进入字幕与旁白草稿。
 - 风格层只使用 Flow Plan `styleUsage` 明确授权的层。
+- 按当前剪辑规则和 confirmed Flow Plan 生成所需产物；局部旁白或补字幕任务不以全片 `narration-framework.md` 为前置。下述旁白框架、逐 clip 审查表及其格式校验要求，仅在明确生成对应产物时适用。
+- 判断字幕缺口时区分实际保留的现场语音、新增旁白和纯视觉留白；不得仅因片段无字幕就补写旁白。片头插入或正文调整后，所有字幕须按最终时间线的实际片段位置和源素材范围重新核验。
 - 旁白框架阶段的当前 Resolve timeline 只提供 clip 边界、顺序、source range、MediaPool source 和 `clipId / assetId / spanId / eventId` 映射；Resolve item name、MediaPool folder name、rough-cut `hostSummary.clips[].eventTitle` 或从 Resolve 名称拆出的显示标签都只是 debug/display-only，不得作为地点、路线、事件标题、地貌、水文、植被或字幕写作事实来源。无字幕视觉事实只来自 `visualObservation`。生成器不得把 `materialPatterns` 当作画面事实、分类来源或兜底描述；`semanticKind=speech/mixed` 但当前 Resolve clip 无字幕时，先按同素材实际 source range 匹配最近 visual span 的 `visualObservation`，无合格 visual span 时才使用当前 speech/mixed span 自带 `visualObservation`。正文必须写成剪辑规则附录式的 Markdown pack-list：顶层是口播 / 行车 / 航拍 / 照片 / 延时叙事单元，`整体` 或 `摘要` 写 pack 级理解，`clips` 保留 leaf clip 描述；每个将进入旁白字幕生成的无字幕非照片 leaf 必须使用当前 clip 自己的 GPS / GPX / reverse-geocode 地理上下文，行车 leaf 按当前 clip 源时间中点取定位，航拍 leaf 可使用 confirmed chronology event 作为语境但仍要回到实际飞行位置/视域；正文只写可读地点、道路/村寨锚点和山体/江河湖泊/植被/地貌特征，不输出裸经纬度、GPS 来源、匹配误差、`GPX±Ns`、`机内GPS` 或 `GPS匹配`；道路、桥梁、隧道、互通、收费站、跨江/跨海通道等交通设施专名可以作为可读锚点，但项目部、管理中心、停车场、观赏点等 POI 全名不得进入正文；行车和航拍 pack 的子条目不得复制同一 pack 总结模板，也不得复用整段 route 作为 leaf 定位；pack 的整体句必须归纳子 clip 的地貌、水文、道路、植被、村镇和天气路况变化，不能只拼接首尾或前三条；多 clip 口播 pack 只写摘要和 clip 范围，不逐 clip 展开口播细节；clip-map 只写轻量 v2 指针表，`entries[]` 只存 `marker + clips`，`packs[]` 只存 `title + entries`，不得复制 packet 中可反查的 asset/span/summary 事实；不得输出 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类标签串。遇到 `�` 或 GBK/UTF-8 mojibake 候选时必须丢弃并回退到 chronology/GPS，不能写入正式 packet 可消费字段或正文。
 - 旁白框架定位文案必须去除同类重复：命名水体、峡谷崖壁、山口峰丛、桥隧道路或具体植被已经出现时，不再追加 `江河湖泊 / 峡谷崖壁 / 林带植被` 等泛类标签。`林带植被` 不得进入正式正文；应结合 GPS 地点、海拔带、季节与画面线索写成可辩护的具体植被，如 `干热河谷灌丛、云南松和针阔混交林`、`常绿阔叶林坡`、`高山针叶林、杜鹃灌丛和冷杉林线`、`湖岸草甸`，不能确认时省略。
 - `postlock.subtitle_narration` 的具体格式、合并、跳过字幕、风格引用和审查表要求，必须来自当前剪辑规则与 confirmed Flow Plan step notes；skill 不硬编码项目级创作约束。

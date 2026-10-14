@@ -17,6 +17,7 @@ export interface IResolveTimelineHostConfig {
   pythonPath?: string;
   scriptPath?: string;
   workingDirectory?: string;
+  signal?: AbortSignal;
 }
 
 type IExecFile = (
@@ -53,6 +54,8 @@ export interface IResolveRoughCutMediaSyncInput {
   resolveProjectName: string;
   namespace?: string;
   legacyNamespaces?: string[];
+  progressPath?: string;
+  jobId?: string;
   clips: Array<Pick<IResolveRoughCutClipInput,
     'assetId'
     | 'rawRelativePath'
@@ -211,17 +214,18 @@ async function runResolveTimelineRequest<T>(request: {
     const { stdout } = await request.execFileImpl(
       pythonPath,
       [scriptPath, '--request', requestPath],
-        {
-          cwd: request.config.workingDirectory?.trim()
-            ? request.config.workingDirectory.trim()
-            : dirname(scriptPath),
-          env: {
-            ...process.env,
-            PYTHONIOENCODING: 'utf-8',
-          },
-          encoding: 'utf8',
-          maxBuffer: 10 * 1024 * 1024,
-          windowsHide: true,
+      {
+        cwd: request.config.workingDirectory?.trim()
+          ? request.config.workingDirectory.trim()
+          : dirname(scriptPath),
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: 'utf-8',
+        },
+        encoding: 'utf8',
+        maxBuffer: 10 * 1024 * 1024,
+        windowsHide: true,
+        signal: request.config.signal,
       },
     );
     return parseResolveTimelinePayload<T>(stdout);

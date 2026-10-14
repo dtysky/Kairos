@@ -44,7 +44,9 @@ import {
   updateProjectChronologyEvent,
 } from './api.js';
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
-import { resolveEditFlowSelections } from './edit-flow-state.js';
+import { editSelectionStorageKey, resolveProjectEditId, splitEditFlowSteps } from './edit-flow-state.js';
+import { EditUnitEditor } from './components/edit-unit-editor.jsx';
+import { ResolveMediaPreparation } from './components/resolve-media-preparation.jsx';
 import {
   CaptureTimeOverridesEditor,
   ColorCurrentSummary,
@@ -60,6 +62,8 @@ import {
   WorkflowPrompt,
 } from './workspace-forms.jsx';
 
+const EMPTY_ROWS = [];
+
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,7 +74,9 @@ export function AppShell() {
   const hydratedProjectSelectionRef = React.useRef(false);
   const projectLoadSequenceRef = React.useRef(0);
   const [projectId, setProjectId] = useState('');
-  const [activeEditId, setActiveEditId] = useState(window.localStorage.getItem('kairos.console.editId') || 'main');
+  const currentProjectIdRef = React.useRef(projectId);
+  currentProjectIdRef.current = projectId;
+  const [activeEditId, setActiveEditId] = useState('main');
   const [config, setConfig] = useState(null);
   const [colorArchive, setColorArchive] = useState({ roots: [] });
   const [savedConfig, setSavedConfig] = useState(null);
@@ -139,11 +145,11 @@ export function AppShell() {
     setEditRelinkError('');
   }, [projectId, activeEditId]);
 
-  const projects = status?.projects || [];
+  const projects = status?.projects || EMPTY_ROWS;
   const duplicateProjectNames = useMemo(() => buildDuplicateProjectNameSet(projects), [projects]);
   const currentProject = projects.find(project => project.projectId === projectId) || null;
-  const services = status?.services || [];
-  const allJobs = status?.jobs || [];
+  const services = status?.services || EMPTY_ROWS;
+  const allJobs = status?.jobs || EMPTY_ROWS;
   const activeJobs = useMemo(
     () => allJobs.filter(job => ['queued', 'running', 'blocked', 'awaiting_agent'].includes(job.status)),
     [allJobs],
@@ -216,6 +222,22 @@ export function AppShell() {
     setProjectId(nextProjectId);
   }
 
+  async function requestEditChange(nextEditId) {
+    if (!projectId || !nextEditId) return false;
+    if (isProjectSwitchBlocked(consoleState.dirtySections)
+      && !window.confirm('当前页面还有未保存的配置草稿。切换剪辑单元会丢失这些修改，仍要切换吗？')) return false;
+    if (nextEditId === activeEditId) return true;
+    projectLoadSequenceRef.current += 1;
+    window.localStorage.setItem(editSelectionStorageKey(projectId), nextEditId);
+    setActiveEditId(nextEditId);
+    setConfig(null);
+    setSavedConfig(null);
+    setBusy(current => ({ ...current, 'edit-select': true }));
+    try { await refreshProject(projectId, nextEditId); }
+    finally { setBusy(current => ({ ...current, 'edit-select': false })); }
+    return true;
+  }
+
   async function refreshStatus() {
     try {
       setStatus(await fetchWorkspaceStatus());
@@ -225,21 +247,30 @@ export function AppShell() {
     }
   }
 
-  async function refreshProject(nextProjectId, nextEditId = activeEditId) {
+  async function refreshProject(nextProjectId, nextEditId) {
     const loadSequence = ++projectLoadSequenceRef.current;
     try {
-      const [nextConfig, nextReviews, nextColorArchive] = await Promise.all([
-        fetchProjectConfig(nextProjectId, nextEditId),
+      const preferredEditId = nextEditId || window.localStorage.getItem(editSelectionStorageKey(nextProjectId));
+      let [nextConfig, nextReviews, nextColorArchive] = await Promise.all([
+        fetchProjectConfig(nextProjectId, preferredEditId || 'main'),
         fetchProjectReviews(nextProjectId),
         fetchProjectColorArchive(nextProjectId).catch(() => ({ roots: [] })),
       ]);
       if (loadSequence !== projectLoadSequenceRef.current) return;
+      const selectedEditId = resolveProjectEditId(nextConfig.editUnits, preferredEditId,
+        window.localStorage.getItem('kairos.console.editId'));
+      if (nextConfig.editUnit?.editId !== selectedEditId) {
+        nextConfig = await fetchProjectConfig(nextProjectId, selectedEditId);
+      }
+      if (loadSequence !== projectLoadSequenceRef.current) return;
+      window.localStorage.setItem(editSelectionStorageKey(nextProjectId), selectedEditId);
+      setActiveEditId(selectedEditId);
       setConfig(nextConfig);
       setColorArchive(nextColorArchive || { roots: [] });
       setSavedConfig(nextConfig);
       setReviews(nextReviews.items || []);
     } catch (caught) {
-      handleError(caught);
+      if (loadSequence === projectLoadSequenceRef.current) handleError(caught);
     }
   }
 
@@ -482,14 +513,17 @@ export function AppShell() {
     try {
       await saveProjectSection(projectId, 'edit-unit', payload);
       const nextEditId = payload.editId || 'main';
-      window.localStorage.setItem('kairos.console.editId', nextEditId);
+      window.localStorage.setItem(editSelectionStorageKey(projectId), nextEditId);
+      if (currentProjectIdRef.current !== projectId) return true;
       setActiveEditId(nextEditId);
       await refreshProject(projectId, nextEditId);
       await refreshStatus();
-      setMessage('已保存 Edit 初始化');
+      setMessage('已保存剪辑单元配置');
       setError('');
+      return true;
     } catch (caught) {
       handleError(caught);
+      return false;
     } finally {
       setBusy(current => ({ ...current, 'edit-unit': false }));
     }
@@ -829,7 +863,7 @@ export function AppShell() {
             <Route path="/style/monitor/:categoryId?" element={<StyleMonitorRedirect />} />
             <Route path="/style" element={<StylePage config={styleSources} capabilities={capabilities} jobs={allJobs} setStyleSources={setStyleSources} onSave={saveStyleLibrary} busy={busy} onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})} location={location} history={{ push: navigate }} />} />
             <Route path="/script" element={<Navigate to="/edit" replace />} />
-            <Route path="/edit" element={<EditFlowPage config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onSaveEditUnit={saveEditUnitPayload} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} />} />
+            <Route path="/edit" element={<EditFlowPage projectId={projectId} config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onPrepareMedia={() => runProjectWorkflow('resolve-media-sync')} onSaveEditUnit={saveEditUnitPayload} onSelectEditUnit={requestEditChange} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} />} />
             <Route path="/timeline-export" element={<TimelineExportPage capabilities={capabilities} />} />
             <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} asrConfig={asrConfig} setAsrConfig={setAsrConfig} onSaveAsrConfig={saveAsrConfig} transcriptGlossary={transcriptGlossary} setTranscriptGlossary={setTranscriptGlossary} onSaveTranscriptGlossary={saveTranscriptGlossaryConfig} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -2485,6 +2519,9 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
 }
 
 function EditFlowPage({
+  projectId,
+  jobs,
+  onPrepareMedia,
   config,
   activeEditId,
   editFlowPlan,
@@ -2494,6 +2531,7 @@ function EditFlowPage({
   styleSources,
   busy,
   onSaveEditUnit,
+  onSelectEditUnit,
   onSaveResolveSnapshot,
   onRegisterResolveSnapshot,
   onInstallResolveAssets,
@@ -2504,31 +2542,13 @@ function EditFlowPage({
   editRelinkError,
 }) {
   const editUnit = config?.editUnit;
-  const inferredSelections = resolveEditFlowSelections({
-    activeEditId,
-    editFlowPlan,
-    editRules,
-    editUnit,
-    styleSources,
-  });
-  const [editId, setEditId] = useState(inferredSelections.editId);
-  const [editRuleCategory, setEditRuleCategory] = useState(inferredSelections.editRuleCategory);
-  const [styleCategory, setStyleCategory] = useState(inferredSelections.styleCategory);
+  const editId = activeEditId;
   const [externalDrpPath, setExternalDrpPath] = useState('');
   const [expandedStepIds, setExpandedStepIds] = useState({});
-
   useEffect(() => {
-    setEditRuleCategory(inferredSelections.editRuleCategory);
-  }, [editUnit?.updatedAt, inferredSelections.editRuleCategory]);
-
-  useEffect(() => {
-    setStyleCategory(inferredSelections.styleCategory);
-  }, [editUnit?.updatedAt, inferredSelections.styleCategory]);
-
-  useEffect(() => {
-    const nextEditId = editUnit?.editId || activeEditId || editFlowPlan?.editId;
-    if (nextEditId && nextEditId !== editId) setEditId(nextEditId);
-  }, [activeEditId, editFlowPlan?.editId, editId, editUnit?.editId]);
+    setExternalDrpPath('');
+    setExpandedStepIds({});
+  }, [projectId, activeEditId]);
 
   const registry = useMemo(() => {
     const map = new Map();
@@ -2547,12 +2567,11 @@ function EditFlowPage({
     });
     return map;
   }, [editFlowRuns]);
-  const firstActionableStepId = useMemo(() => (
-    (editFlowPlan?.steps || []).find(step => latestRunByStep.get(step.id)?.status !== 'completed')?.id || ''
-  ), [editFlowPlan?.steps, latestRunByStep]);
+  const { active: flowSteps, historical: historicalSteps } = splitEditFlowSteps(editFlowPlan?.steps);
+  const firstActionableStepId = flowSteps.find(step => latestRunByStep.get(step.id)?.status !== 'completed')?.id || '';
 
   const planStatus = editFlowPlan?.status || 'missing';
-  const isBusy = Boolean(busy['edit-unit']);
+  const mediaPreparationActive = (jobs || []).some(job => job.jobType === 'resolve-media-sync' && ['queued', 'running'].includes(job.status));
   const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
   const registerResolveBusy = Boolean(busy['edit:resolve-register']);
   const installResolveAssetsBusy = Boolean(busy['edit:resolve-assets']);
@@ -2564,7 +2583,6 @@ function EditFlowPage({
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
   const editUnitSaved = Boolean(editUnit?.editRuleCategory);
-  const canSaveEditUnit = Boolean(editId?.trim() && editRuleCategory);
   const editResolveProject = config?.editResolveProject || null;
   const latestEditDrp = editResolveProject?.latestDrpSnapshot || null;
 
@@ -2572,57 +2590,21 @@ function EditFlowPage({
     <div className="route-page edit-flow-page">
       <RouteIntro
         title="剪辑流"
-        subtitle="初始化 Edit Unit，绑定剪辑规则与风格档案；Flow Plan 和后续产物由 Codex Agent 在仓库内生成维护。"
+        subtitle="先准备项目共享素材池，再为各专题初始化剪辑单元；Flow Plan 和后续产物由 Codex Agent 维护。"
       />
+
+      <ResolveMediaPreparation projectId={projectId} projectName={editResolveProject?.resolveProjectName || config?.projectBrief?.name || ''}
+        jobs={jobs} spansReady={spansReady} chronologyReady={chronologyReady}
+        submitting={Boolean(busy['job:resolve-media-sync'])} onStart={onPrepareMedia} />
 
       <div className="edit-flow-dashboard">
         <Card className="panel edit-flow-control-panel">
-          <div className="edit-flow-panel-head">
-            <div>
-              <h2>Edit 初始化</h2>
-              <p>这里只保存 editId、剪辑规则和风格档案；后续剪辑产物由 Codex Agent 维护。</p>
-            </div>
-            <Button
-              type={isBusy || !canSaveEditUnit ? 'disabled' : 'primary'}
-              disabled={isBusy || !canSaveEditUnit}
-              onClick={() => onSaveEditUnit({
-                editId,
-                editRuleCategory,
-                styleCategory,
-              })}
-            >
-              {isBusy ? '保存中…' : '保存 Edit 初始化'}
-            </Button>
-          </div>
-
-          <div className="edit-flow-form-grid">
-            <label className="edit-flow-field">
-              <span>Edit ID</span>
-              <input value={editId} onChange={event => setEditId(event.target.value)} />
-            </label>
-            <label className="edit-flow-field">
-              <span>剪辑规则</span>
-              <select value={editRuleCategory} onChange={event => setEditRuleCategory(event.target.value)}>
-                <option value="">请选择</option>
-                {(editRules?.categories || []).map(category => (
-                  <option key={category.categoryId} value={category.categoryId}>
-                    {category.displayName || category.categoryId}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="edit-flow-field">
-              <span>风格档案</span>
-              <select value={styleCategory} onChange={event => setStyleCategory(event.target.value)}>
-                <option value="">不使用</option>
-                {(styleSources?.categories || []).map(category => (
-                  <option key={category.categoryId} value={category.categoryId}>
-                    {category.displayName || category.categoryId}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          {config ? <EditUnitEditor key={`${projectId}:${activeEditId}`}
+            activeEditId={activeEditId} editUnit={editUnit} editUnits={config.editUnits}
+            editFlowPlan={editFlowPlan} editRules={editRules} styleSources={styleSources}
+            busy={Boolean(busy['edit-unit'] || busy['edit-select'])}
+            onSave={onSaveEditUnit} onSelect={onSelectEditUnit} />
+            : <p role="status">正在加载剪辑单元…</p>}
 
           <div className="edit-flow-status-strip">
             <EditFlowStatusItem label="Edit Unit" value={editUnitSaved ? 'saved' : 'unsaved'} tone={editUnitSaved ? 'good' : 'warn'} />
@@ -2637,14 +2619,14 @@ function EditFlowPage({
           <div className="edit-flow-panel-head">
             <div>
               <h2>Flow Plan</h2>
-              <p>{editFlowPlan ? `${editFlowPlan.steps?.length || 0} steps · ${editFlowPlan.editRuleCategory}` : '等待 Codex Agent 写入执行计划'}</p>
+              <p>{editFlowPlan ? `${flowSteps.length} steps · ${editFlowPlan.editRuleCategory}` : '等待 Codex Agent 写入执行计划'}</p>
             </div>
           </div>
 
           {editFlowPlan ? (
             <div className="edit-flow-plan-body">
               <div className="edit-flow-plan-summary">
-                <strong>{`${editFlowPlan.steps?.length || 0} 个步骤 · ${formatEditFlowRunStatus(editFlowPlan.status)}`}</strong>
+                <strong>{`${flowSteps.length} 个步骤 · ${formatEditFlowRunStatus(editFlowPlan.status)}`}</strong>
                 <span>{`${editFlowPlan.editRuleHash?.slice(0, 12) || 'no-hash'} · ${editFlowPlan.status}`}</span>
               </div>
               <details className="edit-flow-plan-details">
@@ -2687,21 +2669,21 @@ function EditFlowPage({
             </Button>
             <Button
               type={relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function' ? 'disabled' : 'default'}
-              disabled={relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function'}
+              disabled={mediaPreparationActive || relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function'}
               onClick={() => onRelinkResolveMedia?.({ editId })}
             >
               {relinkResolveBusy ? '安装校验并重链中…' : '重链素材路径'}
             </Button>
             <Button
               type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
-              disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
+              disabled={mediaPreparationActive || saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
               onClick={() => onSaveResolveSnapshot?.({ editId, retention: 'latest-only' })}
             >
               {saveResolveBusy ? '保存中…' : '覆盖最新'}
             </Button>
             <Button
               type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
-              disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
+              disabled={mediaPreparationActive || saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
               onClick={() => onSaveResolveSnapshot?.({ editId, retention: 'archive' })}
             >
               归档快照
@@ -2803,7 +2785,7 @@ function EditFlowPage({
         </div>
 
         <div className="edit-flow-steps">
-        {(editFlowPlan?.steps || []).map((step, index) => {
+        {flowSteps.map((step, index) => {
           const capability = registry.get(step.capabilityId);
           const latestRun = latestRunByStep.get(step.id);
           const runStatus = latestRun?.status || 'pending';
@@ -2877,7 +2859,14 @@ function EditFlowPage({
             </Card>
           );
         })}
-        {!(editFlowPlan?.steps || []).length ? (
+        {historicalSteps.length ? <details className="compact-disclosure">
+          <summary>历史素材导入步骤 · 已移至页面顶部的项目共享素材池</summary>
+          <p>这些旧记录继续保留，不再作为各集剪辑的待执行步骤。</p>
+          <ul>{historicalSteps.map(step => <li key={step.id}>
+            {step.title || step.id} · {formatEditFlowRunStatus(latestRunByStep.get(step.id)?.status || 'pending')}
+          </li>)}</ul>
+        </details> : null}
+        {!flowSteps.length ? (
           <EmptyPanel title="暂无 step" detail="Codex Agent 写入 Flow Plan 后会显示能力列表。" />
         ) : null}
         </div>

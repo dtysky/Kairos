@@ -3,13 +3,19 @@
 > 本文档用于把当前已经稳定的 Kairos 方案收口成一份浓缩入口。
 > 它不是新的 ADR，也不替代迭代设计文档；它的职责是先回答“Kairos 现在到底是什么、怎么工作、哪些结论已经稳定”。
 
+## 2026-10-14 项目级剪辑素材池准备
+
+`/edit` 从已保存的 edit-unit 配置列出当前项目的剪辑单元，支持选择与单独新建。选择状态只保存在前端并按项目隔离，缺少有效历史选择时优先打开首个已有单元；切换后规则、Flow Plan 和运行记录一起加载。新 ID 草稿可正常输入，未保存的规则/风格修改受现有草稿保护约束。
+
+Resolve 剪辑素材池准备现为编年史确认后的项目级前置流程：在 `/edit` 顶部运行独立 `resolve-media-sync` 任务，不依赖 Edit Unit 或 Flow Plan。全项目共享 `Kairos Project Media`，各专题后续分别建立时间线；导入阶段不修改时间线。任务中心和页面显示真实任务及素材进度，历史结果不替代当前 Media Pool 校验。新 Flow Plan 不再包含 `resolve.media_sync`，旧条目保留为历史；时间线生成在修改前核验共享素材是否存在。
+
 ## 2026-10-14 项目研究词表
 
 人工审查可清空最终文本并接受以删除该句字幕，保存与刷新不得恢复旧文字。原始分段时间及画面保留；仅当整个候选已无有效字幕时清除口播属性并保留视觉召回，部分删除不影响其它句子。统一审查保留删除决定，整轮提交前仍不改正式 spans。
 
 调研词表已经纳入字幕审查标准步骤：每次进入审查先核对纳入的 Pharos trip 与已发布研究报告，再生成/核对项目词表、记录来源，最后逐句审查。无对应报告时记录缺席，不把计划或委托当研究原文。首次审查在生成词表后通过 `refreshProjectTranscriptReviewGlossary` 更新候选审查上下文；已有统一草稿使用 `continueProjectSpeechTranscriptReview`。两个入口均保存审计、校验输入并保护 spans；后者还保护全部人工选择与文字。无需用户为每个新项目再次提醒。
 
-当前 Pharos 协议组合哈希为 `ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84`。新增 Atlas / Argo、field guide、路线推进与 Pyxis 地图不改变 Kairos canonical 镜像、素材匹配或 chronology，无需修改 Ingest/parser。研究资料作为 post-ASR 项目词表的独立来源，不能当作执行记录。
+当前 Pharos 协议组合哈希为 `11343a653e0ecf802cc390e0f40f9f7c22dd2fa2e87aef857fb8d33a5e58e584`。本次追加复核仅 Argo 本地车辆实测说明变化，protocol 与其余设计文件未变，现有 rules/skills 的输入边界及 Ingest/parser 无需修改。Atlas / Argo、field guide、路线推进与 Pyxis 地图不改变 Kairos canonical 镜像、素材匹配或 chronology。研究资料作为 post-ASR 项目词表的独立来源，不能当作执行记录。
 
 项目词表放在项目 `config/transcript-glossary.json`，只含标准写法及必需的使用语境；另存来源快照与逐词出处审计。审查合并内置、工作区、项目三层词表（后一层同名语境优先），只作为 Agent 前置信息。已开始的审查需经旧词表 hash、完整草稿版本及输入校验后显式续接词表；保留用户已修改的字幕、状态、窗口和选择，归档续接前产物，不重建 spans。之后只复核未决项，正式提交前仍不改变 spans。
 
@@ -442,8 +448,11 @@ flowchart TD
 
 ### Edit Flow
 
+- `travel-vlog` 的轻量创作路径为正文粗剪、人工精剪、短片头、按需旁白、字幕与收尾；具体范围、片头时长参考、旁白范围和审查要求统一维护在 `config/edit-rules/travel-vlog.md`。本集范围先承接纳入的 Pharos 行程中已有创作意图与分集分组，再以执行记录和 confirmed chronology 核对实际素材，不按单个地点重新臆定分集。片头在正文基本完成后由 Agent 与人工协作设计，不新增自动片头 capability；专题成片时长不构成召回阶段自动删减素材的预算。
+- 局部旁白任务只生成当前剪辑规则和 confirmed Flow Plan 明确要求的产物，不自动升级为全片逐镜旁白框架。片头插入或正文调整后，字幕必须重新对照最终 Resolve timeline 核验；现场语音补字幕和新增旁白分别处理，纯视觉留白不算字幕缺口。
+
 - `/edit` 是 Chronology 之后的正式剪辑入口；新工作不再经过固定 `/script -> /timeline` 阶段链。
-- 用户从 Workspace 剪辑规则库选择 `editRuleCategory`，可选一个 layered `styleCategory`；`/edit` 只保存 `edits/<editId>/config/edit-unit.json` 并只读展示既有产物。
+- 用户从 Workspace 剪辑规则库选择 `editRuleCategory`，可选一个 layered `styleCategory`；`/edit` 提供独立项目素材准备，保存 `edits/<editId>/config/edit-unit.json` 并只读展示各集剪辑产物。
 - Codex Agent 是规则解释和 Agent/SubAgent 执行的唯一正式主体：它读取 raw markdown、capability registry、project brief、Pharos / chronology / analysis 可用性摘要，生成并维护 `flow-plan.json` 与后续产物。
 - `edits/<editId>/planning/flow-plan.json` 必须是 `plannerPolicyVersion=codex-agent-v1`、edit-rule hash 匹配且 confirmed，才允许下游 step 被信任。
 - 每个 step 只按 `capabilityId / inputRefs / outputRefs / gate / execution / notes` 执行；代码不得关键词解析规则 markdown 来推断 chronology、素材权重、默认章节或结构禁区。
@@ -451,7 +460,7 @@ flowchart TD
 - `execution` 可表达 SubAgent 粒度和连续天阈值打包：例如 `shardBy=day` 搭配 `shardPacking={base:"day", metric:"chronologyEventCount"|"materialRefCount", maxPerShard, preserveOrder:true}`。
 - 所有 Edit Flow `sharded-agent` 都必须写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行时由 confirmed Flow Plan step 直接启动 Codex SubAgent，不 fork 当前长上下文，只传有界 step/shard 上下文。
 - step 轻量执行记录写入 `edits/<editId>/runs/current.json`，每条 record 记录 `stepId / capabilityId / status / inputSnapshot / outputPaths / review / error`；不得把完整 KTEP、timeline clip 列表、Resolve clip 明细、源字幕正文或 `hostSummary.clips` 内联进 `current.json`，完整审计必须写到 capability 自己的 declared/temporary artifact。`timeline.generate` 的 clip 级审计只属于 `.tmp/edit-flow/<editId>/timeline/current.json`，源语音字幕只属于 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 timeline artifact。不再默认创建 `runs/<runId>/record.json` 子目录。需要历史归档时另写 archive，UI 和正式进度读取 current state。
-- `trip.event_table` 只消费 confirmed `media/chronology.json`，但不再是默认 planning 前置；素材级 spans / assets 由 `edit.framework` 或 `material.recall` 按各自 `inputRefs` 精确消费；Resolve 素材同步由 `resolve.media_sync` 独立负责。
+- `trip.event_table` 只消费 confirmed `media/chronology.json`，但不再是默认 planning 前置；素材级 spans / assets 由 `edit.framework` 或 `material.recall` 按各自 `inputRefs` 精确消费；Resolve 素材同步由 项目级 `resolve-media-sync` 任务 独立负责。
 - `edit.framework` 的人工审查输出必须以 `全片章节 + 分段操作稿 + 缺口 + 人工审查点` 为核心结构；`分段操作稿` 是给后续素材召回的唯一可执行 FW beat handoff，每行必须有稳定 FW beat id。不得另写 `beat 边界索引`，全文不得泄漏 chronology/event/route/gap/span/asset id；额外 handoff 区块只在用户维护的剪辑规则明确要求时输出，系统合同不预设固定标题。
 - 当前 capability registry v1 是固定注册表，而不是从某个规则样例反推：
   - `pharos.parse`
@@ -460,7 +469,6 @@ flowchart TD
   - `edit.framework`
   - `material.recall`
   - `script.generate`
-  - `resolve.media_sync`
   - `timeline.generate`
   - `resolve.lock_rough_cut`
   - `postlock.subtitle_narration`
@@ -468,7 +476,7 @@ flowchart TD
 - `script.generate` 是可选 capability，只在剪辑规则明确要求前置文本稿 / beat 稿时出现；它不是旅行纪录片规则的强制步骤。
 - `material.recall` 的正式输出只有 `edits/<editId>/script/material-slots.json`；`segment-plan.json` 不再是正式产物，也不能作为下游输入；素材事实只消费 `edit-framework.md + store/spans.json + store/assets.json`，人工规则只消费 Flow Plan 当前 step context / notes，不消费完整 chronology 或 asset reports。
 - `material-slots.json` 是素材召回与粗剪建议的唯一结构化产物：按 FW/segment 分组，每个 slot 保留 `chosenSpanIds` 作为选择真相；`treatments` 是稀疏覆盖表，缺少 `treatments[spanId]`、`audio` 或 `speed` 时按默认 `{audio:0,speed:1}` 读取，只有静音、非 0dB 增益或非 1 倍速才写字段。生成和合并阶段必须把 `speed` 写成 `1..5` 的整数倍；如果上游临时输出给出小数或超过 `5x`，下游读取会规整到该范围，而不是把规划流程直接打失败。`mixed`、`audio:*`、`speed:*` 或自然语言解析式建议不得进入正式字段。
-- `resolve.media_sync` 是 deterministic runner，从 confirmed chronology / fresh spans / assets / root path 映射把事件素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve Media Pool bin 组织和工程归档，不是 `material.recall` 的语义接口；不新增 `media-archive.json`，达芬奇 Media Pool 本身是素材归档真相。重复运行必须复用已有 MediaPoolItem：事件目录一致则跳过，事件目录变化则只移动到新目录不重导入，并在同步结束后清理空事件目录；run record 只记录 imported / reused / moved / pruned 摘要。Resolve bin / item name 与 hostSummary display label 只是人工识别和 debug 回声，不得回流为 Kairos 地点、路线、事件标题或字幕事实。
+- 项目级 `resolve-media-sync` 任务 是独立 Supervisor deterministic job，不依赖 Edit Unit 或 Flow Plan，从 confirmed chronology / fresh spans / assets / root path 映射把事件素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve Media Pool bin 组织和工程归档，不是 `material.recall` 的语义接口；不新增 `media-archive.json`，达芬奇 Media Pool 本身是素材归档真相。重复运行必须复用已有 MediaPoolItem：事件目录一致则跳过，事件目录变化则只移动到新目录不重导入，并在同步结束后清理空事件目录；Supervisor result 只记录 imported / reused / moved / pruned 摘要。Resolve bin / item name 与 hostSummary display label 只是人工识别和 debug 回声，不得回流为 Kairos 地点、路线、事件标题或字幕事实。
 - `/edit` 还提供项目级 Resolve `[Edit]` 工程维护动作：用户可手动触发素材路径重链，后端按 `project-brief` root 的当前可读路径与 primary/alternate 候选生成映射，Resolve host 精确加载现有 `${projectBrief.name} [Edit]`，核对 `Kairos Project Media` 与目标 edit timeline 后调用 `RelinkClips` 并 `SaveProject()`；若 `project-brief.json.voiceoverMedia` 已配置，同一动作还会按配音媒体主路径 / 备选路径处理 `Kairos Voiceover` Media Pool bin，并在摘要中单独显示配音重链、跳过或警告状态。若 `project-brief.json.audioMedia` 已配置，同一动作还会按该项目外部音频主路径 / 备选路径处理 audio-only 的 `Kairos Audio` Media Pool bin；它是 BGM、SFX 和其它手工加音频的共享目录配置，重链阶段不区分角色。该动作只返回重链/未映射/不可读/缺失目标/跳过非文件/旧路径剩余等摘要，不自动导出 DRP，也不属于 Flow Plan step 执行。Resolve compound/timeline 等非文件 item 不参与重链，缺失本机目标只作为 warning，不阻塞其它可重链素材。
 - `timeline.generate` 是 deterministic runner，从 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 读取输入，不要求 `script/current.json` 或 `segment-plan.json`，并只按 `material-slots` 的选择和顺序从已同步的 Resolve Media Pool 落位；chronology 只用于 Resolve path/bin/context 映射，不得改变 chosen spans。
 - `timeline.generate` 必须通过 Resolve host 创建/更新粗剪 timeline；Resolve 对每段 source range 按素材自身帧率量化，计划毫秒时长不能作为最终字幕时钟。生成器只做一遍原生落片，读取每个 clip 的 `actualStartFrame / actualEndFrame`，把 KTEP clip 重定时到实际帧位，再从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`；不得为了字幕再次重建视频时间线，也不得把未执行的 SRT 导入写成成功。最终才写 `.tmp/edit-flow/<editId>/timeline/current.json` 本机临时 KTEP/manifest 审计。航拍视频在粗剪中一律强制禁用 linked audio，即使 ASR 误识别出 transcript 或 `speech/mixed`，也不进入 source-speech handle / SRT 路径。被选中且实际有声的非航拍 speech/mixed 非照片 clip 在落 Resolve 前，优先以有效 `transcriptSegments` 的首末时间作为 Qwen aligned 口播核心，再只扩展一次 source padding：头部 `250ms`、尾部 `250ms`，并 clamp 到素材时长；timed segments 缺失时才依次兼容旧 `effectiveSpeechStartMs/effectiveSpeechEndMs` 与 span source/edit window。SRT 仍按 transcriptSegments 的真实时间映射到扩展后的实际 clip 内部，但 transcript segment 只是时间单元，不保证已有句界仍符合正式规则：保持 36 个文本单位上限，只有 `，` / `,` 是软标点，其余 Unicode 标点一律结束句子；超长句只选择满足上限所需的最少逗号边界并以整体最均衡为准，某个逗号分句后的正文仍超限时才使用字符兜底。同一 clip 内相邻候选的映射间隔 `<1500ms` 且合并后 `<=36` 时必须继续合并；最终 cue 若停在软逗号上，必须把尾逗号提升为 `。`，并在这条 source-speech SRT 中保留该句界。拆出的 cue 在原 segment 时间内按文本单位比例分配，不回写 span 文本或 segment 边界。其他自动旁白字幕、字幕审查稿、最终旁白 SRT/VTT 和配音插件合并文本仍移除行末 `。` / `.`，保留 `？` / `！` 与句内标点。照片默认是 `1000ms` 静帧，只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 显式声明时才改变；Resolve clip color 是正式批处理标记：照片 video item 使用 `Blue`，延时 video item 使用 `Purple`，行车 video item 使用 `Brown`，航拍 video item 使用 `Teal`，没有这些视觉分类颜色的普通有声 video item 使用 `Orange`；剩余可听 linked audio item 使用 `Orange` 供音频归一筛选。生成粗剪还会创建/复用 Resolve Color Groups `Kairos Photos` 与 `Kairos Timelapse`，并把照片/延时 video item 分别分配进去，供 Color 页 `Group Post-Clip` 批量处理。Resolve 不可用、Media Pool 缺素材、source range 回读校验失败、timeline placement 出现空帧、clip color 或 color group 无法写入、图片 still duration 不匹配时不能作为 KTEP-only 成功兜底。
@@ -478,7 +486,7 @@ flowchart TD
 - `postlock.subtitle_narration` 的定位括号还必须做地貌 / 水文 / 植被类别去重：已经写出具体河湖海、峡谷崖壁、山口峰丛、桥隧道路或植被带时，不得再追加 `江河湖泊 / 峡谷崖壁 / 林带植被` 等泛类标签。`林带植被` 不得进入正式正文；可确认时要结合 GPS 地点、季节、海拔带和画面线索写成 `干热河谷灌丛、云南松和针阔混交林`、`常绿阔叶林坡`、`高山针叶林、杜鹃灌丛和冷杉林线`、`湖岸草甸` 等可辩护表达，证据不足时省略。
 - `postlock.subtitle_narration` 的最终字幕审查稿 `edits/<editId>/postlock/subtitle-review.md` 只有在 `narration-framework.md` 经人工确认后才可生成；审查稿的表格列名、行粒度、跳过规则、占位文本和单元格内 clip 范围标注方式由当前剪辑规则与 confirmed Flow Plan step notes 定义，全局设计不固定项目级表头。审查稿必须参考 Flow Plan 授权的 `styleUsage.literary` 风格档案，并参考当前 Resolve timeline 每个 clip 或 clip 序列组的真实时长；连续相邻的行车或航拍视频可以先聚类判断整体动机，再按剪辑规则要求的粒度编写，首尾 CLIP 可承上启下并参考前后口播但不得覆盖已有口播字幕。普通非照片 clip 默认一条短 caption；只有延时摄影和延时序列允许突破一 clip 一句，且字幕数量不设固定 2-3 条上限，应优先保证画面叙述完整，按天光、云雾、色温、车流 / 人流、山体显露、夜色或晨雾回升等可观察变化拆成足够清楚的多条短字幕，并保留 clip 标签 / 范围或子范围，最终 SRT 按真实 timeline 时间分配。普通行车、航拍和视觉 clip 不因“较长”自动获得拆分例外。照片和照片序列默认不生成旁白字幕；若当前剪辑规则要求保留对应行，按剪辑规则指定的占位文本填写。被聚类且标记为 `开车` 的片段必须结合位置、路线 / 道路名推断与前置视觉分析景观事实来写，无法确定时按剪辑规则指定的方式标注待确认，不得编造。
 - Resolve 内直选字幕配音当前通过 `apps/resolve-volc-voiceover-plugin/` 独立实现：插件安装到 DaVinci Resolve `Fusion/Scripts/Edit` 菜单，枚举当前 timeline 的 subtitle tracks，并要求用户在插件面板里指定旁白字幕轨道；多选字幕列表只加载该轨字幕，当前播放头定位、Resolve In/Out 批量选择和 Clear 也只作用于所选轨道，避免把 source-speech / 原声字幕误当旁白合成；Locate 只负责选中并滚动到插件列表行，不追求 Resolve 原生 timeline item 选中。Lua 插件优先通过本地 TCP/HTTP 调用 `127.0.0.1:8940` Supervisor TSV API 获取 profile/config summary 并请求火山引擎 V3 TTS / V3 声音复刻合成；当 Resolve Lua runtime 缺少 socket/TCP 能力时，插件改走 Supervisor 管理的 workspace 文件 IPC（`.tmp/resolve-volc-voiceover-plugin/ipc/requests|responses`），仍由 Supervisor 执行同一 TSV 逻辑。Supervisor 只负责项目匹配、`voiceoverMedia` 选择、runtime profile 读取、direct Volcengine fetch、cache、音频落盘、duration probe 和 manifest 写入，不连接 Resolve；Lua 自己完成 Media Pool bin 创建、音轨选择、`ImportMedia`、`AppendToTimeline`、marker 和 `SaveProject`。单选时一条字幕生成一个 audio item；多选时直接把用户选中的所有字幕按 timeline 时间排序合并成一个 TTS 文本、移除行末 `。` / `.`、生成一个 merged audio item，并插入到第一条所选字幕起点，项目 `.tmp` debug manifest 记录 `isMergedGroup / groupSize / sourceSubtitleIds / sourceSubtitles`。它不是 Flow Plan capability，也不读 Resolve 原生 timeline 多选态，因为官方 scripting API 未提供稳定接口。字幕正文只能来自 Resolve subtitle item 暴露字段；若当前 Resolve 版本不暴露正文，插件必须阻塞并提示导入 SRT 或粘贴文本。插件不再走 `.cmd`、curl 或 Python backend，也不依赖 Python 可执行文件；文件 IPC 只读写 workspace 请求/响应文件，不启动外部命令链。火山 `volcApiKey`、默认 voice profile 和 profiles 注册表写在 workspace 全局 `config/runtime.json.voiceover`，Resolve 面板只通过下拉选择注册 profile，不直接编辑 API key / speaker / resource / model / language。生成音频使用当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 解析出的可写媒体根；正式媒体目录固定为 `<voiceoverMediaRoot>/<safe Resolve project>/<safe timeline>/`，目录内只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`，方便多设备按同一项目配置 relink；`voiceoverMedia.resolveProjectAliases[]` 可显式把临时 / debug Resolve 工程名归属到该项目；请求缓存、debug manifest 和插件日志写到匹配项目的 `.tmp/resolve-volc-voiceover-plugin/`，便于和项目级调试材料一起清理。Resolve 面板只暴露 `Insert`，不再提供只打开系统播放器的 Preview。若当前 Resolve 工程名无法唯一匹配 Kairos 项目，或未配置可写 `voiceoverMedia`，合成必须阻塞。默认不删除已有音频，只有显式 replacement 且命中插件 marker/customData 的旧音频才可删除。
-- Resolve Media Pool 的项目全局 `Kairos Project Media` bin 由 `resolve.media_sync` 按 chronology event title 同步，避免 spanId/assetId 一级分组污染人工审查，也避免按 editId 重复归档素材；粗剪 timeline 固定放在 `Kairos Timelines` bin。粗剪创建只走 Resolve 原生 API（当前为 `MediaPool.AppendToTimeline`），不走 FCPXML。当前 `speed > 1` 仅作为待办请求保留，不应用到 Resolve 粗剪；`audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item，照片可无 audio item，航拍视频一律以 disabled linked audio 落位。照片 video item 设置为 `Blue` 并分配到 `Kairos Photos`，延时 video item 设置为 `Purple` 并分配到 `Kairos Timelapse`，行车 video item 设置为 `Brown`，航拍 video item 设置为 `Teal`；没有这些视觉分类颜色且 `audio > -100` 的普通视频 clip 设置为 `Orange`；剩余可听 linked audio item 设置为 `Orange`，便于用户分别按音频、照片、延时、行车、航拍筛选，并在 Color 页按组批量处理。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume` key。
+- Resolve Media Pool 的项目全局 `Kairos Project Media` bin 由 项目级 `resolve-media-sync` 任务 按 chronology event title 同步，避免 spanId/assetId 一级分组污染人工审查，也避免按 editId 重复归档素材；粗剪 timeline 固定放在 `Kairos Timelines` bin。粗剪创建只走 Resolve 原生 API（当前为 `MediaPool.AppendToTimeline`），不走 FCPXML。当前 `speed > 1` 仅作为待办请求保留，不应用到 Resolve 粗剪；`audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item，照片可无 audio item，航拍视频一律以 disabled linked audio 落位。照片 video item 设置为 `Blue` 并分配到 `Kairos Photos`，延时 video item 设置为 `Purple` 并分配到 `Kairos Timelapse`，行车 video item 设置为 `Brown`，航拍 video item 设置为 `Teal`；没有这些视觉分类颜色且 `audio > -100` 的普通视频 clip 设置为 `Orange`；剩余可听 linked audio item 设置为 `Orange`，便于用户分别按音频、照片、延时、行车、航拍筛选，并在 Color 页按组批量处理。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume` key。
 - `resolve.lock_rough_cut` 只表示人工审查并锁定已经生成的 Resolve rough-cut timeline，不负责创建 timeline。
 - capability runner 可以复用旧 script/timeline 内部脚本、clean-context Agent stage 或确定性工具，但这些实现必须挂到 registry，而不是藏在固定阶段代码里。
 - `KTEP 2.0` 当前正式把 source-speech beat 升级为双通道：
@@ -500,7 +508,7 @@ flowchart TD
 - `timeline.generate` 不再调用 segment-cut refiner/reviewer，不写 `timeline/rough-cut-base.json`、`timeline/segment-cuts/`、`timeline/reviews/` 或 `timeline/agent-pipeline.json` 作为正式内部门槛。
 - deterministic placement 只按 `material-slots.json` 中的 FW/slot/chosenSpanIds 顺序落位；route 只使用被召回的 chosen spans，不整体铺开。
 - `material-slots.json.treatments` 是静音/加速唯一正式覆盖来源：缺省读取为 `audio=0,speed=1`，因此默认有声正常速 span 不需要写 entry；被选中的非照片非航拍 span 只要有 transcript、transcriptSegments、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音` 就禁止写或解析出 `audio<=-100`，这个保护覆盖 `drive / broll / timelapse / talking-head`，不以 `talking-head` 为边界；航拍视频原音在 `timeline.generate` 中一律禁用，即使 ASR 误识别出 speech truth 也不进入原声保护或 source-speech SRT；`coverageAudit` 负责暴露未选入的 protected speech-backed 非照片 span，但代码不得把它们盲目追加进主粗剪时间线，扩召回应回到 `material.recall` 的选择逻辑与人工审查；无口播行车可由 treatment 显式静音/整数倍加速，航拍可显式整数倍加速但音轨仍强制 disabled，且 `speed` 必须在 `1..5` 内；照片默认仍由素材召回写 `{audio:-100}`，时长由 timeline 规则处理。
-- `resolve.media_sync` 会先按 chronology event title 同步项目全局 `Kairos Project Media` media pool bin；这是 Resolve 工程归档组织，不参与 `material.recall` 语义判断。达芬奇 Media Pool 是素材归档真相，重复运行应复用或移动已有 MediaPoolItem，不清空 namespace、不重导入；如果事件分类子目录一致则跳过，若不一致则移动到新目录，最后清理空事件目录。`timeline.generate` 的 Resolve timeline 固定放在 `Kairos Timelines`。
+- 项目级 `resolve-media-sync` 任务 会先按 chronology event title 同步项目全局 `Kairos Project Media` media pool bin；这是 Resolve 工程归档组织，不参与 `material.recall` 语义判断。达芬奇 Media Pool 是素材归档真相，重复运行应复用或移动已有 MediaPoolItem，不清空 namespace、不重导入；如果事件分类子目录一致则跳过，若不一致则移动到新目录，最后清理空事件目录。`timeline.generate` 的 Resolve timeline 固定放在 `Kairos Timelines`。
 - `timeline.generate` 再从已同步 Media Pool 读取素材，用 Resolve 原生 `AppendToTimeline` 创建/替换粗剪 timeline；静音视频通过禁用 linked audio item 实现，航拍视频总是先强制静音，有声非航拍 speech/mixed 非照片 clip 默认按 timed transcriptSegments 首末边界保留 `250ms` 头部和 `250ms` 尾部 source padding。Resolve clip color 由 host 自动写入并回读校验：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`，没有这些视觉分类颜色的普通有声 video item 为 `Orange`，剩余可听 linked audio item 为 `Orange`。同时创建/复用 `Kairos Photos` 与 `Kairos Timelapse` Resolve Color Groups，并把照片/延时 video item 分别分组。单遍 host 落片返回的实际 clip 帧位用于重定时 KTEP 和 source-speech cues；生成器据此写 `.tmp/edit-flow/<editId>/timeline/current.srt`，通过 source range / still duration / timeline placement / clip color / color group 校验后写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计。没有 transcriptSegments 时才用整段 `transcript` 兜底。SRT cue 文本经过共享字幕 helper，统一移除行末 `。` / `.`，但保留问号、叹号和句内标点。Resolve 不可用、Media Pool 缺素材、原生 append/静音失败、source range 错误、图片时长不匹配、timeline placement 出现空帧、clip color/color group 无法写入或非 0 dB clip gain 无法 live probe 设置时直接阻塞。当前 `speed>1` 不阻塞，但会被忽略并记录为 pending。
 - 字幕当前分为粗剪伴随 SRT 与 post-lock 文本路径，所有自动生成路径共享“行末不补 / 不保留 `。` 或 `.`”规则：
   - 粗剪伴随路径：`timeline.generate` 从已选中、实际有声且非航拍的 source-speech spans 按 Resolve 实际 clip 帧位写 `.tmp/edit-flow/<editId>/timeline/current.srt`
@@ -709,14 +717,15 @@ flowchart TD
 
 1. `project brief` 提供全片约束
 2. confirmed `media/chronology.json` 提供时空顺序和事件真相
-3. 用户在 `/edit` 选择 workspace `剪辑规则`，可选 layered `styleCategory`
-4. `/edit` 保存 `edits/<editId>/config/edit-unit.json`
-5. Codex Agent 读取规则 markdown、能力 registry 和项目上下文，生成 / 更新 `edits/<editId>/planning/flow-plan.json`
-6. Console 只读展示 step capability、runner、输入、输出、gate 和状态
-7. Codex Agent 逐步运行 capability step；每步 run record 写入 `edits/<editId>/runs/current.json`
-8. 带 `gate=human` 的 step 必须通过产物审查后，后续依赖 step 才能继续；这不是 Console runner 动作
-9. `timeline.generate` 输出 Resolve rough cut timeline，并写本机临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计与 `.tmp/edit-flow/<editId>/timeline/current.srt` 原声字幕；成功后尝试以 `latest-only` 保存项目级 `[Edit]` DRP，失败只进入 warning
-10. 导出阶段消费已存在且通过校验的正式 timeline / locked rough cut 或其它 capability outputs
+3. 在 `/edit` 顶部运行项目级 `resolve-media-sync`，准备各专题共用的素材池；不依赖 Edit Unit / Flow Plan，不创建或改动时间线
+4. 用户在 `/edit` 选择 workspace `剪辑规则`，可选 layered `styleCategory`
+5. `/edit` 保存 `edits/<editId>/config/edit-unit.json`
+6. Codex Agent 读取规则 markdown、能力 registry 和项目上下文，生成 / 更新 `edits/<editId>/planning/flow-plan.json`
+7. Console 只读展示 step capability、runner、输入、输出、gate 和状态
+8. Codex Agent 逐步运行 capability step；每步 run record 写入 `edits/<editId>/runs/current.json`
+9. 带 `gate=human` 的 step 必须通过产物审查后，后续依赖 step 才能继续；这不是 Console runner 动作
+10. `timeline.generate` 输出 Resolve rough cut timeline，并写本机临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计与 `.tmp/edit-flow/<editId>/timeline/current.srt` 原声字幕；成功后尝试以 `latest-only` 保存项目级 `[Edit]` DRP，失败只进入 warning
+11. 导出阶段消费已存在且通过校验的正式 timeline / locked rough cut 或其它 capability outputs
 
 因此，当前稳定结论包括：
 

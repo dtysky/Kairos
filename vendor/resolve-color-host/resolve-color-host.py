@@ -456,6 +456,30 @@ def execute_root(resolve, payload):
     }
 
 
+def write_rough_cut_media_progress(payload, phase, current, total, file_name=None, **counts):
+    progress_path = payload.get("progressPath")
+    if not progress_path:
+        return
+    path = Path(progress_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    progress = {
+        "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "status": "running",
+        "pipelineKey": "resolve-media-sync",
+        "pipelineLabel": "剪辑素材池准备",
+        "phaseKey": phase,
+        "phaseLabel": {"scan": "检查共享素材池", "import": "同步素材", "save": "保存剪辑工程"}[phase],
+        "current": current,
+        "total": total,
+        "unit": "素材",
+        "fileName": file_name,
+        "extra": {"jobId": payload.get("jobId"), **counts},
+    }
+    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(progress, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporary, path)
+
+
 def sync_rough_cut_media(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
     media_pool = require_method(project, "GetMediaPool")()
@@ -465,6 +489,7 @@ def sync_rough_cut_media(resolve, payload):
     if not clip_requests:
         raise HostError("resolve_media_sync_empty", "sync_rough_cut_media requires at least one media clip.")
 
+    write_rough_cut_media_progress(payload, "scan", 0, len(clip_requests))
     namespace_folder = ensure_namespace_folder_with_legacy(media_pool, namespace, payload.get("legacyNamespaces"))
     namespace_state = collect_namespace_state(namespace_folder)
     media_pool_state = collect_namespace_state(require_method(media_pool, "GetRootFolder")())
@@ -477,12 +502,17 @@ def sync_rough_cut_media(resolve, payload):
         dedupe_by_source_path=True,
         fallback_state=media_pool_state,
         cleanup_empty_folders=True,
+        progress_callback=lambda current, clip, counts: write_rough_cut_media_progress(
+            payload, "import", current, len(clip_requests),
+            Path(clip["sourceAbsolutePath"]).name, **counts,
+        ),
     )
     event_folders = {
         portable_parent_dir(entry["rawRelativePath"])
         for entry in prepared_entries
         if portable_parent_dir(entry["rawRelativePath"])
     }
+    write_rough_cut_media_progress(payload, "save", len(clip_requests), len(clip_requests), **sync_summary)
     save_project(project, resolve)
     return {
         "resolveProjectName": payload["resolveProjectName"],
@@ -501,7 +531,7 @@ def sync_rough_cut_media(resolve, payload):
 
 
 def create_rough_cut_timeline(resolve, payload):
-    project = ensure_project(resolve, payload["resolveProjectName"])
+    project, _ = load_existing_project(resolve, payload["resolveProjectName"])
     media_pool = require_method(project, "GetMediaPool")()
     timeline_name = stringify_signal_value(payload.get("timelineName"))
     if not timeline_name:
@@ -512,19 +542,8 @@ def create_rough_cut_timeline(resolve, payload):
 
     namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Project Media"
     timeline_folder_name = stringify_signal_value(payload.get("timelineFolderName")) or "Kairos Timelines"
-    namespace_folder = ensure_namespace_folder_with_legacy(media_pool, namespace, payload.get("legacyNamespaces"))
-    timeline_folder = ensure_namespace_folder(media_pool, timeline_folder_name)
-    rename_legacy_timeline_if_needed(project, timeline_name, payload.get("legacyTimelineNames"))
-    apply_project_timeline_spec_before_create(project, media_pool, timeline_name, payload.get("timelineSpec"))
-    safe_call(media_pool, "SetCurrentFolder", timeline_folder)
-    timeline = ensure_timeline(project, media_pool, timeline_name)
-    move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
-    apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
-    assert_timeline_matches_spec(project, timeline, payload.get("timelineSpec"))
-    safe_call(resolve, "OpenPage", "edit")
-    safe_call(project, "SetCurrentTimeline", timeline)
-    namespace_state = collect_namespace_state(namespace_folder)
-    media_pool_item_by_source_path = namespace_state["clipBySourcePath"]
+    namespace_folder = find_root_media_pool_folder(require_method(media_pool, "GetRootFolder")(), namespace)
+    media_pool_item_by_source_path = collect_namespace_state(namespace_folder)["clipBySourcePath"] if namespace_folder else {}
     missing = [
         {
             "clipId": clip["clipId"],
@@ -537,9 +556,20 @@ def create_rough_cut_timeline(resolve, payload):
     if missing:
         raise HostError(
             "resolve_media_pool_clip_missing",
-            "Resolve Media Pool is missing rough-cut media; run resolve.media_sync before timeline.generate.",
+            "Resolve 缺少粗剪所需素材；请先在 /edit 顶部运行“准备剪辑素材池”。",
             {"missing": missing[:50], "missingCount": len(missing), "namespace": namespace},
         )
+    # Verify media before creating, renaming, changing FPS, or clearing any timeline.
+    timeline_folder = ensure_namespace_folder(media_pool, timeline_folder_name)
+    rename_legacy_timeline_if_needed(project, timeline_name, payload.get("legacyTimelineNames"))
+    apply_project_timeline_spec_before_create(project, media_pool, timeline_name, payload.get("timelineSpec"))
+    safe_call(media_pool, "SetCurrentFolder", timeline_folder)
+    timeline = ensure_timeline(project, media_pool, timeline_name)
+    move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
+    apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    assert_timeline_matches_spec(project, timeline, payload.get("timelineSpec"))
+    safe_call(resolve, "OpenPage", "edit")
+    safe_call(project, "SetCurrentTimeline", timeline)
     resume_state = None
     if payload.get("resumeFromCurrentPlayhead") is True:
         resume_state = prepare_rough_cut_suffix_resume(project, media_pool, timeline, clips, payload)
@@ -2524,6 +2554,7 @@ def sync_namespace_clips(
     dedupe_by_source_path=True,
     fallback_state=None,
     cleanup_empty_folders=False,
+    progress_callback=None,
 ):
     imported = 0
     moved = 0
@@ -2538,6 +2569,8 @@ def sync_namespace_clips(
     fallback_clip_relative_dir_by_source_path = (fallback_state or {}).get("clipRelativeDirBySourcePath", {}) if fallback_state else {}
 
     for clip_request in clip_requests:
+        if progress_callback:
+            progress_callback(len(prepared_entries), clip_request, {"imported": imported, "moved": moved, "reused": reused})
         relative_dir = portable_parent_dir(clip_request["rawRelativePath"])
         target_folder = ensure_folder_chain(media_pool, namespace_folder, folder_by_relative_dir, relative_dir)
         source_path = clip_request["sourceAbsolutePath"]
@@ -2580,6 +2613,8 @@ def sync_namespace_clips(
             "creativeTags": creative["creativeTags"],
             "groupNameSeed": creative["displayName"],
         })
+        if progress_callback:
+            progress_callback(len(prepared_entries), clip_request, {"imported": imported, "moved": moved, "reused": reused})
 
     empty_folders_deleted = prune_empty_namespace_folders(media_pool, namespace_folder) if cleanup_empty_folders else 0
     return prepared_entries, {

@@ -58,6 +58,7 @@ import {
   deriveResolveRoughCutTimelineName,
 } from './resolve-edit-naming.js';
 import { snapshotProjectEditDrp } from './edit-resolve-snapshot.js';
+import { getProjectProgressPath, writeKairosProgress } from '../../store/progress.js';
 
 const CPHOTO_DEFAULT_DURATION_MS = 1000;
 const CSPEECH_SOURCE_HEAD_HANDLE_MS = 250;
@@ -89,9 +90,13 @@ export interface IBuildProjectTimelineResult {
 
 export interface ISyncProjectResolveMediaInput {
   projectRoot: string;
+  /** Legacy caller fields; project media preparation no longer consumes edit context. */
   editId?: string;
   workspaceRoot?: string;
   editRuleCategory?: string;
+  jobId?: string;
+  progressPath?: string;
+  signal?: AbortSignal;
 }
 
 export interface ISyncProjectResolveMediaResult {
@@ -139,7 +144,12 @@ interface ISourceWindow {
 export async function syncProjectResolveMedia(
   input: ISyncProjectResolveMediaInput,
 ): Promise<ISyncProjectResolveMediaResult> {
-  const editId = normalizeEditId(input.editId);
+  const progressPath = input.progressPath ?? getProjectProgressPath(input.projectRoot, 'resolve-media-sync');
+  await writeKairosProgress(progressPath, {
+    status: 'running', pipelineKey: 'resolve-media-sync', pipelineLabel: '剪辑素材池准备',
+    phaseKey: 'prepare', phaseLabel: '检查项目素材与编年史',
+    extra: { jobId: input.jobId },
+  });
   const [project, assets, freshSpans, chronology, ingestRoots] = await Promise.all([
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
@@ -147,18 +157,6 @@ export async function syncProjectResolveMedia(
     assertConfirmedProjectChronology(input.projectRoot),
     loadIngestRoots(input.projectRoot).then(result => result.roots),
   ]);
-  if (input.workspaceRoot) {
-    if (!input.editRuleCategory) {
-      throw new Error('resolve.media_sync requires editRuleCategory to validate confirmed Flow Plan');
-    }
-    await assertConfirmedEditFlowPlan({
-      workspaceRoot: input.workspaceRoot,
-      projectRoot: input.projectRoot,
-      editId,
-      editRuleCategory: input.editRuleCategory,
-      requiredCapabilityIds: ['resolve.media_sync'],
-    });
-  }
   const resolveProjectName = deriveResolveRoughCutProjectName(project.name, project.id);
   const clips = buildResolveMediaSyncClips({
     assets,
@@ -167,12 +165,25 @@ export async function syncProjectResolveMedia(
     ingestRoots,
   });
   await assertResolveMediaSyncSourceFilesExist(clips);
+  if (clips.length === 0) throw new Error('编年史没有可导入的图片或视频素材。');
+  await writeKairosProgress(progressPath, {
+    status: 'running', pipelineKey: 'resolve-media-sync', pipelineLabel: '剪辑素材池准备',
+    phaseKey: 'connect', phaseLabel: '连接 Resolve 并检查共享素材池',
+    current: 0, total: clips.length, unit: '素材', extra: { jobId: input.jobId },
+  });
   const resolveMedia = await syncResolveRoughCutMedia({
     projectId: project.id,
     resolveProjectName,
     namespace: CRESOLVE_PROJECT_MEDIA_NAMESPACE,
-    legacyNamespaces: [`Kairos Edit ${editId}`],
     clips,
+    progressPath,
+    jobId: input.jobId,
+  }, { signal: input.signal });
+  await writeKairosProgress(progressPath, {
+    status: 'succeeded', pipelineKey: 'resolve-media-sync', pipelineLabel: '剪辑素材池准备',
+    phaseKey: 'complete', phaseLabel: '素材池同步完成',
+    current: clips.length, total: clips.length, unit: '素材',
+    extra: { jobId: input.jobId, ...resolveMedia.hostSummary },
   });
   return {
     resolveProjectName,
@@ -196,7 +207,7 @@ async function assertResolveMediaSyncSourceFilesExist(clips: IResolvedResolveMed
     .map(clip => `${clip.assetId} (${clip.sourceAbsolutePath})`)
     .join(', ');
   throw new Error(
-    `resolve.media_sync blocked: ${missing.length} source file(s) are missing or unreadable before Resolve import. Missing examples: ${examples}`,
+    `剪辑素材池准备受阻：${missing.length} 个源文件缺失或不可读。请检查本机素材路径。示例：${examples}`,
   );
 }
 
@@ -247,7 +258,7 @@ export async function buildProjectTimeline(
       projectRoot: input.projectRoot,
       editId,
       editRuleCategory: input.editRuleCategory,
-      requiredCapabilityIds: ['resolve.media_sync', 'timeline.generate'],
+      requiredCapabilityIds: ['timeline.generate'],
     });
   }
 

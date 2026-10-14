@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { IEditUnitConfig, IMaterialSlotsDocument } from '../protocol/schema.js';
 import {
@@ -10,6 +10,7 @@ import {
   getProjectEditConfigRoot,
   getProjectEditPlanningRoot,
   getProjectEditScriptRoot,
+  getProjectEditsRoot,
   normalizeEditId,
 } from './edit-store.js';
 import {
@@ -19,6 +20,28 @@ import {
 import { readJsonOrNull, writeJson } from './writer.js';
 
 const CEDIT_UNIT_CONFIG_FILE = 'edit-unit.json';
+
+/** Discover saved units without materializing the legacy main placeholder. */
+export async function listEditUnitConfigs(projectRoot: string): Promise<IEditUnitConfig[]> {
+  const entries = await readdir(getProjectEditsRoot(projectRoot), { withFileTypes: true }).catch(error => {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  });
+  const units = await Promise.all(entries.filter(entry => entry.isDirectory() && normalizeEditId(entry.name) === entry.name)
+    .map(async entry => {
+      const path = getEditUnitConfigPath(projectRoot, entry.name);
+      const raw = await readFile(path, 'utf8').catch(error => {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+      });
+      if (raw === null) return null;
+      const unit = ZEditUnitConfig.parse(JSON.parse(raw));
+      if (unit.editId !== entry.name) throw new Error(`Edit Unit identity mismatch: ${path}`);
+      return unit.editRuleCategory ? unit : null;
+    }));
+  return units.filter((unit): unit is IEditUnitConfig => unit !== null)
+    .sort((a, b) => a.editId.localeCompare(b.editId));
+}
 
 export function getEditUnitConfigPath(projectRoot: string, editId?: string | null): string {
   return join(getProjectEditConfigRoot(projectRoot, editId), CEDIT_UNIT_CONFIG_FILE);

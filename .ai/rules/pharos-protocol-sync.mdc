@@ -46,7 +46,7 @@ alwaysApply: true
 
 ## 2026-10 同步复核
 
-- 2026-10-14 当前七份协议文档组合哈希为 `ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84`，重新包含 Atlas / Argo、field guide 和路线扩展；下列 10 月 13 日记录为历史。已复核 protocol、Atlas、Argo、overview、requirements 和 Pyxis 设计；canonical 文件白名单无需代码变更。
+- 2026-10-14 当前七份协议文档组合哈希为 `11343a653e0ecf802cc390e0f40f9f7c22dd2fa2e87aef857fb8d33a5e58e584`，包含 Atlas / Argo、field guide 和路线扩展；下列 10 月 13 日记录为历史。本次相对 `ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84` 仅 Argo 本地车辆实测说明变化，已复核 protocol 与 Argo 差异，其余设计文件 hash 未变；现有 rules/skills 的 canonical 边界无需调整，Kairos 无需代码变更。
 - 字幕审查前置项目词表允许只读提取已发布 field guide 的标准写法及使用语境，并独立记录来源快照、revision、hash 与章节出处。这不是 Ingest 接入：研究文件不进入 Pharos 镜像或 source fingerprint，研究观点、计划地点、局部日和路线推进仍不作为素材执行事实。
 
 - 2026-10-13 当前 `../Pharos` 的 `master/origin/master` 已回到此前审核过的五份设计文档，组合哈希为 `0653a38ae92f5a7e577d713fed48428e1debd0669caac585bb4ce2690630fe59`；Atlas / Argo、`field-guide.json` 与路线推进扩展不属于当前基线。Kairos canonical 输入边界没有变化，无需代码修改。
