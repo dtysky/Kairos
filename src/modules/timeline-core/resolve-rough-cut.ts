@@ -128,17 +128,12 @@ export interface IResolveEditMediaRelinkRoot {
 export interface IResolveEditMediaRelinkInput {
   projectId: string;
   resolveProjectName: string;
-  namespace?: string;
-  timelineName?: string;
-  timelineTrackTypes?: Array<'video' | 'audio'>;
-  timelineCountUnmapped?: boolean;
   roots: IResolveEditMediaRelinkRoot[];
 }
 
 export interface IResolveEditMediaRelinkResult {
   resolveProjectName: string;
-  namespace: string;
-  timelineName?: string;
+  scope: 'project';
   createdAt: string;
   hostSummary?: Record<string, unknown>;
 }

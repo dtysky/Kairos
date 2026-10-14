@@ -70,8 +70,8 @@ export function installProjectEditResolveAssets(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-assets`, payload);
 }
 
-export function relinkProjectEditResolveMedia(projectId, payload = {}) {
-  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-media-relink`, payload);
+export function relinkProjectEditResolveMedia(projectId) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-media-relink`, {});
 }
 
 export function fetchWorkspaceStyleConfig() {

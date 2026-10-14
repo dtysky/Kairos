@@ -554,17 +554,14 @@ async function routeRequest(
   if (editMediaRelinkMatch && method === 'POST') {
     const projectId = decodeURIComponent(editMediaRelinkMatch[1]!);
     assertMediaPreparationJobAvailable('resolve-maintenance', projectId, await listJobRecords(options.workspaceRoot));
-    const payload = await readJsonBody(request).catch(() => ({}));
-    const editId = typeof payload?.editId === 'string' && payload.editId.trim()
-      ? payload.editId.trim()
-      : undefined;
+    // Drain legacy bodies, but project relink must never depend on an edit selection.
+    await readJsonBody(request).catch(() => ({}));
     const resolveAssetsInstall = await installResolveAssets({
       workspaceRoot: options.workspaceRoot,
     });
     const relinkResult = await relinkProjectEditMedia({
       workspaceRoot: options.workspaceRoot,
       projectId,
-      editId,
     });
     sendJson(response, 200, {
       ...relinkResult,

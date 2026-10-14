@@ -143,7 +143,7 @@ export function AppShell() {
     setEditResolveAssetsError('');
     setEditRelinkResult(null);
     setEditRelinkError('');
-  }, [projectId, activeEditId]);
+  }, [projectId]);
 
   const projects = status?.projects || EMPTY_ROWS;
   const duplicateProjectNames = useMemo(() => buildDuplicateProjectNameSet(projects), [projects]);
@@ -380,17 +380,16 @@ export function AppShell() {
     }
   }
 
-  async function relinkEditResolveMedia(payload = {}) {
+  async function relinkEditResolveMedia() {
     if (!projectId) return;
     const busyKey = 'edit:resolve-relink';
     setBusy(current => ({ ...current, [busyKey]: true }));
     setEditRelinkResult(null);
     setEditRelinkError('');
     try {
-      const result = await relinkProjectEditResolveMedia(projectId, payload);
+      const result = await relinkProjectEditResolveMedia(projectId);
       setEditRelinkResult(result);
       setEditResolveAssetsResult(result?.resolveAssetsInstall || result?.hostSummary?.resolveAssetsInstall || null);
-      await refreshProject(projectId);
       await refreshStatus();
       setMessage(formatEditRelinkMessage(result));
       setError('');
@@ -2670,9 +2669,9 @@ function EditFlowPage({
             <Button
               type={relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function' ? 'disabled' : 'default'}
               disabled={mediaPreparationActive || relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function'}
-              onClick={() => onRelinkResolveMedia?.({ editId })}
+              onClick={() => onRelinkResolveMedia?.()}
             >
-              {relinkResolveBusy ? '安装校验并重链中…' : '重链素材路径'}
+              {relinkResolveBusy ? '安装校验并重链中…' : '重链整个工程素材'}
             </Button>
             <Button
               type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
@@ -2709,7 +2708,7 @@ function EditFlowPage({
         ) : null}
         {relinkResolveBusy ? (
           <div className="edit-resolve-relink-summary">
-            <span>正在安装/更新 Resolve 插件与效果，并重链 Media Pool 素材路径…</span>
+            <span>正在安装/更新 Resolve 插件与效果，并重链整个工程素材池…</span>
           </div>
         ) : null}
         {editRelinkError ? (
@@ -2721,6 +2720,7 @@ function EditFlowPage({
           <div className="edit-resolve-relink-summary">
             <span>{`插件 ${formatResolveAssetsStatus(editRelinkSummary.resolveAssetsInstall)}`}</span>
             <span>{`素材池 ${editRelinkSummary.totalMediaItems ?? 0}`}</span>
+            <span>{`已校验时间线 ${editRelinkSummary.timelineCount ?? 0}`}</span>
             <span>{`重链 ${editRelinkSummary.relinked ?? 0}`}</span>
             <span>{`配音 ${formatVoiceoverRelinkSummary(editRelinkSummary.voiceover)}`}</span>
             <span>{`音频 ${formatExternalAudioRelinkSummary(editRelinkSummary.audio)}`}</span>
@@ -2728,7 +2728,7 @@ function EditFlowPage({
             <span>{`不可读 ${editRelinkSummary.localUnreadable ?? 0}`}</span>
             <span>{`缺失目标 ${editRelinkSummary.missingTargetCount ?? 0}`}</span>
             <span>{`未映射 ${editRelinkSummary.unmappedCount ?? 0}`}</span>
-            <span>{`跳过复合 ${editRelinkSummary.skippedNonFileCount ?? 0}`}</span>
+            <span>{`跳过非文件 ${editRelinkSummary.skippedNonFileCount ?? 0}`}</span>
             <span>{`时间线旧路径 ${editRelinkSummary.timelineOldPathRemaining ?? 0}`}</span>
           </div>
         ) : null}

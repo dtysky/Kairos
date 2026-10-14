@@ -124,9 +124,10 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 素材路径重链不是 Flow Plan capability，不写 run record，不生成/确认/推进任何 step。
 - `/edit` 的 Resolve 插件 / 效果库 / Fusion 模板安装也是工程维护动作，不是 Flow Plan capability。安装 truth 来自 workspace `config/resolve-assets/manifest.json`，当前包括 Resolve 旁白配音插件和 `Kairos Cinematic Matte` Fusion Edit Effect。旁白插件的 Resolve Scripts 菜单目录只安装 `KairosVolcVoiceover.lua`；工作区链接必须放在 `Fusion/Config/KairosVolcVoiceover/kairos_workspace.json`，安装器应清理 user/system 两边历史残留的同名脚本和 `KairosVolcVoiceoverLib` 目录，避免 Resolve 菜单出现重复入口。Console 必须显示安装状态并提供安装/刷新按钮。
 - 素材路径重链必须把 Resolve assets installer 作为强制前置阶段：先按 manifest 安装/更新并校验本机 Resolve 用户目录资源；installer 失败时阻塞 relink，不得继续调用 Resolve `RelinkClips`；installer 成功时 relink 返回摘要必须包含安装结果。
-- 重链必须先核对现有 `${projectBrief.name} [Edit]`、`Kairos Project Media` 和目标 edit timeline；不得创建新的 Resolve 项目来假装成功。
-- 重链只从 `project-brief` root primary/alternate 候选映射到当前可读 root，调用 Resolve `RelinkClips` 后保存工程，并返回旧路径剩余、不可读、缺失目标、未映射、跳过非文件和 timeline 校验摘要。
-- 若 `config/project-brief.json.voiceoverMedia` 或 `audioMedia` 已配置，重链同一动作还要分别处理 `Kairos Voiceover` 和 audio-only `Kairos Audio` Media Pool bin，并在摘要中独立显示 configured/skipped/warning 状态；`audioMedia` 是 BGM、SFX 和其它手工加音频共享的外部音频目录，不拆成 bgm/sfx 两个 relink 字段。
+- Resolve `[Edit]` 素材重链是工程级维护：只核对现有工程身份，递归处理整个 Media Pool 中可由项目素材、voiceoverMedia、audioMedia 主/备选路径映射的文件，不依赖 editId、Edit Unit、当前/指定时间线或固定 bin。允许工程没有时间线；不调用 SetCurrentTimeline，不创建、改名或重建时间线。重链后只读校验工程内所有时间线的视频/音频引用，返回工程汇总及逐时间线摘要；未映射、缺失目标和非文件 item 分别报告，配音/音频保留独立配置与路径统计。保存现有工程，不自动导出 DRP，不推进 Flow Plan。
+- 片段导出、批量标色和从播放头续建仍属于时间线操作：按末尾稳定 [editId] 唯一匹配，显示名可不同；目标缺失或同 ID 多候选时在修改前阻塞，返回实际名称，续建不能补建缺失目标。
+- 重链 API 不接收专题选择，旧调用附带 editId / timelineName 时忽略；Console 显示整个工程素材池及全部时间线校验计数。
+- 合并项目素材、`config/project-brief.json.voiceoverMedia` 和 `audioMedia` 的可读 primary/alternate 路径映射，递归处理所有 Media Pool 文件夹；不以 `Kairos Project Media / Kairos Voiceover / Kairos Audio` 名称限制范围。配音/音频仍分别显示配置、跳过与警告状态。
 - Resolve compound/timeline 等非文件 item 没有稳定 `File Path`，必须跳过；缺失本机目标和未映射文件要作为 warning 暴露，不能阻塞其它可重链素材。
 - 重链不自动导出 DRP；用户需要 DRP 时必须单独触发 `覆盖最新` 或 `归档快照`。
 

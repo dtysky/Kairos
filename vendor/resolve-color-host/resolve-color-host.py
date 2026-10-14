@@ -536,6 +536,10 @@ def create_rough_cut_timeline(resolve, payload):
     timeline_name = stringify_signal_value(payload.get("timelineName"))
     if not timeline_name:
         raise HostError("resolve_timeline_name_missing", "create_rough_cut_timeline requires timelineName.")
+    resume_from_playhead = payload.get("resumeFromCurrentPlayhead") is True
+    timeline = require_existing_edit_timeline(project, timeline_name) if resume_from_playhead else None
+    if timeline is not None:
+        timeline_name = safe_call(timeline, "GetName")
     clips = normalize_rough_cut_clips(payload.get("clips"))
     if not clips:
         raise HostError("resolve_timeline_empty", "create_rough_cut_timeline requires at least one clip.")
@@ -559,19 +563,22 @@ def create_rough_cut_timeline(resolve, payload):
             "Resolve 缺少粗剪所需素材；请先在 /edit 顶部运行“准备剪辑素材池”。",
             {"missing": missing[:50], "missingCount": len(missing), "namespace": namespace},
         )
-    # Verify media before creating, renaming, changing FPS, or clearing any timeline.
-    timeline_folder = ensure_namespace_folder(media_pool, timeline_folder_name)
-    rename_legacy_timeline_if_needed(project, timeline_name, payload.get("legacyTimelineNames"))
-    apply_project_timeline_spec_before_create(project, media_pool, timeline_name, payload.get("timelineSpec"))
-    safe_call(media_pool, "SetCurrentFolder", timeline_folder)
-    timeline = ensure_timeline(project, media_pool, timeline_name)
-    move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
-    apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    # Resume targets existing manual work. Do not run creation/rename/FPS repair
+    # just because its display label differs from the request on this machine.
+    if not resume_from_playhead:
+        # Verify media before creating, renaming, changing FPS, or clearing any timeline.
+        timeline_folder = ensure_namespace_folder(media_pool, timeline_folder_name)
+        rename_legacy_timeline_if_needed(project, timeline_name, payload.get("legacyTimelineNames"))
+        apply_project_timeline_spec_before_create(project, media_pool, timeline_name, payload.get("timelineSpec"))
+        safe_call(media_pool, "SetCurrentFolder", timeline_folder)
+        timeline = ensure_timeline(project, media_pool, timeline_name)
+        move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
+        apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
     assert_timeline_matches_spec(project, timeline, payload.get("timelineSpec"))
     safe_call(resolve, "OpenPage", "edit")
     safe_call(project, "SetCurrentTimeline", timeline)
     resume_state = None
-    if payload.get("resumeFromCurrentPlayhead") is True:
+    if resume_from_playhead:
         resume_state = prepare_rough_cut_suffix_resume(project, media_pool, timeline, clips, payload)
         clips = resume_state["clips"]
         subtitle_import = {"enabled": False, "reason": "suffix-srt-manual-import"}
@@ -1034,17 +1041,7 @@ def mark_existing_rough_cut_clip_colors(resolve, payload):
         )
 
     project, current_project_before = load_existing_project(resolve, project_name)
-    timeline = find_named_timeline(project, timeline_name)
-    if timeline is None:
-        raise HostError(
-            "resolve_edit_timeline_missing",
-            f"Resolve edit timeline not found: {timeline_name}",
-            {
-                "resolveProjectName": project_name,
-                "timelineName": timeline_name,
-                "timelines": list_timeline_names(project),
-            },
-        )
+    timeline = require_existing_edit_timeline(project, timeline_name)
     safe_call(project, "SetCurrentTimeline", timeline)
     safe_call(resolve, "OpenPage", "edit")
 
@@ -1153,38 +1150,21 @@ def relink_edit_media(resolve, payload):
         raise HostError("resolve_edit_project_name_missing", "relink_edit_media requires resolveProjectName.")
     project, current_project_before = load_existing_project(resolve, project_name)
     media_pool = require_method(project, "GetMediaPool")()
-    namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Project Media"
     root_folder = require_method(media_pool, "GetRootFolder")()
-    namespace_folder = find_root_media_pool_folder(root_folder, namespace)
-    if namespace_folder is None:
-        raise HostError(
-            "resolve_edit_media_namespace_missing",
-            f"Resolve edit media namespace not found: {namespace}",
-            {"resolveProjectName": project_name, "namespace": namespace},
-        )
-
-    timeline_name = stringify_signal_value(payload.get("timelineName"))
-    timeline = find_named_timeline(project, timeline_name) if timeline_name else safe_call(project, "GetCurrentTimeline")
-    if timeline_name and timeline is None:
-        raise HostError(
-            "resolve_edit_timeline_missing",
-            f"Resolve edit timeline not found: {timeline_name}",
-            {
-                "resolveProjectName": project_name,
-                "timelineName": timeline_name,
-                "timelines": list_timeline_names(project),
-            },
-        )
-    if timeline is not None:
-        safe_call(project, "SetCurrentTimeline", timeline)
+    # Relink is project-wide. Ignore legacy edit/timeline/bin selectors and never
+    # switch timelines; even a project with no timelines can contain offline media.
+    timelines = []
+    for index in range(1, int(require_method(project, "GetTimelineCount")()) + 1):
+        timeline = require_method(project, "GetTimelineByIndex")(index)
+        if timeline is None:
+            raise HostError("resolve_edit_timeline_audit_unavailable", f"Unable to audit project timeline at index {index}.")
+        timelines.append(timeline)
 
     mappings = normalize_edit_relink_roots(payload.get("roots"))
     if not mappings:
         raise HostError("resolve_edit_relink_roots_missing", "relink_edit_media requires at least one readable root mapping.")
 
-    timeline_track_types = normalize_relink_timeline_track_types(payload.get("timelineTrackTypes"))
-    count_timeline_unmapped = payload.get("timelineCountUnmapped") is not False
-    items = collect_media_pool_items(namespace_folder)
+    items = collect_media_pool_items(root_folder)
     preflight = build_edit_relink_plan(items, mappings)
     relink_results = []
     relinked = 0
@@ -1197,12 +1177,14 @@ def relink_edit_media(resolve, payload):
     if relinked > 0:
         time.sleep(1.0)
     verify = summarize_edit_relink_state(
-        namespace_folder,
-        timeline,
+        root_folder,
+        None,
         mappings,
-        timeline_track_types,
-        count_timeline_unmapped=count_timeline_unmapped,
+        ["video", "audio"],
+        timelines=timelines,
     )
+    for root_id, summary in verify["rootSummaries"].items():
+        summary["relinked"] = preflight["relinkedByRoot"].get(root_id, 0)
     relink_failures = [entry for entry in relink_results if not entry["ok"]]
     if relink_failures:
         raise HostError(
@@ -1224,16 +1206,12 @@ def relink_edit_media(resolve, payload):
 
     return {
         "resolveProjectName": project_name,
-        "namespace": namespace,
-        "timelineName": timeline_name or (safe_call(timeline, "GetName") if timeline is not None else None),
+        "scope": "project",
         "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "hostSummary": {
             "currentProjectBefore": current_project_before,
             "loadedProject": safe_call(project, "GetName"),
-            "namespace": namespace,
-            "timeline": safe_call(timeline, "GetName") if timeline is not None else None,
-            "timelineTrackTypes": timeline_track_types,
-            "timelineCountUnmapped": count_timeline_unmapped,
+            "scope": "project",
             "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
             "rootCount": len(mappings),
             "alreadyLocalBefore": preflight["alreadyLocal"],
@@ -1369,17 +1347,7 @@ def export_edit_timeline_clip_packet(resolve, payload):
         )
     project, current_project_before = load_existing_project(resolve, project_name)
     timeline_name = stringify_signal_value(payload.get("timelineName"))
-    timeline = find_named_timeline(project, timeline_name) if timeline_name else safe_call(project, "GetCurrentTimeline")
-    if timeline_name and timeline is None:
-        raise HostError(
-            "resolve_edit_timeline_missing",
-            f"Resolve edit timeline not found: {timeline_name}",
-            {
-                "resolveProjectName": project_name,
-                "timelineName": timeline_name,
-                "timelines": list_timeline_names(project),
-            },
-        )
+    timeline = require_existing_edit_timeline(project, timeline_name) if timeline_name else safe_call(project, "GetCurrentTimeline")
     if timeline is None:
         raise HostError(
             "resolve_edit_timeline_missing",
@@ -2158,6 +2126,45 @@ def find_named_timeline(project, timeline_name):
     return None
 
 
+def find_existing_edit_timeline(project, timeline_name):
+    # Display labels can differ across devices or after a manual rename; the
+    # terminal edit id is the maintenance identity. Do not guess among copies.
+    edit_id_match = re.search(r"(?:^|\s)\[([^\[\]]+)\]$", timeline_name.strip())
+    if edit_id_match is None:
+        return find_named_timeline(project, timeline_name)
+    edit_id = edit_id_match.group(1)
+    candidates = []
+    count = safe_call(project, "GetTimelineCount") or 0
+    for index in range(1, int(count) + 1):
+        candidate = safe_call(project, "GetTimelineByIndex", index)
+        name = safe_call(candidate, "GetName") if candidate else None
+        candidate_match = re.search(r"(?:^|\s)\[([^\[\]]+)\]$", name.strip()) if isinstance(name, str) else None
+        if candidate_match and candidate_match.group(1) == edit_id:
+            candidates.append(candidate)
+    if len(candidates) > 1:
+        raise HostError(
+            "resolve_edit_timeline_ambiguous",
+            f"Multiple Resolve edit timelines match [{edit_id}]; select an unambiguous target before maintenance.",
+            {"timelineName": timeline_name, "editId": edit_id, "timelines": [safe_call(item, "GetName") for item in candidates]},
+        )
+    return candidates[0] if candidates else None
+
+
+def require_existing_edit_timeline(project, timeline_name):
+    timeline = find_existing_edit_timeline(project, timeline_name)
+    if timeline is None:
+        raise HostError(
+            "resolve_edit_timeline_missing",
+            f"Resolve edit timeline not found: {timeline_name}",
+            {
+                "resolveProjectName": safe_call(project, "GetName"),
+                "timelineName": timeline_name,
+                "timelines": list_timeline_names(project),
+            },
+        )
+    return timeline
+
+
 def list_timeline_names(project):
     names = []
     count = safe_call(project, "GetTimelineCount") or 0
@@ -2251,19 +2258,10 @@ def normalize_edit_relink_roots(value):
     return roots
 
 
-def normalize_relink_timeline_track_types(value):
-    allowed = {"video", "audio"}
-    result = []
-    for raw in iter_values(value or []):
-        text = (stringify_signal_value(raw) or "").strip().lower()
-        if text in allowed and text not in result:
-            result.append(text)
-    return result or ["video"]
-
-
 def build_edit_relink_plan(items, mappings):
     by_folder = {}
     roots = {mapping["rootId"]: 0 for mapping in mappings}
+    relinked_by_root = {mapping["rootId"]: 0 for mapping in mappings}
     already_local = 0
     missing_targets = []
     unmapped = []
@@ -2288,6 +2286,7 @@ def build_edit_relink_plan(items, mappings):
             if edit_relink_target_exists(target_path):
                 folder_path = str(Path(target_path).parent)
                 by_folder.setdefault(folder_path, []).append(item)
+                relinked_by_root[root_id] += 1
             else:
                 missing_targets.append(build_edit_relink_item_sample(item, source_path, {
                     "type": item_type,
@@ -2299,6 +2298,7 @@ def build_edit_relink_plan(items, mappings):
     return {
         "byFolder": by_folder,
         "roots": roots,
+        "relinkedByRoot": relinked_by_root,
         "alreadyLocal": already_local,
         "missingTargets": missing_targets,
         "unmapped": unmapped,
@@ -2306,9 +2306,12 @@ def build_edit_relink_plan(items, mappings):
     }
 
 
-def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types=None, count_timeline_unmapped=True):
+def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types=None, count_timeline_unmapped=True, timelines=None):
     items = collect_media_pool_items(namespace_folder)
     roots = {mapping["rootId"]: 0 for mapping in mappings}
+    root_summaries = {root_id: {"totalMediaItems": 0, "localReadable": 0, "localUnreadable": 0,
+                               "oldPathRemaining": 0, "missingTargetCount": 0, "unmappedCount": 0}
+                      for root_id in roots}
     old_remaining = 0
     local_readable = 0
     local_unreadable = 0
@@ -2322,12 +2325,16 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_t
             skipped_non_file.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
             continue
         root_id, target_path, state = map_edit_relink_target(source_path, mappings)
+        root_summary = root_summaries.get(root_id)
         if root_id:
             roots[root_id] = roots.get(root_id, 0) + 1
+            root_summary["totalMediaItems"] += 1
         if state == "old":
             if edit_relink_target_exists(target_path):
                 old_remaining += 1
+                root_summary["oldPathRemaining"] += 1
             else:
+                root_summary["missingTargetCount"] += 1
                 missing_targets.append(build_edit_relink_item_sample(item, source_path, {
                     "type": item_type,
                     "oldPath": source_path,
@@ -2336,13 +2343,45 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_t
         elif state == "local":
             if edit_relink_target_exists(target_path):
                 local_readable += 1
+                root_summary["localReadable"] += 1
             else:
                 local_unreadable += 1
+                root_summary["localUnreadable"] += 1
         else:
             unmapped.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
 
     timeline_track_types = timeline_track_types or ["video"]
-    timeline_items = list(iter_timeline_relink_items(timeline, timeline_track_types)) if timeline is not None else []
+    audit_targets = timelines if timelines is not None else ([timeline] if timeline is not None else [])
+    timeline_summaries = [summarize_relink_timeline(target, mappings, timeline_track_types, count_timeline_unmapped)
+                          for target in audit_targets]
+    timeline_counts = {key: sum(row[key] for row in timeline_summaries) for key in (
+        "timelineItemCount", "timelineVideoItemCount", "timelineAudioItemCount", "timelineOldPathRemaining",
+        "timelineUnreadable", "timelineMissingTargetCount", "timelineUnmappedCount", "timelineSkippedNonFileCount",
+    )}
+    return {
+        "totalMediaItems": len(items),
+        "roots": roots,
+        "rootSummaries": root_summaries,
+        "oldPathRemaining": old_remaining,
+        "localReadable": local_readable,
+        "localUnreadable": local_unreadable,
+        "missingTargetCount": len(missing_targets),
+        "missingTargetSamples": missing_targets[:20],
+        "unmappedCount": len(unmapped),
+        "unmappedSamples": unmapped[:20],
+        "skippedNonFileCount": len(skipped_non_file),
+        "skippedNonFileSamples": skipped_non_file[:20],
+        "timelineTrackTypes": timeline_track_types,
+        "timelineCountUnmapped": bool(count_timeline_unmapped),
+        "timelineCount": len(timeline_summaries),
+        "timelines": timeline_summaries,
+        "timelineMissingTargetSamples": [sample for row in timeline_summaries for sample in row["timelineMissingTargetSamples"]][:20],
+        **timeline_counts,
+    }
+
+
+def summarize_relink_timeline(timeline, mappings, timeline_track_types, count_timeline_unmapped):
+    timeline_items = list(iter_timeline_relink_items(timeline, timeline_track_types))
     timeline_old = 0
     timeline_unreadable = 0
     timeline_missing_targets = []
@@ -2372,19 +2411,8 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_t
                 timeline_unmapped += 1
 
     return {
-        "totalMediaItems": len(items),
-        "roots": roots,
-        "oldPathRemaining": old_remaining,
-        "localReadable": local_readable,
-        "localUnreadable": local_unreadable,
-        "missingTargetCount": len(missing_targets),
-        "missingTargetSamples": missing_targets[:20],
-        "unmappedCount": len(unmapped),
-        "unmappedSamples": unmapped[:20],
-        "skippedNonFileCount": len(skipped_non_file),
-        "skippedNonFileSamples": skipped_non_file[:20],
-        "timelineTrackTypes": timeline_track_types,
-        "timelineCountUnmapped": bool(count_timeline_unmapped),
+        "timelineName": safe_call(timeline, "GetName"),
+        "timelineId": safe_call(timeline, "GetUniqueId"),
         "timelineItemCount": len(timeline_items),
         "timelineVideoItemCount": sum(1 for track_type, _item in timeline_items if track_type == "video"),
         "timelineAudioItemCount": sum(1 for track_type, _item in timeline_items if track_type == "audio"),
@@ -2401,16 +2429,21 @@ def map_edit_relink_target(source_path, mappings):
     normalized_path = normalize_relink_path(source_path)
     if not normalized_path:
         return None, None, "unmapped"
+    matches = []
     for mapping in mappings:
         local_path = mapping["localPath"]
         if relink_path_has_root(normalized_path, local_path):
-            return mapping["rootId"], normalized_path, "local"
+            matches.append((len(local_path), 1, mapping["rootId"], normalized_path, "local"))
         for candidate in mapping["candidates"]:
             if not candidate or candidate == local_path:
                 continue
             if relink_path_has_root(normalized_path, candidate):
                 relative = normalized_path[len(candidate):].lstrip("/")
-                return mapping["rootId"], join_relink_target(local_path, relative), "old"
+                matches.append((len(candidate), 0, mapping["rootId"], join_relink_target(local_path, relative), "old"))
+    # Project audio roots can be nested inside an ingest root. Prefer the most
+    # specific configured path, independent of mapping order.
+    if matches:
+        return max(matches, key=lambda match: match[:2])[2:]
     return None, None, "unmapped"
 
 
@@ -2426,6 +2459,7 @@ def is_edit_relink_non_file_type(item_type):
     return normalized in {
         "compound",
         "timeline",
+        "时间线",
         "multicam",
         "fusion composition",
         "",
