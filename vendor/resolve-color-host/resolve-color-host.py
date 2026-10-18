@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import uuid
+import zipfile
 from pathlib import Path
 
 
@@ -1716,8 +1717,10 @@ def build_resolve_timeline_item_name(clip):
 
 
 def save_drp_snapshot(resolve, payload):
-    project = ensure_project(resolve, payload["resolveProjectName"])
-    save_project(project, resolve)
+    project, _ = load_existing_project(resolve, payload["resolveProjectName"])
+    project_manager = require_method(resolve, "GetProjectManager")()
+    if require_method(project_manager, "SaveProject")() is not True:
+        raise HostError("resolve_project_save_failed", "Resolve 工程保存失败，未导出 DRP。")
     snapshot = export_project_snapshot(resolve, project, payload, "manual", "save_drp_snapshot")
     if not snapshot:
         raise HostError(
@@ -6258,10 +6261,10 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
         snapshots_root = snapshot_root / "snapshots"
         snapshots_root.mkdir(parents=True, exist_ok=True)
         label_parts = [label, chunk_id]
-        filename = f"{timestamp}-{sanitize_filename('-'.join([part for part in label_parts if part]))}.drp"
+        filename = f"{timestamp}-{sanitize_filename('-'.join([part for part in label_parts if part]))}-{uuid.uuid4().hex[:8]}.drp"
         snapshot_path = snapshots_root / filename
         exported = safe_call(project_manager, "ExportProject", project_name, str(snapshot_path), False)
-        if exported is False or not snapshot_path.is_file():
+        if exported is not True or not snapshot_path.is_file():
             raise HostError(
                 "resolve_project_export_failed",
                 f"Unable to export Resolve project snapshot: {snapshot_path}",
@@ -6270,12 +6273,19 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
                     "snapshotPath": str(snapshot_path),
                 },
             )
-        shutil.copy2(snapshot_path, latest_path)
+        validate_drp_snapshot(snapshot_path)
+        temp_path = snapshot_root / f".{latest_path.stem}-{uuid.uuid4().hex[:8]}.tmp.drp"
+        try:
+            shutil.copy2(snapshot_path, temp_path)
+            os.replace(temp_path, latest_path)
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
     else:
         temp_path = snapshot_root / f".{latest_path.stem}-{timestamp}-{uuid.uuid4().hex[:8]}.tmp.drp"
         try:
             exported = safe_call(project_manager, "ExportProject", project_name, str(temp_path), False)
-            if exported is False or not temp_path.is_file():
+            if exported is not True or not temp_path.is_file():
                 raise HostError(
                     "resolve_project_export_failed",
                     f"Unable to export Resolve project snapshot: {temp_path}",
@@ -6284,6 +6294,7 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
                         "snapshotPath": str(temp_path),
                     },
                 )
+            validate_drp_snapshot(temp_path)
             os.replace(temp_path, latest_path)
         finally:
             if temp_path.exists():
@@ -6302,6 +6313,19 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
         "database": normalize_database_info(safe_call(project_manager, "GetCurrentDatabase")),
         "detail": f"{stage} exported withStillsAndLUTs=false retention={retention}",
     }
+
+
+def validate_drp_snapshot(path):
+    try:
+        with zipfile.ZipFile(path) as archive:
+            if not archive.namelist() or archive.testzip() is not None:
+                raise ValueError("DRP ZIP 为空或内容校验失败")
+    except (OSError, ValueError, RuntimeError, zipfile.BadZipFile) as error:
+        raise HostError(
+            "resolve_project_snapshot_invalid",
+            f"Resolve 导出的 DRP 完整性校验失败，已保留原 latest：{error}",
+            {"snapshotPath": str(path)},
+        ) from error
 
 
 def normalize_drp_snapshot_retention(value):

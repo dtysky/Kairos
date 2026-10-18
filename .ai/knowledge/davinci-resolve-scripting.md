@@ -1,5 +1,7 @@
 # DaVinci Resolve Scripting Local Documentation
 
+DRP maintenance must open an existing matching project without creating a project or selecting a timeline. For `save_drp_snapshot`, use the documented ProjectManager `SaveProject()` and require `True`, then require `ExportProject()` success and a non-empty valid DRP ZIP before atomically replacing latest. The general render preflight may create a project, so it is not a backup prerequisite. A running Resolve process does not prove that scripting is available: on 2026-10-18, Resolve's log showed script-server `failed to bind socket: Error 1` while the main editor was running. Diagnose this separately from project content, and do not operate or restart the editor merely to verify a code fix.
+
 This is Kairos' local working documentation for DaVinci Resolve scripting. It is not just
 an index: agents should use it as the first local reference before touching Resolve export,
 `/color`, the vendored Resolve host, DRX/DRT handling, render jobs, LUT sync, or Resolve

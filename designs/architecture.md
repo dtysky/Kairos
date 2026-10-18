@@ -1,5 +1,12 @@
 # Kairos — 架构设计 v2
 
+## 2026-10-18 Resolve 剪辑工程备份尝试
+
+- `IColorResolveProjectMapEntry` 增加可选 `latestSnapshotAttempt / snapshotAttempts`（旧索引缺省按空处理）（最多 50 条），记录 attemptId、running/succeeded/failed、startedAt/finishedAt、mode、retention、action、error。`latestSnapshot` 始终表示最后成功结果；失败不清空或刷新它。
+- `snapshotProjectEditDrp` 和外部 DRP 登记共用项目级尝试记录与同进程互斥，开始先落盘，成功把尝试及快照一起写入，失败持久保存机器错误码和消息并继续抛出。自动 timeline 备份仍保留 warning 和已生成时间线，但不再仅存在 run warning 中。项目 config 的现有 resolveProjectMap 返回尝试状态。
+- 手动备份只调用严格 `save_drp_snapshot`，不运行可能创建工程或探测渲染能力的通用 preflight。Host 用 existing-project lookup，验证 `SaveProject()` 成功，导出到临时文件并校验非空 ZIP 完整性后原子更新 latest；archive 仍只有显式选择时创建。
+- `/edit` 显示最近尝试与最后成功快照两个独立状态，失败在维护区折叠摘要和区域内持续可见，可按原 retention 重试。失败请求后重新读取持久状态；额外保留网络错误的本地状态。普通状态轮询成功不能清除操作错误。running 记录只表示尝试未结束，按钮忙碌仍以当前请求为准。
+
 > 当前实现形态：Node.js 库 + Agent Skill（临时承载版本）
 > 正式主链：Pharos-first 的素材编排流程；DaVinci 调色是与主链解耦的独立增强链路
 >
@@ -37,7 +44,7 @@ Supervisor 使用独立 `resolve-media-sync` job 执行该准备流程，通过�
 
 词表提取由 Agent 完成，代码不从地名列表自动发明语境。第一次审查若词表在 span-builder 准备候选后新增，使用 `refreshProjectTranscriptReviewGlossary` 校验候选 artifact SHA-256、旧 effective glossary、normalization、trip 和 segment 引用，再更新候选审查的词表 hash；不改 spans，也不重新构建候选。一旦已有统一审查则该入口拒绝覆盖，必须使用 `continueProjectSpeechTranscriptReview`，仅补充词条并复核未决且未经人工改写的行。Console 复制指令、自动生成 handoff 与 workflow/speech-review skill 均要求这个顺序。
 
-已复核当前 Pharos 七份设计文档，组合哈希 `11343a653e0ecf802cc390e0f40f9f7c22dd2fa2e87aef857fb8d33a5e58e584`；本次追加变化仅为 Argo 本地车辆实测说明，protocol 与其余设计文件未变，现有 rules/skills 无新增执行要求。Atlas / Argo、只读 `field-guide.json`、active route、route progress、地点局部日和 Pyxis 派生地图均不扩大 Kairos canonical Ingest 输入；现有 `plan.json / record.json / gpx/*.gpx` 白名单与匹配实现无需改变。此结论取代下文 10 月 13 日的历史基线说明。
+2026-10-17 已复核本机 Pharos 七份设计文档，组合哈希 `ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84`；相对 10 月 14 日 `11343a653e0ecf802cc390e0f40f9f7c22dd2fa2e87aef857fb8d33a5e58e584` 仅 Argo 文档版本不同。复读当前 protocol 与 Argo 本地车辆实测、子系统关系后确认，protocol 及其余五份设计文件未变，现有 rules/skills 无新增执行要求。Atlas / Argo、只读 `field-guide.json`、active route、route progress、地点局部日和 Pyxis 派生地图均不扩大 Kairos canonical Ingest 输入；现有 `plan.json / record.json / gpx/*.gpx` 白名单与匹配实现无需改变。Edit Flow 的 story group 仅作专题采集标签，实际边界仍来自 confirmed chronology 与当前素材。本轮无需代码变更；此结论取代下文历史基线说明。
 
 Agent 在字幕审查前必须检查 Pharos 已发布的 field guide，并据此提取或核对项目 `config/transcript-glossary.json`，每项仍只含 `canonical + context`。源文件快照、trip ID、revision、SHA-256 和逐词章节出处保存在独立来源审计中，不混入 canonical Pharos 镜像、素材时间或 chronology。研究只提供专名拼写与适用语境，计划地点不证明实际到访，推断与创作提示不作为事实。
 
@@ -210,7 +217,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - `edit.framework` 是剪辑 handoff：`全片章节` 只做宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界且每行有稳定 FW beat id；不得输出 `beat 边界索引`；全文不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观画面/声音总结；系统合同不规定固定的素材召回提示章节名，是否输出额外 handoff 区块只由用户维护的剪辑规则决定
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
 - `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`，并应把同一 chronology event 内照片作为尾部照片包而非插入非照片素材之间；项目级 `resolve-media-sync` 任务先把事件素材同步到达芬奇 Media Pool；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，只从已同步 Media Pool 选用素材，不再要求 `script/current.json`，同一事件内落片时保持非照片在前、照片尾部打包；单遍落片回读实际帧位后生成 `.tmp/edit-flow/<editId>/timeline/current.srt`
-- `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP，默认使用 `latest-only` 只覆盖当前 latest DRP；失败只进入 result/run warning，不回滚已生成 timeline
+- `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP，默认使用 `latest-only` 只覆盖当前 latest DRP；失败进入工程级持久尝试状态及 result/run warning，不回滚已生成 timeline
 - `/edit` 素材重链只核对现有 `${projectBrief.name} [Edit]` 工程身份，合并项目素材、配音与外部音频的 primary/alternate 路径映射，递归处理整个 Media Pool 后保存工程。Edit Unit、时间线名称与 bin 名称都不是前置条件；没有时间线也能重链，已有时间线只做全部视频/音频引用校验，不切换当前时间线。返回工程及逐时间线摘要，未映射/缺失目标作为 warning，非文件 item 跳过；不推进 Flow Plan，不自动导出 DRP。
 
 旅行类默认剪辑规则的正式顺序是：
@@ -1108,7 +1115,7 @@ src/modules/edit-flow/
 - `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并按 `material-slots` 的选择和顺序从已同步 Media Pool 取素材；航拍视频 linked audio 一律强制 disabled；有声非航拍 speech/mixed 非照片 clip 在 Resolve append 前按 timed transcriptSegments 首末边界扩展一次 source padding（头 `250ms`、尾 `250ms`，clamp 到素材边界），chronology 只用于 Resolve path/bin/context 映射，不得硬性读取 `script/current.json` 或 `segment-plan.json`
 - Resolve `[Edit]` 素材重链是工程级维护：只核对现有工程身份，递归处理整个 Media Pool 中可由项目素材、voiceoverMedia、audioMedia 主/备选路径映射的文件，不依赖 editId、Edit Unit、当前/指定时间线或固定 bin。允许工程没有时间线；不调用 SetCurrentTimeline，不创建、改名或重建时间线。重链后只读校验工程内所有时间线的视频/音频引用，返回工程汇总及逐时间线摘要；未映射、缺失目标和非文件 item 分别报告，配音/音频保留独立配置与路径统计。保存现有工程，不自动导出 DRP，不推进 Flow Plan。
 - `.tmp/edit-flow/<editId>/timeline/current.json` 作为本机临时 KTEP/manifest 审计输出保留，`.tmp/edit-flow/<editId>/timeline/current.srt` 作为按 Resolve 实际帧位生成的源语音字幕保留，但 Resolve rough-cut timeline 才是用户可见成功标准
-- `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 保存；该保存属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，自动保存默认仅覆盖 latest，导出失败只写 warning
+- `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 保存；该保存属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，自动保存默认仅覆盖 latest，导出失败写工程级持久尝试状态及 warning
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution / notes`，不得从 markdown 正文做隐藏启发式，也不得自动向 Agent packet 注入未声明的 planning markdown；当前 step context / notes 是 packet 的正式高优先级输入
 
 #### 2.4 Timeline / Export — Resolve 粗剪与 KTEP 审计
@@ -1134,7 +1141,7 @@ vendor/resolve-color-host/
   → 时间线构建先对旧 `spans/material-slots` 执行 Analyze overlap 策略的兼容过滤：同素材 selected speech union 与 visual 最终 source range 的 `IoU >= 0.5` 时扣除 speech，连续 remainder `<15000ms` 删除、`>=15000ms` 才落为裁切后的 visual clip；每个 selected span 的基础 `clip-xxxxx` 在过滤前分配，drop/split 不得推动后续锚点编号
   → 若显式选择 `resume-from-current-playhead`，host 在同一个既有 rough-cut timeline 中读取播放头，以命中的完整 video item 末帧和其 `clip-xxxxx` 名称作为续接锚点；只清除锚点后的 video/audio/subtitle，按确定性计划过滤并追加锚点后的 clips。失败期间保留临时 duplicate，全部追加、source range、still duration、颜色、分组和连续性校验通过并保存工程后才删除 duplicate；Node 层只为新追加后缀按实际绝对帧位生成 `remaining.srt`，不导入字幕、不改前缀
   → Resolve 单遍原生落片成功后，按 host 返回的 `actualStartFrame / actualEndFrame` 重定时 clip 并写 `.tmp/edit-flow/<editId>/timeline/current.srt`
-  → Resolve timeline 成功后以 `latest-only` 保存项目级 `[Edit]` DRP；失败只写入 `drpSnapshotWarning`
+  → Resolve timeline 成功后以 `latest-only` 保存项目级 `[Edit]` DRP；失败写入工程级持久尝试状态及 `drpSnapshotWarning`
   → 单遍落片和实际帧位校验通过后才写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计
 ```
 

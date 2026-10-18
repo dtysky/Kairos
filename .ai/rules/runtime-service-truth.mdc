@@ -58,6 +58,8 @@ alwaysApply: true
 
 ## Live Job Truth
 
+- Resolve `[Edit]` DRP 备份的 `latestSnapshotAttempt / snapshotAttempts` 是持久尝试记录，`latestSnapshot` 只表示最后成功快照。失败必须在 `/edit` 维护摘要和备份区持续可见，不能被状态轮询清空；自动备份也写入同一状态，job 结束后刷新项目配置。没有当前请求时，残留 running 只能显示“上次尝试未结束”，不能当成仍在运行。失败不回滚已有时间线，也不更新成功快照。
+
 - `progress.json` 只是 durable progress cache，不等于 live job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 不是 Analyze 或 spatial-refresh 仍在运行的证据
 - Analyze 续跑不能把 `progress.json.step` 当恢复指针；启动后必须从真实产物推导待办。若 coarse report 已全部存在且仅剩 fine-scan，首个 live progress 应进入 `fine-scan-prefetch`，不能误写回 `prepare`。

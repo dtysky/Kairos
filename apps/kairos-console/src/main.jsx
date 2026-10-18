@@ -47,6 +47,7 @@ import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import { editSelectionStorageKey, resolveProjectEditId, splitEditFlowSteps } from './edit-flow-state.js';
 import { EditUnitEditor } from './components/edit-unit-editor.jsx';
 import { ResolveMediaPreparation } from './components/resolve-media-preparation.jsx';
+import { ResolveSnapshotStatus, resolveSnapshotStatusLabel } from './components/resolve-snapshot-status.jsx';
 import {
   CaptureTimeOverridesEditor,
   ColorCurrentSummary,
@@ -73,6 +74,7 @@ export function AppShell() {
   const storedProjectIdRef = React.useRef(window.localStorage.getItem('kairos.console.projectId') || '');
   const hydratedProjectSelectionRef = React.useRef(false);
   const projectLoadSequenceRef = React.useRef(0);
+  const previousLiveJobsRef = React.useRef({ projectId: '', count: 0 });
   const [projectId, setProjectId] = useState('');
   const currentProjectIdRef = React.useRef(projectId);
   currentProjectIdRef.current = projectId;
@@ -97,6 +99,8 @@ export function AppShell() {
   const [editResolveAssetsError, setEditResolveAssetsError] = useState('');
   const [editRelinkResult, setEditRelinkResult] = useState(null);
   const [editRelinkError, setEditRelinkError] = useState('');
+  const [editSnapshotError, setEditSnapshotError] = useState(null);
+  const [statusError, setStatusError] = useState('');
 
   useEffect(() => {
     refreshStatus();
@@ -194,7 +198,13 @@ export function AppShell() {
   }, [allJobs, config, dispatch, projectId, reviews, services]);
 
   useEffect(() => {
-    if (!projectId || liveProjectJobs.length === 0) return undefined;
+    const previous = previousLiveJobsRef.current;
+    previousLiveJobsRef.current = { projectId, count: liveProjectJobs.length };
+    if (!projectId) return undefined;
+    if (liveProjectJobs.length === 0) {
+      if (previous.projectId === projectId && previous.count > 0) refreshProject(projectId);
+      return undefined;
+    }
     const timer = window.setInterval(() => refreshProject(projectId), 4000);
     return () => window.clearInterval(timer);
   }, [projectId, liveProjectJobs.length]);
@@ -241,9 +251,9 @@ export function AppShell() {
   async function refreshStatus() {
     try {
       setStatus(await fetchWorkspaceStatus());
-      setError('');
+      setStatusError('');
     } catch (caught) {
-      handleError(caught);
+      setStatusError(caught instanceof Error ? caught.message : String(caught));
     }
   }
 
@@ -269,6 +279,9 @@ export function AppShell() {
       setColorArchive(nextColorArchive || { roots: [] });
       setSavedConfig(nextConfig);
       setReviews(nextReviews.items || []);
+      const nextAttempt = nextConfig.editResolveProject?.resolveProjectMap?.projects?.[nextConfig.editResolveProject?.resolveProjectName]?.latestSnapshotAttempt;
+      setEditSnapshotError(previous => previous?.projectId === nextProjectId && nextAttempt && previous.attemptId !== nextAttempt.attemptId ? null : previous);
+      return nextConfig;
     } catch (caught) {
       if (loadSequence === projectLoadSequenceRef.current) handleError(caught);
     }
@@ -331,13 +344,19 @@ export function AppShell() {
     if (!projectId) return;
     const busyKey = 'edit:resolve-snapshot';
     setBusy(current => ({ ...current, [busyKey]: true }));
+    setEditSnapshotError(null);
     try {
       await saveProjectEditResolveSnapshot(projectId, payload);
+      if (currentProjectIdRef.current !== projectId) return;
       await refreshProject(projectId);
       await refreshStatus();
       setMessage(payload?.retention === 'archive' ? '已归档剪辑 DRP 快照' : '已覆盖最新剪辑 DRP');
       setError('');
     } catch (caught) {
+      if (currentProjectIdRef.current !== projectId) return;
+      const refreshed = await refreshProject(projectId);
+      const attempt = refreshed?.editResolveProject?.resolveProjectMap?.projects?.[refreshed.editResolveProject?.resolveProjectName]?.latestSnapshotAttempt;
+      setEditSnapshotError({ projectId, attemptId: attempt?.attemptId, mode: 'manual', retention: payload.retention || 'latest-only', message: caught instanceof Error ? caught.message : String(caught) });
       handleError(caught);
     } finally {
       setBusy(current => ({ ...current, [busyKey]: false }));
@@ -348,13 +367,19 @@ export function AppShell() {
     if (!projectId) return;
     const busyKey = 'edit:resolve-register';
     setBusy(current => ({ ...current, [busyKey]: true }));
+    setEditSnapshotError(null);
     try {
       await registerProjectEditResolveSnapshot(projectId, payload);
+      if (currentProjectIdRef.current !== projectId) return;
       await refreshProject(projectId);
       await refreshStatus();
       setMessage('已登记剪辑 DRP');
       setError('');
     } catch (caught) {
+      if (currentProjectIdRef.current !== projectId) return;
+      const refreshed = await refreshProject(projectId);
+      const attempt = refreshed?.editResolveProject?.resolveProjectMap?.projects?.[refreshed.editResolveProject?.resolveProjectName]?.latestSnapshotAttempt;
+      setEditSnapshotError({ projectId, attemptId: attempt?.attemptId, mode: 'external', retention: 'archive', message: caught instanceof Error ? caught.message : String(caught) });
       handleError(caught);
     } finally {
       setBusy(current => ({ ...current, [busyKey]: false }));
@@ -850,7 +875,7 @@ export function AppShell() {
 
         <main className="shell-content">
           {message ? <div className="message-banner">{message}</div> : null}
-          {error ? <div className="error-banner">{error}</div> : null}
+          {error || statusError ? <div className="error-banner" role="alert">{error || statusError}</div> : null}
 
           <Routes>
             <Route path="/" element={<OverviewPage currentProject={currentProject} activeJobs={activeJobs} services={services} projectProgress={projectProgress} openReviewCount={openReviewCount} />} />
@@ -862,7 +887,7 @@ export function AppShell() {
             <Route path="/style/monitor/:categoryId?" element={<StyleMonitorRedirect />} />
             <Route path="/style" element={<StylePage config={styleSources} capabilities={capabilities} jobs={allJobs} setStyleSources={setStyleSources} onSave={saveStyleLibrary} busy={busy} onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})} location={location} history={{ push: navigate }} />} />
             <Route path="/script" element={<Navigate to="/edit" replace />} />
-            <Route path="/edit" element={<EditFlowPage projectId={projectId} config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onPrepareMedia={() => runProjectWorkflow('resolve-media-sync')} onSaveEditUnit={saveEditUnitPayload} onSelectEditUnit={requestEditChange} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} />} />
+            <Route path="/edit" element={<EditFlowPage projectId={projectId} config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onPrepareMedia={() => runProjectWorkflow('resolve-media-sync')} onSaveEditUnit={saveEditUnitPayload} onSelectEditUnit={requestEditChange} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} editSnapshotError={editSnapshotError?.projectId === projectId ? editSnapshotError : null} />} />
             <Route path="/timeline-export" element={<TimelineExportPage capabilities={capabilities} />} />
             <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} asrConfig={asrConfig} setAsrConfig={setAsrConfig} onSaveAsrConfig={saveAsrConfig} transcriptGlossary={transcriptGlossary} setTranscriptGlossary={setTranscriptGlossary} onSaveTranscriptGlossary={saveTranscriptGlossaryConfig} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -2539,6 +2564,7 @@ function EditFlowPage({
   editResolveAssetsError,
   editRelinkResult,
   editRelinkError,
+  editSnapshotError,
 }) {
   const editUnit = config?.editUnit;
   const editId = activeEditId;
@@ -2584,6 +2610,8 @@ function EditFlowPage({
   const editUnitSaved = Boolean(editUnit?.editRuleCategory);
   const editResolveProject = config?.editResolveProject || null;
   const latestEditDrp = editResolveProject?.latestDrpSnapshot || null;
+  const snapshotAttempt = editResolveProject?.resolveProjectMap?.projects?.[editResolveProject?.resolveProjectName]?.latestSnapshotAttempt;
+  const snapshotStatus = resolveSnapshotStatusLabel(snapshotAttempt, editSnapshotError?.message, saveResolveBusy || registerResolveBusy);
 
   return (
     <div className="route-page edit-flow-page">
@@ -2648,9 +2676,9 @@ function EditFlowPage({
         <summary>
           <div className="compact-disclosure-copy">
             <strong>Resolve 剪辑工程维护</strong>
-            <span>{latestEditDrp?.createdAt ? `最近快照 ${latestEditDrp.createdAt}` : (editResolveProject?.resolveProjectName || '尚未生成剪辑工程快照')}</span>
+            <span>{snapshotStatus || (latestEditDrp?.createdAt ? `最后成功备份 ${latestEditDrp.createdAt}` : (editResolveProject?.resolveProjectName || '尚未生成剪辑工程快照'))}</span>
           </div>
-          <Tag>按需展开</Tag>
+          <Tag color={snapshotAttempt?.status === 'failed' || editSnapshotError ? 'error' : undefined}>{snapshotStatus || '按需展开'}</Tag>
         </summary>
       <Card className="panel edit-resolve-drp-panel">
         <div className="edit-flow-panel-head">
@@ -2737,9 +2765,12 @@ function EditFlowPage({
             <span>{editRelinkWarningText}</span>
           </div>
         ) : null}
+        <ResolveSnapshotStatus attempt={snapshotAttempt} latestSnapshot={latestEditDrp}
+          localError={editSnapshotError?.message} retryMode={editSnapshotError?.mode} retryRetention={editSnapshotError?.retention} busy={saveResolveBusy || registerResolveBusy}
+          disabled={mediaPreparationActive || relinkResolveBusy} onRetry={onSaveResolveSnapshot} />
         <div className="color-drp-panel">
           <div className="color-drp-copy">
-            <strong>Resolve [Edit] DRP 快照</strong>
+            <strong>Resolve [Edit] 最后成功的 DRP 快照</strong>
             <div className="muted">
               {latestEditDrp?.snapshotPath
                 ? `latest · ${latestEditDrp.latestPath || latestEditDrp.snapshotPath}`

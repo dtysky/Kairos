@@ -1651,10 +1651,24 @@ export const IColorResolveProjectSnapshot = z.object({
 });
 export type IColorResolveProjectSnapshot = z.infer<typeof IColorResolveProjectSnapshot>;
 
+export const IResolveProjectSnapshotAttempt = z.object({
+  attemptId: z.string(),
+  status: z.enum(['running', 'succeeded', 'failed']),
+  startedAt: z.string(),
+  finishedAt: z.string().optional(),
+  mode: z.enum(['auto', 'manual', 'external']),
+  retention: z.enum(['latest-only', 'archive']),
+  action: z.string(),
+  error: z.object({ code: z.string().optional(), message: z.string() }).optional(),
+});
+export type IResolveProjectSnapshotAttempt = z.infer<typeof IResolveProjectSnapshotAttempt>;
+
 export const IColorResolveProjectMapEntry = z.object({
   projectName: z.string(),
   safeProjectName: z.string(),
   latestSnapshot: IColorResolveProjectSnapshot.optional(),
+  latestSnapshotAttempt: IResolveProjectSnapshotAttempt.optional(),
+  snapshotAttempts: z.array(IResolveProjectSnapshotAttempt).optional(),
   snapshots: z.array(IColorResolveProjectSnapshot).default([]),
   updatedAt: z.string().optional(),
 });

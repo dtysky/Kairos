@@ -1,11 +1,11 @@
 {
   "sourceRoot": "../Pharos/designs",
-  "generatedAt": "2026-10-14T05:59:40.349Z",
-  "combinedSha256": "11343a653e0ecf802cc390e0f40f9f7c22dd2fa2e87aef857fb8d33a5e58e584",
+  "generatedAt": "2026-10-17T10:05:16.518Z",
+  "combinedSha256": "ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84",
   "files": [
     {
       "path": "argo.md",
-      "sha256": "cb6fc290b1a0e801d15ff46c91f8f2d1a6f5d2c83cc2c5162680144244498830"
+      "sha256": "ceb172103ed965499a674191e67dc7ddbe1f6af5f7e073da3b3882efe82b2354"
     },
     {
       "path": "atlas.md",

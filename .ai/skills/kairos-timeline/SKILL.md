@@ -41,6 +41,8 @@ timeline generation through `/edit`: a confirmed Flow Plan declares
 
 ## Output Contract
 
+Project DRP backup attempts (including automatic failures) persist in `edits/resolve-project-map.json` as `latestSnapshotAttempt` and the last 50 `snapshotAttempts`, separately from `latestSnapshot`. Keep the timeline on backup failure, but surface the failure in the `/edit` maintenance summary and backup panel. Snapshot operations must load an existing matching project only, never create a project or select a timeline. Require successful save/export and validate the DRP before replacing latest. Do not operate or restart the user's Resolve UI merely to test backup code; use simulated host tests unless live interaction is authorized.
+
 The audit output is:
 
 ```text

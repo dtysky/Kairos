@@ -146,7 +146,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 用户明确要求保留已人工剪好的前缀时，`timeline.generate` 使用 `resume-from-current-playhead` 维护模式：播放头命中的完整 video item 是最后保留项，其稳定 `clip-xxxxx` 是计划锚点。Resolve host 只删除锚点后的旧 video/audio/subtitle 并追加后续计划 clips；Node 只输出绝对时间码的 `remaining.srt` 供用户手动导入，不覆盖前缀字幕，也不声称已导入。
 - 任何自动生成的字幕、字幕审查稿、最终 SRT/VTT 和配音插件合并文本都不得自动补 `。` 或 `.`，并应移除行末已有 `。` / `.`；不要全局移除 `？`、`！` 或句内标点。
 - `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。
-- Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败只写 warning，不回滚 timeline。
+- Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败写工程级 `latestSnapshotAttempt / snapshotAttempts` 和 warning，不回滚 timeline；`/edit` 的维护摘要和备份区域必须持续展示失败，刷新后仍保留。
 
 ### `resolve.lock_rough_cut` / `postlock.subtitle_narration`
 

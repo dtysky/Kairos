@@ -1,9 +1,10 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
 import type {
   IColorResolveProjectMap,
   IColorResolveProjectSnapshot,
+  IResolveProjectSnapshotAttempt,
 } from '../../protocol/schema.js';
 import {
   getProjectEditResolveProjectsRoot,
@@ -30,7 +31,7 @@ export interface ISnapshotProjectEditDrpInput {
   retention?: 'latest-only' | 'archive';
   mode?: 'manual' | 'auto';
   action?: string;
-  executor?: Pick<IColorExecutor, 'preflight' | 'saveDrpSnapshot'>;
+  executor?: Pick<IColorExecutor, 'saveDrpSnapshot'>;
 }
 
 export interface ISnapshotProjectEditDrpResult {
@@ -72,34 +73,25 @@ export async function snapshotProjectEditDrp(
   const context = await resolveEditSnapshotContext(input);
   const retention = normalizeEditDrpSnapshotRetention(input.retention);
   const executor = input.executor ?? new PythonResolveColorExecutor();
-  const preflight = await executor.preflight({
-    projectId: context.projectId ?? context.project.id,
-    resolveProjectName: context.resolveProjectName,
+  const snapshot = await runEditDrpAttempt(context, {
+    mode: input.mode ?? 'manual', retention, action: input.action ?? input.mode ?? 'manual',
+  }, async () => {
+    const saved = await executor.saveDrpSnapshot({
+      projectId: context.projectId ?? context.project.id,
+      resolveProjectName: context.resolveProjectName,
+      snapshotRoot: context.snapshotRoot,
+      snapshotLabel: input.snapshotLabel ?? 'manual',
+      latestFilename: resolveEditDrpLatestFilename(context.resolveProjectName),
+      retention,
+      action: input.action ?? input.mode ?? 'manual',
+    });
+    return {
+      ...normalizeRequiredEditDrpSnapshot(saved.snapshot, context.resolveProjectName),
+      retention,
+      mode: input.mode ?? 'manual',
+      ...(input.action ? { action: input.action } : {}),
+    };
   });
-  if (preflight.status === 'blocked') {
-    throw new ProjectEditDrpBlockedError(
-      preflight.blockingReasons.length > 0
-        ? preflight.blockingReasons
-        : ['Resolve host preflight blocked edit DRP snapshot。'],
-    );
-  }
-
-  const saved = await executor.saveDrpSnapshot({
-    projectId: context.projectId ?? context.project.id,
-    resolveProjectName: context.resolveProjectName,
-    snapshotRoot: context.snapshotRoot,
-    snapshotLabel: input.snapshotLabel ?? 'manual',
-    latestFilename: resolveEditDrpLatestFilename(context.resolveProjectName),
-    retention,
-    action: input.action ?? input.mode ?? 'manual',
-  });
-  const snapshot = {
-    ...normalizeRequiredEditDrpSnapshot(saved.snapshot, context.resolveProjectName),
-    retention,
-    ...(input.mode ? { mode: input.mode } : {}),
-    ...(input.action ? { action: input.action } : {}),
-  };
-  await recordEditDrpSnapshots(context.projectRoot, context.resolveProjectName, [snapshot]);
   return {
     projectId: context.projectId,
     editId: input.editId,
@@ -114,45 +106,48 @@ export async function registerExternalEditDrpSnapshot(
   input: IRegisterExternalEditDrpSnapshotInput,
 ): Promise<IRegisterExternalEditDrpSnapshotResult> {
   const context = await resolveEditSnapshotContext(input);
-  const trimmedDrpPath = input.drpPath?.trim() ?? '';
-  if (!trimmedDrpPath) {
-    throw new ProjectEditDrpBlockedError(['登记外部剪辑 DRP 需要填写 .drp 路径。']);
-  }
-  const sourcePath = resolve(trimmedDrpPath);
-  const sourceStats = await stat(sourcePath).catch(() => null);
-  const blockers = [
-    sourceStats && !sourceStats.isFile() ? `登记外部剪辑 DRP 不是文件：${sourcePath}` : '',
-    !sourceStats ? `登记外部剪辑 DRP 不存在或不可读：${sourcePath}` : '',
-    extname(sourcePath).toLowerCase() !== '.drp' ? `登记外部剪辑 DRP 必须是 .drp 文件：${sourcePath}` : '',
-  ].filter(Boolean);
-  if (blockers.length > 0) {
-    throw new ProjectEditDrpBlockedError(blockers);
-  }
+  const snapshot = await runEditDrpAttempt(context, {
+    mode: 'external', retention: 'archive', action: 'register_external_drp',
+  }, async () => {
+    const trimmedDrpPath = input.drpPath?.trim() ?? '';
+    if (!trimmedDrpPath) {
+      throw new ProjectEditDrpBlockedError(['登记外部剪辑 DRP 需要填写 .drp 路径。']);
+    }
+    const sourcePath = resolve(trimmedDrpPath);
+    const sourceStats = await stat(sourcePath).catch(() => null);
+    const blockers = [
+      sourceStats && !sourceStats.isFile() ? `登记外部剪辑 DRP 不是文件：${sourcePath}` : '',
+      !sourceStats ? `登记外部剪辑 DRP 不存在或不可读：${sourcePath}` : '',
+      extname(sourcePath).toLowerCase() !== '.drp' ? `登记外部剪辑 DRP 必须是 .drp 文件：${sourcePath}` : '',
+    ].filter(Boolean);
+    if (blockers.length > 0) {
+      throw new ProjectEditDrpBlockedError(blockers);
+    }
 
-  const createdAt = new Date().toISOString();
-  const snapshotsRoot = join(context.snapshotRoot, 'snapshots');
-  await mkdir(snapshotsRoot, { recursive: true });
-  const targetPath = join(
-    snapshotsRoot,
-    `${formatEditSnapshotTimestamp(createdAt)}-external-${hashString(sourcePath).slice(0, 8)}.drp`,
-  );
-  await copyFile(sourcePath, targetPath);
-  const latestPath = join(context.snapshotRoot, resolveEditDrpLatestFilename(context.resolveProjectName));
-  await mkdir(dirname(latestPath), { recursive: true });
-  if (resolve(targetPath) !== resolve(latestPath)) {
-    await copyFile(targetPath, latestPath);
-  }
-  const snapshot: IColorResolveProjectSnapshot = {
-    projectName: context.resolveProjectName,
-    snapshotPath: targetPath,
-    latestPath,
-    createdAt,
-    mode: 'external',
-    retention: 'archive',
-    action: 'register_external_drp',
-    detail: `登记外部剪辑 DRP：${sourcePath}`,
-  };
-  await recordEditDrpSnapshots(context.projectRoot, context.resolveProjectName, [snapshot]);
+    const createdAt = new Date().toISOString();
+    const snapshotsRoot = join(context.snapshotRoot, 'snapshots');
+    await mkdir(snapshotsRoot, { recursive: true });
+    const targetPath = join(
+      snapshotsRoot,
+      `${formatEditSnapshotTimestamp(createdAt)}-external-${hashString(sourcePath).slice(0, 8)}.drp`,
+    );
+    await copyFile(sourcePath, targetPath);
+    const latestPath = join(context.snapshotRoot, resolveEditDrpLatestFilename(context.resolveProjectName));
+    await mkdir(dirname(latestPath), { recursive: true });
+    if (resolve(targetPath) !== resolve(latestPath)) {
+      await copyFile(targetPath, latestPath);
+    }
+    return {
+      projectName: context.resolveProjectName,
+      snapshotPath: targetPath,
+      latestPath,
+      createdAt,
+      mode: 'external' as const,
+      retention: 'archive' as const,
+      action: 'register_external_drp',
+      detail: `登记外部剪辑 DRP：${sourcePath}`,
+    };
+  });
   return {
     projectId: context.projectId,
     editId: input.editId,
@@ -194,20 +189,57 @@ async function resolveEditSnapshotContext(input: {
   };
 }
 
-async function recordEditDrpSnapshots(
+const activeSnapshotProjects = new Set<string>();
+
+async function runEditDrpAttempt(
+  context: Awaited<ReturnType<typeof resolveEditSnapshotContext>>,
+  options: Pick<IResolveProjectSnapshotAttempt, 'mode' | 'retention' | 'action'>,
+  operation: () => Promise<IColorResolveProjectSnapshot>,
+): Promise<IColorResolveProjectSnapshot> {
+  const key = resolve(context.projectRoot);
+  if (activeSnapshotProjects.has(key)) {
+    throw new ProjectEditDrpBlockedError(['该工程已有 DRP 备份请求正在执行，请等待完成。']);
+  }
+  activeSnapshotProjects.add(key);
+  const attempt: IResolveProjectSnapshotAttempt = {
+    ...options, attemptId: randomUUID(), status: 'running', startedAt: new Date().toISOString(),
+  };
+  try {
+    await recordEditDrpAttempt(context.projectRoot, context.resolveProjectName, attempt);
+    const snapshot = await operation();
+    await recordEditDrpAttempt(context.projectRoot, context.resolveProjectName, {
+      ...attempt, status: 'succeeded', finishedAt: new Date().toISOString(),
+    }, snapshot);
+    return snapshot;
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
+      ? error.code : undefined;
+    const message = error instanceof Error ? error.message : String(error);
+    try {
+      await recordEditDrpAttempt(context.projectRoot, context.resolveProjectName, {
+        ...attempt, status: 'failed', finishedAt: new Date().toISOString(), error: { code, message },
+      });
+    } catch (recordError) {
+      throw new Error(`${message}；备份失败记录也无法保存：${recordError instanceof Error ? recordError.message : String(recordError)}`, { cause: error });
+    }
+    throw error;
+  } finally {
+    activeSnapshotProjects.delete(key);
+  }
+}
+
+async function recordEditDrpAttempt(
   projectRoot: string,
   resolveProjectName: string,
-  snapshots: IColorResolveProjectSnapshot[],
+  attempt: IResolveProjectSnapshotAttempt,
+  snapshot?: IColorResolveProjectSnapshot,
 ): Promise<IColorResolveProjectMap> {
-  const normalizedSnapshots = snapshots
+  const normalizedSnapshots = (snapshot ? [snapshot] : [])
     .map(snapshot => normalizeEditDrpSnapshot({
       ...snapshot,
       projectName: snapshot.projectName || resolveProjectName,
     }))
     .filter((snapshot): snapshot is IColorResolveProjectSnapshot => Boolean(snapshot));
-  if (normalizedSnapshots.length === 0) {
-    return loadEditResolveProjectMap(projectRoot);
-  }
   const existing = await loadEditResolveProjectMap(projectRoot);
   const safeProjectName = safeEditProjectKey(resolveProjectName);
   const previous = existing.projects[resolveProjectName];
@@ -223,8 +255,8 @@ async function recordEditDrpSnapshots(
   const orderedSnapshots = [...snapshotsByPath.values()]
     .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   const latestSnapshot = normalizedSnapshots[normalizedSnapshots.length - 1]
-    ?? orderedSnapshots[orderedSnapshots.length - 1]
-    ?? previous?.latestSnapshot;
+    ?? previous?.latestSnapshot
+    ?? orderedSnapshots[orderedSnapshots.length - 1];
   const updatedAt = new Date().toISOString();
   return saveEditResolveProjectMap(projectRoot, {
     ...existing,
@@ -232,9 +264,12 @@ async function recordEditDrpSnapshots(
     projects: {
       ...existing.projects,
       [resolveProjectName]: {
+        ...previous,
         projectName: resolveProjectName,
         safeProjectName,
         latestSnapshot,
+        latestSnapshotAttempt: attempt,
+        snapshotAttempts: [...(previous?.snapshotAttempts ?? []).filter(row => row.attemptId !== attempt.attemptId), attempt].slice(-50),
         snapshots: orderedSnapshots.slice(-200),
         updatedAt,
       },

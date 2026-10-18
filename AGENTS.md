@@ -110,6 +110,8 @@ Operational lesson that must not be forgotten:
 
 ## Mandatory Rules
 
+Resolve `[Edit]` DRP 保存及外部登记必须持久记录工程级最近尝试和最近 50 次尝试，失败与最后成功快照分开。自动备份失败不回滚时间线，但必须进入同一记录并在 `/edit` 折叠摘要及备份区持续显示；状态轮询不得清除操作错误，旧 running 记录不代表 live job。备份只打开已存在的匹配工程，不创建工程或切换时间线；验证 SaveProject、ExportProject 和 DRP 完整性后才原子更新 latest。
+
 Resolve `[Edit]` 素材重链是工程级维护：只核对现有工程身份，递归处理整个 Media Pool 中可由项目素材、voiceoverMedia、audioMedia 主/备选路径映射的文件，不依赖 editId、Edit Unit、当前/指定时间线或固定 bin。允许工程没有时间线；不调用 SetCurrentTimeline，不创建、改名或重建时间线。重链后只读校验工程内所有时间线的视频/音频引用，返回工程汇总及逐时间线摘要；未映射、缺失目标和非文件 item 分别报告，配音/音频保留独立配置与路径统计。保存现有工程，不自动导出 DRP，不推进 Flow Plan。
 
 片段导出、批量标色和从播放头续建仍属于时间线操作：按末尾稳定 [editId] 唯一匹配，显示名可不同；目标缺失或同 ID 多候选时在修改前阻塞，返回实际名称，续建不能补建缺失目标。
