@@ -31762,7 +31762,7 @@
   {
     "id": "C0103_a7r6_aerial_speech_s0-9",
     "assetId": "C0103_a7r6",
-    "type": "aerial",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 480,
     "sourceOutMs": 8960,
@@ -32704,7 +32704,7 @@
   {
     "id": "C4317_zve1_day5_drive_speech_s2-18",
     "assetId": "C4317_zve1_day5",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 2160,
     "sourceOutMs": 17680,
@@ -33764,7 +33764,7 @@
   {
     "id": "C4337_zve1_day5_aerial_speech_s0-8",
     "assetId": "C4337_zve1_day5",
-    "type": "aerial",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 560,
     "sourceOutMs": 7840,
@@ -48723,7 +48723,7 @@
   {
     "id": "C4588_zve1_day7_drive_speech_s2-21",
     "assetId": "C4588_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 2720,
     "sourceOutMs": 20800,
@@ -49903,7 +49903,7 @@
   {
     "id": "C4610_zve1_day7_drive_speech_s1-10",
     "assetId": "C4610_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 1280,
     "sourceOutMs": 10000,
@@ -52219,7 +52219,7 @@
   {
     "id": "C4661_zve1_day7_drive_speech_s1-7",
     "assetId": "C4661_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 1200,
     "sourceOutMs": 6880,
@@ -52254,7 +52254,7 @@
   {
     "id": "C4662_zve1_day7_drive_speech_s0-5",
     "assetId": "C4662_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 480,
     "sourceOutMs": 4400,
@@ -52364,7 +52364,7 @@
   {
     "id": "C4665_zve1_day7_drive_speech_s0-9",
     "assetId": "C4665_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 960,
     "sourceOutMs": 8480,
@@ -52559,7 +52559,7 @@
   {
     "id": "C4669_zve1_day7_drive_speech_s0-8",
     "assetId": "C4669_zve1_day7",
-    "type": "drive",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 560,
     "sourceOutMs": 7680,
@@ -53104,7 +53104,7 @@
   {
     "id": "C4683_zve1_day7_drive_speech_s1-16",
     "assetId": "C4683_zve1_day7",
-    "type": "drive",
+    "type": "talking-head",
     "semanticKind": "speech",
     "sourceInMs": 1440,
     "sourceOutMs": 15200,
@@ -53139,7 +53139,7 @@
   {
     "id": "C4683_zve1_day7_drive_visual_s12-57",
     "assetId": "C4683_zve1_day7",
-    "type": "drive",
+    "type": "talking-head",
     "semanticKind": "visual",
     "sourceInMs": 12304,
     "sourceOutMs": 56912,
@@ -53165,7 +53165,7 @@
   {
     "id": "C4683_zve1_day7_drive_speech_s27-39",
     "assetId": "C4683_zve1_day7",
-    "type": "drive",
+    "type": "talking-head",
     "semanticKind": "speech",
     "sourceInMs": 27600,
     "sourceOutMs": 38080,
@@ -53205,7 +53205,7 @@
   {
     "id": "C4683_zve1_day7_drive_speech_s47-58",
     "assetId": "C4683_zve1_day7",
-    "type": "drive",
+    "type": "talking-head",
     "semanticKind": "speech",
     "sourceInMs": 47200,
     "sourceOutMs": 57920,

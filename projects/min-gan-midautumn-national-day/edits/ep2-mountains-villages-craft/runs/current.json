@@ -1,0 +1,433 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "ep2-mountains-villages-craft",
+  "updatedAt": "2026-10-17T11:48:10.512Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-framework-ep2-mountains-villages-craft-20261017",
+      "editId": "ep2-mountains-villages-craft",
+      "flowPlanId": "edit-flow-ep2-mountains-villages-craft-vlog-20261017",
+      "flowPlanHash": "9b04789c5def4e75bee83489bbd66b122e42b39d341bab2fb675d990cb4f763d",
+      "stepId": "edit-framework-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-10-17T10:08:54.693Z",
+      "updatedAt": "2026-10-17T11:42:14.352Z",
+      "completedAt": "2026-10-17T10:14:59.968Z",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-clean-context-subagent",
+        "sourceHashes": {
+          "store/spans.json": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205"
+        },
+        "scope": {
+          "startAt": "2026-09-28T06:39:54.800Z",
+          "endAt": "2026-10-02T11:13:41.480Z",
+          "eventCount": 29,
+          "totalSpanCount": 989,
+          "supplementalSpanCount": 14,
+          "assetCount": 857
+        },
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "chronologyEventCount",
+            "maxPerShard": 150,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "shardCount": 1,
+        "packetPath": ".tmp/edit-flow/ep2-mountains-villages-craft/framework/manifest.json",
+        "subagentTask": "/root/framework_ep2"
+      },
+      "outputPaths": [
+        "edits/ep2-mountains-villages-craft/planning/edit-framework.md"
+      ],
+      "summary": {
+        "stage": "framework_confirmed",
+        "chapterCount": 11,
+        "frameworkRowCount": 145,
+        "candidateSpanCount": 989,
+        "coveredSpanCount": 989,
+        "supplementalPhotoCount": 14,
+        "zeroSpanAssetCount": 43,
+        "frameworkHash": "af829fde562bdf7a5cc70da0f0e2be4dbe5f84fa0aff76ccc98e62beeabfe01c",
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep2-mountains-villages-craft/framework/validation.json",
+        "nextStep": "material-recall-v1",
+        "reviewedFrameworkHash": "f3f5551af758c7386e82b28a14bafed7f162ae57620887f82243935d7a6af16b",
+        "classificationCorrectionPath": "edits/ep2-mountains-villages-craft/planning/material-classification-corrections.json"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-10-17T11:20:22.646Z",
+        "confirmedBy": "user",
+        "note": "用户明确表示“接受，推进武夷山到下一步”，确认本专题框架并授权进入素材召回。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-recall-ep2-mountains-villages-craft-20261017",
+      "editId": "ep2-mountains-villages-craft",
+      "flowPlanId": "edit-flow-ep2-mountains-villages-craft-vlog-20261017",
+      "flowPlanHash": "9b04789c5def4e75bee83489bbd66b122e42b39d341bab2fb675d990cb4f763d",
+      "stepId": "material-recall-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-10-17T11:20:22.646Z",
+      "updatedAt": "2026-10-17T11:42:14.352Z",
+      "completedAt": "2026-10-17T11:26:53.712Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-clean-context-subagent",
+        "sourceHashes": {
+          "store/spans.json": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "edits/ep2-mountains-villages-craft/planning/edit-framework.md": "73151876219e63fc1cab62a929d9a88b0b7f09dd3b36d321563918d5d17e2afb",
+          "edits/ep2-mountains-villages-craft/planning/flow-plan.json": "c89518125604a147c3bd292359c78f155cee44ff84ec7785757eb4907fd5e13e"
+        },
+        "scope": {
+          "startAt": "2026-09-28T06:39:54.800Z",
+          "endAt": "2026-10-02T11:13:41.480Z",
+          "candidateCount": 989,
+          "assetCount": 857,
+          "supplementalPhotoCount": 14
+        },
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "materialRefCount",
+            "maxPerShard": 2000,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "shardCount": 1,
+        "packetPath": ".tmp/edit-flow/ep2-mountains-villages-craft/recall/manifest.json",
+        "subagentTask": "/root/recall_ep2"
+      },
+      "outputPaths": [
+        "edits/ep2-mountains-villages-craft/script/material-slots.json"
+      ],
+      "summary": {
+        "stage": "material_recall_confirmed",
+        "candidateCount": 989,
+        "selectedCount": 986,
+        "excludedCount": 3,
+        "frameworkRowCount": 145,
+        "speechProtected": {
+          "available": 612,
+          "chosen": 612,
+          "dropped": 0,
+          "droppedSpanIds": []
+        },
+        "allSpeechBackedSelected": 612,
+        "mutedCount": 310,
+        "speedChangeCount": 22,
+        "overlongDriveCount": 3,
+        "aerialSpeechTypeRisks": [],
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep2-mountains-villages-craft/recall/validation.json",
+        "reviewPath": ".tmp/edit-flow/ep2-mountains-villages-craft/recall/review.md",
+        "decisionAuditPath": ".tmp/edit-flow/ep2-mountains-villages-craft/recall/decisions.json",
+        "outputHash": "cd6f3714d1e0c89d9b3cb6d8a1d50f64e424ea2eadf8c511ccadd165466f6656",
+        "nextStep": "timeline-generate-v1",
+        "nextStepNeeds": [],
+        "classificationCorrectionPath": "edits/ep2-mountains-villages-craft/planning/material-classification-corrections.json",
+        "classificationCorrectionCount": 13
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-10-17T11:42:14.352Z",
+        "confirmedBy": "user",
+        "note": "用户表示“推进到下一步”，确认当前召回及已列分类更正建议，授权生成武夷山—景德镇粗剪。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-ep2-mountains-villages-craft-20261017",
+      "editId": "ep2-mountains-villages-craft",
+      "flowPlanId": "edit-flow-ep2-mountains-villages-craft-vlog-20261017",
+      "flowPlanHash": "9b04789c5def4e75bee83489bbd66b122e42b39d341bab2fb675d990cb4f763d",
+      "stepId": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-10-17T11:42:43.414Z",
+      "updatedAt": "2026-10-17T11:42:56.857Z",
+      "completedAt": "2026-10-17T11:42:56.857Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "sourceHashes": {
+          "store/spans.json": "fcaff7d311ad175bfad8b4e2d708d2ea37ddb41b04de2cbd1cef9d120da2b1cc",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep2-mountains-villages-craft/script/material-slots.json": "cd6f3714d1e0c89d9b3cb6d8a1d50f64e424ea2eadf8c511ccadd165466f6656",
+          "edits/ep2-mountains-villages-craft/planning/edit-framework.md": "af829fde562bdf7a5cc70da0f0e2be4dbe5f84fa0aff76ccc98e62beeabfe01c"
+        },
+        "classificationCorrectionPath": "edits/ep2-mountains-villages-craft/planning/material-classification-corrections.json",
+        "projectUniqueId": "0b4c3d0c-7282-44c5-b4b3-f9221209c829",
+        "preflightPath": ".tmp/edit-flow/ep2-mountains-villages-craft/timeline-preflight-before.json"
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve 缺少粗剪所需素材；请先在 /edit 顶部运行“准备剪辑素材池”。",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-ep2-mountains-villages-craft-20261017-attempt-2",
+      "editId": "ep2-mountains-villages-craft",
+      "flowPlanId": "edit-flow-ep2-mountains-villages-craft-vlog-20261017",
+      "flowPlanHash": "9b04789c5def4e75bee83489bbd66b122e42b39d341bab2fb675d990cb4f763d",
+      "stepId": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-10-17T11:43:48.542Z",
+      "updatedAt": "2026-10-17T11:48:10.512Z",
+      "completedAt": "2026-10-17T11:48:10.512Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "sourceHashes": {
+          "store/spans.json": "fcaff7d311ad175bfad8b4e2d708d2ea37ddb41b04de2cbd1cef9d120da2b1cc",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep2-mountains-villages-craft/script/material-slots.json": "cd6f3714d1e0c89d9b3cb6d8a1d50f64e424ea2eadf8c511ccadd165466f6656",
+          "edits/ep2-mountains-villages-craft/planning/edit-framework.md": "af829fde562bdf7a5cc70da0f0e2be4dbe5f84fa0aff76ccc98e62beeabfe01c"
+        },
+        "classificationCorrectionPath": "edits/ep2-mountains-villages-craft/planning/material-classification-corrections.json",
+        "projectUniqueId": "0b4c3d0c-7282-44c5-b4b3-f9221209c829",
+        "preflightPath": ".tmp/edit-flow/ep2-mountains-villages-craft/timeline-preflight-before.json"
+      },
+      "outputPaths": [
+        ".tmp\\edit-flow\\ep2-mountains-villages-craft\\timeline\\current.srt",
+        ".tmp/edit-flow/ep2-mountains-villages-craft/timeline/current.json",
+        "edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp"
+      ],
+      "summary": {
+        "stage": "rough_cut_ready_for_manual_edit",
+        "resolveProjectName": "中秋国庆闽赣自驾 [Edit]",
+        "timelineName": "山、村落与手艺 [ep2-mountains-villages-craft]",
+        "timelineUniqueId": "2db4cd01-10f0-4057-a990-3fcaca267236",
+        "clipCount": 986,
+        "subtitleCueCount": 1329,
+        "subtitleSrtPath": ".tmp\\edit-flow\\ep2-mountains-villages-craft\\timeline\\current.srt",
+        "durationFrames": 299061,
+        "fps": 30,
+        "durationSeconds": 9968.7,
+        "existingTimelinesPreserved": [
+          {
+            "name": "闽南海岸 [ep1-minnan-coast]",
+            "id": "b42970c7-0fe9-4c2e-9642-66042513dec8"
+          },
+          {
+            "name": "东山岛 [ep1a-dongshan-island]",
+            "id": "d0801481-d962-48e0-a492-8ebd639e919b"
+          },
+          {
+            "name": "泉州 [ep1b-quanzhou]",
+            "id": "9031e4b3-109e-4f4b-a63d-0ca35b811169"
+          },
+          {
+            "name": "户外洗漱",
+            "id": "294d9f11-c484-42e4-b010-0d03e3c2d3d9"
+          }
+        ],
+        "sourceHashesVerified": true,
+        "resolveActualFrameTiming": {
+          "policyVersion": "resolve-actual-frame-v1",
+          "placementPasses": 1,
+          "plannedDurationMs": 9986300,
+          "actualDurationMs": 9968700,
+          "durationDeltaMs": -17600,
+          "subtitlePreloaded": false
+        },
+        "mutedClipCount": 310,
+        "audioMuteAppliedCount": 56,
+        "audibleClipColoring": {
+          "color": "Orange",
+          "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
+          "checked": 1234,
+          "colored": 1234,
+          "failed": 0
+        },
+        "visualClipColoring": {
+          "photo": {
+            "color": "Blue",
+            "itemScope": "video",
+            "checked": 254,
+            "colored": 254,
+            "failed": 0
+          },
+          "timelapse": {
+            "color": "Purple",
+            "itemScope": "video",
+            "checked": 2,
+            "colored": 2,
+            "failed": 0
+          },
+          "drive": {
+            "color": "Brown",
+            "itemScope": "video",
+            "checked": 144,
+            "colored": 144,
+            "failed": 0
+          },
+          "aerial": {
+            "color": "Teal",
+            "itemScope": "video",
+            "checked": 25,
+            "colored": 25,
+            "failed": 0
+          }
+        },
+        "visualClipGrouping": {
+          "photo": {
+            "groupName": "Kairos Photos",
+            "itemScope": "video",
+            "checked": 254,
+            "assigned": 254,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": false
+          },
+          "timelapse": {
+            "groupName": "Kairos Timelapse",
+            "itemScope": "video",
+            "checked": 2,
+            "assigned": 2,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": false
+          }
+        },
+        "speedAppliedCount": 0,
+        "speedIgnoredCount": 22,
+        "speedStrategy": "ignored",
+        "sourceRangeValidation": {
+          "checked": 732,
+          "passed": 732,
+          "failed": 0,
+          "strategy": "direct-native-append",
+          "maxToleranceFrames": 2
+        },
+        "stillDurationValidation": {
+          "checked": 254,
+          "passed": 254,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "timelinePlacementValidation": {
+          "checked": 986,
+          "passed": 986,
+          "failed": 0,
+          "strategy": "sequential-actual-end"
+        },
+        "timelineGapValidation": {
+          "checked": 986,
+          "gapCount": 0,
+          "overlapCount": 0,
+          "maxGapFrames": 0,
+          "firstGaps": [],
+          "passed": true
+        },
+        "subtitleImport": {
+          "enabled": false
+        },
+        "drpSnapshot": {
+          "projectName": "中秋国庆闽赣自驾 [Edit]",
+          "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+          "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+          "createdAt": "2026-10-17T11:48:02Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline.generate",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+        },
+        "nextStep": "body-intro-lock-v1",
+        "nextStepNeeds": [
+          "User manual rough cut; do not auto-lock or generate intro/narration"
+        ]
+      },
+      "review": {
+        "status": "pending",
+        "note": "本专题粗剪已生成且校验通过，等待用户集中精剪。原声SRT已生成但未导入，22段行车加速仍待人工；未锁片或启动片头/旁白。"
+      }
+    }
+  ]
+}

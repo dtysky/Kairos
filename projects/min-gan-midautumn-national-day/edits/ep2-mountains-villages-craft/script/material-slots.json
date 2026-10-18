@@ -1,0 +1,4419 @@
+{
+  "id": "material-recall-ep2-mountains-villages-craft-20261017",
+  "projectId": "min-gan-midautumn-national-day",
+  "generatedAt": "2026-10-17T11:26:09.171Z",
+  "status": "current",
+  "segments": [
+    {
+      "segmentId": "FW-01-01",
+      "slots": [
+        {
+          "id": "FW-01-01-materials",
+          "query": "车前高速、红色货车、绿色山坡与蓝天相继出现；车内谈到沙县、德化和沿途驾驶感受，随后接近国宝隧道与戴云山隧道。",
+          "requirement": "required",
+          "targetBundles": [
+            "高速上的山色与隧道"
+          ],
+          "chosenSpanIds": [
+            "C4215_zve1_day4_drive_speech_s0-22",
+            "C4216_zve1_day4_drive_speech_s1-12",
+            "C4217_zve1_day4_drive_speech_s0-10",
+            "C4218_zve1_day4_drive_speech_s4-16",
+            "C4219_zve1_day4_drive_speech_s1-7",
+            "C4219_zve1_day4_drive_visual_s4-11"
+          ],
+          "treatments": {
+            "C4219_zve1_day4_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-02",
+      "slots": [
+        {
+          "id": "FW-01-02-materials",
+          "query": "沿途山谷出现暖光与云雾，车内讨论远处的雾气；夜间在亮灯的武夷山服务区口述抵达、未来几天的游览及次晨看云海的打算。",
+          "requirement": "required",
+          "targetBundles": [
+            "傍晚山谷与服务区自述"
+          ],
+          "chosenSpanIds": [
+            "C4220_zve1_day4_drive_speech_s1-13",
+            "C4221_zve1_day4_drive_speech_s3-42",
+            "C4222_zve1_day4_talking-head_speech_s1-33"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-03",
+      "slots": [
+        {
+          "id": "FW-01-03-materials",
+          "query": "经过收费站和夜间道路，到达灯光装饰的餐馆楼梯附近，发现草丛里的猫；伴有导航与人物交谈。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间入城与寻找餐馆"
+          ],
+          "chosenSpanIds": [
+            "C4223_zve1_day4_drive_speech_s2-56",
+            "C4224_zve1_day4_drive_speech_s2-6",
+            "C4225_zve1_day4_broll_speech_s1-16",
+            "C4226_zve1_day4_broll_s0-1",
+            "C4226_zve1_day4_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-04",
+      "slots": [
+        {
+          "id": "FW-01-04-materials",
+          "query": "桌上是清蒸鱼与切片烧鹅，人物夹取、品尝并描述鲜嫩、腥味、茶香及辣味；鱼类来源与烧鹅制作方法来自现场口述和店家转述。",
+          "requirement": "required",
+          "targetBundles": [
+            "红眼睛与岚谷烧鹅"
+          ],
+          "chosenSpanIds": [
+            "C4229_zve1_day4_broll_speech_s0-17",
+            "C4230_zve1_day4_broll_speech_s0-35",
+            "C4233_zve1_day4_broll_speech_s0-23",
+            "C4234_zve1_day4_talking-head_speech_s0-41",
+            "C4234_zve1_day4_talking-head_speech_s40-50"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-05",
+      "slots": [
+        {
+          "id": "FW-01-05-materials",
+          "query": "端起芋头蔬菜汤、展示果汁罐并饮用，人物评价稠度、口感和这顿饭；餐后在夜间街边说天气凉爽，准备上山。",
+          "requirement": "required",
+          "targetBundles": [
+            "芋头汤、葡萄汁与餐后感受"
+          ],
+          "chosenSpanIds": [
+            "C4235_zve1_day4_broll_speech_s0-13",
+            "C4236_zve1_day4_broll_speech_s1-25",
+            "C4237_zve1_day4_broll_speech_s0-8",
+            "C4238_zve1_day4_talking-head_speech_s1-15",
+            "C4240_zve1_day4_talking-head_speech_s0-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-06",
+      "slots": [
+        {
+          "id": "FW-01-06-materials",
+          "query": "车灯照出彩色道路标线、狭窄林间弯道、路边房屋和车辆；车内谈山路宽度、会车与到达位置，伴随导航。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿风景道夜间上山"
+          ],
+          "chosenSpanIds": [
+            "C4241_zve1_day4_drive_speech_s1-16",
+            "C4242_zve1_day4_drive_speech_s0-48",
+            "C4242_zve1_day4_drive_visual_s38-114",
+            "C4242_zve1_day4_drive_speech_s56-89",
+            "C4242_zve1_day4_drive_speech_s117-141",
+            "C4243_zve1_day4_drive_speech_s1-71"
+          ],
+          "treatments": {
+            "C4242_zve1_day4_drive_visual_s38-114": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-07",
+      "slots": [
+        {
+          "id": "FW-01-07-materials",
+          "query": "人物躺在车内床垫上介绍前排大床方案、铺床感受与后续优化想法，期待第二天的日出和云海。",
+          "requirement": "required",
+          "targetBundles": [
+            "车内铺床与日出期待"
+          ],
+          "chosenSpanIds": [
+            "C4244_zve1_day4_broll_speech_s0-32"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-01",
+      "slots": [
+        {
+          "id": "FW-02-01-materials",
+          "query": "天色尚暗，车辆和人群已经到来，人物发现观音像旁才是观景位置；天边转出粉紫色，口述远处云层、山尖与太阳将升起的方向。",
+          "requirement": "required",
+          "targetBundles": [
+            "天未亮时找观景位置"
+          ],
+          "chosenSpanIds": [
+            "C4245_zve1_day5_broll_speech_s4-12",
+            "C4246_zve1_day5_broll_speech_s0-8",
+            "C4247_zve1_day5_drive_speech_s1-3",
+            "C4247_zve1_day5_drive_visual_s1-7",
+            "C4248_zve1_day5_broll_speech_s0-16"
+          ],
+          "treatments": {
+            "C4247_zve1_day5_drive_visual_s1-7": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-02",
+      "slots": [
+        {
+          "id": "FW-02-02-materials",
+          "query": "相机架在露台栏杆前，人物介绍在齐云峰过夜和眼前的粉色朝霞、流动云雾，望着山谷湖面等待日出。",
+          "requirement": "required",
+          "targetBundles": [
+            "朝霞中的观景台"
+          ],
+          "chosenSpanIds": [
+            "C4249_zve1_day5_broll_speech_s0-47",
+            "C4250_zve1_day5_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-03",
+      "slots": [
+        {
+          "id": "FW-02-03-materials",
+          "query": "高处视角展开层叠山丘、谷中湖面、梯状茶地、道路和村落建筑；日出前的淡紫光逐渐转暖，雾气在湖面与山间铺开，部分片段从石栏观景台附近起始。",
+          "requirement": "required",
+          "targetBundles": [
+            "清晨山谷航拍组"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260929054553_0401_D_drone_aerial_s0-13",
+            "DJI_20260929054617_0405_D_drone_aerial_s0-27",
+            "DJI_20260929054726_0418_D_drone_aerial_s0-27",
+            "DJI_20260929054822_0422_D_drone_aerial_s0-36",
+            "DJI_20260929055238_0444_D_drone_aerial_s0-27",
+            "DJI_20260929055313_0448_D_drone_aerial_s0-15",
+            "DJI_20260929055339_0452_D_drone_aerial_s0-19",
+            "DJI_20260929055439_0459_D_drone_aerial_s0-24",
+            "DJI_20260929055614_0466_D_drone_aerial_s0-14",
+            "DJI_20260929061343_0470_D_drone_aerial_s0-20",
+            "DJI_20260929061435_0474_D_drone_aerial_s0-14",
+            "DJI_20260929061453_0475_D_drone_aerial_s0-18",
+            "DJI_20260929061633_0485_D_drone_aerial_s0-6",
+            "DJI_20260929061649_0486_D_drone_aerial_s0-20",
+            "DJI_20260929061803_0491_D_drone_aerial_s0-17",
+            "DJI_20260929061833_0495_D_drone_aerial_s0-5",
+            "DJI_20260929061841_0496_D_drone_aerial_s0-29",
+            "DJI_20260929062538_0515_D_drone_aerial_s0-14",
+            "DJI_20260929062611_0522_D_drone_aerial_s0-25",
+            "DJI_20260929062654_0526_D_drone_aerial_s0-13",
+            "DJI_20260929062737_0533_D_drone_aerial_s0-28",
+            "DJI_20260929062807_0534_D_drone_aerial_s0-12",
+            "DJI_20260929062851_0544_D_drone_aerial_s0-9",
+            "DJI_20260929062913_0548_D_drone_aerial_s0-17",
+            "DJI_20260929062948_0552_D_drone_aerial_s0-12"
+          ],
+          "treatments": {
+            "DJI_20260929054553_0401_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20260929054617_0405_D_drone_aerial_s0-27": {
+              "audio": -100
+            },
+            "DJI_20260929054726_0418_D_drone_aerial_s0-27": {
+              "audio": -100
+            },
+            "DJI_20260929054822_0422_D_drone_aerial_s0-36": {
+              "audio": -100
+            },
+            "DJI_20260929055238_0444_D_drone_aerial_s0-27": {
+              "audio": -100
+            },
+            "DJI_20260929055313_0448_D_drone_aerial_s0-15": {
+              "audio": -100
+            },
+            "DJI_20260929055339_0452_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20260929055439_0459_D_drone_aerial_s0-24": {
+              "audio": -100
+            },
+            "DJI_20260929055614_0466_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20260929061343_0470_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20260929061435_0474_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20260929061453_0475_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20260929061633_0485_D_drone_aerial_s0-6": {
+              "audio": -100
+            },
+            "DJI_20260929061649_0486_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20260929061803_0491_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20260929061833_0495_D_drone_aerial_s0-5": {
+              "audio": -100
+            },
+            "DJI_20260929061841_0496_D_drone_aerial_s0-29": {
+              "audio": -100
+            },
+            "DJI_20260929062538_0515_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20260929062611_0522_D_drone_aerial_s0-25": {
+              "audio": -100
+            },
+            "DJI_20260929062654_0526_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20260929062737_0533_D_drone_aerial_s0-28": {
+              "audio": -100
+            },
+            "DJI_20260929062807_0534_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20260929062851_0544_D_drone_aerial_s0-9": {
+              "audio": -100
+            },
+            "DJI_20260929062913_0548_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20260929062948_0552_D_drone_aerial_s0-12": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-04",
+      "slots": [
+        {
+          "id": "FW-02-04-materials",
+          "query": "天空由紫色、粉色转向橙色，远山层次、谷中云雾和湖面反光随清晨天光变化。",
+          "requirement": "required",
+          "targetBundles": [
+            "朝霞与云海延时"
+          ],
+          "chosenSpanIds": [
+            "20260929_武夷山齐云峰日出云海1_timelapse_timelapse_s0-33",
+            "20260929_武夷山齐云峰日出云海2_timelapse_timelapse_s0-40"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-05",
+      "slots": [
+        {
+          "id": "FW-02-05-materials",
+          "query": "远山上方出现太阳，人物先说雾中的光还不够金，随后观察山谷雾气蔓延、逐渐被暖光照亮，并合影口述拍到日出云海。",
+          "requirement": "required",
+          "targetBundles": [
+            "太阳升起与云雾转金"
+          ],
+          "chosenSpanIds": [
+            "C4251_zve1_day5_broll_speech_s0-17",
+            "C4252_zve1_day5_broll_speech_s0-11",
+            "C4253_zve1_day5_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-06",
+      "slots": [
+        {
+          "id": "FW-02-06-materials",
+          "query": "人物总结看日出的体验，走过观音像、爬满藤蔓的建筑及摄影基地门口；围栏中有公鸡与孔雀，近看羽毛和饲料牌，院前停着车辆。",
+          "requirement": "required",
+          "targetBundles": [
+            "日出后的齐云殿与孔雀"
+          ],
+          "chosenSpanIds": [
+            "C4255_zve1_day5_talking-head_speech_s0-14",
+            "C4256_zve1_day5_broll_speech_s0-15",
+            "C4257_zve1_day5_broll_speech_s0-8",
+            "C4258_zve1_day5_broll_speech_s0-18",
+            "C4259_zve1_day5_broll_speech_s0-13",
+            "C4260_zve1_day5_broll_speech_s0-16",
+            "C4261_zve1_day5_broll_speech_s0-12",
+            "C4262_zve1_day5_broll_speech_s0-1",
+            "C4263_zve1_day5_broll_speech_s0-7",
+            "C4264_zve1_day5_broll_s0-7",
+            "C4265_zve1_day5_broll_s0-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-07",
+      "slots": [
+        {
+          "id": "FW-02-07-materials",
+          "query": "车辆沿林荫小路、彩色标线道路和茶地边行驶，晨光透过树木；人物谈空气、茶园和山形，随后回到三姑一带寻找早餐。",
+          "requirement": "required",
+          "targetBundles": [
+            "白天的下山林道"
+          ],
+          "chosenSpanIds": [
+            "C4266_zve1_day5_drive_s0-22",
+            "C4267_zve1_day5_drive_s0-6",
+            "C4268_zve1_day5_drive_visual_s0-3",
+            "C4268_zve1_day5_drive_speech_s0-26",
+            "C4269_zve1_day5_drive_speech_s0-2",
+            "C4269_zve1_day5_drive_speech_s5-11",
+            "C4269_zve1_day5_drive_visual_s8-26",
+            "C4270_zve1_day5_drive_speech_s2-34",
+            "C4271_zve1_day5_drive_speech_s0-16",
+            "C4272_zve1_day5_drive_speech_s1-15"
+          ],
+          "treatments": {
+            "C4266_zve1_day5_drive_s0-22": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4267_zve1_day5_drive_s0-6": {
+              "audio": -100
+            },
+            "C4268_zve1_day5_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C4269_zve1_day5_drive_visual_s8-26": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-08",
+      "slots": [
+        {
+          "id": "FW-02-08-materials",
+          "query": "街边茶店与小吃店招牌、餐台和餐具可见，现场点餐并与店员交谈；桌上摆出炖蛋、莲子羹、肉饼与大扁肉，人物口述对食材和做法的了解。",
+          "requirement": "required",
+          "targetBundles": [
+            "小吃店点餐与上桌"
+          ],
+          "chosenSpanIds": [
+            "C4273_zve1_day5_broll_s0-1",
+            "C4273_zve1_day5_broll_speech_s0-8",
+            "C4274_zve1_day5_broll_s0-1",
+            "C4274_zve1_day5_broll_speech_s0-10",
+            "C4275_zve1_day5_broll_speech_s0-10",
+            "C4276_zve1_day5_broll_speech_s0-23",
+            "C4277_zve1_day5_broll_speech_s0-10",
+            "C4278_zve1_day5_broll_s0-1",
+            "C4278_zve1_day5_broll_speech_s0-31"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-09",
+      "slots": [
+        {
+          "id": "FW-02-09-materials",
+          "query": "人物逐一吃炖蛋、莲子羹、肉饼和大扁肉，描述甜度、馅料与筋道口感，随后发现碗中还有牛肉牛杂并在店外总结用餐感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "早餐品尝与满足感"
+          ],
+          "chosenSpanIds": [
+            "C4279_zve1_day5_broll_speech_s0-2",
+            "C4279_zve1_day5_broll_speech_s7-12",
+            "C4279_zve1_day5_broll_speech_s15-51",
+            "C4279_zve1_day5_broll_speech_s53-65",
+            "C4280_zve1_day5_broll_speech_s0-12",
+            "C4281_zve1_day5_talking-head_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-10",
+      "slots": [
+        {
+          "id": "FW-02-10-materials",
+          "query": "照片记录朝霞到金色晨光中的层山、湖面、云雾、茶地与建筑，也有观景台人物、孔雀和寺院前车辆。",
+          "requirement": "required",
+          "targetBundles": [
+            "齐云峰清晨照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC08784_photos_photo",
+            "DJI_20260929054703_0409_D-HDR_photos_photo",
+            "DJI_20260929054800_0419_D-HDR_photos_photo",
+            "DSC09047_photos_photo",
+            "DSC00777_photos_photo",
+            "DJI_20260929055223_0441_D-HDR-2_photos_photo",
+            "DJI_20260929055332_0449_D-HDR_photos_photo",
+            "DSC09102_photos_photo",
+            "DJI_20260929055404_0453_D-HDR_photos_photo",
+            "DJI_20260929055536_0463_D-HDR_photos_photo",
+            "DSC02113_photos_photo",
+            "DSC09185_photos_photo",
+            "DSC01103_photos_photo",
+            "DJI_20260929061625_0482_D-HDR_photos_photo",
+            "DJI_20260929061827_0492_D-HDR_photos_photo",
+            "DSC01323_photos_photo",
+            "DSC09415_photos_photo",
+            "DJI_20260929062039_0512_D-HDR_photos_photo",
+            "DSC02128_photos_photo",
+            "DJI_20260929062558_0516_D-HDR_photos_photo",
+            "DJI_20260929062644_0523_D-HDR_photos_photo",
+            "DJI_20260929062710_0527_D-HDR_photos_photo",
+            "DJI_20260929062842_0541_D-HDR_photos_photo",
+            "DJI_20260929062904_0545_D-HDR_photos_photo",
+            "DSC09564_photos_photo",
+            "DSC01574_photos_photo",
+            "DSC02130-2_photos_photo",
+            "DSC01588_photos_photo",
+            "DSC01593_photos_photo",
+            "DSC02131_photos_photo",
+            "DSC02132_photos_photo"
+          ],
+          "treatments": {
+            "DSC08784_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929054703_0409_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929054800_0419_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09047_photos_photo": {
+              "audio": -100
+            },
+            "DSC00777_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929055223_0441_D-HDR-2_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929055332_0449_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09102_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929055404_0453_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929055536_0463_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC02113_photos_photo": {
+              "audio": -100
+            },
+            "DSC09185_photos_photo": {
+              "audio": -100
+            },
+            "DSC01103_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929061625_0482_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929061827_0492_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC01323_photos_photo": {
+              "audio": -100
+            },
+            "DSC09415_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062039_0512_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC02128_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062558_0516_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062644_0523_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062710_0527_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062842_0541_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260929062904_0545_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09564_photos_photo": {
+              "audio": -100
+            },
+            "DSC01574_photos_photo": {
+              "audio": -100
+            },
+            "DSC02130-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01588_photos_photo": {
+              "audio": -100
+            },
+            "DSC01593_photos_photo": {
+              "audio": -100
+            },
+            "DSC02131_photos_photo": {
+              "audio": -100
+            },
+            "DSC02132_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-11",
+      "slots": [
+        {
+          "id": "FW-02-11-materials",
+          "query": "打开车尾，人物展示水箱、恒温慢煮棒、抽水泵和管线，演示摆放与连接，并口述成本、用途和自己的车载方案。",
+          "requirement": "required",
+          "targetBundles": [
+            "车边洗漱装置的布置"
+          ],
+          "chosenSpanIds": [
+            "C4282_zve1_day5_broll_speech_s0-26",
+            "C4282_zve1_day5_broll_speech_s34-43",
+            "C4282_zve1_day5_broll_speech_s47-50",
+            "C4282_zve1_day5_broll_speech_s55-59",
+            "C4282_zve1_day5_broll_speech_s66-118"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-12",
+      "slots": [
+        {
+          "id": "FW-02-12-materials",
+          "query": "水加热后开始试抽水，起初水流较小，调整水管位置后水流改善；人物在车旁展示出水效果并说明使用感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "出水测试与水管调整"
+          ],
+          "chosenSpanIds": [
+            "C4283_zve1_day5_broll_speech_s0-51",
+            "C4283_zve1_day5_broll_speech_s61-79",
+            "C4284_zve1_day5_broll_s0-1",
+            "C4284_zve1_day5_broll_speech_s0-12",
+            "C4285_zve1_day5_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-01",
+      "slots": [
+        {
+          "id": "FW-03-01-materials",
+          "query": "人物在景区入口谈天气炎热，经过有国旗的候车长廊，登上乘客较少的接驳车；抵达天游峰步道口后比较阳光下与树荫里的体感。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入景区与乘接驳车"
+          ],
+          "chosenSpanIds": [
+            "C4286_zve1_day5_broll_speech_s1-25",
+            "C4287_zve1_day5_broll_speech_s1-9",
+            "C4288_zve1_day5_broll_speech_s0-5",
+            "C4289_zve1_day5_broll_speech_s0-5",
+            "C4290_zve1_day5_drive_speech_s0-12",
+            "C4291_zve1_day5_drive_speech_s1-6",
+            "C4292_zve1_day5_drive_speech_s1-7",
+            "C4293_zve1_day5_broll_speech_s2-12",
+            "C4294_zve1_day5_talking-head_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-02",
+      "slots": [
+        {
+          "id": "FW-03-02-materials",
+          "query": "竹叶间露出清澈溪水，人物开始沿石路步行，观察红色果实与蕨类；先猜果子是桑葚，随后读树牌说是野鸦椿，又谈另一种彩色果实的辨识与用途。",
+          "requirement": "required",
+          "targetBundles": [
+            "溪边起步与辨认果子"
+          ],
+          "chosenSpanIds": [
+            "C4295_zve1_day5_broll_speech_s0-6",
+            "C4296_zve1_day5_broll_speech_s1-10",
+            "C4297_zve1_day5_broll_speech_s0-30",
+            "C4298_zve1_day5_broll_speech_s0-23",
+            "C4299_zve1_day5_broll_speech_s0-11",
+            "C4300_zve1_day5_broll_s0-1",
+            "C4300_zve1_day5_broll_speech_s0-15",
+            "C4301_zve1_day5_broll_s0-1",
+            "C4301_zve1_day5_broll_speech_s0-24"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-03",
+      "slots": [
+        {
+          "id": "FW-03-03-materials",
+          "query": "河湾、浅水、沙石与树影呈现不同颜色，画面可见水中鱼群和细碎反光；人物在桥边交谈，猜水中的鱼与前晚吃的鱼有关，并描述波光。",
+          "requirement": "required",
+          "targetBundles": [
+            "九曲溪的鱼与水色"
+          ],
+          "chosenSpanIds": [
+            "C4302_zve1_day5_broll_speech_s0-12",
+            "C0100_a7r6_broll_speech_s0-6",
+            "C4303_zve1_day5_broll_speech_s1-21",
+            "C0102_a7r6_broll_speech_s0-15",
+            "C4304_zve1_day5_broll_speech_s0-7",
+            "C4305_zve1_day5_broll_speech_s2-6",
+            "C4306_zve1_day5_broll_speech_s0-27"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-04",
+      "slots": [
+        {
+          "id": "FW-03-04-materials",
+          "query": "路边可见树枝、地面昆虫、成堆竹根和树旁一株红色石蒜；人物观察、追拍并讨论这些植物和昆虫。",
+          "requirement": "required",
+          "targetBundles": [
+            "杉叶、昆虫与一株石蒜"
+          ],
+          "chosenSpanIds": [
+            "C4307_zve1_day5_broll_speech_s0-9",
+            "C0104_a7r6_broll_s0-1",
+            "C0104_a7r6_broll_speech_s0-10",
+            "C4308_zve1_day5_broll_s0-1",
+            "C4308_zve1_day5_broll_speech_s0-15",
+            "C4309_zve1_day5_broll_s0-1",
+            "C4310_zve1_day5_broll_s0-1",
+            "C4310_zve1_day5_broll_speech_s0-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-05",
+      "slots": [
+        {
+          "id": "FW-03-05-materials",
+          "query": "隔着竹林观看一个人划竹筏，向上看马尾松与伸展的樟树枝叶；人物读“十大功劳”等植物牌，讲自己的理解，并看到爱情路线指示牌。",
+          "requirement": "required",
+          "targetBundles": [
+            "竹筏、古树与植物牌"
+          ],
+          "chosenSpanIds": [
+            "C0105_a7r6_broll_speech_s0-5",
+            "C0106_a7r6_broll_speech_s1-10",
+            "C4311_zve1_day5_broll_s0-1",
+            "C4311_zve1_day5_broll_speech_s0-12",
+            "C4312_zve1_day5_broll_s0-1",
+            "C4312_zve1_day5_broll_speech_s0-13",
+            "C4313_zve1_day5_broll_s0-1",
+            "C4313_zve1_day5_broll_speech_s0-9",
+            "C4314_zve1_day5_broll_s0-1",
+            "C4314_zve1_day5_broll_speech_s0-9",
+            "C4315_zve1_day5_broll_speech_s1-11",
+            "C4316_zve1_day5_broll_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-06",
+      "slots": [
+        {
+          "id": "FW-03-06-materials",
+          "query": "石阶与岩洞通道上下起伏，沿途可见题刻、云窝和钓矶等说明牌；人物先对地名和洞府作联想，随后依据牌文重新理解休憩、垂钓与精舍的故事。",
+          "requirement": "required",
+          "targetBundles": [
+            "云窝石道与读牌停步"
+          ],
+          "chosenSpanIds": [
+            "C4317_zve1_day5_drive_speech_s2-18",
+            "C4318_zve1_day5_broll_speech_s1-25",
+            "C4319_zve1_day5_broll_speech_s1-39",
+            "C4321_zve1_day5_broll_speech_s0-10",
+            "C4322_zve1_day5_broll_speech_s1-14",
+            "C4323_zve1_day5_broll_speech_s0-15",
+            "C4324_zve1_day5_broll_speech_s0-9",
+            "C4325_zve1_day5_broll_speech_s0-9",
+            "C4326_zve1_day5_broll_speech_s2-32"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-07",
+      "slots": [
+        {
+          "id": "FW-03-07-materials",
+          "query": "人物再次确认登峰台阶的方向，走入凉爽的狭窄岩隙和茶洞，拿出饼干与饮料作为午餐，休息后谈剩余台阶。",
+          "requirement": "required",
+          "targetBundles": [
+            "真正上坡与茶洞歇脚"
+          ],
+          "chosenSpanIds": [
+            "C4327_zve1_day5_broll_speech_s1-22",
+            "C4328_zve1_day5_broll_speech_s0-11",
+            "C4329_zve1_day5_broll_speech_s1-14",
+            "C4330_zve1_day5_broll_speech_s0-6",
+            "C4330_zve1_day5_broll_speech_s13-22",
+            "C4331_zve1_day5_broll_speech_s1-3",
+            "C4332_zve1_day5_broll_speech_s1-16",
+            "C4333_zve1_day5_broll_speech_s0-10",
+            "C4334_zve1_day5_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-08",
+      "slots": [
+        {
+          "id": "FW-03-08-materials",
+          "query": "石阶沿岩壁向上延伸，人物背着摄影器材走到半山亭，喘息并谈负重和体力。",
+          "requirement": "required",
+          "targetBundles": [
+            "陡阶与半山亭"
+          ],
+          "chosenSpanIds": [
+            "C4335_zve1_day5_broll_s0-1",
+            "C4335_zve1_day5_broll_speech_s0-15",
+            "C4336_zve1_day5_broll_speech_s0-30"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-09",
+      "slots": [
+        {
+          "id": "FW-03-09-materials",
+          "query": "两段现有航拍类型素材分别俯看浅水鱼影、沙石岸线，以及高处俯瞰的九曲溪河湾和竹筏；现场语音谈鱼鳞反光和河谷景色。",
+          "requirement": "required",
+          "targetBundles": [
+            "溪水与河湾的高位视角组"
+          ],
+          "chosenSpanIds": [
+            "C0103_a7r6_aerial_speech_s0-9",
+            "C4337_zve1_day5_aerial_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-10",
+      "slots": [
+        {
+          "id": "FW-03-10-materials",
+          "query": "亭中人物转身、开玩笑，远处岩壁上可见门楼与陡峭阶梯；随后拾起木棒继续上行，在起风的山路上呼喊和回应。",
+          "requirement": "required",
+          "targetBundles": [
+            "亭中互动与绝壁阶梯"
+          ],
+          "chosenSpanIds": [
+            "C4338_zve1_day5_broll_speech_s1-10",
+            "C0107_a7r6_broll_speech_s1-22",
+            "C4339_zve1_day5_broll_speech_s0-10",
+            "C4340_zve1_day5_broll_speech_s1-38",
+            "C4341_zve1_day5_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-11",
+      "slots": [
+        {
+          "id": "FW-03-11-materials",
+          "query": "高处望见九曲溪的大拐弯、竹筏和层叠山壁；人物口述对河流、山洞的了解及后天漂流计划，随后注意到降雨。",
+          "requirement": "required",
+          "targetBundles": [
+            "河湾全景与雨的到来"
+          ],
+          "chosenSpanIds": [
+            "C4342_zve1_day5_broll_speech_s0-7",
+            "C4343_zve1_day5_broll_speech_s1-41",
+            "C4344_zve1_day5_broll_speech_s0-4"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-12",
+      "slots": [
+        {
+          "id": "FW-03-12-materials",
+          "query": "人物衣服被雨淋湿，在山顶讲刚才冒雨上来的经历、相互问候并用树叶开玩笑；观景台俯瞰整片河湾，随后走到灯笼与牌匾附近，谈雨后又出太阳。",
+          "requirement": "required",
+          "targetBundles": [
+            "冒雨登顶后的合影与回望"
+          ],
+          "chosenSpanIds": [
+            "C4345_zve1_day5_talking-head_s0-1",
+            "C4346_zve1_day5_talking-head_speech_s0-9",
+            "C4347_zve1_day5_talking-head_speech_s0-15",
+            "C4348_zve1_day5_broll_speech_s0-12",
+            "C4349_zve1_day5_broll_speech_s0-15",
+            "C4350_zve1_day5_broll_speech_s0-28"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-13",
+      "slots": [
+        {
+          "id": "FW-03-13-materials",
+          "query": "下山路仍有向上的石阶，经过石牌坊、观鸟提示和入口设施；最后是阳光照入的林间石路、竹林与路边长椅。",
+          "requirement": "required",
+          "targetBundles": [
+            "林间下山与离开步道"
+          ],
+          "chosenSpanIds": [
+            "C4351_zve1_day5_broll_s0-1",
+            "C4351_zve1_day5_broll_speech_s0-7",
+            "C4352_zve1_day5_broll_s0-5",
+            "C4353_zve1_day5_broll_speech_s0-4",
+            "C4354_zve1_day5_broll_speech_s0-2",
+            "C4355_zve1_day5_broll_s0-7",
+            "C4356_zve1_day5_broll_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-14",
+      "slots": [
+        {
+          "id": "FW-03-14-materials",
+          "query": "照片呈现九曲溪的清水、鱼影、竹林、树冠、果实与石蒜，以及竹筏上独自撑篙的人。",
+          "requirement": "required",
+          "targetBundles": [
+            "溪边植物与水色照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01595_photos_photo",
+            "DSC01599_photos_photo",
+            "DSC01605_photos_photo",
+            "DSC01609_photos_photo",
+            "DSC01622_photos_photo",
+            "DSC01625_photos_photo",
+            "DSC01627_photos_photo",
+            "DSC01629_photos_photo",
+            "DSC01633_photos_photo",
+            "DSC01635_photos_photo",
+            "DSC01636_photos_photo",
+            "DSC01637_photos_photo",
+            "DSC01640_photos_photo",
+            "DSC01641_photos_photo",
+            "DSC01642_photos_photo"
+          ],
+          "treatments": {
+            "DSC01595_photos_photo": {
+              "audio": -100
+            },
+            "DSC01599_photos_photo": {
+              "audio": -100
+            },
+            "DSC01605_photos_photo": {
+              "audio": -100
+            },
+            "DSC01609_photos_photo": {
+              "audio": -100
+            },
+            "DSC01622_photos_photo": {
+              "audio": -100
+            },
+            "DSC01625_photos_photo": {
+              "audio": -100
+            },
+            "DSC01627_photos_photo": {
+              "audio": -100
+            },
+            "DSC01629_photos_photo": {
+              "audio": -100
+            },
+            "DSC01633_photos_photo": {
+              "audio": -100
+            },
+            "DSC01635_photos_photo": {
+              "audio": -100
+            },
+            "DSC01636_photos_photo": {
+              "audio": -100
+            },
+            "DSC01637_photos_photo": {
+              "audio": -100
+            },
+            "DSC01640_photos_photo": {
+              "audio": -100
+            },
+            "DSC01641_photos_photo": {
+              "audio": -100
+            },
+            "DSC01642_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-15",
+      "slots": [
+        {
+          "id": "FW-03-15-materials",
+          "query": "照片记录岩洞通路、题刻与休息处，随后是半山亭人物、绝壁阶梯和从高处看到的九曲溪弯道。",
+          "requirement": "required",
+          "targetBundles": [
+            "岩洞、亭台与登山照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01645_photos_photo",
+            "DSC01652_photos_photo",
+            "DSC01655_photos_photo",
+            "DSC01657_photos_photo",
+            "DSC01659_photos_photo",
+            "DSC01660_photos_photo",
+            "DSC01662_photos_photo",
+            "DSC01664_photos_photo",
+            "DSC01666_photos_photo",
+            "DSC02146_photos_photo",
+            "DSC01667_photos_photo",
+            "DSC01670_photos_photo",
+            "DSC02151-2_photos_photo",
+            "DSC01673_photos_photo",
+            "DSC01674_photos_photo",
+            "DSC02160_photos_photo"
+          ],
+          "treatments": {
+            "DSC01645_photos_photo": {
+              "audio": -100
+            },
+            "DSC01652_photos_photo": {
+              "audio": -100
+            },
+            "DSC01655_photos_photo": {
+              "audio": -100
+            },
+            "DSC01657_photos_photo": {
+              "audio": -100
+            },
+            "DSC01659_photos_photo": {
+              "audio": -100
+            },
+            "DSC01660_photos_photo": {
+              "audio": -100
+            },
+            "DSC01662_photos_photo": {
+              "audio": -100
+            },
+            "DSC01664_photos_photo": {
+              "audio": -100
+            },
+            "DSC01666_photos_photo": {
+              "audio": -100
+            },
+            "DSC02146_photos_photo": {
+              "audio": -100
+            },
+            "DSC01667_photos_photo": {
+              "audio": -100
+            },
+            "DSC01670_photos_photo": {
+              "audio": -100
+            },
+            "DSC02151-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01673_photos_photo": {
+              "audio": -100
+            },
+            "DSC01674_photos_photo": {
+              "audio": -100
+            },
+            "DSC02160_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-16",
+      "slots": [
+        {
+          "id": "FW-03-16-materials",
+          "query": "山顶平台人物与河湾全景，红灯笼石阶、森林小路、牌坊、林下小动物和下山游人出现在照片中。",
+          "requirement": "required",
+          "targetBundles": [
+            "山顶与下山照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01682_photos_photo",
+            "DSC01687_photos_photo",
+            "DSC01689_photos_photo",
+            "DSC01690_photos_photo",
+            "DSC01691_photos_photo",
+            "DSC01692_photos_photo",
+            "DSC02167_photos_photo",
+            "DSC01694_photos_photo",
+            "DSC01695_photos_photo",
+            "DSC01697_photos_photo",
+            "DSC01700_photos_photo"
+          ],
+          "treatments": {
+            "DSC01682_photos_photo": {
+              "audio": -100
+            },
+            "DSC01687_photos_photo": {
+              "audio": -100
+            },
+            "DSC01689_photos_photo": {
+              "audio": -100
+            },
+            "DSC01690_photos_photo": {
+              "audio": -100
+            },
+            "DSC01691_photos_photo": {
+              "audio": -100
+            },
+            "DSC01692_photos_photo": {
+              "audio": -100
+            },
+            "DSC02167_photos_photo": {
+              "audio": -100
+            },
+            "DSC01694_photos_photo": {
+              "audio": -100
+            },
+            "DSC01695_photos_photo": {
+              "audio": -100
+            },
+            "DSC01697_photos_photo": {
+              "audio": -100
+            },
+            "DSC01700_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-01",
+      "slots": [
+        {
+          "id": "FW-04-01-materials",
+          "query": "傍晚车辆驶出停车场，停在坡道附近；人物走到茶主题餐馆，查看店外陈列并选择座位。",
+          "requirement": "required",
+          "targetBundles": [
+            "从停车场到茶宴餐馆"
+          ],
+          "chosenSpanIds": [
+            "C4357_zve1_day5_drive_speech_s5-15",
+            "C4357_zve1_day5_drive_visual_s15-40",
+            "C4357_zve1_day5_drive_speech_s24-30",
+            "C4357_zve1_day5_drive_speech_s38-46",
+            "C4358_zve1_day5_broll_speech_s0-5",
+            "C4360_zve1_day5_broll_speech_s0-10",
+            "C4361_zve1_day5_broll_speech_s0-10"
+          ],
+          "treatments": {
+            "C4357_zve1_day5_drive_visual_s15-40": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-02",
+      "slots": [
+        {
+          "id": "FW-04-02-materials",
+          "query": "人物举着大红袍冰淇淋，桌上出现菌菇和茶排骨；品尝时反复说辣，并用冰淇淋缓和，口述对茶香与口感的评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "茶冰淇淋、菌菇与排骨"
+          ],
+          "chosenSpanIds": [
+            "C4362_zve1_day5_talking-head_speech_s0-26",
+            "C4363_zve1_day5_broll_speech_s0-22",
+            "C4364_zve1_day5_broll_speech_s0-76"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-03",
+      "slots": [
+        {
+          "id": "FW-04-03-materials",
+          "query": "桌上先后出现彩色汤圆、鱼锅和一壶茶，人物逐一品尝并形容茶香、酸咸味与苦味；关于菜品难做及下架的说法来自店家转述。",
+          "requirement": "required",
+          "targetBundles": [
+            "茶汤圆、茶鱼与红茶"
+          ],
+          "chosenSpanIds": [
+            "C4365_zve1_day5_broll_speech_s0-13",
+            "C4366_zve1_day5_broll_speech_s2-29",
+            "C4368_zve1_day5_broll_speech_s0-16",
+            "C4369_zve1_day5_broll_speech_s1-71",
+            "C4372_zve1_day5_broll_speech_s0-8",
+            "C4373_zve1_day5_broll_speech_s8-11",
+            "C4373_zve1_day5_broll_speech_s15-25"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-04",
+      "slots": [
+        {
+          "id": "FW-04-04-materials",
+          "query": "人物在夜间街边评价刚才一餐、店家服务与菜品，随后对自己停在路边坡道上的车辆位置作说明。",
+          "requirement": "required",
+          "targetBundles": [
+            "餐后街边总结与停车处"
+          ],
+          "chosenSpanIds": [
+            "C4374_zve1_day5_talking-head_speech_s0-1",
+            "C4375_zve1_day5_talking-head_speech_s1-35",
+            "C4376_zve1_day5_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-05",
+      "slots": [
+        {
+          "id": "FW-04-05-materials",
+          "query": "夜市灯光、摊位和行人展开，人物询问八月瓜价格、观看猫爪菇干货，并与摊主交流。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜市里的八月瓜与干货"
+          ],
+          "chosenSpanIds": [
+            "C4377_zve1_day5_broll_speech_s1-28",
+            "C4378_zve1_day5_broll_speech_s0-18",
+            "C4379_zve1_day5_broll_speech_s0-10",
+            "C4380_zve1_day5_broll_speech_s4-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-06",
+      "slots": [
+        {
+          "id": "FW-04-06-materials",
+          "query": "两张照片记录树旁和街边建筑前停放的黄色车辆。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间车辆照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02181_photos_photo",
+            "DSC02185_photos_photo"
+          ],
+          "treatments": {
+            "DSC02181_photos_photo": {
+              "audio": -100
+            },
+            "DSC02185_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-07",
+      "slots": [
+        {
+          "id": "FW-04-07-materials",
+          "query": "两只猫在院落垫子与石地上卧着，人物猜它们是否在打架；室内桌上摆有茶具，随后发现墙上的昆虫并惊呼。",
+          "requirement": "required",
+          "targetBundles": [
+            "院落猫与房内茶具、昆虫"
+          ],
+          "chosenSpanIds": [
+            "C0108_a7r6_broll_speech_s0-1",
+            "C0109_a7r6_broll_speech_s1-12",
+            "C4382_zve1_day5_broll_speech_s0-10",
+            "C0110_a7r6_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-08",
+      "slots": [
+        {
+          "id": "FW-04-08-materials",
+          "query": "照片中一只橘白猫和一只狸花猫坐在院落石地与木柱旁。",
+          "requirement": "required",
+          "targetBundles": [
+            "住处猫咪照片"
+          ],
+          "chosenSpanIds": [
+            "DSC01703_photos_photo"
+          ],
+          "treatments": {
+            "DSC01703_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-09",
+      "slots": [
+        {
+          "id": "FW-04-09-materials",
+          "query": "一张静帧中鱼浮在浅水岸边，另一张是户外遮阳伞、旗帜背景中的人物自拍；登记时间相同，画面无法证明是该时刻新发生的活动。",
+          "requirement": "required",
+          "targetBundles": [
+            "当日补充静帧：水边鱼与户外人物"
+          ],
+          "chosenSpanIds": [
+            "Still_2026-09-29_211141_1.2.1_photos_photo",
+            "Still_2026-09-29_211141_1.3.1_photos_photo"
+          ],
+          "treatments": {
+            "Still_2026-09-29_211141_1.2.1_photos_photo": {
+              "audio": -100
+            },
+            "Still_2026-09-29_211141_1.3.1_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-01",
+      "slots": [
+        {
+          "id": "FW-05-01-materials",
+          "query": "车辆沿树木和路灯夹着的道路行驶，到达简朴的停车场；人物交代今天去下梅和大红袍一带看茶文化的计划。",
+          "requirement": "required",
+          "targetBundles": [
+            "前往下梅与停车"
+          ],
+          "chosenSpanIds": [
+            "C4384_zve1_day6_drive_speech_s0-19",
+            "C4385_zve1_day6_drive_visual_s7-10",
+            "C4385_zve1_day6_drive_visual_s18-35",
+            "C4385_zve1_day6_drive_speech_s50-53"
+          ],
+          "treatments": {
+            "C4385_zve1_day6_drive_visual_s7-10": {
+              "audio": -100
+            },
+            "C4385_zve1_day6_drive_visual_s18-35": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-02",
+      "slots": [
+        {
+          "id": "FW-05-02-materials",
+          "query": "入口碑、游客中心、陶器店和传统建筑可见，人物读茶路说明并讲自己的理解；路过屋内机器和装袋活动，走到挂旗的桥边。",
+          "requirement": "required",
+          "targetBundles": [
+            "茶路碑与入村街巷"
+          ],
+          "chosenSpanIds": [
+            "C4386_zve1_day6_broll_speech_s2-42",
+            "C4387_zve1_day6_broll_speech_s0-11",
+            "C4388_zve1_day6_broll_speech_s0-11",
+            "C4389_zve1_day6_broll_speech_s0-14",
+            "C4390_zve1_day6_broll_speech_s0-22",
+            "C4390_zve1_day6_broll_speech_s28-36"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-03",
+      "slots": [
+        {
+          "id": "FW-05-03-materials",
+          "query": "沿溪木廊、民居、瓜果与桥相继出现，人物口述当溪与梅溪、运茶竹筏的故事；水边竹筏和绳索旁出现小鸟，引来拍摄与惊呼。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿溪走到祖师桥与翠鸟"
+          ],
+          "chosenSpanIds": [
+            "C4391_zve1_day6_broll_speech_s0-9",
+            "C4393_zve1_day6_broll_speech_s0-10",
+            "C4394_zve1_day6_broll_speech_s0-10",
+            "C4395_zve1_day6_broll_speech_s1-50",
+            "C0111_a7r6_broll_s0-1",
+            "C0111_a7r6_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-04",
+      "slots": [
+        {
+          "id": "FW-05-04-materials",
+          "query": "庙内可见供像、钟和香炉，烟气向屋顶开口升起，阳光照入；人物谈对庙中信仰的理解，随后观看清澈水渠。",
+          "requirement": "required",
+          "targetBundles": [
+            "庙内烟光与清澈水渠"
+          ],
+          "chosenSpanIds": [
+            "C4396_zve1_day6_broll_speech_s2-49",
+            "C4398_zve1_day6_broll_speech_s0-10",
+            "C4399_zve1_day6_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-05",
+      "slots": [
+        {
+          "id": "FW-05-05-materials",
+          "query": "石门雕刻、深色木柱、匾额与人物展板可见；人物介绍所了解的邹氏经商、家训和后代经历，同时边看边读。",
+          "requirement": "required",
+          "targetBundles": [
+            "邹氏家祠的门雕与厅堂"
+          ],
+          "chosenSpanIds": [
+            "C4400_zve1_day6_broll_s0-1",
+            "C4401_zve1_day6_broll_speech_s0-5",
+            "C4402_zve1_day6_broll_speech_s2-24",
+            "C4402_zve1_day6_broll_speech_s30-37",
+            "C4402_zve1_day6_broll_speech_s39-43",
+            "C4403_zve1_day6_broll_speech_s0-12",
+            "C4404_zve1_day6_broll_speech_s0-10",
+            "C4406_zve1_day6_broll_s0-1",
+            "C4406_zve1_day6_broll_speech_s0-28"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-06",
+      "slots": [
+        {
+          "id": "FW-05-06-materials",
+          "query": "门洞连接庭院与厅堂，天井、排水口、柱子和雕刻被近看；人物对建筑布局及寓意作说明，出门后回望水渠、桥和沿岸屋舍。",
+          "requirement": "required",
+          "targetBundles": [
+            "院落借景、天井与家祠回望"
+          ],
+          "chosenSpanIds": [
+            "C4407_zve1_day6_broll_speech_s1-3",
+            "C4408_zve1_day6_broll_speech_s0-23",
+            "C4408_zve1_day6_broll_speech_s30-34",
+            "C4409_zve1_day6_broll_speech_s0-30",
+            "C4410_zve1_day6_broll_speech_s0-16",
+            "C4411_zve1_day6_talking-head_speech_s0-11",
+            "C4412_zve1_day6_broll_s0-1",
+            "C4412_zve1_day6_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-07",
+      "slots": [
+        {
+          "id": "FW-05-07-materials",
+          "query": "路边作坊内堆着工具与材料，门头写着手工作坊；接着看到小庙供像、红灯笼木廊和水渠跌水，人物读牌并猜测各处用途。",
+          "requirement": "required",
+          "targetBundles": [
+            "铁铺、街巷小庙与溪上木廊"
+          ],
+          "chosenSpanIds": [
+            "C4413_zve1_day6_broll_speech_s0-11",
+            "C4414_zve1_day6_broll_speech_s0-5",
+            "C4415_zve1_day6_broll_speech_s0-12",
+            "C4416_zve1_day6_broll_speech_s0-12",
+            "C4417_zve1_day6_broll_speech_s1-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-08",
+      "slots": [
+        {
+          "id": "FW-05-08-materials",
+          "query": "竹盘和网罩下晾着南瓜片及其他食物，人物询问酸枣糕能否购买；清浅水渠中有两只白鸭。",
+          "requirement": "required",
+          "targetBundles": [
+            "南瓜干、酸枣糕与鸭子"
+          ],
+          "chosenSpanIds": [
+            "C4418_zve1_day6_broll_speech_s0-14",
+            "C4419_zve1_day6_broll_speech_s0-10",
+            "C4420_zve1_day6_broll_speech_s0-13",
+            "C4421_zve1_day6_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-09",
+      "slots": [
+        {
+          "id": "FW-05-09-materials",
+          "query": "人物走入木楼，看天井、楼梯和室内陈设，口述对旧时居住分层的了解，随后看到墙上的画像与供台。",
+          "requirement": "required",
+          "targetBundles": [
+            "闺秀楼的木楼与楼梯"
+          ],
+          "chosenSpanIds": [
+            "C4422_zve1_day6_broll_speech_s0-48",
+            "C4424_zve1_day6_broll_speech_s0-10",
+            "C4425_zve1_day6_broll_speech_s1-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-10",
+      "slots": [
+        {
+          "id": "FW-05-10-materials",
+          "query": "穿过藤蔓覆盖的门洞，出现田地、枯荷与小花；人物坐着吃酸枣糕，继续观察瓜藤、白花、玉米与村屋，并谈自己的乡村生活联想。",
+          "requirement": "required",
+          "targetBundles": [
+            "村后藤门、荷田与酸枣糕"
+          ],
+          "chosenSpanIds": [
+            "C4426_zve1_day6_broll_s0-1",
+            "C4426_zve1_day6_broll_speech_s0-15",
+            "C4427_zve1_day6_broll_s0-1",
+            "C4427_zve1_day6_broll_speech_s0-18",
+            "C4428_zve1_day6_talking-head_speech_s0-4",
+            "C4428_zve1_day6_talking-head_speech_s16-22",
+            "C4429_zve1_day6_broll_s0-1",
+            "C4429_zve1_day6_broll_speech_s0-13",
+            "C4430_zve1_day6_broll_s0-1",
+            "C4430_zve1_day6_broll_speech_s0-9",
+            "C4431_zve1_day6_broll_s0-1",
+            "C4431_zve1_day6_broll_speech_s0-6",
+            "C4432_zve1_day6_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-11",
+      "slots": [
+        {
+          "id": "FW-05-11-materials",
+          "query": "墙边可见石蒜、橙色小花和结籽枝条，人物多次猜植物名称，随后转述一位村民出来纠正的经历；离开时又看到晾晒的豆角。",
+          "requirement": "required",
+          "targetBundles": [
+            "花木辨认与村民纠正"
+          ],
+          "chosenSpanIds": [
+            "C4433_zve1_day6_broll_speech_s0-14",
+            "C4434_zve1_day6_broll_speech_s0-6",
+            "C4435_zve1_day6_broll_speech_s0-11",
+            "C4436_zve1_day6_broll_speech_s0-8",
+            "C4437_zve1_day6_talking-head_speech_s0-19",
+            "C4439_zve1_day6_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-12",
+      "slots": [
+        {
+          "id": "FW-05-12-materials",
+          "query": "照片记录水渠、桥、沿溪木屋、红旗灯笼，以及翠鸟、庙内烟光、家祠厅堂和人物展板。",
+          "requirement": "required",
+          "targetBundles": [
+            "溪桥、庙堂与家祠照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01706_photos_photo",
+            "DSC01708_photos_photo",
+            "DSC01711_photos_photo",
+            "DSC01713_photos_photo",
+            "DSC01715_photos_photo",
+            "DSC01717_photos_photo",
+            "DSC01720_photos_photo",
+            "DSC02195_photos_photo",
+            "DSC02197_photos_photo",
+            "DSC01725_photos_photo",
+            "DSC02199_photos_photo",
+            "DSC01729_photos_photo",
+            "DSC01730_photos_photo"
+          ],
+          "treatments": {
+            "DSC01706_photos_photo": {
+              "audio": -100
+            },
+            "DSC01708_photos_photo": {
+              "audio": -100
+            },
+            "DSC01711_photos_photo": {
+              "audio": -100
+            },
+            "DSC01713_photos_photo": {
+              "audio": -100
+            },
+            "DSC01715_photos_photo": {
+              "audio": -100
+            },
+            "DSC01717_photos_photo": {
+              "audio": -100
+            },
+            "DSC01720_photos_photo": {
+              "audio": -100
+            },
+            "DSC02195_photos_photo": {
+              "audio": -100
+            },
+            "DSC02197_photos_photo": {
+              "audio": -100
+            },
+            "DSC01725_photos_photo": {
+              "audio": -100
+            },
+            "DSC02199_photos_photo": {
+              "audio": -100
+            },
+            "DSC01729_photos_photo": {
+              "audio": -100
+            },
+            "DSC01730_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-13",
+      "slots": [
+        {
+          "id": "FW-05-13-materials",
+          "query": "照片中有铁铺外观、小庙、晾晒食物、鸭子、藤门、荷田、花虫与盆栽，也补充了离村前的豆角、水渠和雕刻门楼。",
+          "requirement": "required",
+          "targetBundles": [
+            "村巷、晾晒与田园照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01731_photos_photo",
+            "DSC02200-2_photos_photo",
+            "DSC02201-2_photos_photo",
+            "DSC01732_photos_photo",
+            "DSC02205-2_photos_photo",
+            "DSC01734_photos_photo",
+            "DSC02206_photos_photo",
+            "DSC02207_photos_photo",
+            "DSC01735_photos_photo",
+            "DSC01737_photos_photo",
+            "DSC01740_photos_photo",
+            "DSC01742_photos_photo",
+            "DSC01745_photos_photo",
+            "DSC01747_photos_photo",
+            "DSC02210_photos_photo",
+            "DSC01749_photos_photo",
+            "DSC01752_photos_photo",
+            "DSC01753_photos_photo",
+            "DSC01755_photos_photo",
+            "DSC01757_photos_photo",
+            "DSC02211-2_photos_photo",
+            "DSC01758_photos_photo",
+            "DSC01759_photos_photo",
+            "DSC01760_photos_photo"
+          ],
+          "treatments": {
+            "DSC01731_photos_photo": {
+              "audio": -100
+            },
+            "DSC02200-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC02201-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01732_photos_photo": {
+              "audio": -100
+            },
+            "DSC02205-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01734_photos_photo": {
+              "audio": -100
+            },
+            "DSC02206_photos_photo": {
+              "audio": -100
+            },
+            "DSC02207_photos_photo": {
+              "audio": -100
+            },
+            "DSC01735_photos_photo": {
+              "audio": -100
+            },
+            "DSC01737_photos_photo": {
+              "audio": -100
+            },
+            "DSC01740_photos_photo": {
+              "audio": -100
+            },
+            "DSC01742_photos_photo": {
+              "audio": -100
+            },
+            "DSC01745_photos_photo": {
+              "audio": -100
+            },
+            "DSC01747_photos_photo": {
+              "audio": -100
+            },
+            "DSC02210_photos_photo": {
+              "audio": -100
+            },
+            "DSC01749_photos_photo": {
+              "audio": -100
+            },
+            "DSC01752_photos_photo": {
+              "audio": -100
+            },
+            "DSC01753_photos_photo": {
+              "audio": -100
+            },
+            "DSC01755_photos_photo": {
+              "audio": -100
+            },
+            "DSC01757_photos_photo": {
+              "audio": -100
+            },
+            "DSC02211-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01758_photos_photo": {
+              "audio": -100
+            },
+            "DSC01759_photos_photo": {
+              "audio": -100
+            },
+            "DSC01760_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-01",
+      "slots": [
+        {
+          "id": "FW-06-01-materials",
+          "query": "车行途中经过高架上的列车、挂旗道路与桥梁，人物对列车货物作猜测并评论沿途山水。",
+          "requirement": "required",
+          "targetBundles": [
+            "离开下梅的火车与桥"
+          ],
+          "chosenSpanIds": [
+            "C4440_zve1_day6_drive_speech_s1-16",
+            "C4441_zve1_day6_drive_speech_s2-8",
+            "C4441_zve1_day6_drive_visual_s4-11",
+            "C4442_zve1_day6_drive_speech_s1-21"
+          ],
+          "treatments": {
+            "C4441_zve1_day6_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-02",
+      "slots": [
+        {
+          "id": "FW-06-02-materials",
+          "query": "车辆跟随前车穿行树荫道路，车内尝试解释火山、岩浆和花岗岩的关系，并转而讨论沿途车辆与生活感受；这些解释是当时的个人理解。",
+          "requirement": "required",
+          "targetBundles": [
+            "车内地质解释与沿路交谈"
+          ],
+          "chosenSpanIds": [
+            "C4443_zve1_day6_drive_speech_s0-82",
+            "C4443_zve1_day6_drive_visual_s77-137",
+            "C4443_zve1_day6_drive_speech_s85-107"
+          ],
+          "treatments": {
+            "C4443_zve1_day6_drive_visual_s77-137": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-03",
+      "slots": [
+        {
+          "id": "FW-06-03-materials",
+          "query": "车辆经过路口、商店和围墙，车内长谈熟人轶事、家庭关系及对前车的观察，随后经过学校附近；口述涉及转述与个人评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "城市路段与车内闲谈"
+          ],
+          "chosenSpanIds": [
+            "C4443_zve1_day6_drive_speech_s110-124",
+            "C4443_zve1_day6_drive_speech_s126-173",
+            "C4443_zve1_day6_drive_visual_s163-180",
+            "C4443_zve1_day6_drive_speech_s174-177",
+            "C4443_zve1_day6_drive_speech_s182-193",
+            "C4443_zve1_day6_drive_speech_s240-316",
+            "C4443_zve1_day6_drive_speech_s322-350",
+            "C4443_zve1_day6_drive_visual_s335-352",
+            "C4443_zve1_day6_drive_speech_s352-373",
+            "C4443_zve1_day6_drive_speech_s378-385"
+          ],
+          "treatments": {
+            "C4443_zve1_day6_drive_visual_s163-180": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4443_zve1_day6_drive_visual_s335-352": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-04",
+      "slots": [
+        {
+          "id": "FW-06-04-materials",
+          "query": "车辆穿过闸杆、桥梁及树影斑驳的道路，人物谈桥边景色和树叶颜色，在导航提示下接近目的地。",
+          "requirement": "required",
+          "targetBundles": [
+            "桥边山水与树影道路"
+          ],
+          "chosenSpanIds": [
+            "C4444_zve1_day6_drive_speech_s1-8",
+            "C4445_zve1_day6_drive_speech_s0-22",
+            "C4446_zve1_day6_drive_speech_s0-20",
+            "C4447_zve1_day6_drive_speech_s0-15",
+            "C4447_zve1_day6_drive_speech_s17-19",
+            "C4448_zve1_day6_drive_speech_s7-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-05",
+      "slots": [
+        {
+          "id": "FW-06-05-materials",
+          "query": "走入陈列馆后观看黑色茶盏、器物残片、兔毫纹和金色图案，人物口述黑盏与点茶的关系，并指着展签与纹样观察。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入黑釉器物陈列馆"
+          ],
+          "chosenSpanIds": [
+            "C4449_zve1_day6_broll_speech_s0-26",
+            "C4450_zve1_day6_broll_speech_s0-15",
+            "C4450_zve1_day6_broll_s14-15",
+            "C4451_zve1_day6_broll_s0-1",
+            "C4451_zve1_day6_broll_speech_s0-19",
+            "C4451_zve1_day6_broll_s19-20",
+            "C4452_zve1_day6_broll_speech_s0-11",
+            "C4453_zve1_day6_broll_speech_s0-7"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-06",
+      "slots": [
+        {
+          "id": "FW-06-06-materials",
+          "query": "近看绘有纹样的残片与黑金色器物，人物指认凤凰、山水等图案，对残片为何留下作猜测；随后观看窑址说明和燃料、瓦片等陈列。",
+          "requirement": "required",
+          "targetBundles": [
+            "残片、图案与窑炉展示"
+          ],
+          "chosenSpanIds": [
+            "C4454_zve1_day6_broll_speech_s0-15",
+            "C4455_zve1_day6_broll_s0-2",
+            "C4455_zve1_day6_broll_speech_s1-7",
+            "C4456_zve1_day6_broll_s0-1",
+            "C4456_zve1_day6_broll_speech_s0-12",
+            "C4457_zve1_day6_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-07",
+      "slots": [
+        {
+          "id": "FW-06-07-materials",
+          "query": "沿清浅溪流旁的林荫石路前行，人物边走边口述点茶步骤及对手艺、圈层与工业化的个人看法。",
+          "requirement": "required",
+          "targetBundles": [
+            "林间走向窑址与点茶观点"
+          ],
+          "chosenSpanIds": [
+            "C4459_zve1_day6_broll_speech_s0-7",
+            "C4460_zve1_day6_broll_speech_s0-81"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-08",
+      "slots": [
+        {
+          "id": "FW-06-08-materials",
+          "query": "木棚与栏杆下是一条长而倾斜的窑址，内部有成排器物与碎片；人物第一次看到这种尺度的窑炉，讨论坡形和烧制容量。",
+          "requirement": "required",
+          "targetBundles": [
+            "一号窑的斜坡与器物"
+          ],
+          "chosenSpanIds": [
+            "C4461_zve1_day6_broll_speech_s1-8",
+            "C4462_zve1_day6_broll_speech_s1-15",
+            "C4463_zve1_day6_broll_speech_s0-30"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-09",
+      "slots": [
+        {
+          "id": "FW-06-09-materials",
+          "query": "从更高处回看长窑及成排器物，人物对窑炉重建、遗弃缘由和摆放方式提出疑问；最后在体验馆外说明这次只看一看。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿窑向上与体验馆外"
+          ],
+          "chosenSpanIds": [
+            "C4464_zve1_day6_broll_speech_s1-30",
+            "C4465_zve1_day6_broll_speech_s1-22",
+            "C4466_zve1_day6_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-10",
+      "slots": [
+        {
+          "id": "FW-06-10-materials",
+          "query": "照片记录黑金色器物、窑炉展示、林间石道与昆虫，以及长窑、散落陶片、木廊人物和亭子外观。",
+          "requirement": "required",
+          "targetBundles": [
+            "器物、溪边与窑址照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02214_photos_photo",
+            "DSC02216-2_photos_photo",
+            "DSC01765_photos_photo",
+            "DSC01766_photos_photo",
+            "DSC01767_photos_photo",
+            "DSC01771_photos_photo",
+            "DSC01772_photos_photo",
+            "DSC01775_photos_photo",
+            "DSC01777_photos_photo",
+            "DSC02221_photos_photo",
+            "DSC02229-2_photos_photo",
+            "DSC02231_photos_photo",
+            "DSC02232_photos_photo"
+          ],
+          "treatments": {
+            "DSC02214_photos_photo": {
+              "audio": -100
+            },
+            "DSC02216-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01765_photos_photo": {
+              "audio": -100
+            },
+            "DSC01766_photos_photo": {
+              "audio": -100
+            },
+            "DSC01767_photos_photo": {
+              "audio": -100
+            },
+            "DSC01771_photos_photo": {
+              "audio": -100
+            },
+            "DSC01772_photos_photo": {
+              "audio": -100
+            },
+            "DSC01775_photos_photo": {
+              "audio": -100
+            },
+            "DSC01777_photos_photo": {
+              "audio": -100
+            },
+            "DSC02221_photos_photo": {
+              "audio": -100
+            },
+            "DSC02229-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC02231_photos_photo": {
+              "audio": -100
+            },
+            "DSC02232_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-11",
+      "slots": [
+        {
+          "id": "FW-06-11-materials",
+          "query": "餐馆外可见免费用餐告示，桌上出现空心菜、红菇汤与稻花鱼；人物品尝并描述味道，同时转述食材产地、时令等说法。",
+          "requirement": "required",
+          "targetBundles": [
+            "午饭入店与汤、鱼"
+          ],
+          "chosenSpanIds": [
+            "C4467_zve1_day6_broll_s0-1",
+            "C4467_zve1_day6_broll_speech_s0-11",
+            "C4468_zve1_day6_broll_s0-1",
+            "C4468_zve1_day6_broll_speech_s0-10",
+            "C4469_zve1_day6_broll_speech_s0-10",
+            "C4470_zve1_day6_talking-head_speech_s0-43",
+            "C4471_zve1_day6_broll_speech_s0-57",
+            "C4472_zve1_day6_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-12",
+      "slots": [
+        {
+          "id": "FW-06-12-materials",
+          "query": "人物品尝文公菜，将口感比作粉蒸肉，翻看蛋皮下的配菜，又从鱼汤中发现芋头；有关朱熹的故事以“据说”的口吻讲述。",
+          "requirement": "required",
+          "targetBundles": [
+            "文公菜与藏在汤里的芋头"
+          ],
+          "chosenSpanIds": [
+            "C4473_zve1_day6_talking-head_speech_s0-85",
+            "C4474_zve1_day6_broll_speech_s0-1",
+            "C4475_zve1_day6_broll_speech_s0-8",
+            "C4477_zve1_day6_broll_speech_s1-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-01",
+      "slots": [
+        {
+          "id": "FW-07-01-materials",
+          "query": "人物在餐馆外说准备去看母树；途中雨水打在车盖和湿路面，抵达停车区时雨势加大，车内谈没有带上家中雨衣。",
+          "requirement": "required",
+          "targetBundles": [
+            "午后再出发与骤雨"
+          ],
+          "chosenSpanIds": [
+            "C4478_zve1_day6_talking-head_speech_s1-17",
+            "C4479_zve1_day6_drive_speech_s1-14",
+            "C4480_zve1_day6_drive_speech_s0-8",
+            "C4481_zve1_day6_drive_speech_s0-39"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-02",
+      "slots": [
+        {
+          "id": "FW-07-02-materials",
+          "query": "经过湿桥、小片茶地和候车区，乘小型接驳车沿林间弯道、牌坊及岩壁行进；现场有问路、车内广播和看山的惊叹。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨中北入口与接驳"
+          ],
+          "chosenSpanIds": [
+            "C4482_zve1_day6_drive_speech_s0-10",
+            "C4483_zve1_day6_broll_speech_s0-1",
+            "C4484_zve1_day6_broll_speech_s0-3",
+            "C4485_zve1_day6_broll_speech_s1-19",
+            "C4486_zve1_day6_broll_s0-1",
+            "C4486_zve1_day6_broll_speech_s0-7",
+            "C4487_zve1_day6_broll_speech_s0-11",
+            "C4487_zve1_day6_broll_speech_s14-20",
+            "C4488_zve1_day6_drive_s0-1",
+            "C4488_zve1_day6_drive_speech_s0-14",
+            "C4489_zve1_day6_drive_s0-15",
+            "C4490_zve1_day6_drive_s0-10",
+            "C4491_zve1_day6_drive_speech_s0-22",
+            "C4492_zve1_day6_drive_speech_s0-33",
+            "C4493_zve1_day6_drive_speech_s2-3",
+            "C4493_zve1_day6_drive_speech_s8-14"
+          ],
+          "treatments": {
+            "C4488_zve1_day6_drive_s0-1": {
+              "audio": -100
+            },
+            "C4489_zve1_day6_drive_s0-15": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4490_zve1_day6_drive_s0-10": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-03",
+      "slots": [
+        {
+          "id": "FW-07-03-materials",
+          "query": "到站后沿石路走进茶丛与高岩壁之间，人物读地名和茶树牌，讲自己对岩谷、岩茶和地层的理解。",
+          "requirement": "required",
+          "targetBundles": [
+            "九龙窠的茶地与岩壁"
+          ],
+          "chosenSpanIds": [
+            "C4494_zve1_day6_broll_speech_s0-8",
+            "C4495_zve1_day6_broll_speech_s1-43",
+            "C4496_zve1_day6_broll_speech_s0-13",
+            "C4497_zve1_day6_broll_speech_s0-27"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-04",
+      "slots": [
+        {
+          "id": "FW-07-04-materials",
+          "query": "近看枝上小果、溪中鱼群、潮湿岩壁和茶树标牌；人物拍摄放大画面，讨论水团花、肉桂茶名及岩石中的亮色颗粒，其中地质解释与简称判断带有猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "果实、小鱼与岩石纹理"
+          ],
+          "chosenSpanIds": [
+            "C4498_zve1_day6_broll_speech_s0-11",
+            "C4498_zve1_day6_broll_speech_s17-22",
+            "C0112_a7r6_broll_speech_s0-11",
+            "C4499_zve1_day6_broll_speech_s0-13",
+            "C4500_zve1_day6_broll_s0-1",
+            "C4500_zve1_day6_broll_speech_s0-7",
+            "C4501_zve1_day6_talking-head_speech_s0-12",
+            "C4502_zve1_day6_broll_s0-1",
+            "C4502_zve1_day6_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-05",
+      "slots": [
+        {
+          "id": "FW-07-05-materials",
+          "query": "叶片果实上带着雨珠，蓝绿色昆虫停在叶上，紫花长在路旁；人物追拍昆虫、观察花序，随后边走边说雨停、太阳出来和闻到茶香。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨珠、色蟌与雨停后的茶路"
+          ],
+          "chosenSpanIds": [
+            "C4503_zve1_day6_broll_speech_s0-13",
+            "C0113_a7r6_broll_speech_s0-1",
+            "C0114_a7r6_broll_speech_s0-14",
+            "C0114_a7r6_broll_speech_s16-22",
+            "C4504_zve1_day6_broll_s0-1",
+            "C4504_zve1_day6_broll_speech_s0-11",
+            "C4505_zve1_day6_broll_speech_s0-10",
+            "C4506_zve1_day6_broll_speech_s1-26"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-06",
+      "slots": [
+        {
+          "id": "FW-07-06-materials",
+          "query": "石路在溪流和树林之间转折，台阶通向石门；人物一边走一边感叹还没走到母树，观察门和清澈急流。",
+          "requirement": "required",
+          "targetBundles": [
+            "曲折石道与古朴石门"
+          ],
+          "chosenSpanIds": [
+            "C4507_zve1_day6_broll_speech_s0-10",
+            "C4508_zve1_day6_broll_s0-3",
+            "C4509_zve1_day6_broll_speech_s0-27"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-07",
+      "slots": [
+        {
+          "id": "FW-07-07-materials",
+          "query": "岩壁下的石台、红栏与几棵茶树被近看，旁边有大红袍传说说明牌；人物口述母树保护与繁育的了解，并表达对传说的态度。",
+          "requirement": "required",
+          "targetBundles": [
+            "大红袍母树与传说牌"
+          ],
+          "chosenSpanIds": [
+            "C4510_zve1_day6_broll_speech_s0-27",
+            "C0115_a7r6_broll_s0-1",
+            "C0115_a7r6_broll_speech_s0-12",
+            "C4511_zve1_day6_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-08",
+      "slots": [
+        {
+          "id": "FW-07-08-materials",
+          "query": "近摸毛茸茸的叶子，沿岩间溪路经过踏石小桥，抬头看斜向岩纹、山顶独树和枝上的巢状物；人物再次观察鱼身反光并作辨认。",
+          "requirement": "required",
+          "targetBundles": [
+            "返程溪桥、岩纹与鱼影"
+          ],
+          "chosenSpanIds": [
+            "C4512_zve1_day6_broll_speech_s0-14",
+            "C4513_zve1_day6_broll_speech_s1-21",
+            "C4514_zve1_day6_broll_speech_s0-6",
+            "C4515_zve1_day6_broll_speech_s1-18",
+            "C4516_zve1_day6_broll_speech_s0-18",
+            "C4518_zve1_day6_broll_speech_s0-39",
+            "C4519_zve1_day6_broll_speech_s0-16",
+            "C0116_a7r6_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-09",
+      "slots": [
+        {
+          "id": "FW-07-09-materials",
+          "query": "人物说因疲劳准备换乘，随后出现在水帘洞入口和宽阔林道；途中讨论摩托车揽客、路程与步行感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "转往水帘洞与宽阔步道"
+          ],
+          "chosenSpanIds": [
+            "C4521_zve1_day6_talking-head_speech_s0-13",
+            "C4522_zve1_day6_broll_s0-1",
+            "C4522_zve1_day6_broll_speech_s0-12",
+            "C4523_zve1_day6_broll_speech_s3-8",
+            "C4524_zve1_day6_talking-head_speech_s0-13",
+            "C4525_zve1_day6_broll_speech_s0-2",
+            "C4526_zve1_day6_broll_speech_s0-25",
+            "C4527_zve1_day6_talking-head_speech_s1-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-10",
+      "slots": [
+        {
+          "id": "FW-07-10-materials",
+          "query": "先看到小股落水，再近看分层岩壁、深缝、滴水和石孔；人物把岩层纹理比作刀斧劈开，对孔内小石子的来历作猜测，天空传来持续响声。",
+          "requirement": "required",
+          "targetBundles": [
+            "滴水岩壁与裂隙细节"
+          ],
+          "chosenSpanIds": [
+            "C4528_zve1_day6_broll_speech_s0-7",
+            "C4529_zve1_day6_broll_speech_s0-11",
+            "C4530_zve1_day6_broll_speech_s0-12",
+            "C4531_zve1_day6_broll_speech_s0-13",
+            "C4532_zve1_day6_broll_speech_s0-8",
+            "C4533_zve1_day6_broll_s0-1",
+            "C4533_zve1_day6_broll_speech_s0-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-11",
+      "slots": [
+        {
+          "id": "FW-07-11-materials",
+          "query": "人物站在落水与水潭附近说已经到达，随后发现仍需上台阶，说明刚才只是较小的水帘洞。",
+          "requirement": "required",
+          "targetBundles": [
+            "以为到了终点的小瀑布"
+          ],
+          "chosenSpanIds": [
+            "C4534_zve1_day6_broll_speech_s3-29",
+            "C4535_zve1_day6_broll_s0-1",
+            "C4535_zve1_day6_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-12",
+      "slots": [
+        {
+          "id": "FW-07-12-materials",
+          "query": "沿石阶继续走，先看到白色长尾鸟与鸽群，再到巨大岩壁下仰看垂落的水；人物起初觉得水少，换角度后描述水直接下落的形态和震撼感。",
+          "requirement": "required",
+          "targetBundles": [
+            "再上台阶，鸟群与真正的水帘洞"
+          ],
+          "chosenSpanIds": [
+            "C4536_zve1_day6_broll_speech_s1-2",
+            "C4537_zve1_day6_broll_speech_s2-20",
+            "C4537_zve1_day6_broll_speech_s26-33",
+            "C4538_zve1_day6_broll_speech_s0-3",
+            "C0117_a7r6_broll_speech_s0-7",
+            "C0118_a7r6_broll_speech_s0-12",
+            "C4539_zve1_day6_broll_speech_s0-19",
+            "C4541_zve1_day6_broll_speech_s0-19",
+            "C4542_zve1_day6_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-13",
+      "slots": [
+        {
+          "id": "FW-07-13-materials",
+          "query": "回程道路、树间溪流和接驳车停车区依次出现，水面映着暖色；人物总结两日步行、相互交谈，随后看到晚霞并口述崇阳溪与九曲溪的汇流关系。",
+          "requirement": "required",
+          "targetBundles": [
+            "回到起点与晚霞"
+          ],
+          "chosenSpanIds": [
+            "C4543_zve1_day6_broll_speech_s7-8",
+            "C4544_zve1_day6_broll_s0-1",
+            "C4544_zve1_day6_broll_speech_s0-13",
+            "C4545_zve1_day6_talking-head_speech_s1-14",
+            "C4546_zve1_day6_talking-head_speech_s0-7",
+            "C4547_zve1_day6_broll_speech_s0-6",
+            "C4548_zve1_day6_broll_speech_s1-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-14",
+      "slots": [
+        {
+          "id": "FW-07-14-materials",
+          "query": "照片细看果实、湿岩、红叶、昆虫、花序与蛛网水珠，也记录茶谷石路和行走的人。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨后茶谷生态照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01812_photos_photo",
+            "DSC01814_photos_photo",
+            "DSC01815_photos_photo",
+            "DSC01821_photos_photo",
+            "DSC01822_photos_photo",
+            "DSC01825_photos_photo",
+            "DSC01831_photos_photo",
+            "DSC01834_photos_photo",
+            "DSC01845_photos_photo",
+            "DSC01846_photos_photo",
+            "DSC01847_photos_photo",
+            "DSC01848_photos_photo",
+            "DSC01849_photos_photo",
+            "DSC01850_photos_photo",
+            "DSC01854_photos_photo",
+            "DSC01860_photos_photo",
+            "DSC01865_photos_photo",
+            "DSC01867_photos_photo"
+          ],
+          "treatments": {
+            "DSC01812_photos_photo": {
+              "audio": -100
+            },
+            "DSC01814_photos_photo": {
+              "audio": -100
+            },
+            "DSC01815_photos_photo": {
+              "audio": -100
+            },
+            "DSC01821_photos_photo": {
+              "audio": -100
+            },
+            "DSC01822_photos_photo": {
+              "audio": -100
+            },
+            "DSC01825_photos_photo": {
+              "audio": -100
+            },
+            "DSC01831_photos_photo": {
+              "audio": -100
+            },
+            "DSC01834_photos_photo": {
+              "audio": -100
+            },
+            "DSC01845_photos_photo": {
+              "audio": -100
+            },
+            "DSC01846_photos_photo": {
+              "audio": -100
+            },
+            "DSC01847_photos_photo": {
+              "audio": -100
+            },
+            "DSC01848_photos_photo": {
+              "audio": -100
+            },
+            "DSC01849_photos_photo": {
+              "audio": -100
+            },
+            "DSC01850_photos_photo": {
+              "audio": -100
+            },
+            "DSC01854_photos_photo": {
+              "audio": -100
+            },
+            "DSC01860_photos_photo": {
+              "audio": -100
+            },
+            "DSC01865_photos_photo": {
+              "audio": -100
+            },
+            "DSC01867_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-15",
+      "slots": [
+        {
+          "id": "FW-07-15-materials",
+          "query": "照片呈现母树石台、岩壁下木屋、毛叶植物、过溪人物与小鱼，以及山间独树和岩壁层次。",
+          "requirement": "required",
+          "targetBundles": [
+            "母树、溪桥与岩谷照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01870_photos_photo",
+            "DSC01873_photos_photo",
+            "DSC01874_photos_photo",
+            "DSC01878_photos_photo",
+            "DSC01879_photos_photo",
+            "DSC01886_photos_photo",
+            "DSC01887_photos_photo",
+            "DSC01891_photos_photo"
+          ],
+          "treatments": {
+            "DSC01870_photos_photo": {
+              "audio": -100
+            },
+            "DSC01873_photos_photo": {
+              "audio": -100
+            },
+            "DSC01874_photos_photo": {
+              "audio": -100
+            },
+            "DSC01878_photos_photo": {
+              "audio": -100
+            },
+            "DSC01879_photos_photo": {
+              "audio": -100
+            },
+            "DSC01886_photos_photo": {
+              "audio": -100
+            },
+            "DSC01887_photos_photo": {
+              "audio": -100
+            },
+            "DSC01891_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-16",
+      "slots": [
+        {
+          "id": "FW-07-16-materials",
+          "query": "照片记录林道、滴水岩层、小瀑布、巨大崖壁下的水帘与人物，以及路边白色长尾鸟和鸽群。",
+          "requirement": "required",
+          "targetBundles": [
+            "水帘洞与鸟群照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01895_photos_photo",
+            "DSC01899_photos_photo",
+            "DSC01900_photos_photo",
+            "DSC01901_photos_photo",
+            "DSC01902_photos_photo",
+            "DSC01903_photos_photo",
+            "DSC01904_photos_photo",
+            "DSC02250_photos_photo",
+            "DSC02255-2_photos_photo",
+            "DSC01908_photos_photo",
+            "DSC01910_photos_photo",
+            "DSC02269_photos_photo",
+            "DSC02273_photos_photo",
+            "DSC02274_photos_photo",
+            "DSC02276_photos_photo",
+            "DSC02278-2_photos_photo",
+            "DSC01918_photos_photo",
+            "DSC01920_photos_photo",
+            "DSC01922_photos_photo",
+            "DSC02281_photos_photo"
+          ],
+          "treatments": {
+            "DSC01895_photos_photo": {
+              "audio": -100
+            },
+            "DSC01899_photos_photo": {
+              "audio": -100
+            },
+            "DSC01900_photos_photo": {
+              "audio": -100
+            },
+            "DSC01901_photos_photo": {
+              "audio": -100
+            },
+            "DSC01902_photos_photo": {
+              "audio": -100
+            },
+            "DSC01903_photos_photo": {
+              "audio": -100
+            },
+            "DSC01904_photos_photo": {
+              "audio": -100
+            },
+            "DSC02250_photos_photo": {
+              "audio": -100
+            },
+            "DSC02255-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01908_photos_photo": {
+              "audio": -100
+            },
+            "DSC01910_photos_photo": {
+              "audio": -100
+            },
+            "DSC02269_photos_photo": {
+              "audio": -100
+            },
+            "DSC02273_photos_photo": {
+              "audio": -100
+            },
+            "DSC02274_photos_photo": {
+              "audio": -100
+            },
+            "DSC02276_photos_photo": {
+              "audio": -100
+            },
+            "DSC02278-2_photos_photo": {
+              "audio": -100
+            },
+            "DSC01918_photos_photo": {
+              "audio": -100
+            },
+            "DSC01920_photos_photo": {
+              "audio": -100
+            },
+            "DSC01922_photos_photo": {
+              "audio": -100
+            },
+            "DSC02281_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-17",
+      "slots": [
+        {
+          "id": "FW-07-17-materials",
+          "query": "溪边树林、停着接驳车的晚霞天空、反光湿路以及道路上的黄色车辆，构成这一段离开时的照片。",
+          "requirement": "required",
+          "targetBundles": [
+            "晚霞归途照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02284_photos_photo",
+            "DSC01926_photos_photo",
+            "DSC01932_photos_photo",
+            "DSC01933_photos_photo"
+          ],
+          "treatments": {
+            "DSC02284_photos_photo": {
+              "audio": -100
+            },
+            "DSC01926_photos_photo": {
+              "audio": -100
+            },
+            "DSC01932_photos_photo": {
+              "audio": -100
+            },
+            "DSC01933_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-01",
+      "slots": [
+        {
+          "id": "FW-08-01-materials",
+          "query": "街上行人横穿、车辆经过，人物到停车处后步行找小吃；摊位展示白色椰子蛋，现场交谈并用手轻碰。",
+          "requirement": "required",
+          "targetBundles": [
+            "晚间街市与椰子蛋"
+          ],
+          "chosenSpanIds": [
+            "C4549_zve1_day6_drive_speech_s4-19",
+            "C4553_zve1_day6_talking-head_speech_s1-21",
+            "C4554_zve1_day6_broll_speech_s0-10",
+            "C4555_zve1_day6_broll_speech_s0-13",
+            "C4556_zve1_day6_broll_speech_s0-6",
+            "C4557_zve1_day6_broll_speech_s0-8",
+            "C4558_zve1_day6_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-02",
+      "slots": [
+        {
+          "id": "FW-08-02-materials",
+          "query": "摊主在圆筒炉边制作和售卖光饼，现场询价购买；人物随后拿着纸袋品尝酥皮与馅料，口述与戚继光有关的说法。",
+          "requirement": "required",
+          "targetBundles": [
+            "炉边光饼与品尝"
+          ],
+          "chosenSpanIds": [
+            "C4559_zve1_day6_broll_speech_s0-9",
+            "C4560_zve1_day6_broll_speech_s0-12",
+            "C4561_zve1_day6_talking-head_speech_s0-40"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-03",
+      "slots": [
+        {
+          "id": "FW-08-03-materials",
+          "query": "夜间展示一串食物，人物边走边说牛肉串的辣度超出预期，又买了小橘子，评价价格和味道。",
+          "requirement": "required",
+          "targetBundles": [
+            "烤串的辣与小橘子"
+          ],
+          "chosenSpanIds": [
+            "C4562_zve1_day6_broll_speech_s0-3",
+            "C4563_zve1_day6_broll_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-04",
+      "slots": [
+        {
+          "id": "FW-08-04-materials",
+          "query": "人物在车内交代首班漂流计划，车辆沿空旷道路和彩色标线林道前进，远山起雾，车内期待溪上晨雾。",
+          "requirement": "required",
+          "targetBundles": [
+            "天刚亮时赶往竹筏码头"
+          ],
+          "chosenSpanIds": [
+            "C4564_zve1_day7_talking-head_speech_s0-15",
+            "C4567_zve1_day7_drive_visual_s7-8",
+            "C4567_zve1_day7_drive_speech_s18-32",
+            "C4568_zve1_day7_drive_speech_s4-23",
+            "C4569_zve1_day7_drive_speech_s2-34",
+            "C4569_zve1_day7_drive_visual_s19-66",
+            "C4569_zve1_day7_drive_visual_s66-77"
+          ],
+          "treatments": {
+            "C4567_zve1_day7_drive_visual_s7-8": {
+              "audio": -100
+            },
+            "C4569_zve1_day7_drive_visual_s19-66": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4569_zve1_day7_drive_visual_s66-77": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-05",
+      "slots": [
+        {
+          "id": "FW-08-05-materials",
+          "query": "天刚亮的街边摊位和等候人群可见，取票后按八人一组进入，沿长廊与步道继续走向码头。",
+          "requirement": "required",
+          "targetBundles": [
+            "入口排队、组筏与进场"
+          ],
+          "chosenSpanIds": [
+            "C4570_zve1_day7_broll_speech_s1-3",
+            "C4572_zve1_day7_broll_speech_s0-5",
+            "C4573_zve1_day7_broll_speech_s1-6",
+            "C4574_zve1_day7_broll_speech_s1-9",
+            "C4575_zve1_day7_broll_speech_s0-6",
+            "C4576_zve1_day7_broll_speech_s1-4",
+            "C4577_zve1_day7_broll_speech_s1-12",
+            "C4578_zve1_day7_broll_speech_s2-6",
+            "C4578_zve1_day7_broll_speech_s8-14",
+            "C4579_zve1_day7_broll_speech_s2-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-06",
+      "slots": [
+        {
+          "id": "FW-08-06-materials",
+          "query": "河边停着成排竹筏和救生衣，人物跟随人群走上筏，交谈中询问游程时长并注意到毛毛雨，最后坐定出发。",
+          "requirement": "required",
+          "targetBundles": [
+            "码头候乘与登筏"
+          ],
+          "chosenSpanIds": [
+            "C4580_zve1_day7_broll_speech_s6-21",
+            "C4581_zve1_day7_broll_visual_s0-8",
+            "C4581_zve1_day7_broll_speech_s21-72",
+            "C4582_zve1_day7_broll_speech_s0-5",
+            "C4583_zve1_day7_broll_speech_s2-4"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-07",
+      "slots": [
+        {
+          "id": "FW-08-07-materials",
+          "query": "照片记录码头附近的黄色车辆，以及绿伞装饰下排队的人群。",
+          "requirement": "required",
+          "targetBundles": [
+            "候乘与停车照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02297_photos_photo",
+            "DSC02298_photos_photo"
+          ],
+          "treatments": {
+            "DSC02297_photos_photo": {
+              "audio": -100
+            },
+            "DSC02298_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-08",
+      "slots": [
+        {
+          "id": "FW-08-08-materials",
+          "query": "穿救生衣的乘客坐在筏上，撑筏人持长篙前行；过浅滩时水涌上筏，旁边竹筏陆续靠近、并行和超过，人物发现前后有人共同撑筏。",
+          "requirement": "required",
+          "targetBundles": [
+            "首班竹筏与第一段浅滩"
+          ],
+          "chosenSpanIds": [
+            "C4584_zve1_day7_talking-head_speech_s1-9",
+            "C4585_zve1_day7_broll_speech_s0-7",
+            "C4586_zve1_day7_broll_speech_s2-20",
+            "C4587_zve1_day7_broll_speech_s1-2",
+            "C4588_zve1_day7_drive_speech_s2-21",
+            "C4589_zve1_day7_broll_speech_s0-20",
+            "C4590_zve1_day7_broll_speech_s1-10",
+            "C4591_zve1_day7_broll_speech_s0-9",
+            "C4592_zve1_day7_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-09",
+      "slots": [
+        {
+          "id": "FW-08-09-materials",
+          "query": "河岸鸟、叠石、洞孔与深色岩壁从水面展开，人物拍照自拍，讲自己的丹霞与水位解释，并以笔架等形状联想山峰。",
+          "requirement": "required",
+          "targetBundles": [
+            "河岸岩层与山形联想"
+          ],
+          "chosenSpanIds": [
+            "C4593_zve1_day7_broll_speech_s1-41",
+            "C4593_zve1_day7_broll_speech_s45-51",
+            "C4593_zve1_day7_broll_speech_s53-54",
+            "C4594_zve1_day7_broll_speech_s0-6",
+            "C4595_zve1_day7_broll_speech_s3-4",
+            "C4596_zve1_day7_broll_speech_s4-5",
+            "C4597_zve1_day7_broll_speech_s0-9",
+            "C4598_zve1_day7_broll_speech_s0-26",
+            "C4599_zve1_day7_broll_speech_s0-15",
+            "C4600_zve1_day7_broll_speech_s0-24"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-10",
+      "slots": [
+        {
+          "id": "FW-08-10-materials",
+          "query": "手伸向绿色水面投喂，起初说没有鱼，随后对水中动作兴奋呼喊；旁边大石的轮廓被人物比作乌龟，石面还有刻字。",
+          "requirement": "required",
+          "targetBundles": [
+            "第一次找鱼、喂鱼与乌龟石"
+          ],
+          "chosenSpanIds": [
+            "C4601_zve1_day7_broll_speech_s0-8",
+            "C4602_zve1_day7_broll_speech_s10-12",
+            "C4603_zve1_day7_broll_speech_s0-8",
+            "C4604_zve1_day7_broll_speech_s0-14",
+            "C4605_zve1_day7_broll_speech_s8-10",
+            "C4606_zve1_day7_broll_speech_s3-9",
+            "C4607_zve1_day7_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-11",
+      "slots": [
+        {
+          "id": "FW-08-11-materials",
+          "query": "竹筏在红色和深色岩壁间行进，人物再次口述地层与水位理解，认出前天攀登的天游峰，经过崖边台阶与题刻后尝试呼喊听回声。",
+          "requirement": "required",
+          "targetBundles": [
+            "从水面望天游峰与空谷回声"
+          ],
+          "chosenSpanIds": [
+            "C4609_zve1_day7_broll_speech_s2-47",
+            "C4610_zve1_day7_drive_speech_s1-10",
+            "C4611_zve1_day7_broll_speech_s12-14",
+            "C4612_zve1_day7_broll_speech_s0-11",
+            "C4613_zve1_day7_broll_visual_s0-7",
+            "C4614_zve1_day7_broll_speech_s0-11",
+            "C4615_zve1_day7_broll_speech_s0-13",
+            "C4616_zve1_day7_broll_speech_s0-9",
+            "C4617_zve1_day7_broll_speech_s4-24",
+            "C4618_zve1_day7_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-12",
+      "slots": [
+        {
+          "id": "FW-08-12-materials",
+          "query": "水边亭台、巨石、深洞和木屋依次出现，人物观察鱼翻身、听鸟叫，谈朱熹与景物的联想；竹篙划过清水与石岸。",
+          "requirement": "required",
+          "targetBundles": [
+            "亭台、岩洞与水边木屋"
+          ],
+          "chosenSpanIds": [
+            "C4619_zve1_day7_broll_speech_s0-11",
+            "C4620_zve1_day7_broll_speech_s2-10",
+            "C4620_zve1_day7_broll_speech_s14-15",
+            "C4621_zve1_day7_broll_speech_s0-13",
+            "C4622_zve1_day7_broll_speech_s1-12",
+            "C4623_zve1_day7_broll_speech_s0-2",
+            "C4624_zve1_day7_broll_speech_s1-4",
+            "C4625_zve1_day7_broll_speech_s0-18",
+            "C4626_zve1_day7_broll_s0-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-13",
+      "slots": [
+        {
+          "id": "FW-08-13-materials",
+          "query": "竹筏驶向并穿过拱桥，人物问桥名、转述取景地说法；手继续向水面投喂，伴有看鱼、抢食和拍摄的现场交谈。",
+          "requirement": "required",
+          "targetBundles": [
+            "经过拱桥与水中互动"
+          ],
+          "chosenSpanIds": [
+            "C4628_zve1_day7_broll_speech_s0-11",
+            "C4629_zve1_day7_broll_speech_s0-7",
+            "C4630_zve1_day7_broll_speech_s0-19",
+            "C4631_zve1_day7_broll_speech_s0-7",
+            "C4632_zve1_day7_broll_speech_s0-5",
+            "C4633_zve1_day7_broll_speech_s1-2",
+            "C4634_zve1_day7_broll_speech_s0-6",
+            "C4635_zve1_day7_broll_speech_s5-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-14",
+      "slots": [
+        {
+          "id": "FW-08-14-materials",
+          "query": "崖边刻字、石阶和水面起伏可见，人物谈刻石方式的猜测，交替拍水中鱼与彼此，随后说还剩约三分之一游程。",
+          "requirement": "required",
+          "targetBundles": [
+            "刻石、鱼群与余下游程"
+          ],
+          "chosenSpanIds": [
+            "C4636_zve1_day7_broll_speech_s0-10",
+            "C4637_zve1_day7_broll_speech_s1-13",
+            "C4638_zve1_day7_broll_speech_s0-9",
+            "C4639_zve1_day7_broll_speech_s0-6",
+            "C4640_zve1_day7_broll_speech_s1-16",
+            "C4641_zve1_day7_broll_speech_s1-5",
+            "C4643_zve1_day7_broll_speech_s0-2",
+            "C4644_zve1_day7_broll_speech_s1-5",
+            "C4645_zve1_day7_broll_speech_s2-7"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-15",
+      "slots": [
+        {
+          "id": "FW-08-15-materials",
+          "query": "岸边竹枝交错，高耸岩壁从林中拔起，人物观察水面并把山峰轮廓比作刀锋和有表情的小娃娃。",
+          "requirement": "required",
+          "targetBundles": [
+            "竹林与刀锋般的山壁"
+          ],
+          "chosenSpanIds": [
+            "C4646_zve1_day7_broll_speech_s0-10",
+            "C4647_zve1_day7_broll_speech_s0-9",
+            "C4649_zve1_day7_broll_speech_s0-1",
+            "C4650_zve1_day7_broll_speech_s0-1",
+            "C4652_zve1_day7_broll_speech_s0-12",
+            "C4653_zve1_day7_broll_speech_s3-5",
+            "C4654_zve1_day7_broll_speech_s0-10",
+            "C4655_zve1_day7_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-16",
+      "slots": [
+        {
+          "id": "FW-08-16-materials",
+          "query": "从水面正对挺拔山峰，人物指出玉女峰并与前一天视角比较；多条竹筏在河上相遇，其中一条载着白狗。",
+          "requirement": "required",
+          "targetBundles": [
+            "玉女峰与带狗的竹筏"
+          ],
+          "chosenSpanIds": [
+            "C4656_zve1_day7_broll_speech_s1-8",
+            "C4658_zve1_day7_broll_speech_s0-15",
+            "C4659_zve1_day7_broll_speech_s2-9",
+            "C4660_zve1_day7_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-17",
+      "slots": [
+        {
+          "id": "FW-08-17-materials",
+          "query": "岩石上的鸟、雨点打过的水面与岸边题刻可见，人物说接近一曲终点，指着大王峰说明这次没有攀登。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨中鸟影、一曲与大王峰"
+          ],
+          "chosenSpanIds": [
+            "C0119_a7r6_broll_s0-2",
+            "C0120_a7r6_broll_speech_s0-7",
+            "C4661_zve1_day7_drive_speech_s1-7",
+            "C4662_zve1_day7_drive_speech_s0-5",
+            "C4663_zve1_day7_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-18",
+      "slots": [
+        {
+          "id": "FW-08-18-materials",
+          "query": "竹筏转入两岸浓密树木之间，人物把这段比作丛林穿越，继续观察鱼跃水面，最后指出武夷宫终点并口述全程约九十分钟。",
+          "requirement": "required",
+          "targetBundles": [
+            "林荫水路与终点码头"
+          ],
+          "chosenSpanIds": [
+            "C4664_zve1_day7_broll_speech_s3-7",
+            "C4665_zve1_day7_drive_speech_s0-9",
+            "C4666_zve1_day7_broll_speech_s2-6",
+            "C4667_zve1_day7_broll_speech_s3-24",
+            "C4668_zve1_day7_broll_speech_s0-2",
+            "C4669_zve1_day7_drive_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-19",
+      "slots": [
+        {
+          "id": "FW-08-19-materials",
+          "query": "救生衣与竹筏、撑篙人、河岸白鸟、山体叠石和近水巨岩，构成漂流前段的照片。",
+          "requirement": "required",
+          "targetBundles": [
+            "漂流前段照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01934_photos_photo",
+            "DSC01936_photos_photo",
+            "DSC01938_photos_photo",
+            "DSC02301_photos_photo",
+            "DSC02305_photos_photo",
+            "DSC01941_photos_photo",
+            "DSC01945_photos_photo",
+            "DSC01948_photos_photo",
+            "DSC01950_photos_photo",
+            "DSC01952_photos_photo",
+            "DSC01953_photos_photo",
+            "DSC01957_photos_photo"
+          ],
+          "treatments": {
+            "DSC01934_photos_photo": {
+              "audio": -100
+            },
+            "DSC01936_photos_photo": {
+              "audio": -100
+            },
+            "DSC01938_photos_photo": {
+              "audio": -100
+            },
+            "DSC02301_photos_photo": {
+              "audio": -100
+            },
+            "DSC02305_photos_photo": {
+              "audio": -100
+            },
+            "DSC01941_photos_photo": {
+              "audio": -100
+            },
+            "DSC01945_photos_photo": {
+              "audio": -100
+            },
+            "DSC01948_photos_photo": {
+              "audio": -100
+            },
+            "DSC01950_photos_photo": {
+              "audio": -100
+            },
+            "DSC01952_photos_photo": {
+              "audio": -100
+            },
+            "DSC01953_photos_photo": {
+              "audio": -100
+            },
+            "DSC01957_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-20",
+      "slots": [
+        {
+          "id": "FW-08-20-materials",
+          "query": "照片包括崖壁刻字、水边亭台、巨石洞孔、林边屋舍、拱桥、往来竹筏与石岸上的鸟。",
+          "requirement": "required",
+          "targetBundles": [
+            "河湾、桥与岩岸照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01964_photos_photo",
+            "DSC01967_photos_photo",
+            "DSC01968_photos_photo",
+            "DSC02306_photos_photo",
+            "DSC01973_photos_photo",
+            "DSC01976_photos_photo",
+            "DSC01977_photos_photo",
+            "DSC01979_photos_photo",
+            "DSC01983_photos_photo",
+            "DSC02309_photos_photo",
+            "DSC01985_photos_photo",
+            "DSC01988_photos_photo",
+            "DSC01993_photos_photo"
+          ],
+          "treatments": {
+            "DSC01964_photos_photo": {
+              "audio": -100
+            },
+            "DSC01967_photos_photo": {
+              "audio": -100
+            },
+            "DSC01968_photos_photo": {
+              "audio": -100
+            },
+            "DSC02306_photos_photo": {
+              "audio": -100
+            },
+            "DSC01973_photos_photo": {
+              "audio": -100
+            },
+            "DSC01976_photos_photo": {
+              "audio": -100
+            },
+            "DSC01977_photos_photo": {
+              "audio": -100
+            },
+            "DSC01979_photos_photo": {
+              "audio": -100
+            },
+            "DSC01983_photos_photo": {
+              "audio": -100
+            },
+            "DSC02309_photos_photo": {
+              "audio": -100
+            },
+            "DSC01985_photos_photo": {
+              "audio": -100
+            },
+            "DSC01988_photos_photo": {
+              "audio": -100
+            },
+            "DSC01993_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-21",
+      "slots": [
+        {
+          "id": "FW-08-21-materials",
+          "query": "高耸岩峰、玉女峰前的竹筏、雨中溪岸和鸟，以及两岸树木围拢的末段河道出现在照片中。",
+          "requirement": "required",
+          "targetBundles": [
+            "玉女峰至林荫终点照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC01995_photos_photo",
+            "DSC01996_photos_photo",
+            "DSC01998_photos_photo",
+            "DSC02000_photos_photo",
+            "DSC02002_photos_photo",
+            "DSC02315_photos_photo",
+            "DSC02316_photos_photo",
+            "DSC02010_photos_photo",
+            "DSC02012_photos_photo",
+            "DSC02014_photos_photo",
+            "DSC02017_photos_photo",
+            "DSC02020_photos_photo"
+          ],
+          "treatments": {
+            "DSC01995_photos_photo": {
+              "audio": -100
+            },
+            "DSC01996_photos_photo": {
+              "audio": -100
+            },
+            "DSC01998_photos_photo": {
+              "audio": -100
+            },
+            "DSC02000_photos_photo": {
+              "audio": -100
+            },
+            "DSC02002_photos_photo": {
+              "audio": -100
+            },
+            "DSC02315_photos_photo": {
+              "audio": -100
+            },
+            "DSC02316_photos_photo": {
+              "audio": -100
+            },
+            "DSC02010_photos_photo": {
+              "audio": -100
+            },
+            "DSC02012_photos_photo": {
+              "audio": -100
+            },
+            "DSC02014_photos_photo": {
+              "audio": -100
+            },
+            "DSC02017_photos_photo": {
+              "audio": -100
+            },
+            "DSC02020_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-22",
+      "slots": [
+        {
+          "id": "FW-08-22-materials",
+          "query": "人物穿雨衣沿湿石路离开，谈雨衣购买经历，经过武夷宫和宋街商铺，买了两只滚烫的茶叶蛋。",
+          "requirement": "required",
+          "targetBundles": [
+            "下筏后的雨衣、宋街与茶叶蛋"
+          ],
+          "chosenSpanIds": [
+            "C4670_zve1_day7_broll_speech_s1-20",
+            "C4671_zve1_day7_broll_speech_s1-6",
+            "C4672_zve1_day7_broll_speech_s0-16",
+            "C4673_zve1_day7_talking-head_speech_s0-10",
+            "C4674_zve1_day7_broll_speech_s0-4",
+            "C4675_zve1_day7_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-23",
+      "slots": [
+        {
+          "id": "FW-08-23-materials",
+          "query": "查看公交站牌、辨认到站车辆，在路边等车时尝试拿茶叶蛋；随后乘车穿过景区，回到停车位置并总结交通体验。",
+          "requirement": "required",
+          "targetBundles": [
+            "寻找公交并回到停车处"
+          ],
+          "chosenSpanIds": [
+            "C4676_zve1_day7_drive_speech_s0-9",
+            "C4677_zve1_day7_drive_speech_s0-7",
+            "C4678_zve1_day7_broll_speech_s0-8",
+            "C4679_zve1_day7_broll_speech_s0-13",
+            "C4680_zve1_day7_drive_speech_s1-6",
+            "C4681_zve1_day7_drive_speech_s0-5",
+            "C4682_zve1_day7_talking-head_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-24",
+      "slots": [
+        {
+          "id": "FW-08-24-materials",
+          "query": "照片记录街边黄色车辆、旁边银色车辆与集市环境。",
+          "requirement": "required",
+          "targetBundles": [
+            "回停车处的补充照片"
+          ],
+          "chosenSpanIds": [
+            "DSC02318_photos_photo"
+          ],
+          "treatments": {
+            "DSC02318_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-01",
+      "slots": [
+        {
+          "id": "FW-09-01-materials",
+          "query": "人物在车内剥茶叶蛋、品尝并评价，随后口述准备离开武夷山，对遇到的人与旅游体验作个人总结。",
+          "requirement": "required",
+          "targetBundles": [
+            "车内茶叶蛋与武夷山告别"
+          ],
+          "chosenSpanIds": [
+            "C4683_zve1_day7_drive_speech_s1-16",
+            "C4683_zve1_day7_drive_visual_s12-57",
+            "C4683_zve1_day7_drive_speech_s27-39",
+            "C4683_zve1_day7_drive_speech_s47-58",
+            "C4684_zve1_day7_talking-head_speech_s0-2",
+            "C4685_zve1_day7_drive_speech_s1-64"
+          ],
+          "treatments": {
+            "C4683_zve1_day7_drive_visual_s12-57": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-02",
+      "slots": [
+        {
+          "id": "FW-09-02-materials",
+          "query": "车辆经过运筏车辆、林间道路和九曲收费站，人物猜测竹筏如何回到起点，看到山雾和渐变树色，也表达漂流时没遇到预期晨雾的遗憾。",
+          "requirement": "required",
+          "targetBundles": [
+            "运筏车辆、收费站与晨雾"
+          ],
+          "chosenSpanIds": [
+            "C4686_zve1_day7_drive_speech_s1-19",
+            "C4686_zve1_day7_drive_speech_s22-23",
+            "C4687_zve1_day7_drive_speech_s5-17",
+            "C4688_zve1_day7_drive_speech_s1-14",
+            "C4689_zve1_day7_drive_speech_s2-19",
+            "C4690_zve1_day7_drive_speech_s0-13",
+            "C4690_zve1_day7_drive_speech_s16-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-03",
+      "slots": [
+        {
+          "id": "FW-09-03-materials",
+          "query": "山间高速通向隧道，出洞后湿路和远山笼在雾里；车内说来到江西，沿路辨认路牌并讨论周边目的地。",
+          "requirement": "required",
+          "targetBundles": [
+            "分水关前后迥异的雾景"
+          ],
+          "chosenSpanIds": [
+            "C4691_zve1_day7_drive_s0-16",
+            "C4692_zve1_day7_drive_speech_s3-22",
+            "C4693_zve1_day7_drive_s0-1",
+            "C4694_zve1_day7_drive_speech_s3-55",
+            "C4695_zve1_day7_drive_speech_s2-6",
+            "C4695_zve1_day7_drive_speech_s14-58",
+            "C4695_zve1_day7_drive_speech_s68-72"
+          ],
+          "treatments": {
+            "C4691_zve1_day7_drive_s0-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4693_zve1_day7_drive_s0-1": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-04",
+      "slots": [
+        {
+          "id": "FW-09-04-materials",
+          "query": "车辆在有护栏、树木和其他车流的雾中高速行进，人物试着拍窗外山景，讨论视野遮挡和前车行驶。",
+          "requirement": "required",
+          "targetBundles": [
+            "雾中继续前行与拍摄"
+          ],
+          "chosenSpanIds": [
+            "C4696_zve1_day7_drive_speech_s0-1",
+            "C4696_zve1_day7_drive_speech_s11-12",
+            "C4696_zve1_day7_drive_visual_s13-28",
+            "C4696_zve1_day7_drive_speech_s15-24",
+            "C4696_zve1_day7_drive_speech_s30-38",
+            "C4697_zve1_day7_drive_speech_s0-19"
+          ],
+          "treatments": {
+            "C4696_zve1_day7_drive_visual_s13-28": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-05",
+      "slots": [
+        {
+          "id": "FW-09-05-materials",
+          "query": "路旁事故车辆、绕行提示、并行车流和应急车道附近的车辆可见；人物评论所见驾驶行为，随后驶入车多的上饶服务区。",
+          "requirement": "required",
+          "targetBundles": [
+            "高速交通与服务区人潮"
+          ],
+          "chosenSpanIds": [
+            "C4698_zve1_day7_drive_speech_s1-10",
+            "C4699_zve1_day7_drive_speech_s2-16",
+            "C4699_zve1_day7_drive_visual_s9-22",
+            "C4699_zve1_day7_drive_speech_s28-29",
+            "C4700_zve1_day7_drive_speech_s0-18",
+            "C4700_zve1_day7_drive_visual_s9-28",
+            "C4701_zve1_day7_drive_speech_s0-7"
+          ],
+          "treatments": {
+            "C4699_zve1_day7_drive_visual_s9-22": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4700_zve1_day7_drive_visual_s9-28": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-06",
+      "slots": [
+        {
+          "id": "FW-09-06-materials",
+          "query": "午后高速穿过绿色山丘，路面逐渐湿润；人物观察并排行车、路旁闪灯和路面零件，对车辆损伤原因作现场猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "午后山路、车流与事故观察"
+          ],
+          "chosenSpanIds": [
+            "C4702_zve1_day7_drive_visual_s2-9",
+            "C4702_zve1_day7_drive_speech_s3-7",
+            "C4703_zve1_day7_drive_speech_s1-10",
+            "C4704_zve1_day7_drive_speech_s1-10",
+            "C4705_zve1_day7_drive_speech_s0-9",
+            "C4706_zve1_day7_drive_speech_s0-6",
+            "C4706_zve1_day7_drive_visual_s4-11",
+            "C4707_zve1_day7_drive_speech_s1-24",
+            "C4708_zve1_day7_drive_speech_s0-8"
+          ],
+          "treatments": {
+            "C4702_zve1_day7_drive_visual_s2-9": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4706_zve1_day7_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-07",
+      "slots": [
+        {
+          "id": "FW-09-07-materials",
+          "query": "雨刷划过挡风玻璃，车前是湿滑高速、货车与跨线桥，人物期待抵达后不再下雨。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨中接近景德镇"
+          ],
+          "chosenSpanIds": [
+            "C4709_zve1_day7_drive_speech_s1-3",
+            "C4709_zve1_day7_drive_visual_s6-18",
+            "C4709_zve1_day7_drive_speech_s6-12",
+            "C4709_zve1_day7_drive_speech_s20-24",
+            "C4710_zve1_day7_drive_s0-26"
+          ],
+          "treatments": {
+            "C4709_zve1_day7_drive_visual_s6-18": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4710_zve1_day7_drive_s0-26": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-08",
+      "slots": [
+        {
+          "id": "FW-09-08-materials",
+          "query": "驶出景德镇南收费站，经过城市树荫道路、桥梁和街区，最后进入陶溪川停车场；人物读欢迎标语、谈对城市的第一印象并交谈停车事宜。",
+          "requirement": "required",
+          "targetBundles": [
+            "进城、白鹭大桥与停车"
+          ],
+          "chosenSpanIds": [
+            "C4711_zve1_day7_drive_speech_s0-43",
+            "C4712_zve1_day7_drive_speech_s0-6",
+            "C4712_zve1_day7_drive_speech_s8-12",
+            "C4713_zve1_day7_drive_speech_s0-9",
+            "C4713_zve1_day7_drive_visual_s9-29",
+            "C4714_zve1_day7_drive_speech_s3-17",
+            "C4715_zve1_day7_drive_speech_s2-16",
+            "C4716_zve1_day7_drive_speech_s0-15",
+            "C4717_zve1_day7_drive_speech_s7-104"
+          ],
+          "treatments": {
+            "C4713_zve1_day7_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-09-09",
+      "slots": [
+        {
+          "id": "FW-09-09-materials",
+          "query": "两张照片记录雾天高速上的车辆、潮湿路面与绿色山坡。",
+          "requirement": "required",
+          "targetBundles": [
+            "雾中高速照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02023_photos_photo",
+            "DSC02030_photos_photo"
+          ],
+          "treatments": {
+            "DSC02023_photos_photo": {
+              "audio": -100
+            },
+            "DSC02030_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-01",
+      "slots": [
+        {
+          "id": "FW-10-01-materials",
+          "query": "人物介绍所了解的旧瓷厂与文创园背景，观看瓷器摊位和体验馆；室内有人在桌边绘制器物，也短暂看到他人在陶轮旁处理泥坯，现场有惊叹与交谈。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入陶溪川与旁观作陶"
+          ],
+          "chosenSpanIds": [
+            "C4718_zve1_day7_broll_speech_s0-63",
+            "C4719_zve1_day7_broll_speech_s1-15",
+            "C4720_zve1_day7_broll_speech_s0-11",
+            "C4721_zve1_day7_broll_speech_s1-9",
+            "C4722_zve1_day7_talking-head_speech_s0-34",
+            "C4723_zve1_day7_broll_speech_s0-4",
+            "C4724_zve1_day7_broll_speech_s3-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-02",
+      "slots": [
+        {
+          "id": "FW-10-02-materials",
+          "query": "砖砌高烟囱、广场和展柜中的瓷器可见，人物口述厂史、观察器物颜色与纹样，也注意到部分连接处的胶痕。",
+          "requirement": "required",
+          "targetBundles": [
+            "大烟囱与瓷器陈列"
+          ],
+          "chosenSpanIds": [
+            "C4725_zve1_day7_broll_speech_s1-11",
+            "C4726_zve1_day7_broll_speech_s0-26",
+            "C4727_zve1_day7_broll_speech_s0-46"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-03",
+      "slots": [
+        {
+          "id": "FW-10-03-materials",
+          "query": "摊位展示有眼睛和面孔图案的小陶艺作品，人物用游戏形象作联想；进入砖墙走廊看外露管线，再经过商店与人少的室内区域。",
+          "requirement": "required",
+          "targetBundles": [
+            "街区摊位、走廊与管道"
+          ],
+          "chosenSpanIds": [
+            "C4728_zve1_day7_broll_speech_s1-18",
+            "C4729_zve1_day7_broll_speech_s0-4",
+            "C4730_zve1_day7_broll_s0-1",
+            "C4730_zve1_day7_broll_speech_s0-12",
+            "C4731_zve1_day7_broll_speech_s1-19",
+            "C4732_zve1_day7_broll_s0-1",
+            "C4732_zve1_day7_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-04",
+      "slots": [
+        {
+          "id": "FW-10-04-materials",
+          "query": "人物循工作人员指引寻找博物馆，在街区拿到瓷瓶造型雪糕并尝试掰开；随后看到绘有风光、闪电等画面的陶瓷作品与市集。",
+          "requirement": "required",
+          "targetBundles": [
+            "找博物馆、双份雪糕与陶瓷画"
+          ],
+          "chosenSpanIds": [
+            "C4734_zve1_day7_broll_speech_s0-8",
+            "C4735_zve1_day7_broll_speech_s0-7",
+            "C4736_zve1_day7_broll_speech_s7-19",
+            "C4737_zve1_day7_broll_speech_s0-32",
+            "C4738_zve1_day7_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-05",
+      "slots": [
+        {
+          "id": "FW-10-05-materials",
+          "query": "购票进入后观看文书、堆叠木柴、巨大的砖窑、坑道、金属构件和成排器物；人物边看边提出对添柴、烧制与展品年代的疑问，没有完整现场烧制过程。",
+          "requirement": "required",
+          "targetBundles": [
+            "入馆、燃料与窑体结构"
+          ],
+          "chosenSpanIds": [
+            "C4739_zve1_day7_broll_speech_s0-7",
+            "C4740_zve1_day7_broll_speech_s0-20",
+            "C4741_zve1_day7_broll_s0-1",
+            "C4741_zve1_day7_broll_speech_s0-14",
+            "C4742_zve1_day7_broll_speech_s0-34",
+            "C4743_zve1_day7_broll_speech_s0-8",
+            "C4744_zve1_day7_broll_speech_s0-11",
+            "C4745_zve1_day7_broll_speech_s1-12",
+            "C4746_zve1_day7_broll_speech_s1-16",
+            "C4747_zve1_day7_broll_speech_s0-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-06",
+      "slots": [
+        {
+          "id": "FW-10-06-materials",
+          "query": "曲面屏幕播放火焰色影像，器物在台面投出图案；随后可见窄轨、砖道和设备，人物讨论现代化运送与烧窑，并看到劳动合同陈列。",
+          "requirement": "required",
+          "targetBundles": [
+            "火焰影像、器物光影与轨道"
+          ],
+          "chosenSpanIds": [
+            "C4748_zve1_day7_broll_speech_s0-10",
+            "C4749_zve1_day7_broll_speech_s0-12",
+            "C4750_zve1_day7_broll_speech_s0-11",
+            "C4751_zve1_day7_broll_speech_s0-33",
+            "C4751_zve1_day7_broll_s32-36"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-07",
+      "slots": [
+        {
+          "id": "FW-10-07-materials",
+          "query": "展陈中有大型磨盘装置、收录机、相机、工服、工资表、悬挂木椅与旧照片；人物读展签谈工人经历，拿起老电话试听其中的声音。",
+          "requirement": "required",
+          "targetBundles": [
+            "机械、工服、工资表与老电话"
+          ],
+          "chosenSpanIds": [
+            "C4752_zve1_day7_broll_speech_s0-15",
+            "C4753_zve1_day7_broll_speech_s0-18",
+            "C4754_zve1_day7_broll_speech_s0-2",
+            "C4755_zve1_day7_broll_speech_s0-14",
+            "C4757_zve1_day7_broll_speech_s1-11",
+            "C4758_zve1_day7_broll_s0-1",
+            "C4758_zve1_day7_broll_speech_s0-11",
+            "C4759_zve1_day7_broll_speech_s0-13",
+            "C4759_zve1_day7_broll_speech_s17-21"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-08",
+      "slots": [
+        {
+          "id": "FW-10-08-materials",
+          "query": "老电话之后是大量堆叠餐盘和多种器物展柜，青花、花纹茶具、彩色瓶与雕塑逐一出现；人物谈工业生产、个人审美及与此前黑盏的比较。",
+          "requirement": "required",
+          "targetBundles": [
+            "电话互动与日用、艺术瓷器"
+          ],
+          "chosenSpanIds": [
+            "C4761_zve1_day7_broll_speech_s0-8",
+            "C4762_zve1_day7_broll_s0-1",
+            "C4762_zve1_day7_broll_speech_s0-18",
+            "C4763_zve1_day7_broll_speech_s0-20",
+            "C4764_zve1_day7_broll_speech_s0-14",
+            "C4765_zve1_day7_broll_speech_s0-6",
+            "C4766_zve1_day7_broll_speech_s0-19",
+            "C4767_zve1_day7_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-09",
+      "slots": [
+        {
+          "id": "FW-10-09-materials",
+          "query": "墙上展示旧自行车，屏幕播放带字幕的人物访谈；现场口述谈改制与下岗，并听到讨债经历的片段。",
+          "requirement": "required",
+          "targetBundles": [
+            "自行车与展厅采访影像"
+          ],
+          "chosenSpanIds": [
+            "C4768_zve1_day7_broll_speech_s0-8",
+            "C4769_zve1_day7_talking-head_speech_s3-7"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-10",
+      "slots": [
+        {
+          "id": "FW-10-10-materials",
+          "query": "砖铺街道、树木、陶艺摊位、管道走廊、烟囱及水面倒影和市集人群出现在照片中。",
+          "requirement": "required",
+          "targetBundles": [
+            "陶溪川街区照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02033_photos_photo",
+            "DSC02036_photos_photo",
+            "DSC02325_photos_photo",
+            "DSC02038_photos_photo",
+            "DSC02040_photos_photo",
+            "DSC02331_photos_photo",
+            "DSC02041_photos_photo",
+            "DSC02337_photos_photo",
+            "DSC02042_photos_photo",
+            "DSC02043_photos_photo"
+          ],
+          "treatments": {
+            "DSC02033_photos_photo": {
+              "audio": -100
+            },
+            "DSC02036_photos_photo": {
+              "audio": -100
+            },
+            "DSC02325_photos_photo": {
+              "audio": -100
+            },
+            "DSC02038_photos_photo": {
+              "audio": -100
+            },
+            "DSC02040_photos_photo": {
+              "audio": -100
+            },
+            "DSC02331_photos_photo": {
+              "audio": -100
+            },
+            "DSC02041_photos_photo": {
+              "audio": -100
+            },
+            "DSC02337_photos_photo": {
+              "audio": -100
+            },
+            "DSC02042_photos_photo": {
+              "audio": -100
+            },
+            "DSC02043_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-11",
+      "slots": [
+        {
+          "id": "FW-10-11-materials",
+          "query": "照片记录木柴、砖窑、窑前人物、砖墙合影和厂房木构、窗户等室内空间。",
+          "requirement": "required",
+          "targetBundles": [
+            "窑体与室内空间照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02047_photos_photo",
+            "DSC02346_photos_photo",
+            "DSC02048_photos_photo",
+            "DSC02352_photos_photo",
+            "DSC02354_photos_photo",
+            "DSC02355_photos_photo",
+            "DSC02052_photos_photo"
+          ],
+          "treatments": {
+            "DSC02047_photos_photo": {
+              "audio": -100
+            },
+            "DSC02346_photos_photo": {
+              "audio": -100
+            },
+            "DSC02048_photos_photo": {
+              "audio": -100
+            },
+            "DSC02352_photos_photo": {
+              "audio": -100
+            },
+            "DSC02354_photos_photo": {
+              "audio": -100
+            },
+            "DSC02355_photos_photo": {
+              "audio": -100
+            },
+            "DSC02052_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-12",
+      "slots": [
+        {
+          "id": "FW-10-12-materials",
+          "query": "火焰屏幕、器物光影、窄轨隧道、悬挂木椅与老电话，包括人物拿起听筒的动作，被分别拍下。",
+          "requirement": "required",
+          "targetBundles": [
+            "装置、轨道与工人记忆照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02360_photos_photo",
+            "DSC02361_photos_photo",
+            "DSC02057_photos_photo",
+            "DSC02058_photos_photo",
+            "DSC02060_photos_photo",
+            "DSC02061_photos_photo",
+            "DSC02063_photos_photo",
+            "DSC02068_photos_photo",
+            "DSC02071_photos_photo",
+            "DSC02072_photos_photo"
+          ],
+          "treatments": {
+            "DSC02360_photos_photo": {
+              "audio": -100
+            },
+            "DSC02361_photos_photo": {
+              "audio": -100
+            },
+            "DSC02057_photos_photo": {
+              "audio": -100
+            },
+            "DSC02058_photos_photo": {
+              "audio": -100
+            },
+            "DSC02060_photos_photo": {
+              "audio": -100
+            },
+            "DSC02061_photos_photo": {
+              "audio": -100
+            },
+            "DSC02063_photos_photo": {
+              "audio": -100
+            },
+            "DSC02068_photos_photo": {
+              "audio": -100
+            },
+            "DSC02071_photos_photo": {
+              "audio": -100
+            },
+            "DSC02072_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-10-13",
+      "slots": [
+        {
+          "id": "FW-10-13-materials",
+          "query": "照片包括堆叠餐盘、青花茶具、陶瓷雕塑、墙上自行车及零件，也有展厅屏幕中的受访者影像。",
+          "requirement": "required",
+          "targetBundles": [
+            "瓷器与展厅末段照片包"
+          ],
+          "chosenSpanIds": [
+            "DSC02074_photos_photo",
+            "DSC02077_photos_photo",
+            "DSC02080_photos_photo",
+            "DSC02362_photos_photo",
+            "DSC02363_photos_photo",
+            "DSC02364_photos_photo",
+            "DSC02082_photos_photo"
+          ],
+          "treatments": {
+            "DSC02074_photos_photo": {
+              "audio": -100
+            },
+            "DSC02077_photos_photo": {
+              "audio": -100
+            },
+            "DSC02080_photos_photo": {
+              "audio": -100
+            },
+            "DSC02362_photos_photo": {
+              "audio": -100
+            },
+            "DSC02363_photos_photo": {
+              "audio": -100
+            },
+            "DSC02364_photos_photo": {
+              "audio": -100
+            },
+            "DSC02082_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-01",
+      "slots": [
+        {
+          "id": "FW-11-01-materials",
+          "query": "车辆排在城区车流里，人物谈停车场数量，夜间驶向三宝一带，沿途有亮灯店铺、公交车与湿路反光。",
+          "requirement": "required",
+          "targetBundles": [
+            "陶溪川离开与夜间转场"
+          ],
+          "chosenSpanIds": [
+            "C4770_zve1_day7_drive_speech_s0-12",
+            "C4771_zve1_day7_drive_speech_s1-15",
+            "C4772_zve1_day7_drive_speech_s0-29",
+            "C4773_zve1_day7_drive_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-02",
+      "slots": [
+        {
+          "id": "FW-11-02-materials",
+          "query": "餐馆附近车辆密集，人物找到车位、经过排队入口并说已线上取号，随后口述所了解的三宝村材料供应、艺术家和商业街变化。",
+          "requirement": "required",
+          "targetBundles": [
+            "停车、排队与三宝村口述"
+          ],
+          "chosenSpanIds": [
+            "C4774_zve1_day7_broll_speech_s0-60",
+            "C4775_zve1_day7_broll_speech_s0-2",
+            "C4776_zve1_day7_broll_speech_s0-4",
+            "C4777_zve1_day7_talking-head_speech_s0-2",
+            "C4779_zve1_day7_talking-head_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-03",
+      "slots": [
+        {
+          "id": "FW-11-03-materials",
+          "query": "桌边人物面对镜头，在餐馆暖光中交谈数值与拍摄视角，出现重复的示范和回应。",
+          "requirement": "required",
+          "targetBundles": [
+            "等菜时的镜头讨论"
+          ],
+          "chosenSpanIds": [
+            "C4780_zve1_day7_talking-head_speech_s0-17",
+            "C4781_zve1_day7_talking-head_speech_s1-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-04",
+      "slots": [
+        {
+          "id": "FW-11-04-materials",
+          "query": "桌上摆出配饼牛肉、馄饨三杯鸡和茄子，人物逐一吃并描述嫩度、酸甜和辣度，比较自己的预期与实际味道。",
+          "requirement": "required",
+          "targetBundles": [
+            "黄牛肉、三杯鸡与茄子"
+          ],
+          "chosenSpanIds": [
+            "C4782_zve1_day7_broll_s4-6",
+            "C4783_zve1_day7_broll_speech_s0-20",
+            "C4784_zve1_day7_talking-head_speech_s0-4",
+            "C4784_zve1_day7_talking-head_speech_s12-56",
+            "C4784_zve1_day7_talking-head_speech_s64-80"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-05",
+      "slots": [
+        {
+          "id": "FW-11-05-materials",
+          "query": "人物介绍米制小吃与清汤，夹取品尝，描述黏糯、炒制口感和清甜；小吃历史与做法来自口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "碱水粑、饺子粑与肉丸汤"
+          ],
+          "chosenSpanIds": [
+            "C4785_zve1_day7_broll_speech_s0-12",
+            "C4786_zve1_day7_talking-head_speech_s1-95"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-06",
+      "slots": [
+        {
+          "id": "FW-11-06-materials",
+          "query": "桌上菜肴接近吃完，人物谈份量、价格、服务和辣度，回车后总结当天停车充电的顺利，期待鄱阳湖日出。",
+          "requirement": "required",
+          "targetBundles": [
+            "餐后价格、服务与行程期待"
+          ],
+          "chosenSpanIds": [
+            "C4787_zve1_day7_broll_s0-1",
+            "C4787_zve1_day7_broll_speech_s0-11",
+            "C4788_zve1_day7_talking-head_speech_s0-27",
+            "C4791_zve1_day7_talking-head_speech_s0-31"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-07",
+      "slots": [
+        {
+          "id": "FW-11-07-materials",
+          "query": "夜路上出现远处灯点，人物猜测是否为无人机，随后驶过收费站并向景德镇道别。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜间驶向收费站"
+          ],
+          "chosenSpanIds": [
+            "C4792_zve1_day7_drive_speech_s1-11",
+            "C4793_zve1_day7_drive_speech_s0-9",
+            "C4794_zve1_day7_drive_speech_s3-26"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-08",
+      "slots": [
+        {
+          "id": "FW-11-08-materials",
+          "query": "夜间停车后近看黄色车辆前部、灯旁和保险杠，人物检查开裂与松脱位置，口述改行程后发生碰撞的懊恼。",
+          "requirement": "required",
+          "targetBundles": [
+            "停车查看车辆受损"
+          ],
+          "chosenSpanIds": [
+            "C4795_zve1_day7_broll_speech_s0-40",
+            "C4796_zve1_day7_broll_speech_s0-9"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-09",
+      "slots": [
+        {
+          "id": "FW-11-09-materials",
+          "query": "人物坐在车内拿着纸张，讲述自己对前夜追尾经过、责任认定和待复核状态的理解，并说准备吃饭后继续行程；画面是事后自述。",
+          "requirement": "required",
+          "targetBundles": [
+            "次日下午的事故处理自述"
+          ],
+          "chosenSpanIds": [
+            "C4797_zve1_day8_talking-head_speech_s0-112"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-10",
+      "slots": [
+        {
+          "id": "FW-11-10-materials",
+          "query": "餐馆内外人多，人物说这是交警推荐的店；厨房与点菜区忙碌，随后从大木桶中盛米饭。",
+          "requirement": "required",
+          "targetBundles": [
+            "街边餐馆点菜与木桶米饭"
+          ],
+          "chosenSpanIds": [
+            "C4798_zve1_day8_broll_speech_s2-10",
+            "C4799_zve1_day8_broll_speech_s0-3",
+            "C4800_zve1_day8_broll_speech_s1-6",
+            "C4801_zve1_day8_broll_speech_s1-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-11",
+      "slots": [
+        {
+          "id": "FW-11-11-materials",
+          "query": "桌上是辣椒炒肉、鱼与豆腐汤，人物夹菜、吃饭并描述辣香、豆腐嫩度和米饭清香，翻汤时发现煎蛋。",
+          "requirement": "required",
+          "targetBundles": [
+            "辣椒炒肉、鱼汤与米饭"
+          ],
+          "chosenSpanIds": [
+            "C4802_zve1_day8_broll_speech_s0-12",
+            "C4803_zve1_day8_broll_speech_s1-54",
+            "C4804_zve1_day8_broll_speech_s0-11",
+            "C4805_zve1_day8_broll_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-12",
+      "slots": [
+        {
+          "id": "FW-11-12-materials",
+          "query": "爆炒鱿鱼上桌，人物品尝并谈鲜度、火候和多种配料的味道，餐后在店外评价价格与这次用餐体验。",
+          "requirement": "required",
+          "targetBundles": [
+            "鱿鱼与这一餐的感受"
+          ],
+          "chosenSpanIds": [
+            "C4806_zve1_day8_broll_speech_s0-1",
+            "C4808_zve1_day8_broll_s0-1",
+            "C4808_zve1_day8_broll_speech_s0-5",
+            "C4809_zve1_day8_broll_speech_s1-26",
+            "C4810_zve1_day8_broll_speech_s0-21",
+            "C4812_zve1_day8_talking-head_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-11-13",
+      "slots": [
+        {
+          "id": "FW-11-13-materials",
+          "query": "夜间收费站前车流与灯牌可见，人物说这次真正继续前往鄱阳湖，导航提示驶向坡道。",
+          "requirement": "required",
+          "targetBundles": [
+            "重新离开景德镇"
+          ],
+          "chosenSpanIds": [
+            "C4813_zve1_day8_drive_speech_s2-25"
+          ],
+          "treatments": {}
+        }
+      ]
+    }
+  ],
+  "coverageAudit": {
+    "generatedAt": "2026-10-17T11:42:14.394Z",
+    "byType": [
+      {
+        "key": "broll",
+        "available": 509,
+        "chosen": 509,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "photo",
+        "available": 254,
+        "chosen": 254,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "drive",
+        "available": 147,
+        "chosen": 144,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4269_zve1_day5_drive_visual_s23-28",
+          "C4385_zve1_day6_drive_visual_s23-25",
+          "C4446_zve1_day6_drive_visual_s0-3"
+        ]
+      },
+      {
+        "key": "talking-head",
+        "available": 52,
+        "chosen": 52,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "aerial",
+        "available": 25,
+        "chosen": 25,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "timelapse",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byDay": [
+      {
+        "key": "2026-09-28",
+        "label": "2026-09-28",
+        "available": 31,
+        "chosen": 31,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-09-29",
+        "label": "2026-09-29",
+        "available": 279,
+        "chosen": 278,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4269_zve1_day5_drive_visual_s23-28"
+        ]
+      },
+      {
+        "key": "2026-09-30",
+        "label": "2026-09-30",
+        "available": 328,
+        "chosen": 326,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4385_zve1_day6_drive_visual_s23-25",
+          "C4446_zve1_day6_drive_visual_s0-3"
+        ]
+      },
+      {
+        "key": "2026-10-01",
+        "label": "2026-10-01",
+        "available": 335,
+        "chosen": 335,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-10-02",
+        "label": "2026-10-02",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byEvent": [],
+    "speechProtected": {
+      "available": 612,
+      "chosen": 612,
+      "dropped": 0,
+      "droppedSpanIds": []
+    },
+    "notes": [
+      "范围为已审989个候选；986入选，3个同源重复排除。用户确认召回与分类更正，13个span仅更正type；ID、文字、时间、素材选择和FW归属不变。",
+      "两段地面口述恢复原声；早餐视觉保留原有静音并恢复原速。22个静音行车的加速请求仍由生成器记录为待处理。",
+      "3个静音行车片段即使按4倍仍超过10秒；候车视角及两张补充照片时间疑点继续留待人工。"
+    ]
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "ep2-mountains-villages-craft",
+  "appliedAt": "2026-10-17T11:42:14.352Z",
+  "authorization": "用户在审查结果和明确分类更正建议后表示“推进到下一步”，接受召回并授权按建议更正后生成粗剪。",
+  "scope": "仅正式span的type及已审召回treatments，保持原ID/ASR/segment文字与时间/materialPatterns/visualObservation/chronology/选择与FW边界不变。",
+  "beforeSpansHash": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+  "afterSpansHash": "fcaff7d311ad175bfad8b4e2d708d2ea37ddb41b04de2cbd1cef9d120da2b1cc",
+  "beforeSlotsHash": "8d7799161aaddafbcd8452f05ed72ee45d1720b20876bf1d03625a3852e7f865",
+  "afterSlotsHash": "cd6f3714d1e0c89d9b3cb6d8a1d50f64e424ea2eadf8c511ccadd165466f6656",
+  "corrections": [
+    {
+      "spanId": "C0103_a7r6_aerial_speech_s0-9",
+      "assetId": "C0103_a7r6",
+      "beforeType": "aerial",
+      "afterType": "broll",
+      "reason": "A7R6 地面近看鱼鳞及水色，已审口述与后续更正建议确认按地面视频保留原声。",
+      "visualObservation": "Aerial view of clear shallow water with visible ripples, sandy bottom, and rocky shoreline.",
+      "transcript": "红色的啊，看到没？他刚才转身，他转身的那一瞬间，他就反射阳光，变成那种黄绿色的，哇！",
+      "treatmentBefore": {
+        "audio": -100
+      },
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4337_zve1_day5_aerial_speech_s0-8",
+      "assetId": "C4337_zve1_day5",
+      "beforeType": "aerial",
+      "afterType": "broll",
+      "reason": "ZV-E1 天游峰步行游览中的高位俯瞰九曲溪，按已审更正建议保留地面口述。",
+      "visualObservation": "A river winds through a lush green valley with steep, rocky cliffs on both sides, and several small boats are visible on the water.",
+      "transcript": "这里有好多竹筏在漂流，可以俯瞰，哇，九曲溪，很震撼。",
+      "treatmentBefore": {
+        "audio": -100
+      },
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4317_zve1_day5_drive_speech_s2-18",
+      "assetId": "C4317_zve1_day5",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "人物背包步行上石阶并介绍爬天游峰，不属于行车。",
+      "visualObservation": "A person with a backpack walks on a stone path and up stone steps in a green forest area.",
+      "transcript": "从这里就是正式开始爬天游峰了，上去八百级台阶，说最后一节很陡，要手脚并用。 但是鉴于我已经爬过很多山了，这应该难不倒我，上去感受一下，它有多难。OK。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4588_zve1_day7_drive_speech_s2-21",
+      "assetId": "C4588_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "A man in a white shirt stands on a bamboo raft, holding a long pole to navigate the river.",
+      "transcript": "这里有一个激流，脚让脚抬高。 哇啊，还是比较温柔的。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4610_zve1_day7_drive_speech_s1-10",
+      "assetId": "C4610_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "Green water surface with ripples and reflections.",
+      "transcript": "快快快！继续。 真的好多鱼啊！没有了。没了。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4661_zve1_day7_drive_speech_s1-7",
+      "assetId": "C4661_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "A bamboo raft with red life jackets and a coiled rope floats on a calm river, surrounded by green trees and hills.",
+      "transcript": "到最后一点的时候，下起的这种不大不小的雨，到了一曲了。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4662_zve1_day7_drive_speech_s0-5",
+      "assetId": "C4662_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "A bamboo raft with passengers and a red life jacket floats on a river, surrounded by green hills and trees.",
+      "transcript": "哇，马上就到终点了！ 一曲。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4665_zve1_day7_drive_speech_s0-9",
+      "assetId": "C4665_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "A bamboo raft with passengers and a guide wearing a conical hat navigates a river surrounded by lush green trees.",
+      "transcript": "哎，前方就要到达终点码头了，过了这个弯儿。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4669_zve1_day7_drive_speech_s0-8",
+      "assetId": "C4669_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "broll",
+      "reason": "竹筏游程的水上观察与现场语音，不属于公路行车。",
+      "visualObservation": "Multiple bamboo rafts with passengers and guides navigate a river lined with dense green trees under an overcast sky.",
+      "transcript": "前方就是武夷宫终点，全程大概九十分钟吧，整九十分钟。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4683_zve1_day7_drive_speech_s1-16",
+      "assetId": "C4683_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "talking-head",
+      "reason": "车内人物剥食茶叶蛋并对镜说明，按已审早餐过程保留原速。",
+      "visualObservation": "A man wearing glasses and a grey shirt sits in the driver's seat of a car, peeling a small red fruit.",
+      "transcript": "是，我要来剥这个大红袍茶叶蛋，看我的高级剥法，先把它捏，捏碎，然后一下子就剥下来。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4683_zve1_day7_drive_visual_s12-57",
+      "assetId": "C4683_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "talking-head",
+      "reason": "车内人物剥食茶叶蛋并对镜说明，按已审早餐过程保留原速。",
+      "visualObservation": "A man wearing glasses and a grey shirt is sitting in the driver's seat of a car, peeling a small orange fruit.",
+      "treatmentBefore": {
+        "audio": -100,
+        "speed": 4
+      },
+      "treatmentAfter": {
+        "audio": -100
+      }
+    },
+    {
+      "spanId": "C4683_zve1_day7_drive_speech_s27-39",
+      "assetId": "C4683_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "talking-head",
+      "reason": "车内人物剥食茶叶蛋并对镜说明，按已审早餐过程保留原速。",
+      "visualObservation": "A man wearing glasses and a grey shirt sits in a car, peeling a boiled egg while looking at it.",
+      "transcript": "哎呀，你看一撕它就下来了，非常的快。 吃一口，和普通的茶叶蛋有什么区别？",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    },
+    {
+      "spanId": "C4683_zve1_day7_drive_speech_s47-58",
+      "assetId": "C4683_zve1_day7",
+      "beforeType": "drive",
+      "afterType": "talking-head",
+      "reason": "车内人物剥食茶叶蛋并对镜说明，按已审早餐过程保留原速。",
+      "visualObservation": "A man wearing glasses and a grey shirt sits in a car, eating a piece of fruit while looking at the camera.",
+      "transcript": "感觉好香啊！ 你可能说我饿了，就是觉得比别的茶叶蛋好吃，其实味道也没啥区别。嗯。",
+      "treatmentBefore": {},
+      "treatmentAfter": {}
+    }
+  ],
+  "selectedCount": 986,
+  "protectedSpeechCount": 612,
+  "pendingSpeedCount": 22
+}

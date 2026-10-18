@@ -1,0 +1,241 @@
+{
+  "schemaVersion": "1.0",
+  "plannerPolicyVersion": "codex-agent-v1",
+  "materialIdPolicyVersion": "human-source-v1",
+  "materialTimePolicyVersion": "normalized-captured-at-v1",
+  "id": "edit-flow-ep2-mountains-villages-craft-vlog-20261017",
+  "projectId": "min-gan-midautumn-national-day",
+  "editId": "ep2-mountains-villages-craft",
+  "editRuleCategory": "travel-vlog",
+  "editRuleHash": "0748d3df434eaec8a0b4daa659fff545f0214f730cd97bddc0fcb33a8e322efc",
+  "generatedAt": "2026-10-17T10:06:37.733Z",
+  "updatedAt": "2026-10-17T10:06:37.733Z",
+  "status": "confirmed",
+  "confirmedAt": "2026-10-17T10:06:37.733Z",
+  "summary": "山、村落与手艺：本轮优先完成正文框架 → 框架审查 → 素材召回 → 召回审查 → 独立 Resolve 正文粗剪与原声 SRT；与另一剩余专题集中推进。人工精剪、短片头、锁片、按需旁白及最终字幕留待正文粗剪完成后。",
+  "assumptions": [
+    "用户已为三个专题选择 travel-vlog，本轮明确要求生成剩下两个主题的 Edit Flow 并优先集中完成粗剪；据此登记两份执行计划。此授权不等于确认尚未生成的框架、素材选择或锁片。",
+    "本专题范围：泉州前往武夷山的高速转场、齐云峰车宿与日出、天游峰、下梅古村、遇林亭窑址、茶园与岩谷、九曲溪竹筏，再到景德镇陶溪川及停留晚饭。从“泉州前往武夷山高速沿途”开始，到“景德镇街边餐馆晚饭”结束；10 月 2 日晚“景德镇前往鄱阳湖夜路”归第三专题。",
+    "实际素材时间范围为 2026-09-28 14:39:54 至 2026-10-02 19:13:41（Asia/Shanghai）；正文依照修正后的素材拍摄时间，不按未执行的计划路线改序。",
+    "本专题 29 个已确认事件含 975 段，另有 14 张同范围未挂事件照片，共 989 个候选、857 个素材；补充照片只在本集框架中按实际时间与画面就近安排，不改项目编年史。",
+    "两份剩余专题的事件与候选范围互斥；闽南总版及已拆出的东山岛、泉州时间线保持现状。专题粗剪不预设成片时长、抽样比例或片段数量预算，后续是否再分集以人工剪辑决定。",
+    "先集中审查两份框架，再集中审查两份召回结果，随后分别生成粗剪；每份产物的人工门独立保留，不为批量推进而跳过。粗剪阶段不进入片头、旁白或最终字幕制作。",
+    "共享素材池属于项目级准备，生成各集前只读核实本集实际需要的 Media Pool 项；缺失时执行项目级准备。两份计划不含 resolve.media_sync，不重跑 Ingest、ASR、Analyze、span-builder 或 chronology。",
+    "不需要独立事件表、素材档案或前置逐镜脚本，因此不添加 trip.event_table / material.archive / script.generate；未配置 styleCategory，不引入默认风格档案。",
+    "Pharos story group 只作专题采集标签，范围由已确认编年史及素材确定；研究资料或计划内容不得补写成拍到的事实。"
+  ],
+  "steps": [
+    {
+      "id": "edit-framework-v1",
+      "capabilityId": "edit.framework",
+      "title": "山、村落与手艺：正文剪辑框架",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        }
+      },
+      "gate": "human",
+      "notes": [
+        "按当前 VLOG 规则附录生成全片章节、分段操作稿、不可用 / 缺口、人工审查点。",
+        "按自然日连续打包，以约 150 个事件为阈值；本专题 29 个事件合并为一个有界 SubAgent 包，high reasoning、clean context、不 fork 当前对话。必须完整读取本专题证据，不抽样。",
+        "范围为 2026-09-28 14:39:54 至 2026-10-02 19:13:41（Asia/Shanghai）。从“泉州前往武夷山高速沿途”开始，到“景德镇街边餐馆晚饭”结束；10 月 2 日晚“景德镇前往鄱阳湖夜路”归第三专题。 事件外 14 张补充照片也逐条核对，不重建或改写编年史。",
+        "实际顺序：泉州前往武夷山的高速转场、齐云峰车宿与日出、天游峰、下梅古村、遇林亭窑址、茶园与岩谷、九曲溪竹筏，再到景德镇陶溪川及停留晚饭。",
+        "“手艺”只由实际器物、窑址、工业展陈与现场见闻展开；不得把标题或调研里的制茶、拉坯、匠人采访等当作已拍经历。齐云峰日出按素材时间理解，不沿用自动描述中的日落误判。",
+        "按天、重点时间、行车、航拍和关键事件组织，尽可能覆盖有效片段，不因成片目标时长、框架版面或审查便利过度剔除。",
+        "全片章节仅为宏观概览；分段操作稿是唯一可执行 handoff，每行有稳定 FW-xx-xx id，不另设 beat 边界索引。",
+        "主表事件 / 时间 / spans / 叙事不写 chronology/event/route/gap/span/asset id 或具体素材主键；spans 列必须是准确类型数量与视频语音拆分。",
+        "叙事列只写客观画面与声音总结，不写保留、优先、插入、加速、静音等后续指令。现场观点、猜测、读牌与可确认事实分别理解。",
+        "行车同时间窗口优先无人机跟车于无口播第一视角行车；同事件航拍成组放在普通视频之间，照片在事件末尾成组。规则进入后续召回，不在叙事列写处理命令。",
+        "框架完成后写 awaiting_review，交人工审查；尚未确认时不得执行素材召回。两专题可以并行准备框架，不能互相视为已确认。"
+      ]
+    },
+    {
+      "id": "material-recall-v1",
+      "capabilityId": "material.recall",
+      "title": "按已审框架召回“山、村落与手艺”素材",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        }
+      },
+      "gate": "human",
+      "notes": [
+        "只消费已确认框架的分段操作稿、store/spans.json、store/assets.json 与本 step notes，不把完整编年史或 asset reports 作为语义召回接口。",
+        "按自然日连续打包，以约 2000 个 span 为阈值，使用 clean-context high reasoning SubAgent；本专题初始 989 个候选在一个包内完整读取，最终范围按已审框架校验。",
+        "尽可能纳入有效片段；不发明数量上限、代表抽样、全局压缩比例或成片时长删减规则。",
+        "大致保持真实时间顺序；同一时间窗口无人机跟车与无口播行车重复时优先无人机跟车；同事件航拍成组插入普通视频中，照片在末尾成组。",
+        "口播与纯视觉窗口重叠时优先口播；不改写现有 span 的源时间范围，时间线按既定 IoU 合同作兼容防线。",
+        "同一原始素材的无口播行车先按画面语义去重，最多保留三段；此数量限制仅用于该类素材。",
+        "所有无口播行车直接静音；超过 5 秒的静音行车按整数倍加速到 10 秒以内，最大 4 倍。若 4 倍仍超 10 秒，不得为了达标擅自删掉有效内容，应在审查中列为需人工处理；脚本不能实现加速时可在现有交互剪辑中通过 ComputerUse 完成。",
+        "chosenSpanIds 是选择真相；treatments 为稀疏覆盖表，默认 audio:0/speed:1 不写，照片显式 audio:-100；speed 仅允许 1..4 的整数且用于 drive/aerial。",
+        "被选非照片、非航拍有 transcript/transcriptSegments、speech/mixed 或 有口播语音 的片段不得静音；航拍音轨统一关闭。",
+        "未选 speech-backed 非照片素材必须在 coverageAudit 明示；不靠后续时间线自动补入未选素材。",
+        "人工审查召回结果后才生成正文粗剪。",
+        "只召回本专题范围：从“泉州前往武夷山高速沿途”开始，到“景德镇街边餐馆晚饭”结束；10 月 2 日晚“景德镇前往鄱阳湖夜路”归第三专题。 保留未选 speech-backed 候选审计与逐项取舍依据。"
+      ]
+    },
+    {
+      "id": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "title": "生成“山、村落与手艺”正文粗剪及原声 SRT",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "runner": "deterministic",
+      "execution": {
+        "mode": "deterministic",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "只有本专题框架及召回结果均获人工确认后才落片；按已审 material-slots 的顺序，只使用本集选择，不隐式追加其它专题素材。任何创建、清空或改名之前校验共享池必需项。",
+        "核对现有工程 中秋国庆闽赣自驾 [Edit]，目标为 山、村落与手艺 [ep2-mountains-villages-craft]；首次执行可创建本专题时间线。若同 editId 已有目标，先读取身份和内容，不覆盖未授权的人工修改；同 ID 多候选时阻塞。保护 闽南海岸 [ep1-minnan-coast]、东山岛 [ep1a-dongshan-island]、泉州 [ep1b-quanzhou] 及另一专题时间线。",
+        "同事件照片在尾部成组，默认每张 1000ms；航拍音轨强制关闭，非照片非航拍口播不能静音。",
+        "有声语音片段取有效 transcriptSegments 首末时间，仅在两端各加一次 250ms；同源视觉重叠遵循既有 IoU>=0.5 扣除与 >=15s remainder 合同，不漂移 clip 编号。",
+        "按正式合同写入并回读 clip color（照片 Blue、延时 Purple、行车 Brown、航拍 Teal、其余可听 Orange）及照片/延时 Resolve Groups。",
+        "只落片一次，回读 Resolve 实际帧范围后生成辅助 source-speech SRT；SRT 仅供用户导入，不宣称已导入。字幕句界遵循 36 文本单位与既定标点/间隙合同，source-speech SRT 保留句界句号。",
+        "当前脚本可能不应用 speed，须明确记录 pending/ignored，在后续人工/ComputerUse 剪辑中完成最大四倍的静音行车加速，不冒充已应用。",
+        "成功后尝试项目级 latest-only DRP 备份，失败只报 warning，不回滚时间线。",
+        "本轮交付停止在正文粗剪和可导入的原声 SRT，供用户集中剪辑。不得自动锁片、插入片头或启动后续旁白；另一专题未完成精剪不阻碍本专题准备粗剪。"
+      ]
+    },
+    {
+      "id": "body-intro-lock-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "title": "正文精剪、短片头与完整时间线确认",
+      "inputRefs": [
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/intro-plan.md",
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "runner": "manual",
+      "execution": {
+        "mode": "manual",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "后续阶段：本轮集中完成正文粗剪时不执行；等待用户完成并确认相应前置产物。",
+        "人工与 LLM 交互修改正文，正文基本定稿并经人工确认后，才设计短片头。",
+        "片头从正文实际入选内容提炼精彩预告，约 30 秒为参考，不强凑时长；兼顾代表性风光高点和现场经历，简短交代本集特点并自然接入正文。",
+        "片头可跨时间精选并复用正文素材，正文保持真实经历顺序。Agent 在 intro-plan.md 中列可定位素材（正文时间码或源文件入出点）、建议顺序、预计时长、原声/旁白安排和接入正文位置。",
+        "片头属于现有人工与 LLM 交互剪辑环节，不是自动片头 capability；片头新增旁白只覆盖航拍/延时，不能盖过已有口播。",
+        "片头及衔接完成后由人工确认完整时间线，才登记 locked-rough-cut.json；不得把用户要求推进本集当作锁片确认。"
+      ]
+    },
+    {
+      "id": "optional-narration-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "按需补充航拍与延时旁白",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/narration-review.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "后续阶段：本轮集中完成正文粗剪时不执行；等待用户完成并确认相应前置产物。",
+        "完整时间线人工确认后，按实际需要为航拍/延时提供背景、连接或事后认识，允许留白。",
+        "片头与正文新增旁白只用于航拍、延时，不覆盖地面游览、人物交流、生活片段或已有口播。",
+        "只对需要旁白的段落给实际时间范围与简短文案，依据最终片段可用时长、visualObservation、真实经历与已核实事实；不创建全片逐镜 narration-framework.md。",
+        "没有新增旁白需求时记录无需旁白，后续不生成空洞的旁白字幕；有文案则先交人工审查定稿。"
+      ]
+    },
+    {
+      "id": "subtitles-finish-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "最终字幕同步、缺口补齐与收尾",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "edits/<editId>/subtitles/narration-review.md",
+        "DaVinci Resolve Timeline: 山、村落与手艺 [ep2-mountains-villages-craft]",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/source-speech-missing.srt",
+        "edits/<editId>/subtitles/narration.srt",
+        "edits/<editId>/subtitles/final-subtitle-audit.md"
+      ],
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none"
+      },
+      "gate": "human",
+      "notes": [
+        "后续阶段：本轮集中完成正文粗剪时不执行；等待用户完成并确认相应前置产物。",
+        "由用户完成照片音效补齐和非全屏素材背景模糊效果；Agent 可按现有交互剪辑协助，并记录实际完成状态。",
+        "片头插入或正文调整后，按最终时间线实际片段位置与源范围复核已有字幕同步；不能沿用片头插入前的时间。",
+        "仅为实际保留现场语音却缺少字幕的片段生成 source-speech-missing.srt；纯视觉且未配旁白的片段无字幕不算遗漏。无缺口时在审计记录并跳过空 SRT。",
+        "已审新增旁白按最终时间线单独生成 narration.srt 供用户导入，与现场语音补字幕分开；没有旁白则跳过该输出。",
+        "最终审计明确原声字幕缺口、已有字幕错位修正、旁白独立输出或跳过状态；不声称执行了未做的 Resolve 导入或自动收尾。"
+      ]
+    }
+  ]
+}

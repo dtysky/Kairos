@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "ep3-return-to-wild",
+  "updatedAt": "2026-10-17T10:14:59.984Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-framework-ep3-return-to-wild-20261017",
+      "editId": "ep3-return-to-wild",
+      "flowPlanId": "edit-flow-ep3-return-to-wild-vlog-20261017",
+      "flowPlanHash": "bd527fe68b519b788e66b22f7b428f64cf582986b02263faa9c2eb75689970c7",
+      "stepId": "edit-framework-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "awaiting_review",
+      "startedAt": "2026-10-17T10:08:54.732Z",
+      "updatedAt": "2026-10-17T10:14:59.984Z",
+      "completedAt": "2026-10-17T10:14:59.984Z",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-clean-context-subagent",
+        "sourceHashes": {
+          "store/spans.json": "7079cd4055c2b7919167efd0d0993acafa3b41e3f0f1706ed522044271b0ae9b",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205"
+        },
+        "scope": {
+          "startAt": "2026-10-02T13:25:21.000Z",
+          "endAt": "2026-10-06T08:28:45.000Z",
+          "eventCount": 29,
+          "totalSpanCount": 645,
+          "supplementalSpanCount": 7,
+          "assetCount": 524
+        },
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "chronologyEventCount",
+            "maxPerShard": 150,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "shardCount": 1,
+        "packetPath": ".tmp/edit-flow/ep3-return-to-wild/framework/manifest.json",
+        "subagentTask": "/root/framework_ep3"
+      },
+      "outputPaths": [
+        "edits/ep3-return-to-wild/planning/edit-framework.md"
+      ],
+      "summary": {
+        "stage": "framework_awaiting_review",
+        "chapterCount": 7,
+        "frameworkRowCount": 104,
+        "candidateSpanCount": 645,
+        "coveredSpanCount": 645,
+        "supplementalPhotoCount": 7,
+        "zeroSpanAssetCount": 20,
+        "frameworkHash": "6e8f8a18308bda160b4b2763fb0fa822c91841bf5f3934efdafb0649d1310a9c",
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep3-return-to-wild/framework/validation.json",
+        "nextStep": "material-recall-v1"
+      },
+      "review": {
+        "status": "pending",
+        "note": "框架已生成并校验完整范围，等待用户审查；尚未执行素材召回或时间线生成。"
+      }
+    }
+  ]
+}
