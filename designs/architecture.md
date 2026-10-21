@@ -1,5 +1,7 @@
 # Kairos — 架构设计 v2
 
+照片收尾维护脚本的原生 Fusion 图、既有素材引用、素材池不变校验及幂等边界见 [Resolve 照片收尾脚本](./resolve-photo-finishing.md)；它是现有 Resolve 时间线维护能力，不新增 Supervisor API 或 Flow Plan 阶段。
+
 ## 2026-10-18 Resolve 剪辑工程备份尝试
 
 - `IColorResolveProjectMapEntry` 增加可选 `latestSnapshotAttempt / snapshotAttempts`（旧索引缺省按空处理）（最多 50 条），记录 attemptId、running/succeeded/failed、startedAt/finishedAt、mode、retention、action、error。`latestSnapshot` 始终表示最后成功结果；失败不清空或刷新它。

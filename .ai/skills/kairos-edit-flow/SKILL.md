@@ -4,7 +4,8 @@ description: >-
   Edit-rule-driven atomic capability flow after Chronology. Use when selecting
   edit rules, preparing shared Resolve media, initializing edit units, reviewing Codex-maintained Flow Plans,
   running material recall, assembling rough cuts, locking Resolve rough cuts,
-  or producing post-lock subtitles/narration.
+  producing post-lock subtitles/narration, or finishing existing Resolve photos
+  with shutter sound effects and blurred background fill.
 ---
 
 # Kairos Edit Flow
@@ -162,6 +163,16 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 重写最终 `subtitle-review.md` 时，把任务理解为“给已经剪好的时间线写逐 clip 可落地字幕”，不是“解释素材”：字幕列优先写路线推进、天气 / 道路 / 动作 / 画面变化，少写意义、感悟、素材事实堆叠或地理审计。
 - 普通非照片 clip 默认保留一条短 caption；只有延时摄影和延时序列允许突破一 clip 一句。延时字幕数量不设固定 2-3 条上限，应优先保证画面叙述完整，按天光、云雾、色温、车流 / 人流、山体显露、夜色或晨雾回升等可观察变化拆成足够清楚的多条短字幕。只有剪辑规则、confirmed Flow Plan notes 或用户明确允许时才合并相邻普通 clip，且不得超过允许的合并宽度；普通行车、航拍和视觉 clip 不因“较长”自动获得拆分例外。修订时尽量稳定表格身份列和事实概要列，只改写旁白字幕列；同一延时 clip 拆成多条字幕时必须保留 clip 标签 / 范围或子范围，最终 SRT 按真实 timeline 时间分配。
 - 完成后必须用脚本或等价检查确认表格行数、三列格式、生成 / 不生成数量、每条生成字幕的 `clip N` 标签、合并跨度，以及字幕列没有 GPS / 坐标 / source path / confidence / mojibake / `江河湖泊` / `峡谷崖壁` / `林带植被` 等不应进入成片字幕的噪音，并把检查摘要写入对应 audit。
+
+## 照片音效与背景填充
+
+用户要求现有时间线做这两项收尾时，读取 [Resolve 照片收尾脚本](../../../designs/resolve-photo-finishing.md)，复用仓库脚本，不另写一次性批处理：
+
+- 快门音效：`scripts/resolve-photo-start-sfx.py --project <工程名> --timeline <时间线名> --sfx <已确认的音效路径>`。
+- 照片背景填充：`scripts/resolve-apply-photo-blur-fill.py --project <工程名> --timeline <时间线名>`；先用 `--dry-run` 核对目标与已有效果，再执行。已有正确效果会校验后跳过；`--replace-existing` 仅用于明确要求的替换。
+- 使用同机 vendored Resolve Python。背景填充必须复用 TimelineItem 对应的原素材，并检查全素材池清单不变；不能导入按文件路径加载的 Loader comp，也不能先重复导入再清理。字幕、音效位置和剪切不属于该操作的修改范围。
+- 脚本校验失败时先定位并修复正式脚本；对工程的临时修复不能替代脚本修复及回归验证。结束时核对实际画面、素材引用、素材池和时间线，按现有策略保存及更新工程备份。不要读取 Fusion 图像值 `GetInput('Input')`。
+- 此脚本只识别照片；非照片的非全屏素材先按实际缩放与裁切检查，不因宽高比不同直接套用照片处理。
 
 ## Blocking
 

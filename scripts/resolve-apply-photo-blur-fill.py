@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Kairos photo blur-fill Fusion comps for photo timeline items.
+"""Apply photo blur fill using existing MediaPool sources and native Fusion nodes.
 
 This is a focused Resolve maintenance tool, intentionally separate from the
 timeline generator. It uses the open Resolve project/timeline and only touches
@@ -11,12 +11,10 @@ be calculated from the source image resolution and the timeline resolution.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import re
 import sys
-import time
 from pathlib import Path
 
 
@@ -37,8 +35,11 @@ CDEFAULT_FOREGROUND_TRACK_NAME = "Kairos Photo Foreground"
 CDEFAULT_BACKGROUND_BLUR_FILTER = "Fast Gaussian"
 CDEFAULT_BACKGROUND_MIP_WIDTH = 96
 CDEFAULT_BACKGROUND_MIP_HEIGHT = 54
-CDEFAULT_BACKGROUND_MIP_BLUR = 6.0
-CDEFAULT_BACKGROUND_FINAL_BLUR = 64.0
+# The former serialized XBlur/YBlur fields were not native Blur controls.
+# Preserve the actual live-verified appearance: native sizes were both 1,
+# with the strong background softness supplied by the 96x54 mip stage.
+CDEFAULT_BACKGROUND_MIP_BLUR = 1.0
+CDEFAULT_BACKGROUND_FINAL_BLUR = 1.0
 CDEFAULT_BACKGROUND_GAIN = 1.0
 CDEFAULT_BACKGROUND_SATURATION = 1.0
 CDEFAULT_BACKGROUND_OVERSCAN = 1.12
@@ -81,7 +82,7 @@ def main() -> int:
     parser.add_argument(
         "--comp",
         default=str(Path(__file__).resolve().parents[1] / "config" / "fusion-comps" / "Kairos Photo Blur Fill.comp"),
-        help="Legacy static Fusion comp path kept for diagnostics; default operation generates a per-photo comp.",
+        help="Legacy static Fusion comp path kept for diagnostics; ignored; effects are built with native Fusion nodes, never imported.",
     )
     parser.add_argument("--photo-group", default="Kairos Photos", help="Resolve Color Group name that marks photo clips.")
     parser.add_argument("--photo-color", default="Blue", help="Resolve clip color that marks photo clips.")
@@ -89,13 +90,13 @@ def main() -> int:
     parser.add_argument(
         "--foreground-track",
         default=CDEFAULT_FOREGROUND_TRACK_NAME,
-        help="Legacy foreground video track to clear/exclude from old layered runs.",
+        help="Legacy foreground track to detect and block; this tool never clears tracks.",
     )
-    parser.add_argument("--replace-existing", action="store_true", help="Delete existing comp with --comp-name before import.")
+    parser.add_argument("--replace-existing", action="store_true", help="Build and validate a replacement before removing the existing named effect.")
     parser.add_argument("--limit", type=int, default=0, help="Apply to at most this many matching photo clips; 0 means all.")
     parser.add_argument("--name-contains", default="", help="Only apply to photo clips whose timeline item name contains this text.")
-    parser.add_argument("--dry-run", action="store_true", help="Inspect only; do not import Fusion comps.")
-    parser.add_argument("--no-save", action="store_true", help="Do not SaveProject after importing comps.")
+    parser.add_argument("--dry-run", action="store_true", help="Inspect and validate only; do not modify Fusion comps or media.")
+    parser.add_argument("--no-save", action="store_true", help="Do not SaveProject after applying effects.")
     args = parser.parse_args()
 
     try:
@@ -118,212 +119,275 @@ def main() -> int:
 
 
 def run(args):
-    repo_root = Path(__file__).resolve().parents[1]
-    legacy_comp_path = host.normalize_filesystem_path(args.comp)
-
     resolve = host.load_resolve()
     project, current_project_before = host.load_existing_project(resolve, args.project)
-    timeline = host.find_named_timeline(project, args.timeline)
+    timeline = host.find_existing_edit_timeline(project, args.timeline)
     if timeline is None:
-        raise ToolError(
-            "timeline_missing",
-            f"Resolve timeline not found: {args.timeline}",
-            {"project": args.project, "timelines": host.list_timeline_names(project)},
-        )
-
-    host.safe_call(project, "SetCurrentTimeline", timeline)
-    host.safe_call(resolve, "OpenPage", "edit")
-
+        raise ToolError("timeline_missing", "The existing target timeline was not found.")
     fps = host.resolve_timeline_fps(project, timeline)
-    timeline_width, timeline_height = resolve_timeline_resolution(project, timeline)
-    foreground_track_index = find_video_track_by_name(timeline, args.foreground_track)
-    cleared_foreground_count = clear_track_items(timeline, "video", foreground_track_index, args.dry_run) if foreground_track_index else 0
-    photo_items = collect_photo_items(
-        timeline,
-        args.photo_group,
-        args.photo_color,
-        exclude_video_track_names={args.foreground_track},
-    )
+    width, height = resolve_timeline_resolution(project, timeline)
+    legacy_track = find_video_track_by_name(timeline, args.foreground_track)
+    if legacy_track and timeline.GetItemListInTrack("video", legacy_track):
+        raise ToolError("legacy_photo_foreground_track", "Legacy photo foreground track needs separate review; no clips were cleared.")
+    entries = collect_photo_items(timeline, args.photo_group, args.photo_color)
     if args.name_contains:
-        photo_items = [
-            entry for entry in photo_items
-            if args.name_contains in (entry.get("name") or "")
-            or args.name_contains in (entry.get("sourceStem") or "")
-            or args.name_contains in (entry.get("sourcePath") or "")
-        ]
-    return run_single_comp(
-        args,
-        repo_root,
-        resolve,
-        project,
-        timeline,
-        fps,
-        timeline_width,
-        timeline_height,
-        photo_items,
-        current_project_before,
-        legacy_comp_path,
-        foreground_track_index,
-        cleared_foreground_count,
-    )
-
-
-def run_single_comp(
-    args,
-    repo_root,
-    resolve,
-    project,
-    timeline,
-    fps,
-    timeline_width,
-    timeline_height,
-    photo_items,
-    current_project_before,
-    legacy_comp_path,
-    foreground_track_index,
-    cleared_foreground_count,
-):
-    already_applied = []
-    would_apply = []
-    for entry in photo_items:
+        entries = [e for e in entries if any(args.name_contains in (e.get(k) or "") for k in ("name", "sourceStem", "sourcePath"))]
+    if args.limit > 0:
+        entries = entries[:args.limit]
+    pool = project.GetMediaPool()
+    pool_before = snapshot_media_pool(pool)
+    timeline_before = snapshot_timeline(timeline)
+    planned, skipped = [], []
+    # Validate every selected source before the first write.
+    for entry in entries:
+        capture_existing_source(entry, pool_before)
+        entry.update(photo_layout(entry, width, height))
         names = fusion_comp_names(entry["item"])
-        if has_named_comp(entry["item"], names, args.comp_name):
-            if args.replace_existing:
-                would_apply.append({**entry, "existingCompNames": names, "replace": True})
-            else:
-                already_applied.append({**entry, "existingCompNames": names})
+        if names and names != [args.comp_name]:
+            raise ToolError("photo_existing_composition", "Photo has another Fusion composition; review it separately.", {"name": entry["name"], "comps": names})
+        if names and not args.replace_existing:
+            validate_comp(entry["item"].GetFusionCompByName(args.comp_name), entry)
+            skipped.append(entry)
         else:
-            would_apply.append({**entry, "existingCompNames": names, "replace": False})
-    if args.limit and args.limit > 0:
-        would_apply = would_apply[: args.limit]
-
+            planned.append(entry)
     applied = []
-    failures = []
-    save_result = None
     if not args.dry_run:
-        comp_dir = repo_root / ".tmp" / "fusion-comps" / "photo-blur-fill"
-        comp_dir.mkdir(parents=True, exist_ok=True)
-        for entry in would_apply:
-            item = entry["item"]
-            if entry["replace"]:
-                host.safe_call(item, "DeleteFusionCompByName", args.comp_name)
-            before = set(fusion_comp_names(item))
-            comp_path = write_photo_blur_fill_comp(
-                comp_dir,
-                entry,
-                timeline_width,
-                timeline_height,
-                fps,
-            )
-            comp = host.safe_call(item, "ImportFusionComp", str(comp_path))
-            after = fusion_comp_names(item)
-            created = [name for name in after if name not in before]
-            if not after:
-                failures.append(
-                    result_entry(
-                        entry,
-                        fps,
-                        {
-                            "before": sorted(before),
-                            "after": after,
-                            "compPath": str(comp_path),
-                        },
-                    )
-                )
-                continue
-            if args.comp_name not in after and created:
-                host.safe_call(item, "RenameFusionCompByName", created[-1], args.comp_name)
-                after = fusion_comp_names(item)
-            if not has_named_comp(item, after, args.comp_name):
-                failures.append(
-                    result_entry(
-                        entry,
-                        fps,
-                        {
-                            "before": sorted(before),
-                            "after": after,
-                            "compPath": str(comp_path),
-                        },
-                    )
-                )
-                continue
-            canvas_mapping_result = apply_timeline_item_canvas_mapping(item, entry, timeline_width, timeline_height)
-            applied.append(
-                result_entry(
-                    entry,
-                    fps,
-                    {
-                        "fusionCompNames": after,
-                        "compPath": str(comp_path),
-                        "layoutKind": entry.get("layoutKind"),
-                        "sourceAspect": entry.get("sourceAspect"),
-                        "foregroundInset": entry.get("foregroundInset"),
-                        "foregroundScale": entry.get("foregroundScale"),
-                        "backgroundScale": entry.get("backgroundScale"),
-                        "backgroundWidth": entry.get("backgroundWidth"),
-                        "backgroundHeight": entry.get("backgroundHeight"),
-                        "backgroundBlurMode": "mip-fill",
-                        "backgroundMipResolution": {
-                            "width": CDEFAULT_BACKGROUND_MIP_WIDTH,
-                            "height": CDEFAULT_BACKGROUND_MIP_HEIGHT,
-                        },
-                        "backgroundMipBlur": CDEFAULT_BACKGROUND_MIP_BLUR,
-                        "backgroundFinalBlur": CDEFAULT_BACKGROUND_FINAL_BLUR,
-                        "canvasMappingResult": canvas_mapping_result,
-                    },
-                )
-            )
-        if failures:
-            raise ToolError(
-                "fusion_comp_import_failed",
-                "Resolve did not import the Fusion comp onto every requested photo clip.",
-                {"failedCount": len(failures), "failed": failures[:20]},
-            )
-        if applied and not args.no_save:
-            save_result = host.save_project_with_result(project, resolve)
-
+        for entry in planned:
+            apply_native_photo_comp(entry, args.comp_name, width, height,
+                                    pool, pool_before, timeline, timeline_before)
+            applied.append(result_entry(entry, fps, {"sourceMediaId": entry["sourceMediaId"]}))
+    assert_media_pool_unchanged(pool_before, snapshot_media_pool(pool))
+    assert_timeline_unchanged(timeline_before, snapshot_timeline(timeline))
+    saved = None
+    if applied and not args.no_save:
+        saved = host.save_project_with_result(project, resolve)
+        if saved is not True:
+            raise ToolError("photo_project_save_failed", "Resolve did not confirm SaveProject.")
     return {
-        "schemaVersion": "kairos-resolve-photo-blur-fill-tool-v3",
-        "mode": "single-fusion-built-in",
-        "project": args.project,
-        "timeline": args.timeline,
-        "currentProjectBefore": current_project_before,
-        "dryRun": bool(args.dry_run),
-        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "compMode": "per-photo-fit-fill-single-comp",
-        "legacyCompPath": legacy_comp_path,
-        "compName": args.comp_name,
-        "replaceExisting": bool(args.replace_existing),
-        "photoGroup": args.photo_group,
-        "photoColor": args.photo_color,
-        "timelineResolution": {"width": timeline_width, "height": timeline_height},
-        "foregroundTrack": args.foreground_track,
-        "foregroundTrackIndex": foreground_track_index,
-        "clearedForegroundCount": cleared_foreground_count,
-        "backgroundBlurMode": "mip-fill",
-        "backgroundBlurFilter": CDEFAULT_BACKGROUND_BLUR_FILTER,
-        "backgroundMipResolution": {
-            "width": CDEFAULT_BACKGROUND_MIP_WIDTH,
-            "height": CDEFAULT_BACKGROUND_MIP_HEIGHT,
-        },
-        "backgroundMipBlur": CDEFAULT_BACKGROUND_MIP_BLUR,
-        "backgroundFinalBlur": CDEFAULT_BACKGROUND_FINAL_BLUR,
-        "backgroundGain": CDEFAULT_BACKGROUND_GAIN,
-        "backgroundSaturation": CDEFAULT_BACKGROUND_SATURATION,
-        "backgroundOverscan": CDEFAULT_BACKGROUND_OVERSCAN,
-        "panoramaAspectThreshold": CDEFAULT_PANORAMA_ASPECT,
-        "panoramaForegroundInset": CDEFAULT_PANORAMA_FOREGROUND_INSET,
-        "photoCount": len(photo_items),
-        "wouldApplyCount": len(would_apply),
-        "appliedCount": len(applied),
-        "alreadyAppliedCount": len(already_applied),
-        "saveProjectResult": save_result,
-        "samples": {
-            "wouldApply": [result_entry(entry, fps) for entry in would_apply[:10]],
-            "applied": applied[:10],
-            "alreadyApplied": [result_entry(entry, fps, {"fusionCompNames": entry.get("existingCompNames", [])}) for entry in already_applied[:10]],
-        },
+        "schemaVersion": "kairos-resolve-photo-blur-fill-tool-v4",
+        "mode": "native-fusion-existing-media",
+        "project": project.GetName(), "timeline": timeline.GetName(),
+        "currentProjectBefore": current_project_before, "dryRun": bool(args.dry_run),
+        "photoCount": len(entries), "wouldApplyCount": len(planned),
+        "appliedCount": len(applied), "alreadyAppliedCount": len(skipped),
+        "mediaPoolUnchanged": True, "mediaPoolItemCount": len(pool_before["items"]),
+        "timelineUnchanged": True, "saveProjectResult": saved,
+        "samples": {"applied": applied[:10]},
     }
+
+
+def snapshot_media_pool(pool):
+    result = {"folders": {}, "items": {}}
+    def visit(folder, parent):
+        fid = folder.GetUniqueId()
+        if not fid or fid in result["folders"]:
+            raise ToolError("photo_pool_identity_invalid", "Cannot uniquely inventory MediaPool folders.")
+        result["folders"][fid] = {"name": folder.GetName(), "parent": parent}
+        for item in host.iter_values(folder.GetClipList() or []):
+            uid = item.GetUniqueId()
+            if not uid or uid in result["items"]:
+                raise ToolError("photo_pool_identity_invalid", "Cannot uniquely inventory MediaPool items.")
+            result["items"][uid] = {"folder": fid, "mediaId": item.GetMediaId(),
+                                    "name": item.GetName(), "path": item.GetClipProperty("File Path")}
+        for child in host.iter_values(folder.GetSubFolderList() or []):
+            visit(child, fid)
+    visit(pool.GetRootFolder(), None)
+    return result
+
+
+def assert_media_pool_unchanged(before, after):
+    if before != after:
+        raise ToolError("photo_media_pool_changed", "Photo blur fill changed the MediaPool; stopped without deleting unknown items.", {
+            "added": sorted(set(after["items"]) - set(before["items"])),
+            "removed": sorted(set(before["items"]) - set(after["items"])),
+            "changed": sorted(k for k in before["items"].keys() & after["items"].keys() if before["items"][k] != after["items"][k]),
+            "foldersChanged": before["folders"] != after["folders"],
+        })
+
+
+def snapshot_timeline(timeline):
+    tracks = []
+    for kind in ("video", "audio", "subtitle"):
+        for index in range(1, int(timeline.GetTrackCount(kind)) + 1):
+            items = []
+            for item in host.iter_values(timeline.GetItemListInTrack(kind, index) or []):
+                media = item.GetMediaPoolItem()
+                items.append((item.GetUniqueId(), item.GetName(), item.GetStart(), item.GetEnd(),
+                              item.GetSourceStartFrame(), item.GetSourceEndFrame(), item.GetClipEnabled(),
+                              media.GetUniqueId() if media else None))
+            tracks.append((kind, index, timeline.GetTrackName(kind, index), items))
+    return (timeline.GetUniqueId(), timeline.GetStartFrame(), timeline.GetEndFrame(), tracks)
+
+
+def assert_timeline_unchanged(before, after):
+    if before != after:
+        raise ToolError("photo_timeline_changed", "Timeline placement/source/audio/subtitle state changed during photo finishing.")
+
+
+def capture_existing_source(entry, pool_snapshot):
+    media = entry["item"].GetMediaPoolItem()
+    uid = media.GetUniqueId() if media else None
+    row = pool_snapshot["items"].get(uid)
+    if not row or not row["mediaId"] or host.normalize_filesystem_path(row["path"]) != entry["sourcePath"]:
+        raise ToolError("photo_existing_source_missing", "Photo must reference an existing, identifiable MediaPool source.")
+    # Fusion MediaID is GetMediaId(), not MediaPoolItem.GetUniqueId().
+    entry["sourceMediaId"] = row["mediaId"]
+    entry["sourceMediaUniqueId"] = uid
+
+
+def node_specs(entry, width, height):
+    end = max(0, int(round(entry["endFrame"] - entry["startFrame"])) - 1)
+    return [
+        ("CanvasBackground", "Background", {"GlobalOut": end, "UseFrameFormatSettings": 0, "Width": width, "Height": height, "TopLeftAlpha": 1}, {}),
+        ("BackgroundResize", "BetterResize", {"Width": entry["backgroundWidth"], "Height": entry["backgroundHeight"]}, {"Input": "MediaIn1"}),
+        ("BackgroundTransform", "Transform", {"Size": 1}, {"Input": "BackgroundResize"}),
+        ("BackgroundCanvasMerge", "Merge", {"PerformDepthMerge": 0}, {"Background": "CanvasBackground", "Foreground": "BackgroundTransform"}),
+        ("BackgroundCanvasCrop", "Crop", {"XSize": width, "YSize": height, "KeepCentered": 1}, {"Input": "BackgroundCanvasMerge"}),
+        ("BackgroundMipDown", "BetterResize", {"Width": CDEFAULT_BACKGROUND_MIP_WIDTH, "Height": CDEFAULT_BACKGROUND_MIP_HEIGHT}, {"Input": "BackgroundCanvasCrop"}),
+        ("BackgroundMipBlur", "Blur", {"XBlurSize": CDEFAULT_BACKGROUND_MIP_BLUR, "YBlurSize": CDEFAULT_BACKGROUND_MIP_BLUR, "Filter": CDEFAULT_BACKGROUND_BLUR_FILTER}, {"Input": "BackgroundMipDown"}),
+        ("BackgroundMipUp", "BetterResize", {"Width": width, "Height": height}, {"Input": "BackgroundMipBlur"}),
+        ("BackgroundFinalBlur", "Blur", {"XBlurSize": CDEFAULT_BACKGROUND_FINAL_BLUR, "YBlurSize": CDEFAULT_BACKGROUND_FINAL_BLUR, "Filter": CDEFAULT_BACKGROUND_BLUR_FILTER}, {"Input": "BackgroundMipUp"}),
+        ("BackgroundGrade", "BrightnessContrast", {"Gain": CDEFAULT_BACKGROUND_GAIN, "Saturation": CDEFAULT_BACKGROUND_SATURATION}, {"Input": "BackgroundFinalBlur"}),
+        ("MergeBackground", "Merge", {"PerformDepthMerge": 0}, {"Background": "CanvasBackground", "Foreground": "BackgroundGrade"}),
+        ("ForegroundTransform", "Transform", {"Size": entry["foregroundScale"]}, {"Input": "MediaIn1"}),
+        ("MergeForeground", "Merge", {"PerformDepthMerge": 0}, {"Background": "MergeBackground", "Foreground": "ForegroundTransform"}),
+        ("OutputCrop", "Crop", {"XSize": width, "YSize": height, "KeepCentered": 1}, {"Input": "MergeForeground"}),
+    ]
+
+
+def tool_map(comp):
+    return {t.GetAttrs()["TOOLS_Name"]: t for t in host.iter_values(comp.GetToolList(False) or {})}
+
+
+def connect(tool, key, source):
+    tool.ConnectInput(key, source, "Output")
+    assert_connection(tool, key, source.GetAttrs()["TOOLS_Name"])
+
+
+def assert_connection(tool, key, expected):
+    inputs = [i for i in host.iter_values(tool.GetInputList() or {}) if i.GetAttrs().get("INPS_ID") == key]
+    output = inputs[0].GetConnectedOutput() if len(inputs) == 1 else None
+    source = output.GetTool() if output else None
+    if source is None or source.GetAttrs().get("TOOLS_Name") != expected:
+        raise ToolError("photo_fusion_connection_invalid", "Fusion graph connection was not confirmed.", {"input": key, "expected": expected})
+
+
+def validate_comp(comp, entry):
+    if comp is None:
+        raise ToolError("photo_fusion_missing", "Photo blur composition is missing.")
+    nodes = tool_map(comp)
+    source, output = nodes.get("MediaIn1"), nodes.get("MediaOut1")
+    if source is None or output is None or source.GetAttrs().get("TOOLS_RegID") != "MediaIn" or output.GetAttrs().get("TOOLS_RegID") != "MediaOut":
+        raise ToolError("photo_fusion_nodes_invalid", "Photo effect must use native MediaIn and MediaOut nodes.")
+    if source.GetAttrs().get("TOOLS_Clip_MediaID") != entry["sourceMediaId"] or source.GetData("MEDIA_ID") != entry["sourceMediaId"]:
+        raise ToolError("photo_fusion_source_mismatch", "Existing effect does not reference the original MediaPool item; use an explicit repair/replacement.")
+    specs = node_specs(entry, 1, 1)  # Graph shape is independent of canvas dimensions.
+    if set(nodes) != {"MediaIn1", "MediaOut1"} | {s[0] for s in specs}:
+        raise ToolError("photo_fusion_nodes_invalid", "Photo effect node set is incomplete or has unexpected nodes.")
+    for name, kind, _, links in specs:
+        if nodes[name].GetAttrs().get("TOOLS_RegID") != kind:
+            raise ToolError("photo_fusion_nodes_invalid", "Photo effect node type differs.", {"node": name})
+        for key, src in links.items():
+            assert_connection(nodes[name], key, src)
+    assert_connection(output, "Input", "OutputCrop")
+
+
+def build_native_graph(comp, entry, width, height):
+    nodes = tool_map(comp)
+    if set(nodes) - {"MediaIn1", "MediaOut1"}:
+        raise ToolError("photo_new_comp_not_empty", "New Fusion composition contains unexpected nodes.")
+    for name, kind in (("MediaIn1", "MediaIn"), ("MediaOut1", "MediaOut")):
+        if name not in nodes:
+            node = comp.AddTool(kind, -1, -1)
+            if node is None:
+                raise ToolError("photo_fusion_node_create_failed", "Could not create native Fusion node.", {"node": name})
+            node.SetAttrs({"TOOLS_Name": name})
+            nodes[name] = node
+    source = nodes["MediaIn1"]
+    source.SetInput("MediaSource", "MediaPool")
+    source.SetInput("MediaID", entry["sourceMediaId"])
+    source.SetData("MEDIA_ID", entry["sourceMediaId"])
+    end = max(0, int(round(entry["endFrame"] - entry["startFrame"])) - 1)
+    source.SetInput("GlobalIn", 0)
+    source.SetInput("GlobalOut", end)
+    source.SetInput("ClipTimeStart", 0)
+    source.SetInput("ClipTimeEnd", 0)
+    source.SetInput("Loop", 1)
+    for pos, (name, kind, values, links) in enumerate(node_specs(entry, width, height)):
+        node = comp.AddTool(kind, (pos % 7) * 2, pos // 7)
+        if node is None:
+            raise ToolError("photo_fusion_node_create_failed", "Could not create Fusion node.", {"node": name})
+        node.SetAttrs({"TOOLS_Name": name})
+        for key, value in values.items():
+            node.SetInput(key, value)
+            actual = node.GetInput(key, 0)  # Scalar only. Never request image-valued Input.
+            equal = abs(actual - value) < 1e-5 if isinstance(actual, (int, float)) and isinstance(value, (int, float)) else actual == value
+            if not equal:
+                raise ToolError("photo_fusion_parameter_invalid", "Fusion did not retain a scalar setting.", {"node": name, "input": key, "expected": value, "actual": actual})
+        nodes[name] = node
+        for key, src in links.items():
+            connect(node, key, nodes[src])
+    connect(nodes["MediaOut1"], "Input", nodes["OutputCrop"])
+    validate_comp(comp, entry)
+
+
+def apply_native_photo_comp(entry, comp_name, width, height, pool, pool_before, timeline, timeline_before):
+    item = entry["item"]
+    old_names = fusion_comp_names(item)
+    original_props = item.GetProperty()
+    new_name = None
+    old_backup = None
+    try:
+        comp = item.AddFusionComp()
+        created = [n for n in fusion_comp_names(item) if n not in old_names]
+        if len(created) == 1:
+            new_name = created[0]
+        if comp is None or len(created) != 1:
+            raise ToolError("photo_fusion_create_failed", "Resolve did not create exactly one new composition.")
+        # Detect an unexpected import before continuing with graph construction.
+        assert_media_pool_unchanged(pool_before, snapshot_media_pool(pool))
+        build_native_graph(comp, entry, width, height)
+        mapping = apply_timeline_item_canvas_mapping(item, entry, width, height)
+        if mapping["readback"].get("Scaling") != CSCALE_STRETCH:
+            raise ToolError("photo_canvas_mapping_failed", "Resolve did not retain the required canvas mapping.")
+        assert_media_pool_unchanged(pool_before, snapshot_media_pool(pool))
+        assert_timeline_unchanged(timeline_before, snapshot_timeline(timeline))
+        if old_names:
+            old_backup = comp_name + " (replacement rollback)"
+            if old_backup in fusion_comp_names(item) or item.RenameFusionCompByName(comp_name, old_backup) is not True:
+                old_backup = None
+                raise ToolError("photo_fusion_replace_failed", "Could not preserve the previous effect for replacement rollback.")
+        if item.RenameFusionCompByName(new_name, comp_name) is not True:
+            raise ToolError("photo_fusion_rename_failed", "Could not name the validated photo effect.")
+        new_name = comp_name
+        if not item.LoadFusionCompByName(comp_name):
+            raise ToolError("photo_fusion_load_failed", "Could not activate the validated photo effect.")
+        validate_comp(item.GetFusionCompByName(comp_name), entry)
+        if old_backup and item.DeleteFusionCompByName(old_backup) is not True:
+            raise ToolError("photo_fusion_replace_failed", "Could not remove the previous effect after candidate validation.")
+    except Exception as error:
+        # Only our new composition is removed; never delete MediaPool sources.
+        # Resolve will not remove the active candidate while another comp exists.
+        restore_name = old_backup or (comp_name if old_names else None)
+        rollback_failures = []
+        if restore_name and not item.LoadFusionCompByName(restore_name):
+            rollback_failures.append("activate previous composition")
+        if new_name:
+            if item.DeleteFusionCompByName(new_name) is not True:
+                rollback_failures.append("remove candidate " + new_name)
+        if old_backup:
+            if item.RenameFusionCompByName(old_backup, comp_name) is not True:
+                rollback_failures.append("restore previous composition name")
+        for key in ("Scaling", "ZoomGang", "ZoomX", "ZoomY", "Pan", "Tilt"):
+            if key in original_props:
+                item.SetProperty(key, original_props[key])
+        if old_names and comp_name in fusion_comp_names(item):
+            item.LoadFusionCompByName(comp_name)
+        if rollback_failures:
+            raise ToolError("photo_fusion_rollback_failed", "Photo operation failed and rollback needs review.",
+                            {"originalError": str(error), "failures": rollback_failures,
+                             "remainingComps": fusion_comp_names(item)}) from error
+        raise
 
 
 def collect_photo_items(timeline, photo_group_name, photo_color, exclude_video_track_names=None):
@@ -383,16 +447,6 @@ def fusion_comp_names(item):
     return [host.stringify_signal_value(name) for name in host.iter_values(names or []) if host.stringify_signal_value(name)]
 
 
-def has_named_comp(item, names, comp_name):
-    target = str(comp_name).strip().lower()
-    matched_name = next((name for name in names if str(name).strip().lower() == target), None)
-    if matched_name is None:
-        return False
-    comp = host.safe_call(item, "GetFusionCompByName", matched_name)
-    tools = host.safe_call(comp, "GetToolList") if comp else None
-    return len(tools or {}) >= 4
-
-
 def find_video_track_by_name(timeline, track_name):
     count = int(host.safe_call(timeline, "GetTrackCount", "video") or 0)
     for index in range(1, count + 1):
@@ -400,27 +454,6 @@ def find_video_track_by_name(timeline, track_name):
         if name == track_name:
             return index
     return None
-
-
-def clear_track_items(timeline, track_type, track_index, dry_run):
-    if not track_index:
-        return 0
-    items = host.safe_call(timeline, "GetItemListInTrack", track_type, track_index)
-    if items is None:
-        items = host.safe_call(timeline, "GetItemsInTrack", track_type, track_index)
-    item_list = list(host.iter_values(items or []))
-    if not item_list:
-        return 0
-    if dry_run:
-        return len(item_list)
-    ok = host.safe_call(timeline, "DeleteClips", item_list, False)
-    if ok is False:
-        raise ToolError(
-            "track_clear_failed",
-            f"Unable to clear {track_type} track {track_index}.",
-            {"trackType": track_type, "trackIndex": track_index, "itemCount": len(item_list)},
-        )
-    return len(item_list)
 
 
 def apply_timeline_item_canvas_mapping(item, entry, timeline_width, timeline_height):
@@ -630,20 +663,11 @@ def probe_jpeg_resolution(path):
             handle.seek(segment_length - 2, 1)
 
 
-def write_photo_blur_fill_comp(output_dir, entry, timeline_width, timeline_height, fps):
+def photo_layout(entry, timeline_width, timeline_height):
     source_width = host.parse_int(entry.get("sourceWidth"))
     source_height = host.parse_int(entry.get("sourceHeight"))
     if not source_width or not source_height:
-        raise ToolError(
-            "photo_resolution_missing",
-            "Cannot generate photo blur-fill comp because the source image resolution is unknown.",
-            result_entry(entry, fps),
-        )
-    source_path = entry.get("sourcePath")
-    if not source_path:
-        raise ToolError("photo_source_path_missing", "Cannot generate photo blur-fill comp without a source path.", result_entry(entry, fps))
-
-    duration_frames = max(1, int(round((entry.get("endFrame") or 0) - (entry.get("startFrame") or 0))))
+        raise ToolError("photo_resolution_missing", "Source image resolution is required.")
     source_aspect = source_width / source_height
     timeline_aspect = timeline_width / timeline_height
     foreground_inset = 1.0
@@ -666,333 +690,7 @@ def write_photo_blur_fill_comp(output_dir, entry, timeline_width, timeline_heigh
     entry["backgroundWidth"] = background_width
     entry["backgroundHeight"] = background_height
 
-    digest = hashlib.sha1(f"{source_path}|{entry.get('startFrame')}|{entry.get('endFrame')}".encode("utf-8")).hexdigest()[:16]
-    safe_stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", entry.get("sourceStem") or "photo").strip("._") or "photo"
-    path = output_dir / f"{safe_stem}_{digest}.comp"
-    path.write_text(
-        build_photo_blur_fill_comp(
-            source_path=source_path,
-            source_name=entry.get("name") or entry.get("sourceStem") or "Photo",
-            source_width=source_width,
-            source_height=source_height,
-            timeline_width=timeline_width,
-            timeline_height=timeline_height,
-            duration_frames=duration_frames,
-            fps=fps,
-            foreground_scale=foreground_scale,
-            background_scale=background_scale,
-            background_width=background_width,
-            background_height=background_height,
-        ),
-        encoding="utf-8",
-    )
-    return path
-
-
-def build_photo_blur_fill_comp(
-    *,
-    source_path,
-    source_name,
-    source_width,
-    source_height,
-    timeline_width,
-    timeline_height,
-    duration_frames,
-    fps,
-    foreground_scale,
-    background_scale,
-    background_width,
-    background_height,
-):
-    last_frame = max(0, duration_frames - 1)
-    return f"""Composition {{
-\tCurrentTime = 0,
-\tRenderRange = {{ 0, {last_frame} }},
-\tGlobalRange = {{ 0, {last_frame} }},
-\tCurrentID = 9,
-\tPlaybackUpdateMode = 0,
-\tStereoMode = false,
-\tVersion = "DaVinci Resolve Studio",
-\tSavedOutputs = 0,
-\tHeldTools = 0,
-\tDisabledTools = 0,
-\tLockedTools = 0,
-\tAudioOffset = 0,
-\tResumable = true,
-\tOutputClips = {{
-\t}},
-\tTools = ordered() {{
-\t\tMediaIn1 = Loader {{
-\t\t\tExtentSet = true,
-\t\t\tCtrlWShown = false,
-\t\t\tCustomData = {{
-\t\t\t\tMediaProps = {{
-\t\t\t\t\tMEDIA_FORMAT_TYPE = "Photo",
-\t\t\t\t\tMEDIA_HAS_AUDIO = false,
-\t\t\t\t\tMEDIA_HEIGHT = {source_height},
-\t\t\t\t\tMEDIA_IS_SOURCE_RES = true,
-\t\t\t\t\tMEDIA_MARK_IN = 0,
-\t\t\t\t\tMEDIA_MARK_OUT = {last_frame},
-\t\t\t\t\tMEDIA_NAME = "{fusion_string(source_name)}",
-\t\t\t\t\tMEDIA_NUM_FRAMES = {duration_frames},
-\t\t\t\t\tMEDIA_PAR = 1,
-\t\t\t\t\tMEDIA_PATH = "{fusion_string(source_path)}",
-\t\t\t\t\tMEDIA_SRC_FRAME_RATE = {fusion_number(fps)},
-\t\t\t\t\tMEDIA_START_FRAME = 0,
-\t\t\t\t\tMEDIA_WIDTH = {source_width}
-\t\t\t\t}},
-\t\t\t}},
-\t\t\tInputs = {{
-\t\t\t\tGlobalOut = Input {{ Value = {last_frame}, }},
-\t\t\t\tClipTimeEnd = Input {{ Value = {last_frame}, }},
-\t\t\t\tDeepOutputMode = Input {{
-\t\t\t\t\tValue = 0,
-\t\t\t\t\tDisabled = true,
-\t\t\t\t}},
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 0, 0 }} }},
-\t\t\tVersion = 1,
-\t\t\tClips = {{
-\t\t\t\tClip {{
-\t\t\t\t\tID = "Clip1",
-\t\t\t\t\tMultiframe = true,
-\t\t\t\t\tFilename = "{fusion_string(source_path)}",
-\t\t\t\t\tLength = {duration_frames},
-\t\t\t\t\tLengthSetManually = true,
-\t\t\t\t\tGlobalEnd = {last_frame},
-\t\t\t\t\tTrimOut = {last_frame},
-\t\t\t\t}}
-\t\t\t}}
-\t\t}},
-\t\tCanvasBackground = Background {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tGlobalOut = Input {{ Value = {last_frame}, }},
-\t\t\t\tWidth = Input {{ Value = {timeline_width}, }},
-\t\t\t\tHeight = Input {{ Value = {timeline_height}, }},
-\t\t\t\tUseFrameFormatSettings = Input {{ Value = 0, }},
-\t\t\t\tTopLeftRed = Input {{ Value = 0, }},
-\t\t\t\tTopLeftGreen = Input {{ Value = 0, }},
-\t\t\t\tTopLeftBlue = Input {{ Value = 0, }},
-\t\t\t\tTopLeftAlpha = Input {{ Value = 1, }}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 220, -180 }} }},
-\t\t}},
-\t\tBackgroundResize = BetterResize {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tWidth = Input {{ Value = {background_width}, }},
-\t\t\t\tHeight = Input {{ Value = {background_height}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "MediaIn1",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 220, -70 }} }},
-\t\t}},
-\t\tBackgroundTransform = Transform {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tSize = Input {{ Value = 1, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundResize",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 440, -70 }} }},
-\t\t}},
-\t\tBackgroundCanvasMerge = Merge {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tBackground = Input {{
-\t\t\t\t\tSourceOp = "CanvasBackground",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tForeground = Input {{
-\t\t\t\t\tSourceOp = "BackgroundTransform",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tPerformDepthMerge = Input {{ Value = 0, }}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 660, -70 }} }},
-\t\t}},
-\t\tBackgroundCanvasCrop = Crop {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tXOffset = Input {{ Value = 0, }},
-\t\t\t\tYOffset = Input {{ Value = 0, }},
-\t\t\t\tXSize = Input {{ Value = {timeline_width}, }},
-\t\t\t\tYSize = Input {{ Value = {timeline_height}, }},
-\t\t\t\tKeepCentered = Input {{ Value = 1, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundCanvasMerge",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 880, -70 }} }},
-\t\t}},
-\t\tBackgroundMipDown = BetterResize {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tWidth = Input {{ Value = {CDEFAULT_BACKGROUND_MIP_WIDTH}, }},
-\t\t\t\tHeight = Input {{ Value = {CDEFAULT_BACKGROUND_MIP_HEIGHT}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundCanvasCrop",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1100, -70 }} }},
-\t\t}},
-\t\tBackgroundMipBlur = Blur {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_MIP_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_MIP_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundMipDown",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1320, -70 }} }},
-\t\t}},
-\t\tBackgroundMipUp = BetterResize {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tWidth = Input {{ Value = {timeline_width}, }},
-\t\t\t\tHeight = Input {{ Value = {timeline_height}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundMipBlur",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1540, -70 }} }},
-\t\t}},
-\t\tBackgroundFinalBlur = Blur {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_FINAL_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_FINAL_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundMipUp",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1760, -70 }} }},
-\t\t}},
-\t\tBackgroundGrade = BrightnessContrast {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tGain = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_GAIN)}, }},
-\t\t\t\tSaturation = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_SATURATION)}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundFinalBlur",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1980, -70 }} }},
-\t\t}},
-\t\tMergeBackground = Merge {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tBackground = Input {{
-\t\t\t\t\tSourceOp = "CanvasBackground",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tForeground = Input {{
-\t\t\t\t\tSourceOp = "BackgroundGrade",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tPerformDepthMerge = Input {{ Value = 0, }}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 2200, -70 }} }},
-\t\t}},
-\t\tForegroundTransform = Transform {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tSize = Input {{ Value = {fusion_number(foreground_scale)}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "MediaIn1",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1540, 110 }} }},
-\t\t}},
-\t\tMergeForeground = Merge {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tBackground = Input {{
-\t\t\t\t\tSourceOp = "MergeBackground",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tForeground = Input {{
-\t\t\t\t\tSourceOp = "ForegroundTransform",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}},
-\t\t\t\tPerformDepthMerge = Input {{ Value = 0, }}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1980, 0 }} }},
-\t\t}},
-\t\tOutputCrop = Crop {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tXOffset = Input {{ Value = 0, }},
-\t\t\t\tYOffset = Input {{ Value = 0, }},
-\t\t\t\tXSize = Input {{ Value = {timeline_width}, }},
-\t\t\t\tYSize = Input {{ Value = {timeline_height}, }},
-\t\t\t\tKeepCentered = Input {{ Value = 1, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "MergeForeground",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 2200, 0 }} }},
-\t\t}},
-\t\tMediaOut1 = Saver {{
-\t\t\tCtrlWShown = false,
-\t\t\tInputs = {{
-\t\t\t\tIndex = Input {{ Value = "0", }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "OutputCrop",
-\t\t\t\t\tSource = "Output",
-\t\t\t\t}}
-\t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 2420, 0 }} }},
-\t\t}}
-\t}},
-\tFrames = {{
-\t}},
-\tPrefs = {{
-\t\tComp = {{
-\t\t\tFrameFormat = {{
-\t\t\t\tWidth = {timeline_width},
-\t\t\t\tHeight = {timeline_height},
-\t\t\t\tDepthFull = 3,
-\t\t\t\tDepthPreview = 3,
-\t\t\t\tDepthInteractive = 3,
-\t\t\t}},
-\t\t\tUnsorted = {{
-\t\t\t\tGlobalEnd = {last_frame}
-\t\t\t}},
-\t\t}}
-\t}},
-}}
-"""
-
-
-def fusion_string(value):
-    text = str(value or "")
-    return text.replace("\\", "\\\\").replace('"', '\\"')
-
-
-def fusion_number(value):
-    parsed = host.parse_float(value)
-    if parsed is None:
-        parsed = 0
-    if abs(parsed - round(parsed)) < 0.000001:
-        return str(int(round(parsed)))
-    return f"{parsed:.6f}".rstrip("0").rstrip(".")
+    return {key: entry[key] for key in ("layoutKind", "sourceAspect", "foregroundInset", "foregroundScale", "backgroundScale", "backgroundWidth", "backgroundHeight")}
 
 
 def result_entry(entry, fps, extra=None):

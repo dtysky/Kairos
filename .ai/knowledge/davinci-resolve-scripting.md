@@ -31,6 +31,13 @@ task depends on a method that may be version-sensitive.
 5. If the official API lacks a getter or operation, record that limitation in code comments, tests, or docs instead of inventing a state.
 6. For real Resolve behavior, validate with a running Resolve Studio instance; unit tests alone only validate our wrappers.
 
+## Photo Fusion Source Identity (2026-10-21)
+
+- Photo finishing uses `scripts/resolve-apply-photo-blur-fill.py`; its source/pool contract is in [resolve-photo-finishing.md](../../designs/resolve-photo-finishing.md).
+- `MediaPoolItem.GetMediaId()` supplies Fusion's `MediaID`; `GetUniqueId()` identifies the item in pool inventories. These IDs differ in Resolve 21.0.4. A filename-based Loader imported through `ImportFusionComp` created a second pool item per photo, in the current bin. Do not use that route for photo finishing.
+- Native MediaIn references can be rebound using `SetInput('MediaID', existingMediaId)`; also set `SetData('MEDIA_ID', existingMediaId)`. Live repair showed the old custom-data ID persisted after changing only the input. Read back `GetAttrs()['TOOLS_Clip_MediaID']`, `GetData('MEDIA_ID')`, and an exported comp when diagnosing a repair.
+- Do not call `GetInput('Input')` on image-valued Fusion inputs for validation: it deadlocked this Resolve session. Read scalar settings and connection objects instead. `ExportCurrentFrameAsStill` immediately after moving the playhead can return the previous frame; let the viewer update before checking it.
+
 ## Color Group Policy (2026-10-08)
 
 Automatic groups use only Log/profile and source orientation (`<logProfile> + horizontal / portrait / unknown-orientation`). Prepare does not classify scene color, white balance, lowlight, exposure, or windshield haze or extract frames for those decisions. Technical Group Pre-Clip LUTs and clip repair remain active. `sync_groups` mirrors actual Resolve groups; changing the policy does not migrate already graded projects or invalidate completed prepare chunks. Reassigning existing clips can change their Group Pre/Post-Clip grades and requires a separate scoped migration.

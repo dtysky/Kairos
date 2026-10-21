@@ -153,6 +153,8 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 
 ## Practical Defaults
 
+- 照片快门音效与背景填充必须复用 `scripts/resolve-photo-start-sfx.py` 和 `scripts/resolve-apply-photo-blur-fill.py`，遵守 [照片收尾合同](designs/resolve-photo-finishing.md)。禁止按文件路径重新导入照片；临时修复工程不能代替修复脚本及回归验证。
+
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
 - When mirroring a Pharos trip into that inbox, copy only canonical `plan.json`, optional canonical `record.json`, and `gpx/*.gpx`; never copy `record-import.json`, Carta route reports, travelogues, or other derived review artifacts as Kairos inputs.

@@ -387,6 +387,8 @@ If the change affects official user paths, monitoring, or workflow entry points,
 
 ## Key Docs
 
+- [Resolve 照片收尾脚本](designs/resolve-photo-finishing.md) — 固定音效与模糊背景脚本、原素材复用、素材池不变和幂等校验；不临时重写相同操作。
+
 - `AGENTS.md` — root bootstrap for agents; indexes mandatory rules, skills, and official runtime entry points
 - `designs/current-solution-summary.md` — quickest entry for the current official solution
 - `designs/architecture.md` — architecture context plus current-vs-historical notes
