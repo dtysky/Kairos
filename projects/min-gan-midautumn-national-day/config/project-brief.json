@@ -140,5 +140,28 @@
       "trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd"
     ]
   },
+  "voiceoverMedia": {
+    "rootId": "voiceover",
+    "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/kairos-voiceover",
+    "alternatePaths": [
+      {
+        "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\kairos-voiceover"
+      }
+    ],
+    "resolveProjectAliases": [
+      "Kairos Volc Voiceover Debug"
+    ],
+    "description": "Resolve字幕配音生成音频"
+  },
+  "audioMedia": {
+    "rootId": "audio",
+    "path": "/Volumes/SSDMAX/audios",
+    "alternatePaths": [
+      {
+        "path": "F:\\vlog-proj\\audios"
+      }
+    ],
+    "description": "BGM/SFX手工音频"
+  },
   "materialPatternPhrases": []
 }

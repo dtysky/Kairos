@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-10-21T09:28:06.449Z",
+  "updatedAt": "2026-10-21T16:36:55.792Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-21T09:28:04Z",
-        "mode": "auto",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-10-21T16:36:52Z",
+        "mode": "manual",
         "retention": "latest-only",
-        "action": "photo_blur_script_validation",
+        "action": "manual",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -19,13 +19,13 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "e7a411e2-20e2-428b-b6d9-6fb8448b9123",
+        "attemptId": "4f93f198-8d7a-4e54-93fc-659da517fa8c",
         "status": "succeeded",
-        "startedAt": "2026-10-21T09:28:04.841Z",
-        "finishedAt": "2026-10-21T09:28:06.449Z",
-        "mode": "auto",
+        "startedAt": "2026-10-21T16:36:52.128Z",
+        "finishedAt": "2026-10-21T16:36:55.791Z",
+        "mode": "manual",
         "retention": "latest-only",
-        "action": "photo_blur_script_validation"
+        "action": "manual"
       },
       "snapshotAttempts": [
         {
@@ -84,10 +84,19 @@
           "mode": "auto",
           "retention": "latest-only",
           "action": "photo_blur_script_validation"
+        },
+        {
+          "attemptId": "4f93f198-8d7a-4e54-93fc-659da517fa8c",
+          "status": "succeeded",
+          "startedAt": "2026-10-21T16:36:52.128Z",
+          "finishedAt": "2026-10-21T16:36:55.791Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-10-21T09:28:06.449Z"
+      "updatedAt": "2026-10-21T16:36:55.792Z"
     }
   }
 }
