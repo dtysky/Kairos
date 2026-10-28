@@ -1,0 +1,756 @@
+{
+  "purpose": "Read-only evidence for cross-device intro discussion; not an executable edit plan or lock confirmation.",
+  "projectId": "min-gan-midautumn-national-day",
+  "editId": "ep2-mountains-villages-craft",
+  "sourceCapturedAt": "2026-10-28T15:08:37.354908+00:00",
+  "resolve": {
+    "projectName": "中秋国庆闽赣自驾 [Edit]",
+    "observedProjectId": "33a3e5ee-944c-4b17-8460-67964dcef98a",
+    "timelineName": "山、村落与手艺 [ep2-mountains-villages-craft]",
+    "observedTimelineId": "fea82462-cf1e-4506-b9c2-09978586ccc4",
+    "fps": 30,
+    "startTimecode": "00:00:00:00",
+    "startFrame": 0,
+    "endFrame": 96497,
+    "counts": {
+      "video": 499,
+      "audio": 350,
+      "subtitle": 528
+    }
+  },
+  "draft": {
+    "status": "discussion-draft",
+    "path": "intro-plan.md",
+    "sha256": "2eed304cfbf633910775e3d72680ddc99df44ec6a9d13da216163c737b9ae32a",
+    "durationFrames": 2600,
+    "durationSeconds": 86.66666666666667
+  },
+  "flowPlanAtHandoff": {
+    "path": "flow-plan.json",
+    "status": "confirmed",
+    "updatedAt": "2026-10-17T10:06:37.733Z",
+    "recordedEditRuleHash": "0748d3df434eaec8a0b4daa659fff545f0214f730cd97bddc0fcb33a8e322efc",
+    "observedEditRuleHash": "092b1b2b4cec667fca7bd3643adbb821d6102f478780155006c48c0272322b11",
+    "editRuleHashMatches": false,
+    "note": "Old scope includes Jingdezhen; intro notes retain old duration reference and narration restriction. Preserve historical runs; reconcile relevant plan fields before a formal capability execution."
+  },
+  "timingNotes": [
+    "Body frame ranges use the current 30 fps timeline; end frames are exclusive.",
+    "Source start/end frames below describe the full observed body item; source end is inclusive as returned by Resolve.",
+    "Selected approximate source milliseconds are linearly mapped from item endpoints; they are locators, not a verified retime curve.",
+    "Observed Resolve IDs may change after project import. Verify project identity, stable [editId] suffix, source identity and actual ranges on the destination."
+  ],
+  "selected": [
+    {
+      "order": 1,
+      "assetId": "DJI_20260929055238_0444_D_drone",
+      "ingestRootId": "root-min-gan-drone",
+      "sourcePath": "DJI_20260929055238_0444_D.mp4",
+      "observedResolveItemId": "96503f2f-16b1-40a3-b13f-71c2bcefdcfb",
+      "mode": "旁白",
+      "visual": "晨雾中的群山，先给远景。",
+      "text": "武夷山。来之前，",
+      "note": "“武夷山”之后留一个短停顿。",
+      "bodyRange": {
+        "in": "00:04:30:08",
+        "out": "00:04:34:28",
+        "startFrame": 8108,
+        "endFrame": 8248
+      },
+      "draftIntroRange": {
+        "in": "00:00:00:00",
+        "out": "00:00:04:20",
+        "durationSeconds": 4.666666666666667
+      },
+      "approxSelectedSourceMs": {
+        "in": 2686,
+        "out": 16700
+      },
+      "observedBodyItem": {
+        "startFrame": 8108,
+        "endFrame": 8248,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 161,
+        "sourceEndFrameInclusive": 1000
+      },
+      "currentSubtitleExcerpts": []
+    },
+    {
+      "order": 2,
+      "assetId": "DJI_20260929055339_0452_D_drone",
+      "ingestRootId": "root-min-gan-drone",
+      "sourcePath": "DJI_20260929055339_0452_D.mp4",
+      "observedResolveItemId": "587374d7-7c92-478b-ba2b-e9cfcbccc876",
+      "mode": "旁白",
+      "visual": "俯拍湖面、山坡和薄雾。",
+      "text": "我对它的印象，主要就是山水风光。",
+      "note": "与上条合为一句；保留正文已有速度。",
+      "bodyRange": {
+        "in": "00:04:39:22",
+        "out": "00:04:43:24",
+        "startFrame": 8392,
+        "endFrame": 8514
+      },
+      "draftIntroRange": {
+        "in": "00:00:04:20",
+        "out": "00:00:08:22",
+        "durationSeconds": 4.066666666666666
+      },
+      "approxSelectedSourceMs": {
+        "in": 5622,
+        "out": 13780
+      },
+      "observedBodyItem": {
+        "startFrame": 8392,
+        "endFrame": 8514,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 337,
+        "sourceEndFrameInclusive": 825
+      },
+      "currentSubtitleExcerpts": []
+    },
+    {
+      "order": 3,
+      "assetId": "C4495_zve1_day6",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day6/C4495.mp4",
+      "observedResolveItemId": "df0a90f9-73f4-46ee-96dc-4f19f6162cf3",
+      "mode": "旁白",
+      "visual": "跟着背包人物走入岩壁下的步道，画面从空中落到地面。",
+      "text": "但在这里走了几天，我才发现，它比想象中丰富得多。",
+      "note": "现场声音静音，不沿用正文这段讲岩层的口播或字幕。",
+      "bodyRange": {
+        "in": "00:37:25:00",
+        "out": "00:37:31:15",
+        "startFrame": 67350,
+        "endFrame": 67545
+      },
+      "draftIntroRange": {
+        "in": "00:00:08:22",
+        "out": "00:00:15:07",
+        "durationSeconds": 6.5
+      },
+      "approxSelectedSourceMs": {
+        "in": 7724,
+        "out": 14231
+      },
+      "observedBodyItem": {
+        "startFrame": 67161,
+        "endFrame": 68028,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 85,
+        "sourceEndFrameInclusive": 1818
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "尤其是现在下着雨，非常有感触。这片岩它是这个白垩纪的时候那个岩层、那个洞、",
+          "startFrame": 67286,
+          "endFrame": 67547
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "assetId": "C4393_zve1_day6",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day6/C4393.mp4",
+      "observedResolveItemId": "16c44c11-d84a-4e6a-a753-fb3702368e70",
+      "mode": "旁白",
+      "visual": "下梅沿溪的廊道、民居与行人。",
+      "text": "这里有沿溪而建的古村，",
+      "note": "",
+      "bodyRange": {
+        "in": "00:21:54:00",
+        "out": "00:21:57:18",
+        "startFrame": 39420,
+        "endFrame": 39528
+      },
+      "draftIntroRange": {
+        "in": "00:00:15:07",
+        "out": "00:00:18:25",
+        "durationSeconds": 3.6
+      },
+      "approxSelectedSourceMs": {
+        "in": 2055,
+        "out": 5665
+      },
+      "observedBodyItem": {
+        "startFrame": 39365,
+        "endFrame": 39665,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 13,
+        "sourceEndFrameInclusive": 613
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "沿着这个一路往下走，然后这就是他们的生活场所，肯定是修缮过的。",
+          "startFrame": 39375,
+          "endFrame": 39511
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "assetId": "C4463_zve1_day6",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day6/C4463.mp4",
+      "observedResolveItemId": "730532ce-42ad-4bc4-acce-367c54f7adb1",
+      "mode": "旁白",
+      "visual": "长条的龙窑遗址，视线沿窑体向上。",
+      "text": "旧时留下的窑址，",
+      "note": "",
+      "bodyRange": {
+        "in": "00:32:40:00",
+        "out": "00:32:43:12",
+        "startFrame": 58800,
+        "endFrame": 58902
+      },
+      "draftIntroRange": {
+        "in": "00:00:18:25",
+        "out": "00:00:22:07",
+        "durationSeconds": 3.4
+      },
+      "approxSelectedSourceMs": {
+        "in": 5236,
+        "out": 8637
+      },
+      "observedBodyItem": {
+        "startFrame": 58662,
+        "endFrame": 59416,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 38,
+        "sourceEndFrameInclusive": 1544
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "来到了这个一号窑，然后这个就是一个龙窑，斜坡似的。",
+          "startFrame": 58672,
+          "endFrame": 58823
+        },
+        {
+          "text": "我觉得你看它这个绵延的形状，就是很像一个龙，还挺壮观的。",
+          "startFrame": 58825,
+          "endFrame": 59022
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "assetId": "C0114_a7r6",
+      "ingestRootId": "root-min-gan-a7r6",
+      "sourcePath": "C0114.mp4",
+      "observedResolveItemId": "53ed142a-1629-470b-b814-d691a8805538",
+      "mode": "旁白",
+      "visual": "枝叶间蓝绿色的小昆虫。",
+      "text": "也有一路偶遇的小生灵，",
+      "note": "不在片头旁白里讲物种知识。",
+      "bodyRange": {
+        "in": "00:39:17:00",
+        "out": "00:39:20:18",
+        "startFrame": 70710,
+        "endFrame": 70818
+      },
+      "draftIntroRange": {
+        "in": "00:00:22:07",
+        "out": "00:00:25:25",
+        "durationSeconds": 3.6
+      },
+      "approxSelectedSourceMs": {
+        "in": 2819,
+        "out": 6423
+      },
+      "observedBodyItem": {
+        "startFrame": 70647,
+        "endFrame": 70870,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 43,
+        "sourceEndFrameInclusive": 488
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "这种奇怪的动，奇怪的昆虫叫色蟌，它长得像蜻蜓，但它不是蜻蜓，它蓝蓝绿绿的，这是雄性。",
+          "startFrame": 70656,
+          "endFrame": 70864
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "assetId": "C4363_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4363.mp4",
+      "observedResolveItemId": "932510fd-80db-410b-a1e9-584f6b9627f7",
+      "mode": "旁白",
+      "visual": "餐桌上大红袍茶排骨的近景。",
+      "text": "和没尝过的新味道。",
+      "note": "“味道”落下后直接切下一条现场反应。",
+      "bodyRange": {
+        "in": "00:17:49:00",
+        "out": "00:17:52:12",
+        "startFrame": 32070,
+        "endFrame": 32172
+      },
+      "draftIntroRange": {
+        "in": "00:00:25:25",
+        "out": "00:00:29:07",
+        "durationSeconds": 3.4
+      },
+      "approxSelectedSourceMs": {
+        "in": 3654,
+        "out": 7057
+      },
+      "observedBodyItem": {
+        "startFrame": 31989,
+        "endFrame": 32479,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 57,
+        "sourceEndFrameInclusive": 1036
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "今天这个纯茶宴，大红袍茶排骨，这个是那个猫爪菇，它的学名是龙爪菇。",
+          "startFrame": 31998,
+          "endFrame": 32263
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "assetId": "C4364_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4364.mp4",
+      "observedResolveItemId": "4c03c50f-e04b-487a-ae2b-7e5c76c6a9b1",
+      "mode": "原声",
+      "visual": "吃菜后的反应。",
+      "text": "本地人的重辣，我靠，好辣！",
+      "note": "保留说完“重辣”后到“好辣”的反应停顿。",
+      "bodyRange": {
+        "in": "00:18:11:05",
+        "out": "00:18:15:15",
+        "startFrame": 32735,
+        "endFrame": 32865
+      },
+      "draftIntroRange": {
+        "in": "00:00:29:07",
+        "out": "00:00:33:17",
+        "durationSeconds": 4.333333333333333
+      },
+      "approxSelectedSourceMs": {
+        "in": 8852,
+        "out": 13186
+      },
+      "observedBodyItem": {
+        "startFrame": 32479,
+        "endFrame": 33088,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 19,
+        "sourceEndFrameInclusive": 1235
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "本地人的重辣，我靠，好辣！",
+          "startFrame": 32743,
+          "endFrame": 32856
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "assetId": "C4386_zve1_day6",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day6/C4386.mp4",
+      "observedResolveItemId": "51beed2a-ac55-47d7-b736-2a76194de06b",
+      "mode": "原声",
+      "visual": "走到下梅入口的茶路碑前。",
+      "text": "这个碑写的是“晋商万里茶路起点”。",
+      "note": "止于读碑，不带后续历史讲解。",
+      "bodyRange": {
+        "in": "00:20:53:11",
+        "out": "00:20:57:26",
+        "startFrame": 37601,
+        "endFrame": 37736
+      },
+      "draftIntroRange": {
+        "in": "00:00:33:17",
+        "out": "00:00:38:02",
+        "durationSeconds": 4.5
+      },
+      "approxSelectedSourceMs": {
+        "in": 1818,
+        "out": 6340
+      },
+      "observedBodyItem": {
+        "startFrame": 37601,
+        "endFrame": 37736,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 109,
+        "sourceEndFrameInclusive": 379
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "这个碑写的是“晋商万里茶路起点”。",
+          "startFrame": 37611,
+          "endFrame": 37726
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "assetId": "C4452_zve1_day6",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day6/C4452.mp4",
+      "observedResolveItemId": "a0c2c423-1f5a-4ac5-865f-b7ca97bf9b10",
+      "mode": "原声",
+      "visual": "建盏釉面纹理特写。",
+      "text": "这个就是那个兔毫，你看里面那个纹路像兔毛一样。",
+      "note": "句尾与下一句紧接，实际剪辑时听“一样”的落点。",
+      "bodyRange": {
+        "in": "00:30:39:22",
+        "out": "00:30:44:23",
+        "startFrame": 55192,
+        "endFrame": 55343
+      },
+      "draftIntroRange": {
+        "in": "00:00:38:02",
+        "out": "00:00:43:03",
+        "durationSeconds": 5.033333333333333
+      },
+      "approxSelectedSourceMs": {
+        "in": 467,
+        "out": 5506
+      },
+      "observedBodyItem": {
+        "startFrame": 55192,
+        "endFrame": 55459,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 28,
+        "sourceEndFrameInclusive": 561
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "这个就是那个兔毫，你看里面那个纹路像兔毛一样。",
+          "startFrame": 55202,
+          "endFrame": 55346
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "assetId": "C4297_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4297.mp4",
+      "observedResolveItemId": "3ec6d04a-e0ce-464e-a9d5-6e9039386005",
+      "mode": "原声",
+      "visual": "步道上认植物，先留下疑问。",
+      "text": "这是桑葚吗？",
+      "note": "句中提取：对齐字时间 12.000–12.960 秒；不带前一句末尾的“多”。",
+      "bodyRange": {
+        "in": "00:10:02:06",
+        "out": "00:10:03:13",
+        "startFrame": 18066,
+        "endFrame": 18103
+      },
+      "draftIntroRange": {
+        "in": "00:00:43:03",
+        "out": "00:00:44:10",
+        "durationSeconds": 1.2333333333333334
+      },
+      "approxSelectedSourceMs": {
+        "in": 11990,
+        "out": 13226
+      },
+      "observedBodyItem": {
+        "startFrame": 17754,
+        "endFrame": 18208,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 94,
+        "sourceEndFrameInclusive": 1002
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "空气好清新呀！这还有很多，这是桑葚吗？",
+          "startFrame": 17968,
+          "endFrame": 18097
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "assetId": "C4298_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4298.mp4",
+      "observedResolveItemId": "489dc599-5d78-42b5-ac2e-5d2b1fe53eb6",
+      "mode": "原声",
+      "visual": "切植物枝叶与果实的近景。",
+      "text": "它不是桑葚，它是野鸦椿。",
+      "note": "留一点看清植物的时间；到下一句“往走近了”之前结束。",
+      "bodyRange": {
+        "in": "00:10:06:28",
+        "out": "00:10:10:06",
+        "startFrame": 18208,
+        "endFrame": 18306
+      },
+      "draftIntroRange": {
+        "in": "00:00:44:10",
+        "out": "00:00:47:18",
+        "durationSeconds": 3.2666666666666666
+      },
+      "approxSelectedSourceMs": {
+        "in": 1518,
+        "out": 4788
+      },
+      "observedBodyItem": {
+        "startFrame": 18208,
+        "endFrame": 18412,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 91,
+        "sourceEndFrameInclusive": 498
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "它不是桑葚，它是野鸦椿。",
+          "startFrame": 18217,
+          "endFrame": 18268
+        }
+      ]
+    },
+    {
+      "order": 13,
+      "assetId": "C4340_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4340.mp4",
+      "observedResolveItemId": "19c30e34-dae8-4142-b85d-4099248b40b8",
+      "mode": "原声",
+      "visual": "山上举起登山杖喊话。",
+      "text": "我就是武夷山之王！咋没有回音啊？哎。",
+      "note": "保留自问和失落反应。",
+      "bodyRange": {
+        "in": "00:14:59:02",
+        "out": "00:15:04:07",
+        "startFrame": 26972,
+        "endFrame": 27127
+      },
+      "draftIntroRange": {
+        "in": "00:00:47:18",
+        "out": "00:00:52:23",
+        "durationSeconds": 5.166666666666667
+      },
+      "approxSelectedSourceMs": {
+        "in": 31832,
+        "out": 37004
+      },
+      "observedBodyItem": {
+        "startFrame": 26972,
+        "endFrame": 27127,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 1908,
+        "sourceEndFrameInclusive": 2217
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "我就是武夷山之王！咋没有回音啊？哎。",
+          "startFrame": 26979,
+          "endFrame": 27118
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "assetId": "C4346_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4346.mp4",
+      "observedResolveItemId": "655673a1-5189-4259-859d-7dd04fbcecc9",
+      "mode": "原声",
+      "visual": "切淋湿后的近景。",
+      "text": "非常狼狈的被淋成落汤鸡，但还是爬上来了。我的天！",
+      "note": "与前条形成当天登山的前后反差。",
+      "bodyRange": {
+        "in": "00:16:08:04",
+        "out": "00:16:12:04",
+        "startFrame": 29044,
+        "endFrame": 29164
+      },
+      "draftIntroRange": {
+        "in": "00:00:52:23",
+        "out": "00:00:56:23",
+        "durationSeconds": 4
+      },
+      "approxSelectedSourceMs": {
+        "in": 4872,
+        "out": 8892
+      },
+      "observedBodyItem": {
+        "startFrame": 29044,
+        "endFrame": 29164,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 292,
+        "sourceEndFrameInclusive": 532
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "非常狼狈的被淋成落汤鸡，但还是爬上来了。",
+          "startFrame": 29056,
+          "endFrame": 29123
+        },
+        {
+          "text": "我的天！",
+          "startFrame": 29144,
+          "endFrame": 29159
+        }
+      ]
+    },
+    {
+      "order": 15,
+      "assetId": "C4589_zve1_day7",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day7/C4589.mp4",
+      "observedResolveItemId": "aba2c5be-c4f3-4b76-9d71-45a985aa14bb",
+      "mode": "原声",
+      "visual": "水面上两只竹筏并行、交错。",
+      "text": "这竹筏还能这竹筏还能超车的。",
+      "note": "保留现场重复；字幕可用标点分开，不能假装素材只有一次“这竹筏还能”。",
+      "bodyRange": {
+        "in": "00:47:02:29",
+        "out": "00:47:08:09",
+        "startFrame": 84689,
+        "endFrame": 84849
+      },
+      "draftIntroRange": {
+        "in": "00:00:56:23",
+        "out": "00:01:02:03",
+        "durationSeconds": 5.333333333333333
+      },
+      "approxSelectedSourceMs": {
+        "in": 0,
+        "out": 5339
+      },
+      "observedBodyItem": {
+        "startFrame": 84689,
+        "endFrame": 84849,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 0,
+        "sourceEndFrameInclusive": 319
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "这竹筏还能这竹筏还能超车的。",
+          "startFrame": 84691,
+          "endFrame": 84828
+        }
+      ]
+    },
+    {
+      "order": 16,
+      "assetId": "C4249_zve1_day5",
+      "ingestRootId": "root-min-gan-zve1",
+      "sourcePath": "day5/C4249.mp4",
+      "observedResolveItemId": "43f735f9-9955-402f-8130-14b8e2febf92",
+      "mode": "原声",
+      "visual": "回到齐云峰清晨，朝霞、云海、机位和人物，把节奏放下来。",
+      "text": "然后那下面是出现了云海，它在流动，这感觉非常的震撼。感觉第一天运气就非常的不错，等会儿等太阳升起。",
+      "note": "最后一句完整说完，再切延时。",
+      "bodyRange": {
+        "in": "00:03:44:00",
+        "out": "00:03:55:17",
+        "startFrame": 6720,
+        "endFrame": 7067
+      },
+      "draftIntroRange": {
+        "in": "00:01:02:03",
+        "out": "00:01:13:20",
+        "durationSeconds": 11.566666666666666
+      },
+      "approxSelectedSourceMs": {
+        "in": 30631,
+        "out": 42209
+      },
+      "observedBodyItem": {
+        "startFrame": 6566,
+        "endFrame": 7067,
+        "sourceFps": 59.94,
+        "sourceStartFrame": 1528,
+        "sourceEndFrameInclusive": 2529
+      },
+      "currentSubtitleExcerpts": [
+        {
+          "text": "然后那下面是出现了云海，它在流动，这感觉非常的震撼。",
+          "startFrame": 6727,
+          "endFrame": 6943
+        },
+        {
+          "text": "感觉第一天运气就非常的不错，等会儿等太阳升起。",
+          "startFrame": 6943,
+          "endFrame": 7067
+        }
+      ]
+    },
+    {
+      "order": 17,
+      "assetId": "20260929_武夷山齐云峰日出云海1_timelapse",
+      "ingestRootId": "root-min-gan-ts-final",
+      "sourcePath": "20260929_武夷山齐云峰日出云海1.mp4",
+      "observedResolveItemId": "6f47127e-49d4-486a-a2b5-e4612f6c4263",
+      "mode": "音乐",
+      "visual": "粉色朝霞渐转暖，山谷云雾流动。",
+      "text": "无新增旁白。",
+      "note": "沿用正文的延时速度。",
+      "bodyRange": {
+        "in": "00:04:01:18",
+        "out": "00:04:06:18",
+        "startFrame": 7248,
+        "endFrame": 7398
+      },
+      "draftIntroRange": {
+        "in": "00:01:13:20",
+        "out": "00:01:18:20",
+        "durationSeconds": 5
+      },
+      "approxSelectedSourceMs": {
+        "in": 12076,
+        "out": 22083
+      },
+      "observedBodyItem": {
+        "startFrame": 7067,
+        "endFrame": 7398,
+        "sourceFps": 24,
+        "sourceStartFrame": 0,
+        "sourceEndFrameInclusive": 529
+      },
+      "currentSubtitleExcerpts": []
+    },
+    {
+      "order": 18,
+      "assetId": "20260929_武夷山齐云峰日出云海2_timelapse",
+      "ingestRootId": "root-min-gan-ts-final",
+      "sourcePath": "20260929_武夷山齐云峰日出云海2.mp4",
+      "observedResolveItemId": "f14a9f3a-24a7-4ed6-8a75-ab590b23357f",
+      "mode": "音乐",
+      "visual": "太阳露出山脊，云海泛金；后半段出片名“武夷山”。",
+      "text": "无新增旁白。",
+      "note": "约最后四秒出片名，结束后接当前正文开场。",
+      "bodyRange": {
+        "in": "00:04:16:04",
+        "out": "00:04:24:04",
+        "startFrame": 7684,
+        "endFrame": 7924
+      },
+      "draftIntroRange": {
+        "in": "00:01:18:20",
+        "out": "00:01:26:20",
+        "durationSeconds": 8
+      },
+      "approxSelectedSourceMs": {
+        "in": 20075,
+        "out": 36082
+      },
+      "observedBodyItem": {
+        "startFrame": 7398,
+        "endFrame": 7954,
+        "sourceFps": 24,
+        "sourceStartFrame": 24,
+        "sourceEndFrameInclusive": 913
+      },
+      "currentSubtitleExcerpts": []
+    }
+  ]
+}

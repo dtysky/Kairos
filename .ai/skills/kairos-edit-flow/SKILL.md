@@ -149,10 +149,16 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。
 - Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败写工程级 `latestSnapshotAttempt / snapshotAttempts` 和 warning，不回滚 timeline；`/edit` 的维护摘要和备份区域必须持续展示失败，刷新后仍保留。
 
+### 正文后的片头协作
+
+- 当当前剪辑规则要求正文完成后设计片头时，先读取当前精剪时间线与字幕，按规则输出包含实际选段、完整新增旁白、原声摘录、取用范围、预计时长和衔接的文本结构，再进入交互修改与实际剪辑。`travel-vlog` 的具体阶段、参考结构与模板见 `config/edit-rules/travel-vlog.md`，产物为 `edits/<editId>/planning/intro-plan.md`；不要在 skill 中固化某一集的素材、文案或时长。
+- 片头文本属于正文后交互剪辑产物，不因包含旁白而要求 `script.generate`、`script/current.json` 或全片 `narration-framework.md`。文本认可、实际落片和完整时间线锁定分别记录；写完文本不能推进尚未完成的剪辑或 human gate。
+- 片头复用画面的声音处理服从该规则与用户认可的方案；只在片头副本上应用，不回写 span speech truth 或正文声音，也不放宽 `material.recall / timeline.generate` 的口播保护。进入正式 capability 前仍按 confirmed Flow Plan 的输入与 gate 执行。
+
 ### `resolve.lock_rough_cut` / `postlock.subtitle_narration`
 
 - 粗剪锁定必须由人工确认。
-- 锁定后才进入字幕与旁白草稿。
+- 锁定后才进入 `postlock.subtitle_narration` 的字幕与旁白草稿；前述片头文本结构在正文后交互剪辑阶段生成，不以完整时间线锁定为前置。
 - 风格层只使用 Flow Plan `styleUsage` 明确授权的层。
 - 按当前剪辑规则和 confirmed Flow Plan 生成所需产物；局部旁白或补字幕任务不以全片 `narration-framework.md` 为前置。下述旁白框架、逐 clip 审查表及其格式校验要求，仅在明确生成对应产物时适用。
 - 判断字幕缺口时区分实际保留的现场语音、新增旁白和纯视觉留白；不得仅因片段无字幕就补写旁白。片头插入或正文调整后，所有字幕须按最终时间线的实际片段位置和源素材范围重新核验。

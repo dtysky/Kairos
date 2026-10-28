@@ -1077,6 +1077,8 @@ src/modules/color/
 
 `travel-vlog` 的具体创作流程由 `config/edit-rules/travel-vlog.md` 定义：正文粗剪与人工精剪后，再协作设计短片头、按需补旁白并完成字幕收尾。片头设计属于既有人工与 Agent 交互剪辑过程，不新增 capability、接口或自动落片承诺；本集范围和各阶段约束仍由 Codex Agent 写入 confirmed Flow Plan 对应 step 的 `notes`。
 
+片头协作顺序为读取当前精剪正文、生成包含具体选段与完整旁白/原声的文本结构、交互修改、实际剪辑与衔接。文本产物为 `edits/<editId>/planning/intro-plan.md`，以当前 Resolve clip/source range 和字幕为取用依据；旧框架、旧粗剪审计与参考片头只提供上下文。它属于正文后交互剪辑产物，不引入 `intro.generate`，也不要求 `script.generate` 或全片旁白框架。旅行 VLOG 的参考结构、声音处理范围和审查模板统一由剪辑规则维护；片头副本静音配旁白不改变正文、素材索引或 `material.recall / timeline.generate` 的口播保护合同。文本获认可、完成实际落片与人工确认完整时间线是不同状态，不能互相代替。
+
 Agent 确定本集范围时先读取纳入的 Pharos 行程原文与既有分集意图，包括存在时的 `pharos:story_groups`；这些信息只约束创作范围，不替代 canonical record、confirmed chronology 或实际素材证据，不改变 Pharos parser 与素材归属规则。已有跨地点分组不得被默认拆成一地一集。
 
 `postlock.subtitle_narration` 按规则和 Flow Plan 声明消费锁定时间线并生成所需产物；局部文案与字幕任务不以全片 `narration-framework.md` 为默认前置。只有明确生成该框架时才应用其完整 clip-map 和逐镜校验合同。所有字幕时位仍须对应当前真实 timeline/source range，纯视觉无字幕不能直接视为遗漏现场语音或需要新增旁白。

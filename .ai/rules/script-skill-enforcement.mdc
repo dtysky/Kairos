@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Script Skill Enforcement
 
-当任务涉及生成、重写、续写、审查或更新 `edits/<editId>/script/current.json`、旁白、beat 文案或 `script.generate` capability 产物时：
+本规则约束 `script.generate` 的脚本、旁白与 beat 产物。当前剪辑规则明确要求的正文后片头文本结构（如 `planning/intro-plan.md`）以及 `postlock.subtitle_narration` 的局部旁白／字幕，分别遵循 `kairos-edit-flow` 对应流程；不能仅因包含旁白就强制添加 `script.generate` 或全片脚本。
+
+当任务涉及生成、重写、续写、审查或更新 `edits/<editId>/script/current.json`，或 `script.generate` capability 的旁白、beat 文案及其他产物时：
 
 - 必须先确认当前 edit unit 的 `edits/<editId>/planning/flow-plan.json` 已 confirmed，且其中明确包含 `script.generate` step；没有该 step 时，不得把脚本生成当成默认流程。
 - 新剪辑工作默认从 `/edit` 的 Edit Unit 初始化和 `kairos-edit-flow` 开始；不要把 `/script`、`script` job、`script/current.json` 解释成正式必经入口。
