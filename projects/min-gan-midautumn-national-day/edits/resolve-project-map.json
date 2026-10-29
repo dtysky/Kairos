@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-28T10:45:17.208Z",
+  "updatedAt": "2026-10-29T10:41:16.267Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
@@ -8,7 +8,7 @@
         "projectName": "中秋国庆闽赣自驾 [Edit]",
         "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
         "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-28T10:45:15Z",
+        "createdAt": "2026-10-29T10:40:21Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,13 +19,17 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "412f243d-433f-4fe8-a58e-e8bd75ee9108",
-        "status": "succeeded",
-        "startedAt": "2026-10-28T10:45:15.575Z",
-        "finishedAt": "2026-10-28T10:45:17.207Z",
-        "mode": "manual",
+        "attemptId": "f4a609b1-cd46-4dc4-bb40-cef2b7a32ec7",
+        "status": "failed",
+        "startedAt": "2026-10-29T10:41:16.206Z",
+        "finishedAt": "2026-10-29T10:41:16.267Z",
+        "mode": "auto",
         "retention": "latest-only",
-        "action": "manual"
+        "action": "save_min_gan_before_commit",
+        "error": {
+          "code": "resolve_app_unavailable",
+          "message": "Unable to connect to DaVinci Resolve. Make sure Resolve Studio is running and external scripting is enabled."
+        }
       },
       "snapshotAttempts": [
         {
@@ -187,10 +191,68 @@
           "mode": "manual",
           "retention": "latest-only",
           "action": "manual"
+        },
+        {
+          "attemptId": "68169152-f2b2-4a56-9775-ee1fba0ef1fe",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T08:13:26.574Z",
+          "finishedAt": "2026-10-29T08:13:28.402Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "create_wuyishan_intro_selects"
+        },
+        {
+          "attemptId": "6240ce71-8cdc-40b5-8569-8560f142d1a7",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T08:48:33.715Z",
+          "finishedAt": "2026-10-29T08:48:35.519Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "complete_wuyishan_intro_aerials"
+        },
+        {
+          "attemptId": "e3832d98-9b10-4456-b2c4-2eb4ef752f52",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T09:07:33.103Z",
+          "finishedAt": "2026-10-29T09:07:34.882Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "mute_wuyishan_intro_narration_background"
+        },
+        {
+          "attemptId": "92035003-9ab8-498b-a1d2-ade57eb4e546",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T10:38:26.352Z",
+          "finishedAt": "2026-10-29T10:38:28.141Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "expand_wuyishan_intro_narration_visuals"
+        },
+        {
+          "attemptId": "2b870a6e-8a0b-4750-83c1-ac4a92d96aaa",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T10:40:21.115Z",
+          "finishedAt": "2026-10-29T10:40:22.960Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "f4a609b1-cd46-4dc4-bb40-cef2b7a32ec7",
+          "status": "failed",
+          "startedAt": "2026-10-29T10:41:16.206Z",
+          "finishedAt": "2026-10-29T10:41:16.267Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "save_min_gan_before_commit",
+          "error": {
+            "code": "resolve_app_unavailable",
+            "message": "Unable to connect to DaVinci Resolve. Make sure Resolve Studio is running and external scripting is enabled."
+          }
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-10-28T10:45:17.208Z"
+      "updatedAt": "2026-10-29T10:41:16.267Z"
     }
   }
 }

@@ -1,0 +1,4161 @@
+{
+  "status": "created-awaiting-user-fine-cut",
+  "createdAt": "2026-10-29T08:14:45.966957+00:00",
+  "projectName": "中秋国庆闽赣自驾 [Edit]",
+  "sourceTimelineName": "山、村落与手艺 [ep2-mountains-villages-craft]",
+  "sourceTimelineId": "821d4cb8-e59c-4053-938a-53dec8215413",
+  "timelineName": "武夷山片头·精选待细剪 [ep2-intro-selects]",
+  "timelineId": "52e3727d-0b8c-471b-a9da-b8df10074467",
+  "fps": 30,
+  "durationFrames": 35383,
+  "durationTimecode": "00:19:39:13",
+  "groups": 68,
+  "videoItems": 111,
+  "audioItems": 102,
+  "subtitles": false,
+  "rendered": false,
+  "originalBodyUnchanged": true,
+  "originalAudioStatePreserved": false,
+  "markers": {
+    "O1": {
+      "start": 0,
+      "title": "晨雾群山",
+      "stage": "航拍与静音旁白",
+      "rows": [
+        25
+      ],
+      "end": 140
+    },
+    "O2": {
+      "start": 140,
+      "title": "湖面与山坡",
+      "stage": "航拍与静音旁白",
+      "rows": [
+        27
+      ],
+      "end": 262
+    },
+    "O3": {
+      "start": 262,
+      "title": "金色晨雾",
+      "stage": "航拍与静音旁白",
+      "rows": [
+        33
+      ],
+      "end": 403
+    },
+    "O4": {
+      "start": 403,
+      "title": "下梅沿溪景观",
+      "stage": "航拍与静音旁白",
+      "rows": [
+        221,
+        238
+      ],
+      "end": 1037
+    },
+    "O5": {
+      "start": 1037,
+      "title": "五颜六色的果实",
+      "stage": "航拍与静音旁白",
+      "rows": [
+        102
+      ],
+      "end": 1350
+    },
+    "N1": {
+      "start": 1350,
+      "title": "九曲溪大拐弯",
+      "stage": "山水与登山",
+      "rows": [
+        154,
+        155
+      ],
+      "end": 2440
+    },
+    "N2": {
+      "start": 2440,
+      "title": "九曲溪水色",
+      "stage": "山水与登山",
+      "rows": [
+        92
+      ],
+      "end": 2879
+    },
+    "N3": {
+      "start": 2879,
+      "title": "绝壁栈道",
+      "stage": "山水与登山",
+      "rows": [
+        156
+      ],
+      "end": 3511
+    },
+    "N4": {
+      "start": 3511,
+      "title": "暴雨后登顶",
+      "stage": "山水与登山",
+      "rows": [
+        157,
+        159
+      ],
+      "end": 3732
+    },
+    "N5": {
+      "start": 3732,
+      "title": "水帘洞原来还没到",
+      "stage": "山水与登山",
+      "rows": [
+        393,
+        394,
+        398,
+        399
+      ],
+      "end": 5129
+    },
+    "N6": {
+      "start": 5129,
+      "title": "人与玉女峰同框",
+      "stage": "山水与登山",
+      "rows": [
+        460
+      ],
+      "end": 5566
+    },
+    "N7": {
+      "start": 5566,
+      "title": "云窝原来是钓鱼处",
+      "stage": "山水与登山",
+      "rows": [
+        135,
+        138
+      ],
+      "end": 5998
+    },
+    "V1": {
+      "start": 5998,
+      "title": "下梅沿溪运茶",
+      "stage": "下梅村落",
+      "rows": [
+        223
+      ],
+      "end": 7203
+    },
+    "V2": {
+      "start": 7203,
+      "title": "门洞成为观景窗",
+      "stage": "下梅村落",
+      "rows": [
+        235
+      ],
+      "end": 7583
+    },
+    "V3": {
+      "start": 7583,
+      "title": "下梅庙内烟与天光",
+      "stage": "下梅村落",
+      "rows": [
+        227
+      ],
+      "end": 7864
+    },
+    "V4": {
+      "start": 7864,
+      "title": "下梅门雕",
+      "stage": "下梅村落",
+      "rows": [
+        236
+      ],
+      "end": 8324
+    },
+    "V5": {
+      "start": 8324,
+      "title": "晒物与酸枣糕",
+      "stage": "下梅村落",
+      "rows": [
+        250,
+        253,
+        254,
+        255
+      ],
+      "end": 9069
+    },
+    "V6": {
+      "start": 9069,
+      "title": "认花把村民引出来",
+      "stage": "下梅村落",
+      "rows": [
+        265
+      ],
+      "end": 9619
+    },
+    "T1": {
+      "start": 9619,
+      "title": "兔毫纹理",
+      "stage": "茶与窑",
+      "rows": [
+        292
+      ],
+      "end": 9886
+    },
+    "T2": {
+      "start": 9886,
+      "title": "九曲山水进器物",
+      "stage": "茶与窑",
+      "rows": [
+        296
+      ],
+      "end": 10156
+    },
+    "T3": {
+      "start": 10156,
+      "title": "第一次看见长龙窑",
+      "stage": "茶与窑",
+      "rows": [
+        303
+      ],
+      "end": 10910
+    },
+    "T4": {
+      "start": 10910,
+      "title": "龙窑末窑疑问",
+      "stage": "茶与窑",
+      "rows": [
+        304
+      ],
+      "end": 11425
+    },
+    "T5": {
+      "start": 11425,
+      "title": "雨中岩壁与茶",
+      "stage": "茶与窑",
+      "rows": [
+        339
+      ],
+      "end": 12292
+    },
+    "T6": {
+      "start": 12292,
+      "title": "大红袍母树",
+      "stage": "茶与窑",
+      "rows": [
+        368
+      ],
+      "end": 12921
+    },
+    "B1": {
+      "start": 12921,
+      "title": "认植物到拍清楚",
+      "stage": "生物发现",
+      "rows": [
+        97,
+        98,
+        99,
+        100
+      ],
+      "end": 13850
+    },
+    "B2": {
+      "start": 13850,
+      "title": "光下石蒜",
+      "stage": "生物发现",
+      "rows": [
+        105,
+        106
+      ],
+      "end": 14474
+    },
+    "B3": {
+      "start": 14474,
+      "title": "色蟌翅膀分别控制",
+      "stage": "生物发现",
+      "rows": [
+        349,
+        350
+      ],
+      "end": 14882
+    },
+    "B4": {
+      "start": 14882,
+      "title": "白鹇",
+      "stage": "生物发现",
+      "rows": [
+        397
+      ],
+      "end": 15043
+    },
+    "B5": {
+      "start": 15043,
+      "title": "水里闪光的鱼和昨晚的菜",
+      "stage": "生物发现",
+      "rows": [
+        3,
+        93,
+        94,
+        95,
+        96
+      ],
+      "end": 15924
+    },
+    "B6": {
+      "start": 15924,
+      "title": "发现翠鸟却没带长焦",
+      "stage": "生物发现",
+      "rows": [
+        224
+      ],
+      "end": 16302
+    },
+    "B7": {
+      "start": 16302,
+      "title": "孔雀叫声遭吐槽",
+      "stage": "生物发现",
+      "rows": [
+        56,
+        57,
+        58
+      ],
+      "end": 16613
+    },
+    "B8": {
+      "start": 16613,
+      "title": "花分层开放",
+      "stage": "生物发现",
+      "rows": [
+        352
+      ],
+      "end": 16868
+    },
+    "F1": {
+      "start": 16868,
+      "title": "岩壁像给肉排改花刀",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        374
+      ],
+      "end": 17345
+    },
+    "F2": {
+      "start": 17345,
+      "title": "岚谷烧鹅吃得满足",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        7,
+        8
+      ],
+      "end": 18403
+    },
+    "F3": {
+      "start": 18403,
+      "title": "冰淇淋吃出茶味",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        194,
+        195
+      ],
+      "end": 18835
+    },
+    "F4": {
+      "start": 18835,
+      "title": "猫爪菇的形态",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        196
+      ],
+      "end": 19325
+    },
+    "F5": {
+      "start": 19325,
+      "title": "挺能吃辣到好辣",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        11,
+        197,
+        198,
+        199
+      ],
+      "end": 20973
+    },
+    "F6": {
+      "start": 20973,
+      "title": "茶鱼难以形容的味道",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        203,
+        204,
+        205
+      ],
+      "end": 21734
+    },
+    "F7": {
+      "start": 21734,
+      "title": "红菇汤品尝和菌褶",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        317,
+        318,
+        319
+      ],
+      "end": 22789
+    },
+    "F8": {
+      "start": 22789,
+      "title": "肥鱼的芋头更好吃",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        320,
+        321,
+        322,
+        323
+      ],
+      "end": 24286
+    },
+    "F9": {
+      "start": 24286,
+      "title": "文公菜剥开与口感",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        324,
+        325,
+        326
+      ],
+      "end": 25826
+    },
+    "F10": {
+      "start": 25826,
+      "title": "炉边光饼到咬下去",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        421,
+        422,
+        423
+      ],
+      "end": 26737
+    },
+    "F11": {
+      "start": 26737,
+      "title": "茶叶蛋好吃又没区别",
+      "stage": "从岩壁联想到餐桌",
+      "rows": [
+        494,
+        495,
+        496
+      ],
+      "end": 27131
+    },
+    "E1": {
+      "start": 27131,
+      "title": "竹筏上水与过激流",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        436,
+        437
+      ],
+      "end": 27641
+    },
+    "E2": {
+      "start": 27641,
+      "title": "竹筏还能超车",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        438
+      ],
+      "end": 27801
+    },
+    "E3": {
+      "start": 27801,
+      "title": "狗也来坐竹筏",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        462
+      ],
+      "end": 28185
+    },
+    "E4": {
+      "start": 28185,
+      "title": "山上没回声，筏上再试",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        152,
+        153,
+        447
+      ],
+      "end": 28890
+    },
+    "E5": {
+      "start": 28890,
+      "title": "竹筏穿行竹林",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        466
+      ],
+      "end": 29033
+    },
+    "E6": {
+      "start": 29033,
+      "title": "三元雨衣没买，十元补买",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        487
+      ],
+      "end": 29514
+    },
+    "E7": {
+      "start": 29514,
+      "title": "车宿准备",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        17
+      ],
+      "end": 30180
+    },
+    "E8": {
+      "start": 30180,
+      "title": "想在这里慢慢住几天",
+      "stage": "竹筏体验与个人感受",
+      "rows": [
+        367,
+        400
+      ],
+      "end": 31112
+    },
+    "Z1": {
+      "start": 31112,
+      "title": "齐云峰朝霞云海原声",
+      "stage": "回到日出收束",
+      "rows": [
+        19
+      ],
+      "end": 31613
+    },
+    "Z2": {
+      "start": 31613,
+      "title": "粉霞与云海延时",
+      "stage": "回到日出收束",
+      "rows": [
+        20,
+        24
+      ],
+      "end": 32098
+    },
+    "Z3": {
+      "start": 32098,
+      "title": "太阳露出山脊延时及片名",
+      "stage": "回到日出收束",
+      "rows": [
+        22
+      ],
+      "end": 32654
+    }
+  },
+  "clips": [
+    {
+      "reviewId": "O1",
+      "bodyRow": 25,
+      "bodyIn": "04:30:08",
+      "bodyOut": "04:34:28",
+      "assetId": "DJI_20260929055238_0444_D_drone",
+      "file": "DJI_20260929055238_0444_D.mp4",
+      "itemId": "1501e09e-bef1-4b76-98ce-45298bf03b3c",
+      "startFrame": 0,
+      "endFrame": 140,
+      "durationFrames": 140,
+      "sourceStartFrame": 161,
+      "sourceEndFrame": 1000,
+      "speed": {
+        "Percentage": 299.99999999998545,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "57091d9d-ad8d-46d8-af4c-beb8d68a867e"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "reviewId": "O6",
+      "bodyRow": 26,
+      "bodyIn": "04:34:28",
+      "bodyOut": "04:39:22",
+      "assetId": "DJI_20260929054726_0418_D_drone",
+      "file": "DJI_20260929054726_0418_D.mp4",
+      "itemId": "ecd27f16-c9f2-4d3e-92d7-badce358e652",
+      "startFrame": 140,
+      "endFrame": 284,
+      "durationFrames": 144,
+      "sourceStartFrame": 581,
+      "sourceEndFrame": 1444,
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O2",
+      "bodyRow": 27,
+      "bodyIn": "04:39:22",
+      "bodyOut": "04:43:24",
+      "assetId": "DJI_20260929055339_0452_D_drone",
+      "file": "DJI_20260929055339_0452_D.mp4",
+      "itemId": "dad9f205-5b94-4c78-8f32-f16f9e9a743a",
+      "startFrame": 284,
+      "endFrame": 406,
+      "durationFrames": 122,
+      "sourceStartFrame": 337,
+      "sourceEndFrame": 825,
+      "speed": {
+        "Percentage": 200.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "a1a921de-3cc6-460a-adc0-f3846a2122aa"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "reviewId": "O7",
+      "bodyRow": 28,
+      "bodyIn": "04:43:24",
+      "bodyOut": "04:48:17",
+      "assetId": "DJI_20260929055439_0459_D_drone",
+      "file": "DJI_20260929055439_0459_D.mp4",
+      "itemId": "b3d63e27-75fa-45ab-952a-7ac25101b36a",
+      "startFrame": 406,
+      "endFrame": 549,
+      "durationFrames": 143,
+      "sourceStartFrame": 305,
+      "sourceEndFrame": 1162,
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O8",
+      "bodyRow": 29,
+      "bodyIn": "04:48:17",
+      "bodyOut": "04:53:13",
+      "assetId": "DJI_20260929061453_0475_D_drone",
+      "file": "DJI_20260929061453_0475_D.mp4",
+      "itemId": "c3861b56-f65c-48e8-b3cb-8bf02ce6c997",
+      "startFrame": 549,
+      "endFrame": 695,
+      "durationFrames": 146,
+      "sourceStartFrame": 173,
+      "sourceEndFrame": 1048,
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O9",
+      "bodyRow": 30,
+      "bodyIn": "04:53:13",
+      "bodyOut": "04:58:15",
+      "assetId": "DJI_20260929062654_0526_D_drone",
+      "file": "DJI_20260929062654_0526_D.mp4",
+      "itemId": "1160d432-e493-46fe-8f0e-d4889e99d2fe",
+      "startFrame": 695,
+      "endFrame": 847,
+      "durationFrames": 152,
+      "sourceStartFrame": 139,
+      "sourceEndFrame": 746,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O10",
+      "bodyRow": 31,
+      "bodyIn": "04:58:15",
+      "bodyOut": "05:04:04",
+      "assetId": "DJI_20260929062737_0533_D_drone",
+      "file": "DJI_20260929062737_0533_D.mp4",
+      "itemId": "789ea565-44e0-4607-bdd3-89d253f4c31c",
+      "startFrame": 847,
+      "endFrame": 1016,
+      "durationFrames": 169,
+      "sourceStartFrame": 904,
+      "sourceEndFrame": 1580,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O11",
+      "bodyRow": 32,
+      "bodyIn": "05:04:04",
+      "bodyOut": "05:08:26",
+      "assetId": "DJI_20260929062807_0534_D_drone",
+      "file": "DJI_20260929062807_0534_D.mp4",
+      "itemId": "cddb2d1e-0a7d-4ebc-9482-9e7c44d581c5",
+      "startFrame": 1016,
+      "endFrame": 1158,
+      "durationFrames": 142,
+      "sourceStartFrame": 114,
+      "sourceEndFrame": 682,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "no-audio-item"
+    },
+    {
+      "reviewId": "O3",
+      "bodyRow": 33,
+      "bodyIn": "05:08:26",
+      "bodyOut": "05:13:17",
+      "assetId": "DJI_20260929062913_0548_D_drone",
+      "file": "DJI_20260929062913_0548_D.mp4",
+      "itemId": "772c19b9-fa97-40ef-88c9-43d9f5d75735",
+      "startFrame": 1158,
+      "endFrame": 1299,
+      "durationFrames": 141,
+      "sourceStartFrame": 980,
+      "sourceEndFrame": 134,
+      "speed": {
+        "Percentage": -300.00000000000006,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "0a85bed8-d259-4a51-b152-e6be4a905854"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "itemId": "69c968de-c65d-46fc-a9ff-1ef7686bd18f",
+      "reviewId": "O12",
+      "bodyRow": 371,
+      "bodyIn": "40:48:15",
+      "bodyOut": "40:57:22",
+      "assetId": "C4513_zve1_day6",
+      "file": "C4513.mp4",
+      "startFrame": 1299,
+      "endFrame": 1576,
+      "durationFrames": 277,
+      "sourceStartFrame": 71,
+      "sourceEndFrame": 624,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "f48896a1-4586-40c7-8807-a699b75d7faf"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "reviewId": "O4",
+      "bodyRow": 238,
+      "bodyIn": "25:51:16",
+      "bodyOut": "26:02:20",
+      "assetId": "C4412_zve1_day6",
+      "file": "C4412.mp4",
+      "itemId": "49b3ebca-5bd8-4713-93ca-bc93f7128eff",
+      "startFrame": 1576,
+      "endFrame": 1910,
+      "durationFrames": 334,
+      "sourceStartFrame": 28,
+      "sourceEndFrame": 695,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration",
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "80e042f1-eb98-46bb-bced-493eef8ed248"
+      ]
+    },
+    {
+      "itemId": "3cb55a5f-5fb6-41d2-880f-a51077d99b86",
+      "reviewId": "O13",
+      "bodyRow": 251,
+      "bodyIn": "27:40:07",
+      "bodyOut": "27:45:24",
+      "assetId": "C4419_zve1_day6",
+      "file": "C4419.mp4",
+      "startFrame": 1910,
+      "endFrame": 2077,
+      "durationFrames": 167,
+      "sourceStartFrame": 31,
+      "sourceEndFrame": 365,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "2ece3d6d-8bf2-4700-b9b2-4489d2ecb6a8"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "itemId": "419cd2fa-add7-4009-9488-fd9ad5fbbfbd",
+      "reviewId": "O14",
+      "bodyRow": 333,
+      "bodyIn": "36:49:29",
+      "bodyOut": "36:54:11",
+      "assetId": "C4486_zve1_day6",
+      "file": "C4486.mp4",
+      "startFrame": 2077,
+      "endFrame": 2209,
+      "durationFrames": 132,
+      "sourceStartFrame": 67,
+      "sourceEndFrame": 330,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "53760b2e-5a13-4887-9229-a53fcaab5fe6"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "itemId": "8372cafb-ce5e-4b97-b0cd-3547390fa999",
+      "reviewId": "O15",
+      "bodyRow": 206,
+      "bodyIn": "19:55:25",
+      "bodyOut": "20:02:12",
+      "assetId": "C4372_zve1_day5",
+      "file": "C4372.mp4",
+      "startFrame": 2209,
+      "endFrame": 2406,
+      "durationFrames": 197,
+      "sourceStartFrame": 7,
+      "sourceEndFrame": 401,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "fef163c1-937d-45a1-bd5e-502d34ef7b7f"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "itemId": "4fc9eb4f-feb2-44de-b214-65c8018f1839",
+      "reviewId": "O16",
+      "bodyRow": 293,
+      "bodyIn": "30:48:19",
+      "bodyOut": "30:53:13",
+      "assetId": "C4453_zve1_day6",
+      "file": "C4453.mp4",
+      "startFrame": 2406,
+      "endFrame": 2550,
+      "durationFrames": 144,
+      "sourceStartFrame": 31,
+      "sourceEndFrame": 319,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "cd6c6fcd-e57d-47e5-a0c7-bc9cabd065f6"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "itemId": "469eb6e8-9499-46d6-8661-534586651f11",
+      "reviewId": "O17",
+      "bodyRow": 304,
+      "bodyIn": "33:00:16",
+      "bodyOut": "33:17:21",
+      "assetId": "C4465_zve1_day6",
+      "file": "C4465.mp4",
+      "startFrame": 2550,
+      "endFrame": 3065,
+      "durationFrames": 515,
+      "sourceStartFrame": 136,
+      "sourceEndFrame": 1165,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "81083fdc-f046-4932-a436-909cd5905e15"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "reviewId": "O5",
+      "bodyRow": 102,
+      "bodyIn": "10:30:02",
+      "bodyOut": "10:40:15",
+      "assetId": "C4301_zve1_day5",
+      "file": "C4301.mp4",
+      "itemId": "ae59e2e2-5f19-44c0-8e7e-1ea8f9148412",
+      "startFrame": 3065,
+      "endFrame": 3378,
+      "durationFrames": 313,
+      "sourceStartFrame": 703,
+      "sourceEndFrame": 1328,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration",
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "52e88ad7-b160-4c20-b5b8-1a646628bdb4"
+      ]
+    },
+    {
+      "itemId": "b97c2cb9-d5d7-4377-be9c-1272f47dd7c8",
+      "reviewId": "O18",
+      "bodyRow": 202,
+      "bodyIn": "19:17:03",
+      "bodyOut": "19:30:14",
+      "assetId": "C4368_zve1_day5",
+      "file": "C4368.mp4",
+      "startFrame": 3378,
+      "endFrame": 3779,
+      "durationFrames": 401,
+      "sourceStartFrame": 91,
+      "sourceEndFrame": 892,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 12.0
+      },
+      "role": "narration-background",
+      "linkedAudioItemIds": [
+        "3fce637d-4f1b-4854-af50-463289400642"
+      ],
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration"
+    },
+    {
+      "reviewId": "N1",
+      "bodyRow": 154,
+      "bodyIn": "15:04:07",
+      "bodyOut": "15:32:24",
+      "assetId": "C4343_zve1_day5",
+      "file": "C4343.mp4",
+      "itemId": "fe0d5af2-46b9-4c0b-a196-66adc47acaa3",
+      "startFrame": 3779,
+      "endFrame": 4636,
+      "durationFrames": 857,
+      "sourceStartFrame": 70,
+      "sourceEndFrame": 1783,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 12.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "8f5fcae6-dffa-4aec-ba9d-938e37c4f36a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N1",
+      "bodyRow": 155,
+      "bodyIn": "15:32:24",
+      "bodyOut": "15:40:17",
+      "assetId": "C4337_zve1_day5",
+      "file": "C4337.mp4",
+      "itemId": "6b583ee1-904d-4711-9206-728a1540a8b4",
+      "startFrame": 4636,
+      "endFrame": 4869,
+      "durationFrames": 233,
+      "sourceStartFrame": 19,
+      "sourceEndFrame": 484,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "4c2ec345-aa43-4a27-87ca-ae4ca842f4ad"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N2",
+      "bodyRow": 92,
+      "bodyIn": "09:18:16",
+      "bodyOut": "09:33:05",
+      "assetId": "C4306_zve1_day5",
+      "file": "C4306.mp4",
+      "itemId": "d6c76b49-1629-4efa-a23a-ffabb4659c0b",
+      "startFrame": 4869,
+      "endFrame": 5308,
+      "durationFrames": 439,
+      "sourceStartFrame": 28,
+      "sourceEndFrame": 905,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "c9b7ccf0-3285-4a96-afa5-3e7f46af1f6b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N3",
+      "bodyRow": 156,
+      "bodyIn": "15:40:17",
+      "bodyOut": "16:01:19",
+      "assetId": "C0107_a7r6",
+      "file": "C0107.mp4",
+      "itemId": "26045b2b-bfa7-4930-ada7-d8dd6456f3b3",
+      "startFrame": 5308,
+      "endFrame": 5940,
+      "durationFrames": 632,
+      "sourceStartFrame": 71,
+      "sourceEndFrame": 1333,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "32c2729f-b5d7-4f74-8794-f95729cc37af"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N4",
+      "bodyRow": 157,
+      "bodyIn": "16:01:19",
+      "bodyOut": "16:05:00",
+      "assetId": "C4344_zve1_day5",
+      "file": "C4344.mp4",
+      "itemId": "9e865ee2-9be1-41e0-843e-2bc2bdad7f30",
+      "startFrame": 5940,
+      "endFrame": 6041,
+      "durationFrames": 101,
+      "sourceStartFrame": 3,
+      "sourceEndFrame": 205,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "157abe86-28fa-4363-b806-7c35f20d5406"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N4",
+      "bodyRow": 159,
+      "bodyIn": "16:08:04",
+      "bodyOut": "16:12:04",
+      "assetId": "C4346_zve1_day5",
+      "file": "C4346.mp4",
+      "itemId": "8797085b-e4bf-495b-82af-7a43ff33c63a",
+      "startFrame": 6041,
+      "endFrame": 6161,
+      "durationFrames": 120,
+      "sourceStartFrame": 292,
+      "sourceEndFrame": 532,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "c8acd4f4-7e85-41ae-bce1-befdd0b6eccd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N5",
+      "bodyRow": 393,
+      "bodyIn": "42:47:14",
+      "bodyOut": "43:08:03",
+      "assetId": "C4534_zve1_day6",
+      "file": "C4534.mp4",
+      "itemId": "a8b6f8c2-03db-43b3-9e84-0b093a9bf59d",
+      "startFrame": 6161,
+      "endFrame": 6780,
+      "durationFrames": 619,
+      "sourceStartFrame": 201,
+      "sourceEndFrame": 1437,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "734696a6-a5b0-44b8-9868-8376b1d71593"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N5",
+      "bodyRow": 394,
+      "bodyIn": "43:08:03",
+      "bodyOut": "43:14:25",
+      "assetId": "C4535_zve1_day6",
+      "file": "C4535.mp4",
+      "itemId": "f30257d3-a59c-49ff-9928-4fdfd4a89bb3",
+      "startFrame": 6780,
+      "endFrame": 6982,
+      "durationFrames": 202,
+      "sourceStartFrame": 9,
+      "sourceEndFrame": 412,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "85cc7f58-abc1-4d3c-94da-6b21785a38c8"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N5",
+      "bodyRow": 398,
+      "bodyIn": "43:33:25",
+      "bodyOut": "43:48:14",
+      "assetId": "C4541_zve1_day6",
+      "file": "C4541.mp4",
+      "itemId": "0f36c522-15f8-4e4c-9d92-e0666f4b9ef0",
+      "startFrame": 6982,
+      "endFrame": 7421,
+      "durationFrames": 439,
+      "sourceStartFrame": 32,
+      "sourceEndFrame": 910,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "08382678-2473-4282-a9f6-5c4353d43a0a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N5",
+      "bodyRow": 399,
+      "bodyIn": "43:48:14",
+      "bodyOut": "43:53:01",
+      "assetId": "C4542_zve1_day6",
+      "file": "C4542.mp4",
+      "itemId": "4e1ea3b1-5937-4e50-8a7b-a5a98ba1fbcd",
+      "startFrame": 7421,
+      "endFrame": 7558,
+      "durationFrames": 137,
+      "sourceStartFrame": 9,
+      "sourceEndFrame": 282,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "5c58a5ee-92a6-4884-8639-bb199482833b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N6",
+      "bodyRow": 460,
+      "bodyIn": "49:56:11",
+      "bodyOut": "50:10:28",
+      "assetId": "C4658_zve1_day7",
+      "file": "C4658.mp4",
+      "itemId": "75beb6b8-d462-4547-a89b-36f1149a034d",
+      "startFrame": 7558,
+      "endFrame": 7995,
+      "durationFrames": 437,
+      "sourceStartFrame": 9,
+      "sourceEndFrame": 882,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "6d9c86e9-80f9-4afb-b82a-d78c91b5f74b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N7",
+      "bodyRow": 135,
+      "bodyIn": "13:00:17",
+      "bodyOut": "13:07:09",
+      "assetId": "C4322_zve1_day5",
+      "file": "C4322.mp4",
+      "itemId": "d29bad0f-e29d-44e4-b142-c40812d3d26c",
+      "startFrame": 7995,
+      "endFrame": 8197,
+      "durationFrames": 202,
+      "sourceStartFrame": 178,
+      "sourceEndFrame": 582,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "a5c46004-fc3a-4e8c-b66d-85fac333eadf"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "N7",
+      "bodyRow": 138,
+      "bodyIn": "13:15:21",
+      "bodyOut": "13:23:11",
+      "assetId": "C4325_zve1_day5",
+      "file": "C4325.mp4",
+      "itemId": "1198f5ca-ea64-476e-a7b7-9dcd8ddcecd6",
+      "startFrame": 8197,
+      "endFrame": 8427,
+      "durationFrames": 230,
+      "sourceStartFrame": 13,
+      "sourceEndFrame": 473,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "d3b2a734-405e-4a01-a942-caa1c0547070"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V1",
+      "bodyRow": 223,
+      "bodyIn": "22:08:20",
+      "bodyOut": "22:48:25",
+      "assetId": "C4395_zve1_day6",
+      "file": "C4395.mp4",
+      "itemId": "ee2b29b7-0c25-4e95-8cab-58a1898cbfe7",
+      "startFrame": 8427,
+      "endFrame": 9632,
+      "durationFrames": 1205,
+      "sourceStartFrame": 91,
+      "sourceEndFrame": 2498,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "1e8cdaeb-3c8a-4a94-8a2c-cea9287dd73d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V2",
+      "bodyRow": 235,
+      "bodyIn": "25:13:14",
+      "bodyOut": "25:26:04",
+      "assetId": "C4408_zve1_day6",
+      "file": "C4408.mp4",
+      "itemId": "d715f4e8-c291-41fa-9296-27da41b4c2be",
+      "startFrame": 9632,
+      "endFrame": 10012,
+      "durationFrames": 380,
+      "sourceStartFrame": 19,
+      "sourceEndFrame": 778,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "cb83ca20-520a-4170-b13e-6a5f41859bcd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V3",
+      "bodyRow": 227,
+      "bodyIn": "23:32:12",
+      "bodyOut": "23:41:23",
+      "assetId": "C4398_zve1_day6",
+      "file": "C4398.mp4",
+      "itemId": "10b6c2d5-ebef-4265-b077-65933d461371",
+      "startFrame": 10012,
+      "endFrame": 10293,
+      "durationFrames": 281,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 561,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "c9329175-818d-42d7-a0e7-ad969f063478"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V4",
+      "bodyRow": 236,
+      "bodyIn": "25:26:04",
+      "bodyOut": "25:41:14",
+      "assetId": "C4410_zve1_day6",
+      "file": "C4410.mp4",
+      "itemId": "d4a023bb-3836-434b-a3f8-42e4b85d38cf",
+      "startFrame": 10293,
+      "endFrame": 10753,
+      "durationFrames": 460,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 919,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "22c522ec-69d2-463c-9390-454c748f5721"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V5",
+      "bodyRow": 250,
+      "bodyIn": "27:28:26",
+      "bodyOut": "27:40:07",
+      "assetId": "C4418_zve1_day6",
+      "file": "C4418.mp4",
+      "itemId": "2b796b46-126b-45f7-b30f-dfd0c94ad71f",
+      "startFrame": 10753,
+      "endFrame": 11094,
+      "durationFrames": 341,
+      "sourceStartFrame": 151,
+      "sourceEndFrame": 833,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b81c5b65-3365-40ef-8823-fb70d94091a0"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V5",
+      "bodyRow": 253,
+      "bodyIn": "27:50:20",
+      "bodyOut": "27:54:23",
+      "assetId": "C4420_zve1_day6",
+      "file": "C4420.mp4",
+      "itemId": "17f44490-1b02-4a9e-8dc8-9b1a34a57e0e",
+      "startFrame": 11094,
+      "endFrame": 11217,
+      "durationFrames": 123,
+      "sourceStartFrame": 3,
+      "sourceEndFrame": 249,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "fc26f1e6-b484-455e-bd02-4382cc293e04"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V5",
+      "bodyRow": 254,
+      "bodyIn": "27:54:23",
+      "bodyOut": "27:58:16",
+      "assetId": "C4428_zve1_day6",
+      "file": "C4428.mp4",
+      "itemId": "3041af80-0c51-4b60-bfd9-830de834ee8f",
+      "startFrame": 11217,
+      "endFrame": 11330,
+      "durationFrames": 113,
+      "sourceStartFrame": 28,
+      "sourceEndFrame": 254,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "3e88e71f-439c-4fa9-88d4-3d10ca1863e7"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V5",
+      "bodyRow": 255,
+      "bodyIn": "27:58:16",
+      "bodyOut": "28:04:04",
+      "assetId": "C4428_zve1_day6",
+      "file": "C4428.mp4",
+      "itemId": "c253bac1-a174-447a-ab0a-827e1ced7eda",
+      "startFrame": 11330,
+      "endFrame": 11498,
+      "durationFrames": 168,
+      "sourceStartFrame": 953,
+      "sourceEndFrame": 1289,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "55fdbb61-b684-44e7-a0e2-975b14d1b629"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "V6",
+      "bodyRow": 265,
+      "bodyIn": "29:13:15",
+      "bodyOut": "29:31:25",
+      "assetId": "C4437_zve1_day6",
+      "file": "C4437.mp4",
+      "itemId": "a3fedcdf-605a-46a5-bcda-d82f3dac608b",
+      "startFrame": 11498,
+      "endFrame": 12048,
+      "durationFrames": 550,
+      "sourceStartFrame": 43,
+      "sourceEndFrame": 1141,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "d5c28d6a-f4f0-4e7e-8093-70656d7ef2cd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T1",
+      "bodyRow": 292,
+      "bodyIn": "30:39:22",
+      "bodyOut": "30:48:19",
+      "assetId": "C4452_zve1_day6",
+      "file": "C4452.mp4",
+      "itemId": "9873c869-4954-4148-aa1e-861a452bd990",
+      "startFrame": 12048,
+      "endFrame": 12315,
+      "durationFrames": 267,
+      "sourceStartFrame": 28,
+      "sourceEndFrame": 561,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "91a22609-46cb-48d5-a629-f6a0807f1ea7"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T2",
+      "bodyRow": 296,
+      "bodyIn": "31:09:26",
+      "bodyOut": "31:18:26",
+      "assetId": "C4456_zve1_day6",
+      "file": "C4456.mp4",
+      "itemId": "d00876c2-c945-4dd8-b1b4-96aebc5fe76b",
+      "startFrame": 12315,
+      "endFrame": 12585,
+      "durationFrames": 270,
+      "sourceStartFrame": 147,
+      "sourceEndFrame": 687,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "5a352fb9-ae6e-490f-9e47-de4bee3fa2a6"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T3",
+      "bodyRow": 303,
+      "bodyIn": "32:35:12",
+      "bodyOut": "33:00:16",
+      "assetId": "C4463_zve1_day6",
+      "file": "C4463.mp4",
+      "itemId": "26effefb-a8c3-4311-98e1-67317e34253a",
+      "startFrame": 12585,
+      "endFrame": 13339,
+      "durationFrames": 754,
+      "sourceStartFrame": 38,
+      "sourceEndFrame": 1544,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "448eec23-92d4-4e7e-a543-84db8c8dfba3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T4",
+      "bodyRow": 304,
+      "bodyIn": "33:00:16",
+      "bodyOut": "33:17:21",
+      "assetId": "C4465_zve1_day6",
+      "file": "C4465.mp4",
+      "itemId": "e09b0c9f-69ce-4258-b475-45fb508b48c7",
+      "startFrame": 13339,
+      "endFrame": 13854,
+      "durationFrames": 515,
+      "sourceStartFrame": 137,
+      "sourceEndFrame": 1166,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "1b8e8071-65cd-45d2-b6fa-292dc6bb9c7d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T5",
+      "bodyRow": 339,
+      "bodyIn": "37:18:21",
+      "bodyOut": "37:47:18",
+      "assetId": "C4495_zve1_day6",
+      "file": "C4495.mp4",
+      "itemId": "8729a611-3f37-4a32-9c1d-f28eaac206c3",
+      "startFrame": 13854,
+      "endFrame": 14721,
+      "durationFrames": 867,
+      "sourceStartFrame": 85,
+      "sourceEndFrame": 1818,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b02b514e-2639-41f6-a464-5b2820f0082a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "T6",
+      "bodyRow": 368,
+      "bodyIn": "40:12:01",
+      "bodyOut": "40:33:00",
+      "assetId": "C4510_zve1_day6",
+      "file": "C4510.mp4",
+      "itemId": "1d62010e-90d7-452e-a1aa-e7666210ec46",
+      "startFrame": 14721,
+      "endFrame": 15350,
+      "durationFrames": 629,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 1256,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "7b59b807-2bd8-47e4-8f75-cbfd32b768f3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B1",
+      "bodyRow": 97,
+      "bodyIn": "09:51:24",
+      "bodyOut": "10:06:28",
+      "assetId": "C4297_zve1_day5",
+      "file": "C4297.mp4",
+      "itemId": "57151458-ba64-4def-bcef-3d0ef198afa7",
+      "startFrame": 15350,
+      "endFrame": 15804,
+      "durationFrames": 454,
+      "sourceStartFrame": 94,
+      "sourceEndFrame": 1002,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "9c8922df-5a65-450c-9667-1a64929d5a83"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B1",
+      "bodyRow": 98,
+      "bodyIn": "10:06:28",
+      "bodyOut": "10:13:22",
+      "assetId": "C4298_zve1_day5",
+      "file": "C4298.mp4",
+      "itemId": "47e0a394-bed4-40f0-bc18-813491c891a8",
+      "startFrame": 15804,
+      "endFrame": 16008,
+      "durationFrames": 204,
+      "sourceStartFrame": 91,
+      "sourceEndFrame": 498,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "9d0f04b1-46c6-4e44-a22c-435649e7db1e"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B1",
+      "bodyRow": 99,
+      "bodyIn": "10:13:22",
+      "bodyOut": "10:18:21",
+      "assetId": "C4298_zve1_day5",
+      "file": "C4298.mp4",
+      "itemId": "bd144595-5a43-4a25-b8e1-d2eb5947fe05",
+      "startFrame": 16008,
+      "endFrame": 16157,
+      "durationFrames": 149,
+      "sourceStartFrame": 1050,
+      "sourceEndFrame": 1347,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "30531c48-dc77-4006-9eb7-e6d3823d2c3a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B1",
+      "bodyRow": 100,
+      "bodyIn": "10:18:21",
+      "bodyOut": "10:22:23",
+      "assetId": "C4299_zve1_day5",
+      "file": "C4299.mp4",
+      "itemId": "981eea09-96a8-4019-8c53-6c4a75a0d24d",
+      "startFrame": 16157,
+      "endFrame": 16279,
+      "durationFrames": 122,
+      "sourceStartFrame": 43,
+      "sourceEndFrame": 286,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "0ba350bc-db42-42ad-904e-b63fa11ccf2d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B2",
+      "bodyRow": 105,
+      "bodyIn": "10:51:04",
+      "bodyOut": "11:02:14",
+      "assetId": "C4310_zve1_day5",
+      "file": "C4310.mp4",
+      "itemId": "3b764c7a-ae9d-49bb-b344-f8e6ce0d670e",
+      "startFrame": 16279,
+      "endFrame": 16619,
+      "durationFrames": 340,
+      "sourceStartFrame": 23,
+      "sourceEndFrame": 702,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "e12cb827-6e93-4da5-9ee0-b7953e20a758"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B2",
+      "bodyRow": 106,
+      "bodyIn": "11:02:14",
+      "bodyOut": "11:11:28",
+      "assetId": "C4310_zve1_day5",
+      "file": "C4310.mp4",
+      "itemId": "2563a1d0-b511-416a-9a26-10ca4407540e",
+      "startFrame": 16619,
+      "endFrame": 16903,
+      "durationFrames": 284,
+      "sourceStartFrame": 702,
+      "sourceEndFrame": 1269,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "c0a7c29c-90bc-4204-96bb-e6f3bb6aa2e9"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B3",
+      "bodyRow": 349,
+      "bodyIn": "39:14:27",
+      "bodyOut": "39:22:10",
+      "assetId": "C0114_a7r6",
+      "file": "C0114.mp4",
+      "itemId": "aa59f425-270f-4fc4-a2d3-b5566a2d01a3",
+      "startFrame": 16903,
+      "endFrame": 17126,
+      "durationFrames": 223,
+      "sourceStartFrame": 43,
+      "sourceEndFrame": 488,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "597e13c1-4755-419b-8f6c-7534cf94c670"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B3",
+      "bodyRow": 350,
+      "bodyIn": "39:22:10",
+      "bodyOut": "39:28:15",
+      "assetId": "C0114_a7r6",
+      "file": "C0114.mp4",
+      "itemId": "4b65f1f1-238e-4177-92df-8fd918b48bb7",
+      "startFrame": 17126,
+      "endFrame": 17311,
+      "durationFrames": 185,
+      "sourceStartFrame": 949,
+      "sourceEndFrame": 1318,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "1cc00baf-c9c0-4015-917b-7a25bf65076b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B4",
+      "bodyRow": 397,
+      "bodyIn": "43:28:14",
+      "bodyOut": "43:33:25",
+      "assetId": "C0117_a7r6",
+      "file": "C0117.mp4",
+      "itemId": "96994705-f934-4d29-961e-5c3681b9a227",
+      "startFrame": 17311,
+      "endFrame": 17472,
+      "durationFrames": 161,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 321,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "aec40557-3e61-452c-835e-9357fd2d5b02"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B5",
+      "bodyRow": 3,
+      "bodyIn": "00:18:23",
+      "bodyOut": "00:29:15",
+      "assetId": "C4229_zve1_day4",
+      "file": "C4229.mp4",
+      "itemId": "b9fb4165-e244-4955-9356-00020e3a1d62",
+      "startFrame": 17472,
+      "endFrame": 17794,
+      "durationFrames": 322,
+      "sourceStartFrame": 32,
+      "sourceEndFrame": 676,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "8502ac3f-c80f-4095-90d3-24da6855c6f3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B5",
+      "bodyRow": 93,
+      "bodyIn": "09:33:05",
+      "bodyOut": "09:42:00",
+      "assetId": "C0102_a7r6",
+      "file": "C0102.mp4",
+      "itemId": "a74cd2f2-7404-44d3-9000-7cf0cac91aa1",
+      "startFrame": 17794,
+      "endFrame": 18059,
+      "durationFrames": 265,
+      "sourceStartFrame": 134,
+      "sourceEndFrame": 664,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "ac022ac8-91e6-4817-85b6-44c7d38fa3a2"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B5",
+      "bodyRow": 94,
+      "bodyIn": "09:42:00",
+      "bodyOut": "09:43:27",
+      "assetId": "C0103_a7r6",
+      "file": "C0103.mp4",
+      "itemId": "547940e9-ca63-49e6-b989-9cb6f946ade2",
+      "startFrame": 18059,
+      "endFrame": 18116,
+      "durationFrames": 57,
+      "sourceStartFrame": 14,
+      "sourceEndFrame": 70,
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "9ea4c4c4-bb7e-498a-bd67-c2e0cf95f8cc"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B5",
+      "bodyRow": 95,
+      "bodyIn": "09:43:27",
+      "bodyOut": "09:45:24",
+      "assetId": "C0103_a7r6",
+      "file": "C0103.mp4",
+      "itemId": "0cbe81f3-d4d4-4424-bbbd-551c8f3e8e17",
+      "startFrame": 18116,
+      "endFrame": 18173,
+      "durationFrames": 57,
+      "sourceStartFrame": 14,
+      "sourceEndFrame": 70,
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "a419f468-8b94-43fa-a531-d7d41f8afb5f"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B5",
+      "bodyRow": 96,
+      "bodyIn": "09:45:24",
+      "bodyOut": "09:51:24",
+      "assetId": "C0103_a7r6",
+      "file": "C0103.mp4",
+      "itemId": "6da9bab9-f140-4386-a6f9-3fac339b06b7",
+      "startFrame": 18173,
+      "endFrame": 18353,
+      "durationFrames": 180,
+      "sourceStartFrame": 127,
+      "sourceEndFrame": 487,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "7daae8d4-9af0-4f2b-8506-579e1391fed3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B6",
+      "bodyRow": 224,
+      "bodyIn": "22:48:25",
+      "bodyOut": "23:01:13",
+      "assetId": "C0111_a7r6",
+      "file": "C0111.mp4",
+      "itemId": "cd9e503a-6ed1-4737-9eb6-be9c6d00649f",
+      "startFrame": 18353,
+      "endFrame": 18731,
+      "durationFrames": 378,
+      "sourceStartFrame": 22,
+      "sourceEndFrame": 778,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "0afab0be-146a-4a0d-aaf5-8aa0543b18b0"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B7",
+      "bodyRow": 56,
+      "bodyIn": "06:13:26",
+      "bodyOut": "06:17:20",
+      "assetId": "C4260_zve1_day5",
+      "file": "C4260.mp4",
+      "itemId": "b66902d4-1752-4288-83e4-cef0cc4e3c11",
+      "startFrame": 18731,
+      "endFrame": 18845,
+      "durationFrames": 114,
+      "sourceStartFrame": 14,
+      "sourceEndFrame": 241,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "76ea6b62-2563-44fb-a3c8-80ffe881b0a6"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B7",
+      "bodyRow": 57,
+      "bodyIn": "06:17:20",
+      "bodyOut": "06:21:14",
+      "assetId": "C4260_zve1_day5",
+      "file": "C4260.mp4",
+      "itemId": "52b709a5-535e-418b-8b0b-9d969974488a",
+      "startFrame": 18845,
+      "endFrame": 18959,
+      "durationFrames": 114,
+      "sourceStartFrame": 497,
+      "sourceEndFrame": 725,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b80f317e-02cc-4c16-8239-bf6ec66d95ca"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B7",
+      "bodyRow": 58,
+      "bodyIn": "06:21:14",
+      "bodyOut": "06:24:07",
+      "assetId": "C4260_zve1_day5",
+      "file": "C4260.mp4",
+      "itemId": "a6fb43aa-e03c-4f87-8e3e-9d2446bf58c6",
+      "startFrame": 18959,
+      "endFrame": 19042,
+      "durationFrames": 83,
+      "sourceStartFrame": 725,
+      "sourceEndFrame": 891,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "785597ee-4fab-41d4-88ef-aee5412070a8"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "B8",
+      "bodyRow": 352,
+      "bodyIn": "39:31:08",
+      "bodyOut": "39:39:23",
+      "assetId": "C4505_zve1_day6",
+      "file": "C4505.mp4",
+      "itemId": "729e3d6e-dfc0-494f-9097-ef8a0ab1a0a5",
+      "startFrame": 19042,
+      "endFrame": 19297,
+      "durationFrames": 255,
+      "sourceStartFrame": 27,
+      "sourceEndFrame": 537,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "cecc9d17-3da9-4f6c-a53a-d149550d52b9"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F1",
+      "bodyRow": 374,
+      "bodyIn": "41:08:05",
+      "bodyOut": "41:24:02",
+      "assetId": "C4516_zve1_day6",
+      "file": "C4516.mp4",
+      "itemId": "8efd360e-39bf-45e9-837a-252e108f4477",
+      "startFrame": 19297,
+      "endFrame": 19774,
+      "durationFrames": 477,
+      "sourceStartFrame": 32,
+      "sourceEndFrame": 986,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "95db742e-e137-4236-ae58-5fdd4682bd8d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F2",
+      "bodyRow": 7,
+      "bodyIn": "01:15:21",
+      "bodyOut": "01:25:19",
+      "assetId": "C4234_zve1_day4",
+      "file": "C4234.mp4",
+      "itemId": "a994d186-1be5-4d87-bcde-81b3ec4172b8",
+      "startFrame": 19774,
+      "endFrame": 20072,
+      "durationFrames": 298,
+      "sourceStartFrame": 62,
+      "sourceEndFrame": 657,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "fb18f4af-9e2a-4679-8c2b-0b979c3b0844"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F2",
+      "bodyRow": 8,
+      "bodyIn": "01:25:19",
+      "bodyOut": "01:50:29",
+      "assetId": "C4234_zve1_day4",
+      "file": "C4234.mp4",
+      "itemId": "7c84c6a4-4763-4c73-b5ce-1998d111e43c",
+      "startFrame": 20072,
+      "endFrame": 20832,
+      "durationFrames": 760,
+      "sourceStartFrame": 1152,
+      "sourceEndFrame": 2671,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "e8cf04a3-0f39-4b26-ad2f-9f627c527fa3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F3",
+      "bodyRow": 194,
+      "bodyIn": "17:31:27",
+      "bodyOut": "17:39:23",
+      "assetId": "C4362_zve1_day5",
+      "file": "C4362.mp4",
+      "itemId": "65495024-677f-416a-bf46-fc4755ae2858",
+      "startFrame": 20832,
+      "endFrame": 21068,
+      "durationFrames": 236,
+      "sourceStartFrame": 91,
+      "sourceEndFrame": 562,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "f64a127a-d264-4dba-9735-728a341acd82"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F3",
+      "bodyRow": 195,
+      "bodyIn": "17:39:23",
+      "bodyOut": "17:46:09",
+      "assetId": "C4362_zve1_day5",
+      "file": "C4362.mp4",
+      "itemId": "76fbe8d6-e624-4d18-b35c-3777814475d7",
+      "startFrame": 21068,
+      "endFrame": 21264,
+      "durationFrames": 196,
+      "sourceStartFrame": 1076,
+      "sourceEndFrame": 1467,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "6962e3f4-6295-4f8d-a32c-5c994e72ad7a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F4",
+      "bodyRow": 196,
+      "bodyIn": "17:46:09",
+      "bodyOut": "18:02:19",
+      "assetId": "C4363_zve1_day5",
+      "file": "C4363.mp4",
+      "itemId": "26676a16-6cf1-40c7-9583-95d51408b8e5",
+      "startFrame": 21264,
+      "endFrame": 21754,
+      "durationFrames": 490,
+      "sourceStartFrame": 57,
+      "sourceEndFrame": 1036,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "7e15897a-4a5d-4a56-8de1-1b47defd9604"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F5",
+      "bodyRow": 11,
+      "bodyIn": "02:23:04",
+      "bodyOut": "02:29:28",
+      "assetId": "C4240_zve1_day4",
+      "file": "C4240.mp4",
+      "itemId": "3fd2a682-0929-45ba-affd-c8a868647225",
+      "startFrame": 21754,
+      "endFrame": 21958,
+      "durationFrames": 204,
+      "sourceStartFrame": 32,
+      "sourceEndFrame": 440,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "ac73ed96-985f-415c-8364-323991a9568d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F5",
+      "bodyRow": 197,
+      "bodyIn": "18:02:19",
+      "bodyOut": "18:22:28",
+      "assetId": "C4364_zve1_day5",
+      "file": "C4364.mp4",
+      "itemId": "8ccbd5ae-178c-4875-9912-de5024b10e98",
+      "startFrame": 21958,
+      "endFrame": 22567,
+      "durationFrames": 609,
+      "sourceStartFrame": 19,
+      "sourceEndFrame": 1235,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "c1cdac70-0ad7-4ee7-9f3c-6f98db9fa815"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F5",
+      "bodyRow": 198,
+      "bodyIn": "18:22:28",
+      "bodyOut": "18:34:13",
+      "assetId": "C4364_zve1_day5",
+      "file": "C4364.mp4",
+      "itemId": "28bf95e4-fc8f-4f87-8f63-e4115663efdb",
+      "startFrame": 22567,
+      "endFrame": 22912,
+      "durationFrames": 345,
+      "sourceStartFrame": 1649,
+      "sourceEndFrame": 2338,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "4dc28d71-1a58-45d7-b316-ace2e5c8794f"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F5",
+      "bodyRow": 199,
+      "bodyIn": "18:34:13",
+      "bodyOut": "18:50:23",
+      "assetId": "C4364_zve1_day5",
+      "file": "C4364.mp4",
+      "itemId": "aa6db575-aad6-4374-acc4-edf8faee402d",
+      "startFrame": 22912,
+      "endFrame": 23402,
+      "durationFrames": 490,
+      "sourceStartFrame": 3565,
+      "sourceEndFrame": 4544,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "6833b397-ffda-461b-a06c-c6315720374d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F6",
+      "bodyRow": 203,
+      "bodyIn": "19:30:14",
+      "bodyOut": "19:41:09",
+      "assetId": "C4369_zve1_day5",
+      "file": "C4369.mp4",
+      "itemId": "5dd72ed1-252e-4c54-b6ce-72b188fb5c9f",
+      "startFrame": 23402,
+      "endFrame": 23727,
+      "durationFrames": 325,
+      "sourceStartFrame": 100,
+      "sourceEndFrame": 749,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b1bf85fa-8197-4d2c-b79b-d33c799582cd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F6",
+      "bodyRow": 204,
+      "bodyIn": "19:41:09",
+      "bodyOut": "19:45:28",
+      "assetId": "C4369_zve1_day5",
+      "file": "C4369.mp4",
+      "itemId": "8f2c9d07-802f-4677-9b5d-efdd4755a8fb",
+      "startFrame": 23727,
+      "endFrame": 23866,
+      "durationFrames": 139,
+      "sourceStartFrame": 1582,
+      "sourceEndFrame": 1860,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "8e7dbc4c-8253-4d82-85c1-178b2e315ecb"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F6",
+      "bodyRow": 205,
+      "bodyIn": "19:45:28",
+      "bodyOut": "19:55:25",
+      "assetId": "C4369_zve1_day5",
+      "file": "C4369.mp4",
+      "itemId": "c49566ef-0d01-4d2e-bed7-f0ab54e0be1d",
+      "startFrame": 23866,
+      "endFrame": 24163,
+      "durationFrames": 297,
+      "sourceStartFrame": 3590,
+      "sourceEndFrame": 4183,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b3c57ccd-d555-4c74-bc25-365f3d795996"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F7",
+      "bodyRow": 317,
+      "bodyIn": "33:53:00",
+      "bodyOut": "34:14:07",
+      "assetId": "C4470_zve1_day6",
+      "file": "C4470.mp4",
+      "itemId": "f2092292-77ac-4ebc-877f-6d807064201d",
+      "startFrame": 24163,
+      "endFrame": 24800,
+      "durationFrames": 637,
+      "sourceStartFrame": 221,
+      "sourceEndFrame": 1494,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "efb6d158-ccc3-4ec2-98f6-b3b4c7701ac6"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F7",
+      "bodyRow": 318,
+      "bodyIn": "34:14:07",
+      "bodyOut": "34:19:11",
+      "assetId": "C4470_zve1_day6",
+      "file": "C4470.mp4",
+      "itemId": "4ccb91d6-0ec9-444e-a467-c9cff0f3c0a1",
+      "startFrame": 24800,
+      "endFrame": 24954,
+      "durationFrames": 154,
+      "sourceStartFrame": 2131,
+      "sourceEndFrame": 2439,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "cdd43231-d993-455c-a07b-2450a9c2edd3"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F7",
+      "bodyRow": 319,
+      "bodyIn": "34:19:11",
+      "bodyOut": "34:28:05",
+      "assetId": "C4472_zve1_day6",
+      "file": "C4472.mp4",
+      "itemId": "a3d4b4db-05a2-4bb3-8c5a-1a3f32e201df",
+      "startFrame": 24954,
+      "endFrame": 25218,
+      "durationFrames": 264,
+      "sourceStartFrame": 32,
+      "sourceEndFrame": 560,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "4e086734-69fa-4b82-83ef-7504b51ba7e4"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F8",
+      "bodyRow": 320,
+      "bodyIn": "34:28:05",
+      "bodyOut": "34:54:10",
+      "assetId": "C4471_zve1_day6",
+      "file": "C4471.mp4",
+      "itemId": "ab3730de-9392-464a-9b6b-70c6cb02ab3c",
+      "startFrame": 25218,
+      "endFrame": 26003,
+      "durationFrames": 785,
+      "sourceStartFrame": 285,
+      "sourceEndFrame": 1854,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "976c1ecc-682e-4f9a-a009-e71faf45f300"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F8",
+      "bodyRow": 321,
+      "bodyIn": "34:54:10",
+      "bodyOut": "35:04:25",
+      "assetId": "C4471_zve1_day6",
+      "file": "C4471.mp4",
+      "itemId": "d7bcc813-443d-4e4f-b5cb-ff90f55a1329",
+      "startFrame": 26003,
+      "endFrame": 26318,
+      "durationFrames": 315,
+      "sourceStartFrame": 2047,
+      "sourceEndFrame": 2677,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "448ec59b-cd7a-4bdf-aa61-9f674852c0b1"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F8",
+      "bodyRow": 322,
+      "bodyIn": "35:04:25",
+      "bodyOut": "35:10:14",
+      "assetId": "C4471_zve1_day6",
+      "file": "C4471.mp4",
+      "itemId": "fd728224-570e-4516-ac4f-87301caefeef",
+      "startFrame": 26318,
+      "endFrame": 26487,
+      "durationFrames": 169,
+      "sourceStartFrame": 2863,
+      "sourceEndFrame": 3200,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "9acfe0ef-3992-46c8-b440-e7d6aa1ad6d9"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F8",
+      "bodyRow": 323,
+      "bodyIn": "35:10:14",
+      "bodyOut": "35:18:02",
+      "assetId": "C4475_zve1_day6",
+      "file": "C4475.mp4",
+      "itemId": "e680e0a9-c0a2-429a-8628-18ddd51c7b48",
+      "startFrame": 26487,
+      "endFrame": 26715,
+      "durationFrames": 228,
+      "sourceStartFrame": 38,
+      "sourceEndFrame": 493,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "ae547f6d-7c74-44af-917d-9c5849776467"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F9",
+      "bodyRow": 324,
+      "bodyIn": "35:18:02",
+      "bodyOut": "35:31:23",
+      "assetId": "C4473_zve1_day6",
+      "file": "C4473.mp4",
+      "itemId": "73142224-1723-4ed2-9d12-492084b565c6",
+      "startFrame": 26715,
+      "endFrame": 27126,
+      "durationFrames": 411,
+      "sourceStartFrame": 28,
+      "sourceEndFrame": 849,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "85037a91-020a-4f5a-ab1b-02fcacf4ec7a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F9",
+      "bodyRow": 325,
+      "bodyIn": "35:31:23",
+      "bodyOut": "35:51:01",
+      "assetId": "C4473_zve1_day6",
+      "file": "C4473.mp4",
+      "itemId": "eaee3963-3daa-43c2-902a-8be571564361",
+      "startFrame": 27126,
+      "endFrame": 27704,
+      "durationFrames": 578,
+      "sourceStartFrame": 3398,
+      "sourceEndFrame": 4553,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "38065e97-588f-4591-a5bd-93fcfe234bed"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F9",
+      "bodyRow": 326,
+      "bodyIn": "35:51:01",
+      "bodyOut": "36:09:12",
+      "assetId": "C4477_zve1_day6",
+      "file": "C4477.mp4",
+      "itemId": "af46df52-7e05-4826-b02e-39df124fe7ee",
+      "startFrame": 27704,
+      "endFrame": 28255,
+      "durationFrames": 551,
+      "sourceStartFrame": 56,
+      "sourceEndFrame": 1157,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "8e74890c-de21-4b78-bf38-5fd54ca5ea12"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F10",
+      "bodyRow": 421,
+      "bodyIn": "45:07:16",
+      "bodyOut": "45:12:04",
+      "assetId": "C4560_zve1_day6",
+      "file": "C4560.mp4",
+      "itemId": "45355077-df42-485a-8f03-13443961adb2",
+      "startFrame": 28255,
+      "endFrame": 28393,
+      "durationFrames": 138,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 275,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "4356e3ff-a45e-400b-bd23-82e053f4a2a9"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F10",
+      "bodyRow": 422,
+      "bodyIn": "45:12:04",
+      "bodyOut": "45:33:03",
+      "assetId": "C4561_zve1_day6",
+      "file": "C4561.mp4",
+      "itemId": "0be8b16b-97f1-4230-9066-7dc9995e96d8",
+      "startFrame": 28393,
+      "endFrame": 29022,
+      "durationFrames": 629,
+      "sourceStartFrame": 164,
+      "sourceEndFrame": 1421,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "5b96f939-5330-4bb4-b216-53b6091a7714"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F10",
+      "bodyRow": 423,
+      "bodyIn": "45:33:03",
+      "bodyOut": "45:37:27",
+      "assetId": "C4561_zve1_day6",
+      "file": "C4561.mp4",
+      "itemId": "77cd937b-ef60-49b5-897a-cb9a0843b110",
+      "startFrame": 29022,
+      "endFrame": 29166,
+      "durationFrames": 144,
+      "sourceStartFrame": 1699,
+      "sourceEndFrame": 1987,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "cfbe1f22-9054-4ff1-bb59-e548bb4409f9"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F11",
+      "bodyRow": 494,
+      "bodyIn": "52:34:03",
+      "bodyOut": "52:37:03",
+      "assetId": "C4683_zve1_day7",
+      "file": "C4683.mp4",
+      "itemId": "5cc4688f-bb4c-4789-b69b-407b297b2b72",
+      "startFrame": 29166,
+      "endFrame": 29256,
+      "durationFrames": 90,
+      "sourceStartFrame": 268,
+      "sourceEndFrame": 448,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "08fd3d4f-b085-4776-a6e0-18c8349f2fdd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F11",
+      "bodyRow": 495,
+      "bodyIn": "52:37:03",
+      "bodyOut": "52:40:13",
+      "assetId": "C4683_zve1_day7",
+      "file": "C4683.mp4",
+      "itemId": "619c2942-5163-4cf7-a51d-fbe734a70c24",
+      "startFrame": 29256,
+      "endFrame": 29356,
+      "durationFrames": 100,
+      "sourceStartFrame": 2097,
+      "sourceEndFrame": 2297,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "ba0a27bf-6566-441e-9ad0-fb4b6e6ff49b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "F11",
+      "bodyRow": 496,
+      "bodyIn": "52:40:13",
+      "bodyOut": "52:47:07",
+      "assetId": "C4683_zve1_day7",
+      "file": "C4683.mp4",
+      "itemId": "78b69709-683d-416b-a279-aac5e2e96206",
+      "startFrame": 29356,
+      "endFrame": 29560,
+      "durationFrames": 204,
+      "sourceStartFrame": 2939,
+      "sourceEndFrame": 3347,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "ddb94b59-de45-4464-8d9c-018e7d94bd24"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E1",
+      "bodyRow": 436,
+      "bodyIn": "46:45:29",
+      "bodyOut": "46:58:16",
+      "assetId": "C4586_zve1_day7",
+      "file": "C4586.mp4",
+      "itemId": "c72987de-6786-467c-95f3-abcb14e181b5",
+      "startFrame": 29560,
+      "endFrame": 29937,
+      "durationFrames": 377,
+      "sourceStartFrame": 114,
+      "sourceEndFrame": 867,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "f0d41787-1c2f-41ad-b8ab-f4048ada45cd"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E1",
+      "bodyRow": 437,
+      "bodyIn": "46:58:16",
+      "bodyOut": "47:02:29",
+      "assetId": "C4588_zve1_day7",
+      "file": "C4588.mp4",
+      "itemId": "a74a5c5e-f971-4438-b5a4-9643d224008a",
+      "startFrame": 29937,
+      "endFrame": 30070,
+      "durationFrames": 133,
+      "sourceStartFrame": 147,
+      "sourceEndFrame": 413,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "6aef0d8e-2cac-4ee3-ab25-7b3239972a2e"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E2",
+      "bodyRow": 438,
+      "bodyIn": "47:02:29",
+      "bodyOut": "47:08:09",
+      "assetId": "C4589_zve1_day7",
+      "file": "C4589.mp4",
+      "itemId": "5e31b565-362e-4d8d-bc07-cd68f3d525d2",
+      "startFrame": 30070,
+      "endFrame": 30230,
+      "durationFrames": 160,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 319,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "07d271ae-38dc-4f19-b93c-b805ea616469"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E3",
+      "bodyRow": 462,
+      "bodyIn": "50:17:23",
+      "bodyOut": "50:30:17",
+      "assetId": "C4660_zve1_day7",
+      "file": "C4660.mp4",
+      "itemId": "985779a4-94b4-4673-af13-07c0d5a6c999",
+      "startFrame": 30230,
+      "endFrame": 30614,
+      "durationFrames": 384,
+      "sourceStartFrame": 23,
+      "sourceEndFrame": 790,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "e7a13c1f-4791-4a70-8b06-e603994349e7"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E4",
+      "bodyRow": 152,
+      "bodyIn": "14:48:08",
+      "bodyOut": "14:59:02",
+      "assetId": "C4340_zve1_day5",
+      "file": "C4340.mp4",
+      "itemId": "0d428683-b8e7-4ecf-8b9c-d818860a45dd",
+      "startFrame": 30614,
+      "endFrame": 30938,
+      "durationFrames": 324,
+      "sourceStartFrame": 75,
+      "sourceEndFrame": 723,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "13235bc9-664c-49f5-b0c0-fc1d3d5a381d"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E4",
+      "bodyRow": 153,
+      "bodyIn": "14:59:02",
+      "bodyOut": "15:04:07",
+      "assetId": "C4340_zve1_day5",
+      "file": "C4340.mp4",
+      "itemId": "7df13b8d-5094-427e-ae93-adefde45f79c",
+      "startFrame": 30938,
+      "endFrame": 31093,
+      "durationFrames": 155,
+      "sourceStartFrame": 1908,
+      "sourceEndFrame": 2217,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "1176382a-f23b-4162-8804-89d9fac0acd5"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E4",
+      "bodyRow": 447,
+      "bodyIn": "48:38:02",
+      "bodyOut": "48:45:18",
+      "assetId": "C4618_zve1_day7",
+      "file": "C4618.mp4",
+      "itemId": "652ca681-972b-4e51-8ec7-125caa32b83a",
+      "startFrame": 31093,
+      "endFrame": 31319,
+      "durationFrames": 226,
+      "sourceStartFrame": 3,
+      "sourceEndFrame": 455,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b768898d-729b-4fd6-b840-498d151aeeb7"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E5",
+      "bodyRow": 466,
+      "bodyIn": "50:48:22",
+      "bodyOut": "50:53:15",
+      "assetId": "C4666_zve1_day7",
+      "file": "C4666.mp4",
+      "itemId": "61aab0f8-6763-4107-99c2-beba97931771",
+      "startFrame": 31319,
+      "endFrame": 31462,
+      "durationFrames": 143,
+      "sourceStartFrame": 124,
+      "sourceEndFrame": 409,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "24a020e9-07be-4ea8-bb60-5301b87a9e5b"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E6",
+      "bodyRow": 487,
+      "bodyIn": "51:32:09",
+      "bodyOut": "51:48:10",
+      "assetId": "C4670_zve1_day7",
+      "file": "C4670.mp4",
+      "itemId": "8a5e95d0-0783-4904-8b67-df280366290d",
+      "startFrame": 31462,
+      "endFrame": 31943,
+      "durationFrames": 481,
+      "sourceStartFrame": 112,
+      "sourceEndFrame": 1073,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "84cec3e1-7eaa-4a35-81df-0b548d2c5199"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E7",
+      "bodyRow": 17,
+      "bodyIn": "03:10:16",
+      "bodyOut": "03:32:22",
+      "assetId": "C4244_zve1_day4",
+      "file": "C4244.mp4",
+      "itemId": "7f7e05c7-53c4-44ca-bdc3-bbf9cf97450c",
+      "startFrame": 31943,
+      "endFrame": 32609,
+      "durationFrames": 666,
+      "sourceStartFrame": 91,
+      "sourceEndFrame": 1422,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "b67587a7-4f86-49b2-b856-10e21e31e98f"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E8",
+      "bodyRow": 367,
+      "bodyIn": "39:53:23",
+      "bodyOut": "40:12:01",
+      "assetId": "C4506_zve1_day6",
+      "file": "C4506.mp4",
+      "itemId": "95a2395c-adc5-4781-828f-e4c132f6b88d",
+      "startFrame": 32609,
+      "endFrame": 33157,
+      "durationFrames": 548,
+      "sourceStartFrame": 452,
+      "sourceEndFrame": 1547,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "9a2eda4d-b3de-4568-9f34-77cf570f6c75"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "E8",
+      "bodyRow": 400,
+      "bodyIn": "43:53:01",
+      "bodyOut": "44:05:25",
+      "assetId": "C4545_zve1_day6",
+      "file": "C4545.mp4",
+      "itemId": "740beca9-0340-412e-bdc4-268885a51b25",
+      "startFrame": 33157,
+      "endFrame": 33541,
+      "durationFrames": 384,
+      "sourceStartFrame": 62,
+      "sourceEndFrame": 829,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "efbf2623-5295-4fdc-a3b4-09e0b9180ab5"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "Z1",
+      "bodyRow": 19,
+      "bodyIn": "03:38:26",
+      "bodyOut": "03:55:17",
+      "assetId": "C4249_zve1_day5",
+      "file": "C4249.mp4",
+      "itemId": "04462287-a64b-402c-a12d-a1e03f0e9aa0",
+      "startFrame": 33541,
+      "endFrame": 34042,
+      "durationFrames": 501,
+      "sourceStartFrame": 1528,
+      "sourceEndFrame": 2529,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [
+        "5d2512cd-942b-4a42-aeeb-f8de94aeee0a"
+      ],
+      "sourceAudioEnabled": true
+    },
+    {
+      "reviewId": "Z2",
+      "bodyRow": 20,
+      "bodyIn": "03:55:17",
+      "bodyOut": "04:06:18",
+      "assetId": "20260929_武夷山齐云峰日出云海1_timelapse",
+      "file": "20260929_武夷山齐云峰日出云海1.mp4",
+      "itemId": "b2442a3e-255c-4a98-ad3d-00b932ca54a8",
+      "startFrame": 34042,
+      "endFrame": 34373,
+      "durationFrames": 331,
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 529,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false
+    },
+    {
+      "reviewId": "Z2",
+      "bodyRow": 24,
+      "bodyIn": "04:25:04",
+      "bodyOut": "04:30:08",
+      "assetId": "20260929_武夷山齐云峰日出云海1_timelapse",
+      "file": "20260929_武夷山齐云峰日出云海1.mp4",
+      "itemId": "595a2c32-d109-4c29-bdac-3c23c600860d",
+      "startFrame": 34373,
+      "endFrame": 34527,
+      "durationFrames": 154,
+      "sourceStartFrame": 537,
+      "sourceEndFrame": 782,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false
+    },
+    {
+      "reviewId": "Z3",
+      "bodyRow": 22,
+      "bodyIn": "04:06:18",
+      "bodyOut": "04:25:04",
+      "assetId": "20260929_武夷山齐云峰日出云海2_timelapse",
+      "file": "20260929_武夷山齐云峰日出云海2.mp4",
+      "itemId": "81555e77-19a9-455f-b712-7fa5600dd096",
+      "startFrame": 34527,
+      "endFrame": 35083,
+      "durationFrames": 556,
+      "sourceStartFrame": 24,
+      "sourceEndFrame": 913,
+      "speed": {
+        "Percentage": 200.0
+      },
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "original-selects",
+      "linkedAudioItemIds": [],
+      "sourceAudioEnabled": false
+    },
+    {
+      "reviewId": "O4-alt",
+      "bodyRow": 221,
+      "bodyIn": "21:52:05",
+      "bodyOut": "22:02:05",
+      "assetId": "C4393_zve1_day6",
+      "file": "C4393.mp4",
+      "itemId": "37d7e3a7-3a41-4dd6-a50d-10052833c202",
+      "startFrame": 35083,
+      "endFrame": 35383,
+      "durationFrames": 300,
+      "sourceStartFrame": 13,
+      "sourceEndFrame": 613,
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "sourceAudioEnabled": false,
+      "sourceAudioTreatment": "muted-for-intro-narration",
+      "videoFades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "role": "alternate",
+      "linkedAudioItemIds": [
+        "b992b433-2245-44ce-a575-14b5a1c3bc76"
+      ]
+    }
+  ],
+  "latestDrp": {
+    "projectName": "中秋国庆闽赣自驾 [Edit]",
+    "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+    "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+    "createdAt": "2026-10-29T10:40:21Z",
+    "mode": "manual",
+    "retention": "latest-only",
+    "action": "manual",
+    "database": {
+      "DbType": "Disk",
+      "DbName": "Local Database"
+    },
+    "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+  },
+  "updatedAt": "2026-10-29T10:37:40.801514+00:00",
+  "currentMarkers": {
+    "0": {
+      "color": "Blue",
+      "duration": 140,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：25",
+      "name": "O1 晨雾群山",
+      "customData": "kairos:ep2-intro-selects:O1"
+    },
+    "140": {
+      "color": "Blue",
+      "duration": 144,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O6 航拍 DJI_20260929054726_0418_D",
+      "customData": "kairos:ep2-intro-selects:O6"
+    },
+    "284": {
+      "color": "Blue",
+      "duration": 122,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：27",
+      "name": "O2 湖面与山坡",
+      "customData": "kairos:ep2-intro-selects:O2"
+    },
+    "406": {
+      "color": "Blue",
+      "duration": 143,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O7 航拍 DJI_20260929055439_0459_D",
+      "customData": "kairos:ep2-intro-selects:O7"
+    },
+    "549": {
+      "color": "Blue",
+      "duration": 146,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O8 航拍 DJI_20260929061453_0475_D",
+      "customData": "kairos:ep2-intro-selects:O8"
+    },
+    "695": {
+      "color": "Blue",
+      "duration": 152,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O9 航拍 DJI_20260929062654_0526_D",
+      "customData": "kairos:ep2-intro-selects:O9"
+    },
+    "847": {
+      "color": "Blue",
+      "duration": 169,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O10 航拍 DJI_20260929062737_0533_D",
+      "customData": "kairos:ep2-intro-selects:O10"
+    },
+    "1016": {
+      "color": "Blue",
+      "duration": 142,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O11 航拍 DJI_20260929062807_0534_D",
+      "customData": "kairos:ep2-intro-selects:O11"
+    },
+    "1158": {
+      "color": "Blue",
+      "duration": 141,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：33",
+      "name": "O3 金色晨雾",
+      "customData": "kairos:ep2-intro-selects:O3"
+    },
+    "1299": {
+      "color": "Blue",
+      "duration": 277,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O12 溪谷石径",
+      "customData": "kairos:ep2-intro-selects:O12"
+    },
+    "1576": {
+      "color": "Blue",
+      "duration": 334,
+      "note": "旁白背景：下梅水巷，完整正文窗口；关联原声禁用。C4393 廊道移到片尾备选。",
+      "name": "O4 下梅沿溪景观",
+      "customData": "kairos:ep2-intro-selects:O4"
+    },
+    "1910": {
+      "color": "Blue",
+      "duration": 167,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O13 阳光下的晒物",
+      "customData": "kairos:ep2-intro-selects:O13"
+    },
+    "2077": {
+      "color": "Blue",
+      "duration": 132,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O14 成行茶树",
+      "customData": "kairos:ep2-intro-selects:O14"
+    },
+    "2209": {
+      "color": "Blue",
+      "duration": 197,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O15 杯壶中的红茶",
+      "customData": "kairos:ep2-intro-selects:O15"
+    },
+    "2406": {
+      "color": "Blue",
+      "duration": 144,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O16 描金黑釉器物",
+      "customData": "kairos:ep2-intro-selects:O16"
+    },
+    "2550": {
+      "color": "Blue",
+      "duration": 515,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O17 窑址与堆叠器物",
+      "customData": "kairos:ep2-intro-selects:O17"
+    },
+    "3065": {
+      "color": "Blue",
+      "duration": 313,
+      "note": "旁白背景：果实细节，完整正文窗口；关联原声禁用。",
+      "name": "O5 五颜六色的果实",
+      "customData": "kairos:ep2-intro-selects:O5"
+    },
+    "3378": {
+      "color": "Blue",
+      "duration": 401,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O18 茶鱼近景",
+      "customData": "kairos:ep2-intro-selects:O18"
+    },
+    "3779": {
+      "color": "Blue",
+      "duration": 1090,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：154, 155",
+      "name": "N1 九曲溪大拐弯",
+      "customData": "kairos:ep2-intro-selects:N1"
+    },
+    "4869": {
+      "color": "Blue",
+      "duration": 439,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：92",
+      "name": "N2 九曲溪水色",
+      "customData": "kairos:ep2-intro-selects:N2"
+    },
+    "5308": {
+      "color": "Blue",
+      "duration": 632,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：156",
+      "name": "N3 绝壁栈道",
+      "customData": "kairos:ep2-intro-selects:N3"
+    },
+    "5940": {
+      "color": "Blue",
+      "duration": 221,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：157, 159",
+      "name": "N4 暴雨后登顶",
+      "customData": "kairos:ep2-intro-selects:N4"
+    },
+    "6161": {
+      "color": "Blue",
+      "duration": 1397,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：393, 394, 398, 399",
+      "name": "N5 水帘洞原来还没到",
+      "customData": "kairos:ep2-intro-selects:N5"
+    },
+    "7558": {
+      "color": "Blue",
+      "duration": 437,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：460",
+      "name": "N6 人与玉女峰同框",
+      "customData": "kairos:ep2-intro-selects:N6"
+    },
+    "7995": {
+      "color": "Blue",
+      "duration": 432,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：135, 138",
+      "name": "N7 云窝原来是钓鱼处",
+      "customData": "kairos:ep2-intro-selects:N7"
+    },
+    "8427": {
+      "color": "Blue",
+      "duration": 1205,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：223",
+      "name": "V1 下梅沿溪运茶",
+      "customData": "kairos:ep2-intro-selects:V1"
+    },
+    "9632": {
+      "color": "Blue",
+      "duration": 380,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：235",
+      "name": "V2 门洞成为观景窗",
+      "customData": "kairos:ep2-intro-selects:V2"
+    },
+    "10012": {
+      "color": "Blue",
+      "duration": 281,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：227",
+      "name": "V3 下梅庙内烟与天光",
+      "customData": "kairos:ep2-intro-selects:V3"
+    },
+    "10293": {
+      "color": "Blue",
+      "duration": 460,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：236",
+      "name": "V4 下梅门雕",
+      "customData": "kairos:ep2-intro-selects:V4"
+    },
+    "10753": {
+      "color": "Blue",
+      "duration": 745,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：250, 253, 254, 255",
+      "name": "V5 晒物与酸枣糕",
+      "customData": "kairos:ep2-intro-selects:V5"
+    },
+    "11498": {
+      "color": "Blue",
+      "duration": 550,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：265",
+      "name": "V6 认花把村民引出来",
+      "customData": "kairos:ep2-intro-selects:V6"
+    },
+    "12048": {
+      "color": "Blue",
+      "duration": 267,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：292",
+      "name": "T1 兔毫纹理",
+      "customData": "kairos:ep2-intro-selects:T1"
+    },
+    "12315": {
+      "color": "Blue",
+      "duration": 270,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：296",
+      "name": "T2 九曲山水进器物",
+      "customData": "kairos:ep2-intro-selects:T2"
+    },
+    "12585": {
+      "color": "Blue",
+      "duration": 754,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：303",
+      "name": "T3 第一次看见长龙窑",
+      "customData": "kairos:ep2-intro-selects:T3"
+    },
+    "13339": {
+      "color": "Blue",
+      "duration": 515,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：304",
+      "name": "T4 龙窑末窑疑问",
+      "customData": "kairos:ep2-intro-selects:T4"
+    },
+    "13854": {
+      "color": "Blue",
+      "duration": 867,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：339",
+      "name": "T5 雨中岩壁与茶",
+      "customData": "kairos:ep2-intro-selects:T5"
+    },
+    "14721": {
+      "color": "Blue",
+      "duration": 629,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：368",
+      "name": "T6 大红袍母树",
+      "customData": "kairos:ep2-intro-selects:T6"
+    },
+    "15350": {
+      "color": "Blue",
+      "duration": 929,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：97, 98, 99, 100",
+      "name": "B1 认植物到拍清楚",
+      "customData": "kairos:ep2-intro-selects:B1"
+    },
+    "16279": {
+      "color": "Blue",
+      "duration": 624,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：105, 106",
+      "name": "B2 光下石蒜",
+      "customData": "kairos:ep2-intro-selects:B2"
+    },
+    "16903": {
+      "color": "Blue",
+      "duration": 408,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：349, 350",
+      "name": "B3 色蟌翅膀分别控制",
+      "customData": "kairos:ep2-intro-selects:B3"
+    },
+    "17311": {
+      "color": "Blue",
+      "duration": 161,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：397",
+      "name": "B4 白鹇",
+      "customData": "kairos:ep2-intro-selects:B4"
+    },
+    "17472": {
+      "color": "Blue",
+      "duration": 881,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：3, 93, 94, 95, 96",
+      "name": "B5 水里闪光的鱼和昨晚的菜",
+      "customData": "kairos:ep2-intro-selects:B5"
+    },
+    "18353": {
+      "color": "Blue",
+      "duration": 378,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：224",
+      "name": "B6 发现翠鸟却没带长焦",
+      "customData": "kairos:ep2-intro-selects:B6"
+    },
+    "18731": {
+      "color": "Blue",
+      "duration": 311,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：56, 57, 58",
+      "name": "B7 孔雀叫声遭吐槽",
+      "customData": "kairos:ep2-intro-selects:B7"
+    },
+    "19042": {
+      "color": "Blue",
+      "duration": 255,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：352",
+      "name": "B8 花分层开放",
+      "customData": "kairos:ep2-intro-selects:B8"
+    },
+    "19297": {
+      "color": "Blue",
+      "duration": 477,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：374",
+      "name": "F1 岩壁像给肉排改花刀",
+      "customData": "kairos:ep2-intro-selects:F1"
+    },
+    "19774": {
+      "color": "Blue",
+      "duration": 1058,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：7, 8",
+      "name": "F2 岚谷烧鹅吃得满足",
+      "customData": "kairos:ep2-intro-selects:F2"
+    },
+    "20832": {
+      "color": "Blue",
+      "duration": 432,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：194, 195",
+      "name": "F3 冰淇淋吃出茶味",
+      "customData": "kairos:ep2-intro-selects:F3"
+    },
+    "21264": {
+      "color": "Blue",
+      "duration": 490,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：196",
+      "name": "F4 猫爪菇的形态",
+      "customData": "kairos:ep2-intro-selects:F4"
+    },
+    "21754": {
+      "color": "Blue",
+      "duration": 1648,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：11, 197, 198, 199",
+      "name": "F5 挺能吃辣到好辣",
+      "customData": "kairos:ep2-intro-selects:F5"
+    },
+    "23402": {
+      "color": "Blue",
+      "duration": 761,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：203, 204, 205",
+      "name": "F6 茶鱼难以形容的味道",
+      "customData": "kairos:ep2-intro-selects:F6"
+    },
+    "24163": {
+      "color": "Blue",
+      "duration": 1055,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：317, 318, 319",
+      "name": "F7 红菇汤品尝和菌褶",
+      "customData": "kairos:ep2-intro-selects:F7"
+    },
+    "25218": {
+      "color": "Blue",
+      "duration": 1497,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：320, 321, 322, 323",
+      "name": "F8 肥鱼的芋头更好吃",
+      "customData": "kairos:ep2-intro-selects:F8"
+    },
+    "26715": {
+      "color": "Blue",
+      "duration": 1540,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：324, 325, 326",
+      "name": "F9 文公菜剥开与口感",
+      "customData": "kairos:ep2-intro-selects:F9"
+    },
+    "28255": {
+      "color": "Blue",
+      "duration": 911,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：421, 422, 423",
+      "name": "F10 炉边光饼到咬下去",
+      "customData": "kairos:ep2-intro-selects:F10"
+    },
+    "29166": {
+      "color": "Blue",
+      "duration": 394,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：494, 495, 496",
+      "name": "F11 茶叶蛋好吃又没区别",
+      "customData": "kairos:ep2-intro-selects:F11"
+    },
+    "29560": {
+      "color": "Blue",
+      "duration": 510,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：436, 437",
+      "name": "E1 竹筏上水与过激流",
+      "customData": "kairos:ep2-intro-selects:E1"
+    },
+    "30070": {
+      "color": "Blue",
+      "duration": 160,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：438",
+      "name": "E2 竹筏还能超车",
+      "customData": "kairos:ep2-intro-selects:E2"
+    },
+    "30230": {
+      "color": "Blue",
+      "duration": 384,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：462",
+      "name": "E3 狗也来坐竹筏",
+      "customData": "kairos:ep2-intro-selects:E3"
+    },
+    "30614": {
+      "color": "Blue",
+      "duration": 705,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：152, 153, 447",
+      "name": "E4 山上没回声，筏上再试",
+      "customData": "kairos:ep2-intro-selects:E4"
+    },
+    "31319": {
+      "color": "Blue",
+      "duration": 143,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：466",
+      "name": "E5 竹筏穿行竹林",
+      "customData": "kairos:ep2-intro-selects:E5"
+    },
+    "31462": {
+      "color": "Blue",
+      "duration": 481,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：487",
+      "name": "E6 三元雨衣没买，十元补买",
+      "customData": "kairos:ep2-intro-selects:E6"
+    },
+    "31943": {
+      "color": "Blue",
+      "duration": 666,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：17",
+      "name": "E7 车宿准备",
+      "customData": "kairos:ep2-intro-selects:E7"
+    },
+    "32609": {
+      "color": "Blue",
+      "duration": 932,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：367, 400",
+      "name": "E8 想在这里慢慢住几天",
+      "customData": "kairos:ep2-intro-selects:E8"
+    },
+    "33541": {
+      "color": "Blue",
+      "duration": 501,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：19",
+      "name": "Z1 齐云峰朝霞云海原声",
+      "customData": "kairos:ep2-intro-selects:Z1"
+    },
+    "34042": {
+      "color": "Blue",
+      "duration": 485,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：20, 24",
+      "name": "Z2 粉霞与云海延时",
+      "customData": "kairos:ep2-intro-selects:Z2"
+    },
+    "34527": {
+      "color": "Blue",
+      "duration": 556,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：22",
+      "name": "Z3 太阳露出山脊延时及片名",
+      "customData": "kairos:ep2-intro-selects:Z3"
+    },
+    "35083": {
+      "color": "Yellow",
+      "duration": 300,
+      "note": "从旁白主序列移来的完整旧候选；未删除，原声继续禁用。",
+      "name": "备选 O4a 下梅廊道 C4393",
+      "customData": "kairos:ep2-intro-selects:O4-alt"
+    }
+  },
+  "openingAerialCount": 9,
+  "openingAerialDurationFrames": 1299,
+  "sourceFrameQuantizationAudit": [
+    {
+      "file": "DJI_20260929062654_0526_D.mp4",
+      "expected": [
+        139,
+        747
+      ],
+      "actual": [
+        139,
+        746
+      ],
+      "timelineDurationFrames": 152
+    },
+    {
+      "file": "DJI_20260929062737_0533_D.mp4",
+      "expected": [
+        905,
+        1580
+      ],
+      "actual": [
+        904,
+        1580
+      ],
+      "timelineDurationFrames": 169
+    },
+    {
+      "file": "DJI_20260929062807_0534_D.mp4",
+      "expected": [
+        115,
+        683
+      ],
+      "actual": [
+        114,
+        682
+      ],
+      "timelineDurationFrames": 142
+    }
+  ],
+  "narrationBackgroundAudio": {
+    "policy": "片头9段航拍与9段地面旁白画面均无可听原声；完整保留正文窗口。原声精选不改，原 C4393 廊道移到片尾备选且保持静音。",
+    "openingSilentThroughFrame": 3779,
+    "originalSoundStartsAt": "00:02:05:29",
+    "verifiedAt": "2026-10-29T10:37:40.801514+00:00",
+    "mutedAudioItemIds": [
+      "57091d9d-ad8d-46d8-af4c-beb8d68a867e",
+      "a1a921de-3cc6-460a-adc0-f3846a2122aa",
+      "0a85bed8-d259-4a51-b152-e6be4a905854",
+      "f48896a1-4586-40c7-8807-a699b75d7faf",
+      "80e042f1-eb98-46bb-bced-493eef8ed248",
+      "2ece3d6d-8bf2-4700-b9b2-4489d2ecb6a8",
+      "53760b2e-5a13-4887-9229-a53fcaab5fe6",
+      "fef163c1-937d-45a1-bd5e-502d34ef7b7f",
+      "cd6c6fcd-e57d-47e5-a0c7-bc9cabd065f6",
+      "81083fdc-f046-4932-a436-909cd5905e15",
+      "52e88ad7-b160-4c20-b5b8-1a646628bdb4",
+      "3fce637d-4f1b-4854-af50-463289400642",
+      "b992b433-2245-44ce-a575-14b5a1c3bc76"
+    ]
+  },
+  "narrationVisualExpansion": {
+    "addedReviewIds": [
+      "O12",
+      "O13",
+      "O14",
+      "O15",
+      "O16",
+      "O17",
+      "O18"
+    ],
+    "groundSequence": [
+      "C4513.mp4",
+      "C4412.mp4",
+      "C4419.mp4",
+      "C4486.mp4",
+      "C4372.mp4",
+      "C4453.mp4",
+      "C4465.mp4",
+      "C4301.mp4",
+      "C4368.mp4"
+    ],
+    "groundStartFrame": 1299,
+    "originalSoundStartFrame": 3779,
+    "alternateStartFrame": 35083,
+    "allPreviousItemsPreserved": true,
+    "fadeOutFrames": 12,
+    "fadeInFrames": 12,
+    "newSourceFrameAudit": [
+      {
+        "reviewId": "O12",
+        "sourceStartDelta": 0,
+        "sourceEndDelta": 0
+      },
+      {
+        "reviewId": "O13",
+        "sourceStartDelta": -1,
+        "sourceEndDelta": -1
+      },
+      {
+        "reviewId": "O14",
+        "sourceStartDelta": 0,
+        "sourceEndDelta": 0
+      },
+      {
+        "reviewId": "O15",
+        "sourceStartDelta": -1,
+        "sourceEndDelta": -1
+      },
+      {
+        "reviewId": "O16",
+        "sourceStartDelta": -1,
+        "sourceEndDelta": -1
+      },
+      {
+        "reviewId": "O17",
+        "sourceStartDelta": -1,
+        "sourceEndDelta": -1
+      },
+      {
+        "reviewId": "O18",
+        "sourceStartDelta": 0,
+        "sourceEndDelta": 0
+      }
+    ]
+  }
+}
