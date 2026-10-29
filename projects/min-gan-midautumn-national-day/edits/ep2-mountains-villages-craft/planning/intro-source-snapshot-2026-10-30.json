@@ -1,0 +1,5848 @@
+{
+  "project": "中秋国庆闽赣自驾 [Edit]",
+  "projectId": "ea2bf4cf-8abb-46b0-8cf5-2c250b07636e",
+  "timeline": "武夷山片头·精选待细剪 [ep2-intro-selects]",
+  "timelineId": "a6c8816f-f940-43c7-9495-c9085f7798fe",
+  "fps": 30,
+  "updatedAt": "2026-10-29T16:07:35.108121+00:00",
+  "endFrame": 36350,
+  "insertFrame": 3378,
+  "addedFrames": 967,
+  "sourceSpeechStart": 4746,
+  "validation": {
+    "originalItemsPreserved": true,
+    "otherTimelinesUnchanged": true,
+    "addedAudioMuted": true,
+    "originalAudioStatesUnchanged": true,
+    "gapless": true
+  },
+  "status": "nature-clips-added-narration-srt-ready-for-user-fine-cut",
+  "subtitlesImported": false,
+  "narrationAudioGenerated": false,
+  "cueCount": 13,
+  "maxTextUnits": 11,
+  "narrationTextUnits": 95,
+  "totalCueSeconds": 27.2,
+  "subtitlePath": "projects/min-gan-midautumn-national-day/edits/ep2-mountains-villages-craft/subtitles/intro-2026-10-30/武夷山片头-旁白-逐句.srt",
+  "added": [
+    {
+      "sourceId": "d53596fd-b817-4a14-b020-21d04714fe15",
+      "sourceBodyStart": 17195,
+      "sourceBodyEnd": 17460,
+      "sourceStart": 134,
+      "sourceEnd": 664,
+      "videoId": "8d727e4a-9d5b-43d0-afac-2f4d040c8582",
+      "audioIds": [
+        "d4f43b1e-2c59-4da6-acb6-b54deb6672be"
+      ]
+    },
+    {
+      "sourceId": "01f73650-4636-4e70-a256-75a8abfeb8c8",
+      "sourceBodyStart": 17460,
+      "sourceBodyEnd": 17517,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "videoId": "d7dde723-8357-4ce5-b6a2-a5045004368e",
+      "audioIds": [
+        "7bb318ff-9456-4e47-9ee3-240942b7d566"
+      ]
+    },
+    {
+      "sourceId": "601622a9-aadf-49ca-892d-62580bb2f22b",
+      "sourceBodyStart": 17517,
+      "sourceBodyEnd": 17574,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "videoId": "b8fcc8af-8e9c-4181-9ab3-6aa5c35aea51",
+      "audioIds": [
+        "1c0cbc1a-653a-4d62-8ca0-35135e133d2e"
+      ]
+    },
+    {
+      "sourceId": "77362f2f-b074-40c9-a5a9-4f80630e804a",
+      "sourceBodyStart": 17574,
+      "sourceBodyEnd": 17754,
+      "sourceStart": 127,
+      "sourceEnd": 487,
+      "videoId": "094662a2-0dc5-4038-92ea-e269e9cb665f",
+      "audioIds": [
+        "5463bc99-899e-478c-80de-233457805a3e"
+      ]
+    },
+    {
+      "sourceId": "db8f1be7-9e64-4814-b146-5bdb0ba4f953",
+      "sourceBodyStart": 70647,
+      "sourceBodyEnd": 70870,
+      "sourceStart": 43,
+      "sourceEnd": 488,
+      "videoId": "27ecec2b-3ef3-4f0c-a375-5e0b30789648",
+      "audioIds": [
+        "e03a38cd-6e26-4228-a94b-c4ac4f287e72"
+      ]
+    },
+    {
+      "sourceId": "09013051-1981-42cf-af9a-ab2119dc11e0",
+      "sourceBodyStart": 70870,
+      "sourceBodyEnd": 71055,
+      "sourceStart": 949,
+      "sourceEnd": 1318,
+      "videoId": "25572096-e162-4f68-b59f-4deb534f08a3",
+      "audioIds": [
+        "d69acea8-f59c-4547-99ea-48e88b824575"
+      ]
+    }
+  ],
+  "cues": [
+    {
+      "startFrame": 24,
+      "endFrame": 54,
+      "text": "武夷山",
+      "videoId": "b4286332-12d3-488c-b570-d928f57c8824",
+      "file": "DJI_20260929055238_0444_D.mp4"
+    },
+    {
+      "startFrame": 60,
+      "endFrame": 132,
+      "text": "来之前，我对它的印象",
+      "videoId": "b4286332-12d3-488c-b570-d928f57c8824",
+      "file": "DJI_20260929055238_0444_D.mp4"
+    },
+    {
+      "startFrame": 294,
+      "endFrame": 360,
+      "text": "主要就是山水风光",
+      "videoId": "1e919784-9d78-436a-a10f-c1f84148f212",
+      "file": "DJI_20260929055339_0452_D.mp4"
+    },
+    {
+      "startFrame": 1308,
+      "endFrame": 1374,
+      "text": "但走过山间的小路",
+      "videoId": "b10c3938-232b-4968-bc08-1c250b1dbe57",
+      "file": "C4513.mp4"
+    },
+    {
+      "startFrame": 1587,
+      "endFrame": 1647,
+      "text": "穿过沿溪的古村",
+      "videoId": "eeef934c-861e-4dda-b136-f3f223bca630",
+      "file": "C4412.mp4"
+    },
+    {
+      "startFrame": 1920,
+      "endFrame": 1965,
+      "text": "我开始看见",
+      "videoId": "6032ca81-62ad-4186-abe0-94514c60189f",
+      "file": "C4419.mp4"
+    },
+    {
+      "startFrame": 1968,
+      "endFrame": 2034,
+      "text": "这片山水里的生活",
+      "videoId": "6032ca81-62ad-4186-abe0-94514c60189f",
+      "file": "C4419.mp4"
+    },
+    {
+      "startFrame": 2220,
+      "endFrame": 2265,
+      "text": "从一杯茶",
+      "videoId": "0236e765-70cc-4635-8ca8-d8e8b0da8ce9",
+      "file": "C4372.mp4"
+    },
+    {
+      "startFrame": 2562,
+      "endFrame": 2610,
+      "text": "到一座旧窑",
+      "videoId": "b24e27c1-5c1c-4ae3-ae05-5c82a431d22a",
+      "file": "C4465.mp4"
+    },
+    {
+      "startFrame": 3387,
+      "endFrame": 3468,
+      "text": "从山水间的小小生命",
+      "videoId": "8d727e4a-9d5b-43d0-afac-2f4d040c8582",
+      "file": "C0102.mp4"
+    },
+    {
+      "startFrame": 4353,
+      "endFrame": 4434,
+      "text": "到餐桌上没尝过的滋味",
+      "videoId": "c534c7ac-9ca0-4ded-87a5-c6cea13c0009",
+      "file": "C4368.mp4"
+    },
+    {
+      "startFrame": 4455,
+      "endFrame": 4518,
+      "text": "走得越近，才越觉得",
+      "videoId": "c534c7ac-9ca0-4ded-87a5-c6cea13c0009",
+      "file": "C4368.mp4"
+    },
+    {
+      "startFrame": 4533,
+      "endFrame": 4626,
+      "text": "武夷山比想象中丰富得多",
+      "videoId": "c534c7ac-9ca0-4ded-87a5-c6cea13c0009",
+      "file": "C4368.mp4"
+    }
+  ],
+  "markers": {
+    "0": {
+      "color": "Blue",
+      "duration": 140,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：25",
+      "name": "O1 晨雾群山",
+      "customData": "kairos:ep2-intro-selects:O1"
+    },
+    "140": {
+      "color": "Blue",
+      "duration": 144,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O6 航拍 DJI_20260929054726_0418_D",
+      "customData": "kairos:ep2-intro-selects:O6"
+    },
+    "284": {
+      "color": "Blue",
+      "duration": 122,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：27",
+      "name": "O2 湖面与山坡",
+      "customData": "kairos:ep2-intro-selects:O2"
+    },
+    "406": {
+      "color": "Blue",
+      "duration": 143,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O7 航拍 DJI_20260929055439_0459_D",
+      "customData": "kairos:ep2-intro-selects:O7"
+    },
+    "549": {
+      "color": "Blue",
+      "duration": 146,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O8 航拍 DJI_20260929061453_0475_D",
+      "customData": "kairos:ep2-intro-selects:O8"
+    },
+    "695": {
+      "color": "Blue",
+      "duration": 152,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O9 航拍 DJI_20260929062654_0526_D",
+      "customData": "kairos:ep2-intro-selects:O9"
+    },
+    "847": {
+      "color": "Blue",
+      "duration": 169,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O10 航拍 DJI_20260929062737_0533_D",
+      "customData": "kairos:ep2-intro-selects:O10"
+    },
+    "1016": {
+      "color": "Blue",
+      "duration": 142,
+      "note": "补入正文中已调好的完整航拍，沿用原有调色、变速和裁切。",
+      "name": "O11 航拍 DJI_20260929062807_0534_D",
+      "customData": "kairos:ep2-intro-selects:O11"
+    },
+    "1158": {
+      "color": "Blue",
+      "duration": 141,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：33",
+      "name": "O3 金色晨雾",
+      "customData": "kairos:ep2-intro-selects:O3"
+    },
+    "1299": {
+      "color": "Blue",
+      "duration": 277,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O12 溪谷石径",
+      "customData": "kairos:ep2-intro-selects:O12"
+    },
+    "1576": {
+      "color": "Blue",
+      "duration": 334,
+      "note": "旁白背景：下梅水巷，完整正文窗口；关联原声禁用。C4393 廊道移到片尾备选。",
+      "name": "O4 下梅沿溪景观",
+      "customData": "kairos:ep2-intro-selects:O4"
+    },
+    "1910": {
+      "color": "Blue",
+      "duration": 167,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O13 阳光下的晒物",
+      "customData": "kairos:ep2-intro-selects:O13"
+    },
+    "2077": {
+      "color": "Blue",
+      "duration": 132,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O14 成行茶树",
+      "customData": "kairos:ep2-intro-selects:O14"
+    },
+    "2209": {
+      "color": "Blue",
+      "duration": 197,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O15 杯壶中的红茶",
+      "customData": "kairos:ep2-intro-selects:O15"
+    },
+    "2406": {
+      "color": "Blue",
+      "duration": 144,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O16 描金黑釉器物",
+      "customData": "kairos:ep2-intro-selects:O16"
+    },
+    "2550": {
+      "color": "Blue",
+      "duration": 515,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O17 窑址与堆叠器物",
+      "customData": "kairos:ep2-intro-selects:O17"
+    },
+    "3065": {
+      "color": "Blue",
+      "duration": 313,
+      "note": "旁白背景：果实细节，完整正文窗口；关联原声禁用。",
+      "name": "O5 五颜六色的果实",
+      "customData": "kairos:ep2-intro-selects:O5"
+    },
+    "3378": {
+      "color": "Blue",
+      "duration": 559,
+      "note": "旁白背景静音副本；完整保留正文窗口及变速、调色、裁切，供用户细剪。",
+      "name": "O18 水中闪光的鱼",
+      "customData": "kairos:ep2-intro-selects:O18"
+    },
+    "3937": {
+      "color": "Blue",
+      "duration": 408,
+      "note": "旁白背景静音副本；完整保留正文窗口及变速、调色、裁切，供用户细剪。",
+      "name": "O19 色蟌与翅膀动作",
+      "customData": "kairos:ep2-intro-selects:O19"
+    },
+    "4345": {
+      "color": "Blue",
+      "duration": 401,
+      "note": "旁白背景：完整保留当前正文窗口和画面属性，关联原声禁用，供人工细剪。",
+      "name": "O18 茶鱼近景",
+      "customData": "kairos:ep2-intro-selects:O18"
+    },
+    "4746": {
+      "color": "Blue",
+      "duration": 1090,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：154, 155",
+      "name": "N1 九曲溪大拐弯",
+      "customData": "kairos:ep2-intro-selects:N1"
+    },
+    "5836": {
+      "color": "Blue",
+      "duration": 439,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：92",
+      "name": "N2 九曲溪水色",
+      "customData": "kairos:ep2-intro-selects:N2"
+    },
+    "6275": {
+      "color": "Blue",
+      "duration": 632,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：156",
+      "name": "N3 绝壁栈道",
+      "customData": "kairos:ep2-intro-selects:N3"
+    },
+    "6907": {
+      "color": "Blue",
+      "duration": 221,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：157, 159",
+      "name": "N4 暴雨后登顶",
+      "customData": "kairos:ep2-intro-selects:N4"
+    },
+    "7128": {
+      "color": "Blue",
+      "duration": 1397,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：393, 394, 398, 399",
+      "name": "N5 水帘洞原来还没到",
+      "customData": "kairos:ep2-intro-selects:N5"
+    },
+    "8525": {
+      "color": "Blue",
+      "duration": 437,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：460",
+      "name": "N6 人与玉女峰同框",
+      "customData": "kairos:ep2-intro-selects:N6"
+    },
+    "8962": {
+      "color": "Blue",
+      "duration": 432,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：135, 138",
+      "name": "N7 云窝原来是钓鱼处",
+      "customData": "kairos:ep2-intro-selects:N7"
+    },
+    "9394": {
+      "color": "Blue",
+      "duration": 1205,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：223",
+      "name": "V1 下梅沿溪运茶",
+      "customData": "kairos:ep2-intro-selects:V1"
+    },
+    "10599": {
+      "color": "Blue",
+      "duration": 380,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：235",
+      "name": "V2 门洞成为观景窗",
+      "customData": "kairos:ep2-intro-selects:V2"
+    },
+    "10979": {
+      "color": "Blue",
+      "duration": 281,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：227",
+      "name": "V3 下梅庙内烟与天光",
+      "customData": "kairos:ep2-intro-selects:V3"
+    },
+    "11260": {
+      "color": "Blue",
+      "duration": 460,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：236",
+      "name": "V4 下梅门雕",
+      "customData": "kairos:ep2-intro-selects:V4"
+    },
+    "11720": {
+      "color": "Blue",
+      "duration": 745,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：250, 253, 254, 255",
+      "name": "V5 晒物与酸枣糕",
+      "customData": "kairos:ep2-intro-selects:V5"
+    },
+    "12465": {
+      "color": "Blue",
+      "duration": 550,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：265",
+      "name": "V6 认花把村民引出来",
+      "customData": "kairos:ep2-intro-selects:V6"
+    },
+    "13015": {
+      "color": "Blue",
+      "duration": 267,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：292",
+      "name": "T1 兔毫纹理",
+      "customData": "kairos:ep2-intro-selects:T1"
+    },
+    "13282": {
+      "color": "Blue",
+      "duration": 270,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：296",
+      "name": "T2 九曲山水进器物",
+      "customData": "kairos:ep2-intro-selects:T2"
+    },
+    "13552": {
+      "color": "Blue",
+      "duration": 754,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：303",
+      "name": "T3 第一次看见长龙窑",
+      "customData": "kairos:ep2-intro-selects:T3"
+    },
+    "14306": {
+      "color": "Blue",
+      "duration": 515,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：304",
+      "name": "T4 龙窑末窑疑问",
+      "customData": "kairos:ep2-intro-selects:T4"
+    },
+    "14821": {
+      "color": "Blue",
+      "duration": 867,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：339",
+      "name": "T5 雨中岩壁与茶",
+      "customData": "kairos:ep2-intro-selects:T5"
+    },
+    "15688": {
+      "color": "Blue",
+      "duration": 629,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：368",
+      "name": "T6 大红袍母树",
+      "customData": "kairos:ep2-intro-selects:T6"
+    },
+    "16317": {
+      "color": "Blue",
+      "duration": 929,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：97, 98, 99, 100",
+      "name": "B1 认植物到拍清楚",
+      "customData": "kairos:ep2-intro-selects:B1"
+    },
+    "17246": {
+      "color": "Blue",
+      "duration": 624,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：105, 106",
+      "name": "B2 光下石蒜",
+      "customData": "kairos:ep2-intro-selects:B2"
+    },
+    "17870": {
+      "color": "Blue",
+      "duration": 408,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：349, 350",
+      "name": "B3 色蟌翅膀分别控制",
+      "customData": "kairos:ep2-intro-selects:B3"
+    },
+    "18278": {
+      "color": "Blue",
+      "duration": 161,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：397",
+      "name": "B4 白鹇",
+      "customData": "kairos:ep2-intro-selects:B4"
+    },
+    "18439": {
+      "color": "Blue",
+      "duration": 881,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：3, 93, 94, 95, 96",
+      "name": "B5 水里闪光的鱼和昨晚的菜",
+      "customData": "kairos:ep2-intro-selects:B5"
+    },
+    "19320": {
+      "color": "Blue",
+      "duration": 378,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：224",
+      "name": "B6 发现翠鸟却没带长焦",
+      "customData": "kairos:ep2-intro-selects:B6"
+    },
+    "19698": {
+      "color": "Blue",
+      "duration": 311,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：56, 57, 58",
+      "name": "B7 孔雀叫声遭吐槽",
+      "customData": "kairos:ep2-intro-selects:B7"
+    },
+    "20009": {
+      "color": "Blue",
+      "duration": 255,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：352",
+      "name": "B8 花分层开放",
+      "customData": "kairos:ep2-intro-selects:B8"
+    },
+    "20264": {
+      "color": "Blue",
+      "duration": 477,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：374",
+      "name": "F1 岩壁像给肉排改花刀",
+      "customData": "kairos:ep2-intro-selects:F1"
+    },
+    "20741": {
+      "color": "Blue",
+      "duration": 1058,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：7, 8",
+      "name": "F2 岚谷烧鹅吃得满足",
+      "customData": "kairos:ep2-intro-selects:F2"
+    },
+    "21799": {
+      "color": "Blue",
+      "duration": 432,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：194, 195",
+      "name": "F3 冰淇淋吃出茶味",
+      "customData": "kairos:ep2-intro-selects:F3"
+    },
+    "22231": {
+      "color": "Blue",
+      "duration": 490,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：196",
+      "name": "F4 猫爪菇的形态",
+      "customData": "kairos:ep2-intro-selects:F4"
+    },
+    "22721": {
+      "color": "Blue",
+      "duration": 1648,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：11, 197, 198, 199",
+      "name": "F5 挺能吃辣到好辣",
+      "customData": "kairos:ep2-intro-selects:F5"
+    },
+    "24369": {
+      "color": "Blue",
+      "duration": 761,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：203, 204, 205",
+      "name": "F6 茶鱼难以形容的味道",
+      "customData": "kairos:ep2-intro-selects:F6"
+    },
+    "25130": {
+      "color": "Blue",
+      "duration": 1055,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：317, 318, 319",
+      "name": "F7 红菇汤品尝和菌褶",
+      "customData": "kairos:ep2-intro-selects:F7"
+    },
+    "26185": {
+      "color": "Blue",
+      "duration": 1497,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：320, 321, 322, 323",
+      "name": "F8 肥鱼的芋头更好吃",
+      "customData": "kairos:ep2-intro-selects:F8"
+    },
+    "27682": {
+      "color": "Blue",
+      "duration": 1540,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：324, 325, 326",
+      "name": "F9 文公菜剥开与口感",
+      "customData": "kairos:ep2-intro-selects:F9"
+    },
+    "29222": {
+      "color": "Blue",
+      "duration": 911,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：421, 422, 423",
+      "name": "F10 炉边光饼到咬下去",
+      "customData": "kairos:ep2-intro-selects:F10"
+    },
+    "30133": {
+      "color": "Blue",
+      "duration": 394,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：494, 495, 496",
+      "name": "F11 茶叶蛋好吃又没区别",
+      "customData": "kairos:ep2-intro-selects:F11"
+    },
+    "30527": {
+      "color": "Blue",
+      "duration": 510,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：436, 437",
+      "name": "E1 竹筏上水与过激流",
+      "customData": "kairos:ep2-intro-selects:E1"
+    },
+    "31037": {
+      "color": "Blue",
+      "duration": 160,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：438",
+      "name": "E2 竹筏还能超车",
+      "customData": "kairos:ep2-intro-selects:E2"
+    },
+    "31197": {
+      "color": "Blue",
+      "duration": 384,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：462",
+      "name": "E3 狗也来坐竹筏",
+      "customData": "kairos:ep2-intro-selects:E3"
+    },
+    "31581": {
+      "color": "Blue",
+      "duration": 705,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：152, 153, 447",
+      "name": "E4 山上没回声，筏上再试",
+      "customData": "kairos:ep2-intro-selects:E4"
+    },
+    "32286": {
+      "color": "Blue",
+      "duration": 143,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：466",
+      "name": "E5 竹筏穿行竹林",
+      "customData": "kairos:ep2-intro-selects:E5"
+    },
+    "32429": {
+      "color": "Blue",
+      "duration": 481,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：487",
+      "name": "E6 三元雨衣没买，十元补买",
+      "customData": "kairos:ep2-intro-selects:E6"
+    },
+    "32910": {
+      "color": "Blue",
+      "duration": 666,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：17",
+      "name": "E7 车宿准备",
+      "customData": "kairos:ep2-intro-selects:E7"
+    },
+    "33576": {
+      "color": "Blue",
+      "duration": 932,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：367, 400",
+      "name": "E8 想在这里慢慢住几天",
+      "customData": "kairos:ep2-intro-selects:E8"
+    },
+    "34508": {
+      "color": "Blue",
+      "duration": 501,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：19",
+      "name": "Z1 齐云峰朝霞云海原声",
+      "customData": "kairos:ep2-intro-selects:Z1"
+    },
+    "35009": {
+      "color": "Blue",
+      "duration": 485,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：20, 24",
+      "name": "Z2 粉霞与云海延时",
+      "customData": "kairos:ep2-intro-selects:Z2"
+    },
+    "35494": {
+      "color": "Blue",
+      "duration": 556,
+      "note": "完整保留当前正文候选及原声，供人工细剪。正文条目：22",
+      "name": "Z3 太阳露出山脊延时及片名",
+      "customData": "kairos:ep2-intro-selects:Z3"
+    },
+    "36050": {
+      "color": "Yellow",
+      "duration": 300,
+      "note": "从旁白主序列移来的完整旧候选；未删除，原声继续禁用。",
+      "name": "备选 O4a 下梅廊道 C4393",
+      "customData": "kairos:ep2-intro-selects:O4-alt"
+    }
+  },
+  "clips": [
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b4286332-12d3-488c-b570-d928f57c8824",
+      "name": "clip-00043 齐云峰清晨山景、航拍与离开前口述 DJI_20260929055238_0444_D",
+      "start": 0,
+      "end": 140,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055238_0444_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 161,
+      "sourceEnd": 1000,
+      "mediaId": "06f1e1db-2b12-4efd-b8bd-03fdeb59a206",
+      "speed": {
+        "Percentage": 299.99999999998545,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "bea6b084-ba38-4d6a-8afa-a3d9e71e7177",
+      "name": "DJI_20260929054726_0418_D.mp4",
+      "start": 140,
+      "end": 284,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929054726_0418_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 581,
+      "sourceEnd": 1444,
+      "mediaId": "682c1497-fdcb-4c80-800e-b136a8b542d2",
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1e919784-9d78-436a-a10f-c1f84148f212",
+      "name": "clip-00045 齐云峰清晨山景、航拍与离开前口述 DJI_20260929055339_0452_D",
+      "start": 284,
+      "end": 406,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055339_0452_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 337,
+      "sourceEnd": 825,
+      "mediaId": "38a642d3-c0e7-4abc-a8ee-630c75a46fcb",
+      "speed": {
+        "Percentage": 200.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "360dbe75-74f7-45ec-a34f-08ec5cf7c07c",
+      "name": "DJI_20260929055439_0459_D.mp4",
+      "start": 406,
+      "end": 549,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055439_0459_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 305,
+      "sourceEnd": 1162,
+      "mediaId": "dc628647-75f3-4b58-8723-6e9c47687df2",
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "f7a04049-f2ba-408a-9a76-bb96e8035c0f",
+      "name": "DJI_20260929061453_0475_D.mp4",
+      "start": 549,
+      "end": 695,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929061453_0475_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 173,
+      "sourceEnd": 1048,
+      "mediaId": "e6bb7b08-dbe3-4898-9881-0ff648ce8151",
+      "speed": {
+        "Percentage": 299.99999999998545
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "9715c388-1053-47ae-9436-f976747e5d47",
+      "name": "DJI_20260929062654_0526_D.mp4",
+      "start": 695,
+      "end": 847,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062654_0526_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 139,
+      "sourceEnd": 746,
+      "mediaId": "79bbc766-3a50-4586-b9b2-ed19bd7ac322",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "c12ee6be-ad55-47c6-ba39-ab4f08f139cd",
+      "name": "DJI_20260929062737_0533_D.mp4",
+      "start": 847,
+      "end": 1016,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062737_0533_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 905,
+      "sourceEnd": 1580,
+      "mediaId": "6f21a5e4-1cb6-45c8-927e-da7beaf1ef7f",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "632413e8-585f-436c-95be-a5de57dc0670",
+      "name": "DJI_20260929062807_0534_D.mp4",
+      "start": 1016,
+      "end": 1158,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062807_0534_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 115,
+      "sourceEnd": 682,
+      "mediaId": "0f242e2d-adda-45ba-9e21-281e3707a6a4",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "28072b91-e665-4f40-8d77-7f0cd67f7a0e",
+      "name": "clip-00062 齐云峰清晨山景、航拍与离开前口述 DJI_20260929062913_0548_D",
+      "start": 1158,
+      "end": 1299,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062913_0548_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 980,
+      "sourceEnd": 134,
+      "mediaId": "bb4d2fe0-cc8a-4640-b8df-14c8c4ce8a98",
+      "speed": {
+        "Percentage": -300.00000000000006,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Teal"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b10c3938-232b-4968-bc08-1c250b1dbe57",
+      "name": "C4513.mp4",
+      "start": 1299,
+      "end": 1576,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4513.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 71,
+      "sourceEnd": 624,
+      "mediaId": "81a5d69f-7047-4d2c-aaee-ada8398621e4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "eeef934c-861e-4dda-b136-f3f223bca630",
+      "name": "clip-00345 下梅古村街巷与水渠 C4412",
+      "start": 1576,
+      "end": 1910,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4412.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 695,
+      "mediaId": "a52ca4ac-769d-4860-a5da-0fedeaf79804",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "6032ca81-62ad-4186-abe0-94514c60189f",
+      "name": "C4419.mp4",
+      "start": 1910,
+      "end": 2077,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4419.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 31,
+      "sourceEnd": 365,
+      "mediaId": "a3fa50f1-c993-48c9-90bd-40672d283d18",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "af49d30e-37ad-4131-b62d-417dccf4e9f4",
+      "name": "C4486.mp4",
+      "start": 2077,
+      "end": 2209,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4486.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 67,
+      "sourceEnd": 330,
+      "mediaId": "8aa30bf8-1f3b-46e9-ba25-b436b1b87846",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "0236e765-70cc-4635-8ca8-d8e8b0da8ce9",
+      "name": "C4372.mp4",
+      "start": 2209,
+      "end": 2406,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4372.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 7,
+      "sourceEnd": 401,
+      "mediaId": "67928e4f-9675-4d4f-8fa8-e5715d56ee68",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "a412cabe-e733-49b0-b7a2-292aae279a98",
+      "name": "C4453.mp4",
+      "start": 2406,
+      "end": 2550,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4453.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 31,
+      "sourceEnd": 319,
+      "mediaId": "6760db93-8986-42f0-852e-8921a99a9180",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b24e27c1-5c1c-4ae3-ae05-5c82a431d22a",
+      "name": "C4465.mp4",
+      "start": 2550,
+      "end": 3065,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4465.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 136,
+      "sourceEnd": 1165,
+      "mediaId": "cf2ad708-df69-430e-9769-2b0a5e369c95",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "9a9ce167-5025-462c-b5f3-54f2ef8bbb76",
+      "name": "clip-00163 天游峰片区游览、山路与书院 C4301",
+      "start": 3065,
+      "end": 3378,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4301.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 703,
+      "sourceEnd": 1328,
+      "mediaId": "f051f349-5241-4731-bd69-680e949f1050",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "8d727e4a-9d5b-43d0-afac-2f4d040c8582",
+      "name": "clip-00167 天游峰片区游览、山路与书院 C0102",
+      "start": 3378,
+      "end": 3643,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0102.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 133,
+      "sourceEnd": 663,
+      "mediaId": "27813a53-003c-49d9-b88a-a60f2947cbc1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "d7dde723-8357-4ce5-b6a2-a5045004368e",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3643,
+      "end": 3700,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b8fcc8af-8e9c-4181-9ab3-6aa5c35aea51",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3700,
+      "end": 3757,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "094662a2-0dc5-4038-92ea-e269e9cb665f",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3757,
+      "end": 3937,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 127,
+      "sourceEnd": 487,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "27ecec2b-3ef3-4f0c-a375-5e0b30789648",
+      "name": "clip-00519 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 3937,
+      "end": 4160,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 41,
+      "sourceEnd": 487,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "25572096-e162-4f68-b59f-4deb534f08a3",
+      "name": "clip-00520 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 4160,
+      "end": 4345,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 947,
+      "sourceEnd": 1316,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "c534c7ac-9ca0-4ded-87a5-c6cea13c0009",
+      "name": "C4368.mp4",
+      "start": 4345,
+      "end": 4746,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4368.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 892,
+      "mediaId": "93a2201a-1146-48c0-8af2-a4f1107293d6",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "7bee4f87-3913-4ffc-bc69-a4c2b7db268b",
+      "name": "clip-00220 天游峰片区游览、山路与书院 C4343",
+      "start": 4746,
+      "end": 5603,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4343.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 70,
+      "sourceEnd": 1783,
+      "mediaId": "5365fd30-f757-4dad-a6fa-0f68169b3746",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "2fe78422-8246-46fe-9ccd-a5a2bdc1943c",
+      "name": "clip-00213 天游峰片区游览、山路与书院 C4337",
+      "start": 5603,
+      "end": 5836,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4337.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 484,
+      "mediaId": "db2b9992-d8b1-425d-8aa7-98efdfb38090",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "7f87dc51-1fea-4c2e-8e06-4884fd425ade",
+      "name": "clip-00170 天游峰片区游览、山路与书院 C4306",
+      "start": 5836,
+      "end": 6275,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4306.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 905,
+      "mediaId": "70b55483-fb6c-4b19-a861-c6c6c0454e72",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "f87f8818-45f9-4695-8d9a-474f21c13868",
+      "name": "clip-00215 天游峰片区游览、山路与书院 C0107",
+      "start": 6275,
+      "end": 6907,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0107.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 71,
+      "sourceEnd": 1333,
+      "mediaId": "46f952a3-9c83-4b04-ae1c-833f117ee4db",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1f884a70-7354-48ad-8e5b-0098654645f4",
+      "name": "clip-00221 天游峰片区游览、山路与书院 C4344",
+      "start": 6907,
+      "end": 7008,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4344.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 205,
+      "mediaId": "2867721d-5cd6-49c0-a50c-92de4abfe8c7",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b79add0c-3395-4be3-85e7-5c841f92da85",
+      "name": "clip-00223 天游峰片区游览、山路与书院 C4346",
+      "start": 7008,
+      "end": 7128,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4346.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 292,
+      "sourceEnd": 532,
+      "mediaId": "dd931240-1238-4662-8880-8d5308f443ce",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "483c8bf3-355d-4bc0-9614-dd28657bfd9e",
+      "name": "clip-00555 武夷山茶园、山谷步道与岩壁游览 C4534",
+      "start": 7128,
+      "end": 7747,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4534.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 201,
+      "sourceEnd": 1437,
+      "mediaId": "e9d7187d-d0e6-42e5-99d7-ae816d7a5970",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "26f80d06-80e6-4c26-8aea-6516fb35a532",
+      "name": "clip-00557 武夷山茶园、山谷步道与岩壁游览 C4535",
+      "start": 7747,
+      "end": 7949,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4535.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 412,
+      "mediaId": "89c531c3-8226-4f49-af37-4eb6351b4060",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "4fa35371-ff2a-456c-9868-d3db9da742ab",
+      "name": "clip-00565 武夷山茶园、山谷步道与岩壁游览 C4541",
+      "start": 7949,
+      "end": 8388,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4541.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 910,
+      "mediaId": "41c4a5a8-655a-4d7c-8764-a4d82d115233",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "e93d5f56-bab1-4431-b4a3-43c65e5fb855",
+      "name": "clip-00566 武夷山茶园、山谷步道与岩壁游览 C4542",
+      "start": 8388,
+      "end": 8525,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4542.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 282,
+      "mediaId": "c5fdbc19-9fc1-4ba8-b96a-c4d2ad39c6ff",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1e7b7744-a558-4ad5-a1dd-e55493f1c44b",
+      "name": "clip-00731 九曲溪竹筏漂流 C4658",
+      "start": 8525,
+      "end": 8962,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4658.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 882,
+      "mediaId": "d2523d1b-589d-4eec-9705-c52a6bfee065",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b31d40b1-c976-4a0e-9a51-f7699c56ef4e",
+      "name": "clip-00195 天游峰片区游览、山路与书院 C4322",
+      "start": 8962,
+      "end": 9164,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4322.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 178,
+      "sourceEnd": 582,
+      "mediaId": "baad9521-ed9a-4cf5-a9f7-130662068726",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "bc59cd13-7194-4542-83c7-75df92ea5320",
+      "name": "clip-00198 天游峰片区游览、山路与书院 C4325",
+      "start": 9164,
+      "end": 9394,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4325.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 473,
+      "mediaId": "e8e38b3c-9c45-4eec-bcac-4c0197df73e9",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "d149aa93-a70a-4716-90d1-a5036e09d5c9",
+      "name": "clip-00323 下梅古村街巷与水渠 C4395",
+      "start": 9394,
+      "end": 10599,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4395.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 2498,
+      "mediaId": "f0b47472-a0c2-4cf7-84cd-221146d1373d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "538a6494-f5d5-4e3a-984c-0e5a7778b6d8",
+      "name": "clip-00339 下梅古村街巷与水渠 C4408",
+      "start": 10599,
+      "end": 10979,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4408.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 778,
+      "mediaId": "42a74f1d-a2d3-4001-9583-4c3f1a97e713",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "58680375-691e-4edc-873d-a51f7e17665b",
+      "name": "clip-00327 下梅古村街巷与水渠 C4398",
+      "start": 10979,
+      "end": 11260,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4398.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 561,
+      "mediaId": "0fb3f97e-7057-4a3c-b847-a7bd9219ff5f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "128a5cee-12b4-4806-a1f4-9132670a807c",
+      "name": "clip-00342 下梅古村街巷与水渠 C4410",
+      "start": 11260,
+      "end": 11720,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4410.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 919,
+      "mediaId": "8e903dfa-0961-43f8-9dc7-f7cde7059393",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "039fbfbb-6ffc-495b-a9b5-b7baf89eea75",
+      "name": "clip-00351 下梅古村街巷与水渠 C4418",
+      "start": 11720,
+      "end": 12061,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4418.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 151,
+      "sourceEnd": 833,
+      "mediaId": "e33e4f0e-166a-4438-a1b3-518172cd0da7",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "43605e05-41e7-4792-a06d-231e0d8f3aab",
+      "name": "clip-00353 下梅古村街巷与水渠 C4420",
+      "start": 12061,
+      "end": 12184,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4420.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 249,
+      "mediaId": "05647289-ac18-42b7-9b25-076539c7eb75",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "4291a14e-1b5c-436d-9d6f-1ab684b63b92",
+      "name": "clip-00362 下梅古村街巷与水渠 C4428",
+      "start": 12184,
+      "end": 12297,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4428.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 254,
+      "mediaId": "23a71fcd-7d2f-4154-8793-7f2f79f2d600",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "93c4c27d-4032-41d9-8302-be3162b0db48",
+      "name": "clip-00363 下梅古村街巷与水渠 C4428",
+      "start": 12297,
+      "end": 12465,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4428.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 953,
+      "sourceEnd": 1289,
+      "mediaId": "23a71fcd-7d2f-4154-8793-7f2f79f2d600",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b92bb291-9823-4642-98d5-371f6fde3008",
+      "name": "clip-00375 下梅古村街巷与水渠 C4437",
+      "start": 12465,
+      "end": 13015,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4437.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 1141,
+      "mediaId": "fdb23112-81dd-4c31-96ee-72d84f3ed7b9",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ef76c12d-85e1-4682-b4c0-c73daee9b119",
+      "name": "clip-00443 武夷山黑釉器物展陈与窑址步道 C4452",
+      "start": 13015,
+      "end": 13282,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4452.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 561,
+      "mediaId": "4594f672-0f78-4870-8637-5e0bece9ff10",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "83f924e0-c62f-411d-b313-623b582ed49c",
+      "name": "clip-00449 武夷山黑釉器物展陈与窑址步道 C4456",
+      "start": 13282,
+      "end": 13552,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4456.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 147,
+      "sourceEnd": 687,
+      "mediaId": "209915cf-956b-4a85-bc65-c233e76a2c3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "6c66f72b-81b0-4033-a633-ae4e68975bb5",
+      "name": "clip-00455 武夷山黑釉器物展陈与窑址步道 C4463",
+      "start": 13552,
+      "end": 14306,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4463.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 38,
+      "sourceEnd": 1544,
+      "mediaId": "7c348b74-36c8-445f-b327-66e4afa3dcdc",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b6d13a1b-9500-48fa-8ea8-ad7382aff93f",
+      "name": "clip-00457 武夷山黑釉器物展陈与窑址步道 C4465",
+      "start": 14306,
+      "end": 14821,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4465.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 137,
+      "sourceEnd": 1166,
+      "mediaId": "cf2ad708-df69-430e-9769-2b0a5e369c95",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "c1ac7a4b-e8be-4ca2-ad6c-07bf1c71de4a",
+      "name": "clip-00505 武夷山茶园、山谷步道与岩壁游览 C4495",
+      "start": 14821,
+      "end": 15688,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4495.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 85,
+      "sourceEnd": 1818,
+      "mediaId": "f5fb6791-732c-43b8-9f42-3d89791d731e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "01c6edc3-7aad-4160-aade-0a461cc32c89",
+      "name": "clip-00528 武夷山茶园、山谷步道与岩壁游览 C4510",
+      "start": 15688,
+      "end": 16317,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4510.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 1256,
+      "mediaId": "6a4c4ab2-f589-4e70-b74b-30ce2ec95c53",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "d8730ff5-bff1-4421-b758-178084eee59c",
+      "name": "clip-00157 天游峰片区游览、山路与书院 C4297",
+      "start": 16317,
+      "end": 16771,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4297.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 94,
+      "sourceEnd": 1002,
+      "mediaId": "1d837792-dd4e-437f-a9b0-e900e521e689",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "092421d4-6888-4947-8702-14d91f506821",
+      "name": "clip-00158 天游峰片区游览、山路与书院 C4298",
+      "start": 16771,
+      "end": 16975,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4298.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 498,
+      "mediaId": "631f93ca-9670-4022-9a44-ceb6cc2df549",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "2c5ee912-948e-4ea1-8217-61028e392241",
+      "name": "clip-00158 天游峰片区游览、山路与书院 C4298",
+      "start": 16975,
+      "end": 17124,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4298.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1050,
+      "sourceEnd": 1347,
+      "mediaId": "631f93ca-9670-4022-9a44-ceb6cc2df549",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "cd68efee-1297-4d48-8951-c2d10cc5a8f9",
+      "name": "clip-00159 天游峰片区游览、山路与书院 C4299",
+      "start": 17124,
+      "end": 17246,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4299.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 286,
+      "mediaId": "914a73dd-b7ea-44b0-80a8-c56a31044fef",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ac717bd5-9928-462d-a1db-68bf6cbcb9cd",
+      "name": "clip-00178 天游峰片区游览、山路与书院 C4310",
+      "start": 17246,
+      "end": 17586,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4310.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 23,
+      "sourceEnd": 702,
+      "mediaId": "56076815-def8-45d3-9756-1b78f96cc064",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "742b38fb-1d11-405d-a7de-f005e4fb60d9",
+      "name": "clip-00178 天游峰片区游览、山路与书院 C4310",
+      "start": 17586,
+      "end": 17870,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4310.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 702,
+      "sourceEnd": 1269,
+      "mediaId": "56076815-def8-45d3-9756-1b78f96cc064",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "aa083129-ac97-4b25-8dc6-97beaa7ee152",
+      "name": "clip-00519 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 17870,
+      "end": 18093,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 488,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "c8d81c1b-1237-4fd2-bebd-083a1452d5a9",
+      "name": "clip-00520 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 18093,
+      "end": 18278,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 949,
+      "sourceEnd": 1318,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "182cebb7-313f-4ccb-a409-20243ca46409",
+      "name": "clip-00562 武夷山茶园、山谷步道与岩壁游览 C0117",
+      "start": 18278,
+      "end": 18439,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0117.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 321,
+      "mediaId": "d4c754d4-3600-46b6-9d6e-6c97494cb78e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b05daff1-a820-46ef-ac72-87e14d84e060",
+      "name": "clip-00015 抵达武夷山、晚饭与餐后口述 C4229",
+      "start": 18439,
+      "end": 18761,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4229.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 676,
+      "mediaId": "3e3d1a10-5ce9-4578-92d8-ddb9cad113d4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1e6d87e7-bc27-4c85-8ae2-6ca1d2a47bf1",
+      "name": "clip-00167 天游峰片区游览、山路与书院 C0102",
+      "start": 18761,
+      "end": 19026,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0102.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 134,
+      "sourceEnd": 664,
+      "mediaId": "27813a53-003c-49d9-b88a-a60f2947cbc1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "af4d540d-96b9-47aa-8a53-91f40f1ec410",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19026,
+      "end": 19083,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "97a7ec89-95f0-4207-9ffe-089fa920bbc9",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19083,
+      "end": 19140,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "430843c8-2edb-4228-8a5c-3d84b74366c2",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19140,
+      "end": 19320,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 127,
+      "sourceEnd": 487,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "4821e1f0-a38f-4acb-97de-a835c3a8ba14",
+      "name": "clip-00325 下梅古村街巷与水渠 C0111",
+      "start": 19320,
+      "end": 19698,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0111.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 22,
+      "sourceEnd": 778,
+      "mediaId": "ab7a3215-d45d-443e-ad79-d3f70cab93cb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "160435b0-5560-45ef-a23e-aeab2595f602",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19698,
+      "end": 19812,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 241,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "cf975b46-9b44-4311-895d-1bfebce86ed1",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19812,
+      "end": 19926,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 497,
+      "sourceEnd": 725,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "e27eb3ba-3573-44cd-8a45-b90c7658771b",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19926,
+      "end": 20009,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 725,
+      "sourceEnd": 891,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ad3b4194-af7b-49b1-b704-ae01f3b4ce69",
+      "name": "clip-00523 武夷山茶园、山谷步道与岩壁游览 C4505",
+      "start": 20009,
+      "end": 20264,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4505.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 27,
+      "sourceEnd": 537,
+      "mediaId": "31a16501-a97d-4e9e-bc2a-2f2e5c93a063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "243eea6c-e172-430f-8e8e-de90d3faf943",
+      "name": "clip-00536 武夷山茶园、山谷步道与岩壁游览 C4516",
+      "start": 20264,
+      "end": 20741,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4516.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 986,
+      "mediaId": "7d331e24-d446-478d-b511-d4146b2096e8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "61014f15-cfe6-41d5-9e1d-329fe833e06d",
+      "name": "clip-00018 抵达武夷山、晚饭与餐后口述 C4234",
+      "start": 20741,
+      "end": 21039,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4234.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 62,
+      "sourceEnd": 657,
+      "mediaId": "7da5b50b-62fe-41f2-860f-061e41bfb254",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "98ae9544-eee0-4ba0-907f-18e1a31678ea",
+      "name": "clip-00018 抵达武夷山、晚饭与餐后口述 C4234",
+      "start": 21039,
+      "end": 21799,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4234.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1152,
+      "sourceEnd": 2671,
+      "mediaId": "7da5b50b-62fe-41f2-860f-061e41bfb254",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "a55592a3-3dfc-477a-a322-750c7a92ce90",
+      "name": "clip-00284 武夷山晚饭 C4362",
+      "start": 21799,
+      "end": 22035,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4362.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 562,
+      "mediaId": "63439ee1-19cd-4654-86d5-e37a24faf798",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "6cc488a6-d9ae-4d4c-908c-6cec589036fa",
+      "name": "clip-00284 武夷山晚饭 C4362",
+      "start": 22035,
+      "end": 22231,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4362.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1076,
+      "sourceEnd": 1467,
+      "mediaId": "63439ee1-19cd-4654-86d5-e37a24faf798",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "0253417a-bd8e-4293-8a04-86abbe03dc30",
+      "name": "clip-00285 武夷山晚饭 C4363",
+      "start": 22231,
+      "end": 22721,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4363.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 57,
+      "sourceEnd": 1036,
+      "mediaId": "cff46d1c-1104-45e8-9afe-c0d2b7b9efb1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "e03cb491-31d6-454b-8cbc-95d9e80d9ac1",
+      "name": "clip-00024 抵达武夷山、晚饭与餐后口述 C4240",
+      "start": 22721,
+      "end": 22925,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4240.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 440,
+      "mediaId": "d4936cc9-25c2-4518-b348-d7e29425141e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "6d3d9e0a-856d-40c6-9b00-c2c6e1562a9b",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 22925,
+      "end": 23534,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 1235,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b632be4c-86c8-4f19-8d44-0f682d746a75",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 23534,
+      "end": 23879,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1649,
+      "sourceEnd": 2338,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "a88809e3-0b9f-4045-98d1-808708682f6a",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 23879,
+      "end": 24369,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3565,
+      "sourceEnd": 4544,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1709498f-67e6-47a6-863e-83f6b5f69613",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24369,
+      "end": 24694,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 100,
+      "sourceEnd": 749,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "978ee17a-b1f2-414a-af16-2161347acc53",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24694,
+      "end": 24833,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1582,
+      "sourceEnd": 1860,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "fcd3c3b3-2dd0-415f-8a5c-830aae43ab9b",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24833,
+      "end": 25130,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3590,
+      "sourceEnd": 4183,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "9c68eea1-c635-4b7e-a482-bfee115881bb",
+      "name": "clip-00477 武夷山午饭 C4470",
+      "start": 25130,
+      "end": 25767,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4470.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 221,
+      "sourceEnd": 1494,
+      "mediaId": "3ef2c7ea-bc32-42ad-a9a3-17b66a03255d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "dd0e33b0-202a-4373-b7d9-fbc1f6424e0f",
+      "name": "clip-00477 武夷山午饭 C4470",
+      "start": 25767,
+      "end": 25921,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4470.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2131,
+      "sourceEnd": 2439,
+      "mediaId": "3ef2c7ea-bc32-42ad-a9a3-17b66a03255d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "8e72bfc7-2184-48f8-87da-6bfed5f77556",
+      "name": "clip-00479 武夷山午饭 C4472",
+      "start": 25921,
+      "end": 26185,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4472.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 560,
+      "mediaId": "ff0c0ce8-fefb-45bf-831a-f6cee3b04dde",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ea958296-fcba-42d8-9c80-3670128e617f",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 26185,
+      "end": 26970,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 285,
+      "sourceEnd": 1854,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "d0779952-ce97-4dc0-beee-87c98c9d9f1b",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 26970,
+      "end": 27285,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2047,
+      "sourceEnd": 2677,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "3215a1eb-c0e0-4243-9691-f519e2689dcd",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 27285,
+      "end": 27454,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2863,
+      "sourceEnd": 3200,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "8fc14ad2-83dd-48ac-80f7-c08d73b27281",
+      "name": "clip-00482 武夷山午饭 C4475",
+      "start": 27454,
+      "end": 27682,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4475.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 38,
+      "sourceEnd": 493,
+      "mediaId": "f5b7effc-d24e-4f68-9bb5-0bc6d6c7099a",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "1973bb94-2eae-4513-94f8-2210ceea6d42",
+      "name": "clip-00480 武夷山午饭 C4473",
+      "start": 27682,
+      "end": 28093,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4473.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 849,
+      "mediaId": "51b721ef-f0b0-41af-9ebf-7761c7770a3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ecc9c313-f1cc-47b5-85aa-f2717b1591ed",
+      "name": "clip-00480 武夷山午饭 C4473",
+      "start": 28093,
+      "end": 28671,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4473.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3398,
+      "sourceEnd": 4553,
+      "mediaId": "51b721ef-f0b0-41af-9ebf-7761c7770a3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "f687e1fd-f1c8-4bfb-87b7-c6567f528876",
+      "name": "clip-00483 武夷山午饭 C4477",
+      "start": 28671,
+      "end": 29222,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4477.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 56,
+      "sourceEnd": 1157,
+      "mediaId": "59ff2631-418a-4557-8521-3e41c33c51bc",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "3d0008ce-afc4-4134-a4a2-11bb64741c6b",
+      "name": "clip-00632 武夷山街市晚饭与小吃 C4560",
+      "start": 29222,
+      "end": 29360,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4560.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 275,
+      "mediaId": "62c4bb9f-5628-4a69-bc0e-71aafe051c5f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "e9f1bc32-7da7-44f5-8726-bb71c4f5c124",
+      "name": "clip-00633 武夷山街市晚饭与小吃 C4561",
+      "start": 29360,
+      "end": 29989,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4561.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 164,
+      "sourceEnd": 1421,
+      "mediaId": "efbd429e-3c2c-4080-9194-6a2ff8c4b1a8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ccbc6c1f-e641-44d0-bb45-062f4f0b7f71",
+      "name": "clip-00633 武夷山街市晚饭与小吃 C4561",
+      "start": 29989,
+      "end": 30133,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4561.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1699,
+      "sourceEnd": 1987,
+      "mediaId": "efbd429e-3c2c-4080-9194-6a2ff8c4b1a8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "dfa8c2f4-64ba-4f44-aea4-1817ea29875c",
+      "name": "clip-00796 武夷山前往景德镇沿途 C4683",
+      "start": 30133,
+      "end": 30223,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 268,
+      "sourceEnd": 448,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "531473ce-dc4a-418a-b82f-7df3b2db947a",
+      "name": "clip-00798 武夷山前往景德镇沿途 C4683",
+      "start": 30223,
+      "end": 30323,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2097,
+      "sourceEnd": 2297,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "9a9043ae-a8ee-4318-a20d-3cbedeb16c21",
+      "name": "clip-00799 武夷山前往景德镇沿途 C4683",
+      "start": 30323,
+      "end": 30527,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2939,
+      "sourceEnd": 3347,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "b425dadf-9d98-47d5-bb4a-97408f94e5f5",
+      "name": "clip-00662 九曲溪竹筏漂流 C4586",
+      "start": 30527,
+      "end": 30904,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4586.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 114,
+      "sourceEnd": 867,
+      "mediaId": "b4751288-e156-4d52-b068-80187a6dd851",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "cf7f06b7-1135-4825-a3dc-0bf85ae69b82",
+      "name": "clip-00664 九曲溪竹筏漂流 C4588",
+      "start": 30904,
+      "end": 31037,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4588.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 147,
+      "sourceEnd": 413,
+      "mediaId": "b47731f0-1486-44c2-b959-6dde39034445",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "255a6728-a32f-4141-800b-c2a7161ba070",
+      "name": "clip-00665 九曲溪竹筏漂流 C4589",
+      "start": 31037,
+      "end": 31197,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4589.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 319,
+      "mediaId": "7d5633a0-cdc8-4eb8-a199-0c67214c0453",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "0d637089-80a6-44b2-ad93-10840e4e2c1f",
+      "name": "clip-00733 九曲溪竹筏漂流 C4660",
+      "start": 31197,
+      "end": 31581,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4660.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 23,
+      "sourceEnd": 790,
+      "mediaId": "eee9ccc1-0290-4127-8d8d-35c1e23cb1b8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "08d3532e-a6b8-470d-a9f3-371c078704a9",
+      "name": "clip-00217 天游峰片区游览、山路与书院 C4340",
+      "start": 31581,
+      "end": 31905,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4340.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 75,
+      "sourceEnd": 723,
+      "mediaId": "be46e0e6-c936-43b8-be5f-b99c5bfaa985",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "9d2f9fe6-0222-4d26-b0c1-9098b94611ee",
+      "name": "clip-00217 天游峰片区游览、山路与书院 C4340",
+      "start": 31905,
+      "end": 32060,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4340.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1908,
+      "sourceEnd": 2217,
+      "mediaId": "be46e0e6-c936-43b8-be5f-b99c5bfaa985",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "0955f229-c37b-472b-8e64-8ac09122c7af",
+      "name": "clip-00695 九曲溪竹筏漂流 C4618",
+      "start": 32060,
+      "end": 32286,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4618.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 455,
+      "mediaId": "9632f801-6ad4-4f1a-b590-ab6748eddde4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "399f449f-23a8-4ec8-9490-9fcba50ab189",
+      "name": "clip-00741 九曲溪竹筏漂流 C4666",
+      "start": 32286,
+      "end": 32429,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4666.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 124,
+      "sourceEnd": 409,
+      "mediaId": "acc12426-a87c-43b7-9826-0d4cce211032",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "93ad2b7e-0bba-448f-b89d-f9e634095fc0",
+      "name": "clip-00782 竹筏结束后小吃与回停车处 C4670",
+      "start": 32429,
+      "end": 32910,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4670.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 112,
+      "sourceEnd": 1073,
+      "mediaId": "cbfeaff7-6078-4426-bcb3-f7589d991c19",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "ed0a83a7-b06e-4831-a94b-be62e6024c62",
+      "name": "clip-00031 齐云峰附近车宿准备 C4244",
+      "start": 32910,
+      "end": 33576,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4244.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 1422,
+      "mediaId": "e447d351-a465-4216-921e-79db4fbae491",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "353aff25-5b4d-4cce-9d44-52141bea12df",
+      "name": "clip-00524 武夷山茶园、山谷步道与岩壁游览 C4506",
+      "start": 33576,
+      "end": 34124,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4506.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 452,
+      "sourceEnd": 1547,
+      "mediaId": "7d059b15-8243-4ec2-9759-4a8a415a088b",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "653b6845-e0f5-4c6c-bbce-8a0a6ff51f01",
+      "name": "clip-00570 武夷山茶园、山谷步道与岩壁游览 C4545",
+      "start": 34124,
+      "end": 34508,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4545.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 62,
+      "sourceEnd": 829,
+      "mediaId": "68a4d6a4-5633-4b65-964e-444fcfc7593d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "81bf9602-bf8f-4f08-970d-ba619689901a",
+      "name": "clip-00037 齐云峰清晨山景、航拍与离开前口述 C4249",
+      "start": 34508,
+      "end": 35009,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4249.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1528,
+      "sourceEnd": 2529,
+      "mediaId": "56f5918e-4e69-424a-ba85-fdb8947168f8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "16582f10-2626-4014-9952-4887bc10eabc",
+      "name": "clip-00064 齐云峰清晨山景、航拍与离开前口述 20260929_武夷山齐云峰日出云海1",
+      "start": 35009,
+      "end": 35340,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\ts-final\\20260929_武夷山齐云峰日出云海1.mp4",
+      "sourceFps": 24.0,
+      "sourceStart": 0,
+      "sourceEnd": 529,
+      "mediaId": "b7484718-ba02-47cb-8753-131a3799bf77",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Purple"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "177ee8f9-2c3a-4f1b-944f-8eaa251a23f5",
+      "name": "clip-00064 齐云峰清晨山景、航拍与离开前口述 20260929_武夷山齐云峰日出云海1",
+      "start": 35340,
+      "end": 35494,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\ts-final\\20260929_武夷山齐云峰日出云海1.mp4",
+      "sourceFps": 24.0,
+      "sourceStart": 537,
+      "sourceEnd": 782,
+      "mediaId": "b7484718-ba02-47cb-8753-131a3799bf77",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Purple"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "e2ba616d-d25a-413d-b780-3b87e8b59a07",
+      "name": "clip-00065 齐云峰清晨山景、航拍与离开前口述 20260929_武夷山齐云峰日出云海2",
+      "start": 35494,
+      "end": 36050,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\ts-final\\20260929_武夷山齐云峰日出云海2.mp4",
+      "sourceFps": 24.0,
+      "sourceStart": 24,
+      "sourceEnd": 913,
+      "mediaId": "b574112b-5d67-465f-a193-2252aad1524e",
+      "speed": {
+        "Percentage": 200.0
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Purple"
+    },
+    {
+      "kind": "video",
+      "track": 1,
+      "id": "f1d4d595-2bd1-495d-b580-16634127f45e",
+      "name": "clip-00321 下梅古村街巷与水渠 C4393",
+      "start": 36050,
+      "end": 36350,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4393.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 613,
+      "mediaId": "1e865e84-7e43-4fe4-bebf-b8c53eacec9e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c0ed29b1-0fd8-41c0-b356-94aa8c34b5eb",
+      "name": "clip-00043 齐云峰清晨山景、航拍与离开前口述 DJI_20260929055238_0444_D",
+      "start": 0,
+      "end": 140,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055238_0444_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 161,
+      "sourceEnd": 1000,
+      "mediaId": "06f1e1db-2b12-4efd-b8bd-03fdeb59a206",
+      "speed": {
+        "Percentage": 299.99999999998545,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": ""
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "3e7cdac4-dc49-496c-9d7e-783b038dc9d0",
+      "name": "clip-00045 齐云峰清晨山景、航拍与离开前口述 DJI_20260929055339_0452_D",
+      "start": 284,
+      "end": 406,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929055339_0452_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 337,
+      "sourceEnd": 825,
+      "mediaId": "38a642d3-c0e7-4abc-a8ee-630c75a46fcb",
+      "speed": {
+        "Percentage": 200.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": ""
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "7cf891a4-2b82-46a8-8f34-24f22b05f186",
+      "name": "clip-00062 齐云峰清晨山景、航拍与离开前口述 DJI_20260929062913_0548_D",
+      "start": 1158,
+      "end": 1299,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\drone\\DJI_20260929062913_0548_D.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 980,
+      "sourceEnd": 134,
+      "mediaId": "bb4d2fe0-cc8a-4640-b8df-14c8c4ce8a98",
+      "speed": {
+        "Percentage": -300.00000000000006,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": ""
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "a00331f3-09fe-4cab-9f8b-6fc2fad5684f",
+      "name": "C4513.mp4",
+      "start": 1299,
+      "end": 1576,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4513.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 71,
+      "sourceEnd": 624,
+      "mediaId": "81a5d69f-7047-4d2c-aaee-ada8398621e4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d8f76579-9c8f-4ca0-b350-6c511b7fa7bc",
+      "name": "clip-00345 下梅古村街巷与水渠 C4412",
+      "start": 1576,
+      "end": 1910,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4412.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 695,
+      "mediaId": "a52ca4ac-769d-4860-a5da-0fedeaf79804",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "58f992d3-5218-49b1-bb55-92c9edf2c931",
+      "name": "C4419.mp4",
+      "start": 1910,
+      "end": 2077,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4419.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 31,
+      "sourceEnd": 365,
+      "mediaId": "a3fa50f1-c993-48c9-90bd-40672d283d18",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4161e3b2-1c78-4e51-acf0-311ca96136aa",
+      "name": "C4486.mp4",
+      "start": 2077,
+      "end": 2209,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4486.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 67,
+      "sourceEnd": 330,
+      "mediaId": "8aa30bf8-1f3b-46e9-ba25-b436b1b87846",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "020ab901-f0fc-46a0-a09f-26f0be9ae8e9",
+      "name": "C4372.mp4",
+      "start": 2209,
+      "end": 2406,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4372.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 7,
+      "sourceEnd": 401,
+      "mediaId": "67928e4f-9675-4d4f-8fa8-e5715d56ee68",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "685e125b-6063-4457-88aa-38b4a89ac4dd",
+      "name": "C4453.mp4",
+      "start": 2406,
+      "end": 2550,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4453.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 31,
+      "sourceEnd": 319,
+      "mediaId": "6760db93-8986-42f0-852e-8921a99a9180",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4f30dca7-38ff-437c-873f-c0bc3659af24",
+      "name": "C4465.mp4",
+      "start": 2550,
+      "end": 3065,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4465.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 136,
+      "sourceEnd": 1165,
+      "mediaId": "cf2ad708-df69-430e-9769-2b0a5e369c95",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "3b772b5a-16d2-4f51-9d9b-6f2da57e2fba",
+      "name": "clip-00163 天游峰片区游览、山路与书院 C4301",
+      "start": 3065,
+      "end": 3378,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4301.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 703,
+      "sourceEnd": 1328,
+      "mediaId": "f051f349-5241-4731-bd69-680e949f1050",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d4f43b1e-2c59-4da6-acb6-b54deb6672be",
+      "name": "clip-00167 天游峰片区游览、山路与书院 C0102",
+      "start": 3378,
+      "end": 3643,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0102.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 133,
+      "sourceEnd": 663,
+      "mediaId": "27813a53-003c-49d9-b88a-a60f2947cbc1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "7bb318ff-9456-4e47-9ee3-240942b7d566",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3643,
+      "end": 3700,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "1c0cbc1a-653a-4d62-8ca0-35135e133d2e",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3700,
+      "end": 3757,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "5463bc99-899e-478c-80de-233457805a3e",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 3757,
+      "end": 3937,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 127,
+      "sourceEnd": 487,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e03a38cd-6e26-4228-a94b-c4ac4f287e72",
+      "name": "clip-00519 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 3937,
+      "end": 4160,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 41,
+      "sourceEnd": 487,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d69acea8-f59c-4547-99ea-48e88b824575",
+      "name": "clip-00520 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 4160,
+      "end": 4345,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 947,
+      "sourceEnd": 1316,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "6eb4c866-7251-42cf-8149-bee4e970f9b1",
+      "name": "C4368.mp4",
+      "start": 4345,
+      "end": 4746,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4368.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 892,
+      "mediaId": "93a2201a-1146-48c0-8af2-a4f1107293d6",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "74705b19-72cc-42a8-9dae-987133bbce6f",
+      "name": "clip-00220 天游峰片区游览、山路与书院 C4343",
+      "start": 4746,
+      "end": 5603,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4343.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 70,
+      "sourceEnd": 1783,
+      "mediaId": "5365fd30-f757-4dad-a6fa-0f68169b3746",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "9c66975f-d562-4f20-a391-dc31915761b4",
+      "name": "clip-00213 天游峰片区游览、山路与书院 C4337",
+      "start": 5603,
+      "end": 5836,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4337.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 484,
+      "mediaId": "db2b9992-d8b1-425d-8aa7-98efdfb38090",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "f14bbfcd-883f-4edd-aaa2-ee49bd2361a7",
+      "name": "clip-00170 天游峰片区游览、山路与书院 C4306",
+      "start": 5836,
+      "end": 6275,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4306.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 905,
+      "mediaId": "70b55483-fb6c-4b19-a861-c6c6c0454e72",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "204e2f6f-660b-4cf5-af9a-49488434f54b",
+      "name": "clip-00215 天游峰片区游览、山路与书院 C0107",
+      "start": 6275,
+      "end": 6907,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0107.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 71,
+      "sourceEnd": 1333,
+      "mediaId": "46f952a3-9c83-4b04-ae1c-833f117ee4db",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c37d354e-1516-4043-80a2-82a4cfc34f84",
+      "name": "clip-00221 天游峰片区游览、山路与书院 C4344",
+      "start": 6907,
+      "end": 7008,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4344.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 205,
+      "mediaId": "2867721d-5cd6-49c0-a50c-92de4abfe8c7",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d2dd7ad1-b8ff-4e19-a863-e8dcf0eeac48",
+      "name": "clip-00223 天游峰片区游览、山路与书院 C4346",
+      "start": 7008,
+      "end": 7128,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4346.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 292,
+      "sourceEnd": 532,
+      "mediaId": "dd931240-1238-4662-8880-8d5308f443ce",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "3af7b754-3de3-48e5-84f2-c171f04c1c76",
+      "name": "clip-00555 武夷山茶园、山谷步道与岩壁游览 C4534",
+      "start": 7128,
+      "end": 7747,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4534.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 201,
+      "sourceEnd": 1437,
+      "mediaId": "e9d7187d-d0e6-42e5-99d7-ae816d7a5970",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "9ba0bb71-cc4d-4d66-b01c-cbd5b0b1019e",
+      "name": "clip-00557 武夷山茶园、山谷步道与岩壁游览 C4535",
+      "start": 7747,
+      "end": 7949,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4535.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 412,
+      "mediaId": "89c531c3-8226-4f49-af37-4eb6351b4060",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "01ecb8f7-38e4-4edc-a169-32456c9ea0e3",
+      "name": "clip-00565 武夷山茶园、山谷步道与岩壁游览 C4541",
+      "start": 7949,
+      "end": 8388,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4541.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 910,
+      "mediaId": "41c4a5a8-655a-4d7c-8764-a4d82d115233",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "01bf6e1c-0eb7-46c9-acd0-dd099b715816",
+      "name": "clip-00566 武夷山茶园、山谷步道与岩壁游览 C4542",
+      "start": 8388,
+      "end": 8525,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4542.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 282,
+      "mediaId": "c5fdbc19-9fc1-4ba8-b96a-c4d2ad39c6ff",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "ce003480-2ae5-4143-90fb-70fe9494a545",
+      "name": "clip-00731 九曲溪竹筏漂流 C4658",
+      "start": 8525,
+      "end": 8962,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4658.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 9,
+      "sourceEnd": 882,
+      "mediaId": "d2523d1b-589d-4eec-9705-c52a6bfee065",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "200f8b14-1ee1-43a8-8f3c-649d1a6f4d3e",
+      "name": "clip-00195 天游峰片区游览、山路与书院 C4322",
+      "start": 8962,
+      "end": 9164,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4322.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 178,
+      "sourceEnd": 582,
+      "mediaId": "baad9521-ed9a-4cf5-a9f7-130662068726",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "f37e8df8-cf27-4fd7-8245-3ef329c2c218",
+      "name": "clip-00198 天游峰片区游览、山路与书院 C4325",
+      "start": 9164,
+      "end": 9394,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4325.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 473,
+      "mediaId": "e8e38b3c-9c45-4eec-bcac-4c0197df73e9",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "2840daf6-a3d0-44e5-8c02-b34e0224a445",
+      "name": "clip-00323 下梅古村街巷与水渠 C4395",
+      "start": 9394,
+      "end": 10599,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4395.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 2498,
+      "mediaId": "f0b47472-a0c2-4cf7-84cd-221146d1373d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "820a47c9-554c-4746-b33e-bf6930bc70cd",
+      "name": "clip-00339 下梅古村街巷与水渠 C4408",
+      "start": 10599,
+      "end": 10979,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4408.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 778,
+      "mediaId": "42a74f1d-a2d3-4001-9583-4c3f1a97e713",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "deb3eb59-328c-4156-9b88-2bcc8b20a98b",
+      "name": "clip-00327 下梅古村街巷与水渠 C4398",
+      "start": 10979,
+      "end": 11260,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4398.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 561,
+      "mediaId": "0fb3f97e-7057-4a3c-b847-a7bd9219ff5f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "747176a4-5421-4483-a241-b99a9b494a5e",
+      "name": "clip-00342 下梅古村街巷与水渠 C4410",
+      "start": 11260,
+      "end": 11720,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4410.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 919,
+      "mediaId": "8e903dfa-0961-43f8-9dc7-f7cde7059393",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "fdb401e4-8eaa-476c-a0c5-2c9f81a8fbd0",
+      "name": "clip-00351 下梅古村街巷与水渠 C4418",
+      "start": 11720,
+      "end": 12061,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4418.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 151,
+      "sourceEnd": 833,
+      "mediaId": "e33e4f0e-166a-4438-a1b3-518172cd0da7",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d5c782f6-f008-4389-87ba-a5d303ed006c",
+      "name": "clip-00353 下梅古村街巷与水渠 C4420",
+      "start": 12061,
+      "end": 12184,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4420.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 249,
+      "mediaId": "05647289-ac18-42b7-9b25-076539c7eb75",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "40d61551-544d-492e-b53f-376c4912f251",
+      "name": "clip-00362 下梅古村街巷与水渠 C4428",
+      "start": 12184,
+      "end": 12297,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4428.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 254,
+      "mediaId": "23a71fcd-7d2f-4154-8793-7f2f79f2d600",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "f6fdd663-3a5b-4195-8280-d5585a22700f",
+      "name": "clip-00363 下梅古村街巷与水渠 C4428",
+      "start": 12297,
+      "end": 12465,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4428.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 953,
+      "sourceEnd": 1289,
+      "mediaId": "23a71fcd-7d2f-4154-8793-7f2f79f2d600",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "0427e83b-eb29-4173-8004-efb606adf9dd",
+      "name": "clip-00375 下梅古村街巷与水渠 C4437",
+      "start": 12465,
+      "end": 13015,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4437.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 1141,
+      "mediaId": "fdb23112-81dd-4c31-96ee-72d84f3ed7b9",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "11a971cc-ae7f-46a2-acb0-5656f65303cd",
+      "name": "clip-00443 武夷山黑釉器物展陈与窑址步道 C4452",
+      "start": 13015,
+      "end": 13282,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4452.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 561,
+      "mediaId": "4594f672-0f78-4870-8637-5e0bece9ff10",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c0bba98f-2b7b-4d99-8ae8-1c8055dc7bfa",
+      "name": "clip-00449 武夷山黑釉器物展陈与窑址步道 C4456",
+      "start": 13282,
+      "end": 13552,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4456.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 147,
+      "sourceEnd": 687,
+      "mediaId": "209915cf-956b-4a85-bc65-c233e76a2c3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "92e819bc-04ab-4d56-8345-a82d10a91b6a",
+      "name": "clip-00455 武夷山黑釉器物展陈与窑址步道 C4463",
+      "start": 13552,
+      "end": 14306,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4463.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 38,
+      "sourceEnd": 1544,
+      "mediaId": "7c348b74-36c8-445f-b327-66e4afa3dcdc",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e78791de-77fa-4439-b27a-d85d3e723c91",
+      "name": "clip-00457 武夷山黑釉器物展陈与窑址步道 C4465",
+      "start": 14306,
+      "end": 14821,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4465.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 137,
+      "sourceEnd": 1166,
+      "mediaId": "cf2ad708-df69-430e-9769-2b0a5e369c95",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "be000e15-b2a3-4bda-a23a-f9c8cf407aaf",
+      "name": "clip-00505 武夷山茶园、山谷步道与岩壁游览 C4495",
+      "start": 14821,
+      "end": 15688,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4495.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 85,
+      "sourceEnd": 1818,
+      "mediaId": "f5fb6791-732c-43b8-9f42-3d89791d731e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c21c9bef-7c9a-49ce-bb77-29e5f59042ba",
+      "name": "clip-00528 武夷山茶园、山谷步道与岩壁游览 C4510",
+      "start": 15688,
+      "end": 16317,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4510.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 1256,
+      "mediaId": "6a4c4ab2-f589-4e70-b74b-30ce2ec95c53",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "ea82fc68-7719-4490-bc04-567ff9fc840b",
+      "name": "clip-00157 天游峰片区游览、山路与书院 C4297",
+      "start": 16317,
+      "end": 16771,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4297.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 94,
+      "sourceEnd": 1002,
+      "mediaId": "1d837792-dd4e-437f-a9b0-e900e521e689",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "84e4b75f-d714-4c54-ad4a-d405b3f4df76",
+      "name": "clip-00158 天游峰片区游览、山路与书院 C4298",
+      "start": 16771,
+      "end": 16975,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4298.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 498,
+      "mediaId": "631f93ca-9670-4022-9a44-ceb6cc2df549",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "82c284e6-0bb3-4b31-9e26-0065859b23e0",
+      "name": "clip-00158 天游峰片区游览、山路与书院 C4298",
+      "start": 16975,
+      "end": 17124,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4298.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1050,
+      "sourceEnd": 1347,
+      "mediaId": "631f93ca-9670-4022-9a44-ceb6cc2df549",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "3c1c1657-ba45-483e-b06d-0549d047d36a",
+      "name": "clip-00159 天游峰片区游览、山路与书院 C4299",
+      "start": 17124,
+      "end": 17246,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4299.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 286,
+      "mediaId": "914a73dd-b7ea-44b0-80a8-c56a31044fef",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4aeb17e5-6f71-4e3a-9e29-1fb27fe645d2",
+      "name": "clip-00178 天游峰片区游览、山路与书院 C4310",
+      "start": 17246,
+      "end": 17586,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4310.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 23,
+      "sourceEnd": 702,
+      "mediaId": "56076815-def8-45d3-9756-1b78f96cc064",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4e23f0e5-778f-45e1-a651-99a3210a98df",
+      "name": "clip-00178 天游峰片区游览、山路与书院 C4310",
+      "start": 17586,
+      "end": 17870,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4310.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 702,
+      "sourceEnd": 1269,
+      "mediaId": "56076815-def8-45d3-9756-1b78f96cc064",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "6c2d4058-0417-4145-a589-3069b927b0c2",
+      "name": "clip-00519 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 17870,
+      "end": 18093,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 43,
+      "sourceEnd": 488,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "0b9975f2-18c8-4188-8fbf-d8693c6ffd4c",
+      "name": "clip-00520 武夷山茶园、山谷步道与岩壁游览 C0114",
+      "start": 18093,
+      "end": 18278,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0114.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 949,
+      "sourceEnd": 1318,
+      "mediaId": "5ce29d50-bab7-4ab8-8e4f-53a21a2398ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c9899c1e-ebde-47e4-a03a-751f434ef8c2",
+      "name": "clip-00562 武夷山茶园、山谷步道与岩壁游览 C0117",
+      "start": 18278,
+      "end": 18439,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0117.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 321,
+      "mediaId": "d4c754d4-3600-46b6-9d6e-6c97494cb78e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "5a5499ef-0886-4bf0-8b88-60e47728f3a7",
+      "name": "clip-00015 抵达武夷山、晚饭与餐后口述 C4229",
+      "start": 18439,
+      "end": 18761,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4229.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 676,
+      "mediaId": "3e3d1a10-5ce9-4578-92d8-ddb9cad113d4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4546fbfa-bb88-4ccd-925d-4bcd7a11b63a",
+      "name": "clip-00167 天游峰片区游览、山路与书院 C0102",
+      "start": 18761,
+      "end": 19026,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0102.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 134,
+      "sourceEnd": 664,
+      "mediaId": "27813a53-003c-49d9-b88a-a60f2947cbc1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "ac394ff1-f289-4876-88b8-66502f52a12c",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19026,
+      "end": 19083,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "023bae56-2868-4b5b-9f97-28643379e9e2",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19083,
+      "end": 19140,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 70,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 50.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "002ff342-4a2d-483f-893c-4a8c2a243986",
+      "name": "clip-00212 天游峰片区游览、山路与书院 C0103",
+      "start": 19140,
+      "end": 19320,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0103.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 127,
+      "sourceEnd": 487,
+      "mediaId": "0af2e852-0739-4e0e-9293-94d0ef83ae9c",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d272d4da-d4d0-4dbe-a722-61466413db84",
+      "name": "clip-00325 下梅古村街巷与水渠 C0111",
+      "start": 19320,
+      "end": 19698,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\a7r6\\C0111.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 22,
+      "sourceEnd": 778,
+      "mediaId": "ab7a3215-d45d-443e-ad79-d3f70cab93cb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "53a768d0-6dfe-4bae-9f76-e4633e8cb0e1",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19698,
+      "end": 19812,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 14,
+      "sourceEnd": 241,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "b15bd205-ed36-4d54-8da5-48679d0a6bd8",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19812,
+      "end": 19926,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 497,
+      "sourceEnd": 725,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "789e41c5-3616-4079-a08d-74a8e8ef836d",
+      "name": "clip-00074 齐云峰清晨山景、航拍与离开前口述 C4260",
+      "start": 19926,
+      "end": 20009,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4260.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 725,
+      "sourceEnd": 891,
+      "mediaId": "2e0f52d9-c2fa-4686-bc83-7a6d6954f8ee",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "2dec97c0-5540-4e20-ac5d-858c960c1ab2",
+      "name": "clip-00523 武夷山茶园、山谷步道与岩壁游览 C4505",
+      "start": 20009,
+      "end": 20264,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4505.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 27,
+      "sourceEnd": 537,
+      "mediaId": "31a16501-a97d-4e9e-bc2a-2f2e5c93a063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "fef3bb3e-a283-479f-afb4-75d2131702aa",
+      "name": "clip-00536 武夷山茶园、山谷步道与岩壁游览 C4516",
+      "start": 20264,
+      "end": 20741,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4516.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 986,
+      "mediaId": "7d331e24-d446-478d-b511-d4146b2096e8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "9f8330e6-03bb-4979-88cc-01e399ecaf18",
+      "name": "clip-00018 抵达武夷山、晚饭与餐后口述 C4234",
+      "start": 20741,
+      "end": 21039,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4234.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 62,
+      "sourceEnd": 657,
+      "mediaId": "7da5b50b-62fe-41f2-860f-061e41bfb254",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "5227dff1-4f1e-4d8a-98f4-0c04f79799d2",
+      "name": "clip-00018 抵达武夷山、晚饭与餐后口述 C4234",
+      "start": 21039,
+      "end": 21799,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4234.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1152,
+      "sourceEnd": 2671,
+      "mediaId": "7da5b50b-62fe-41f2-860f-061e41bfb254",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e5bb47fb-cf9c-4890-a08d-f419edf128bc",
+      "name": "clip-00284 武夷山晚饭 C4362",
+      "start": 21799,
+      "end": 22035,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4362.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 562,
+      "mediaId": "63439ee1-19cd-4654-86d5-e37a24faf798",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "7ef81ca5-a78f-442f-969b-036ed8aa329a",
+      "name": "clip-00284 武夷山晚饭 C4362",
+      "start": 22035,
+      "end": 22231,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4362.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1076,
+      "sourceEnd": 1467,
+      "mediaId": "63439ee1-19cd-4654-86d5-e37a24faf798",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c0e789eb-de8a-4d38-876c-cea85f788978",
+      "name": "clip-00285 武夷山晚饭 C4363",
+      "start": 22231,
+      "end": 22721,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4363.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 57,
+      "sourceEnd": 1036,
+      "mediaId": "cff46d1c-1104-45e8-9afe-c0d2b7b9efb1",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "32a6a10f-96fb-4df1-b61b-bd95fa4dbeb3",
+      "name": "clip-00024 抵达武夷山、晚饭与餐后口述 C4240",
+      "start": 22721,
+      "end": 22925,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4240.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 440,
+      "mediaId": "d4936cc9-25c2-4518-b348-d7e29425141e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e8db9da8-3f8f-4b8d-9c55-2f8d4ef28d26",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 22925,
+      "end": 23534,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 19,
+      "sourceEnd": 1235,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "9f1db5d2-619f-4413-b6ea-d2fb6a859e9f",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 23534,
+      "end": 23879,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1649,
+      "sourceEnd": 2338,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "ff0a6bf3-5432-4e7a-95dc-214bc993904e",
+      "name": "clip-00286 武夷山晚饭 C4364",
+      "start": 23879,
+      "end": 24369,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4364.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3565,
+      "sourceEnd": 4544,
+      "mediaId": "fdf6253b-2a1c-48df-be3c-a54a3097aedb",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "7cfccddd-a48c-46ae-8655-6c6836069dff",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24369,
+      "end": 24694,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 100,
+      "sourceEnd": 749,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "da2ded98-9586-40cb-b0c0-5f4dff69e185",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24694,
+      "end": 24833,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1582,
+      "sourceEnd": 1860,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "2ce7bd68-c7e4-4ea0-8758-1db81acff015",
+      "name": "clip-00290 武夷山晚饭 C4369",
+      "start": 24833,
+      "end": 25130,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4369.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3590,
+      "sourceEnd": 4183,
+      "mediaId": "02651895-ea29-4fcd-85da-7977d4cd050f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "271b8b49-adc9-4aba-9fd9-a095d6961876",
+      "name": "clip-00477 武夷山午饭 C4470",
+      "start": 25130,
+      "end": 25767,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4470.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 221,
+      "sourceEnd": 1494,
+      "mediaId": "3ef2c7ea-bc32-42ad-a9a3-17b66a03255d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "b998f7c4-a4df-40c0-b472-ea400d9f61ad",
+      "name": "clip-00477 武夷山午饭 C4470",
+      "start": 25767,
+      "end": 25921,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4470.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2131,
+      "sourceEnd": 2439,
+      "mediaId": "3ef2c7ea-bc32-42ad-a9a3-17b66a03255d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "07f9ce94-4c34-4099-8643-ae7733876ce6",
+      "name": "clip-00479 武夷山午饭 C4472",
+      "start": 25921,
+      "end": 26185,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4472.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 32,
+      "sourceEnd": 560,
+      "mediaId": "ff0c0ce8-fefb-45bf-831a-f6cee3b04dde",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "cde652f8-21a1-4305-b9cd-4bd54a406c0c",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 26185,
+      "end": 26970,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 285,
+      "sourceEnd": 1854,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "58b079b2-8faf-4f1e-ac2b-0c0798da7688",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 26970,
+      "end": 27285,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2047,
+      "sourceEnd": 2677,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "25da905d-95a6-4663-ac07-bf6c3ac77474",
+      "name": "clip-00478 武夷山午饭 C4471",
+      "start": 27285,
+      "end": 27454,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4471.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2863,
+      "sourceEnd": 3200,
+      "mediaId": "869ea7da-9911-41dc-bb57-ed4e9316b5a4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "731e990b-d677-4701-bbfb-49183d63554e",
+      "name": "clip-00482 武夷山午饭 C4475",
+      "start": 27454,
+      "end": 27682,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4475.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 38,
+      "sourceEnd": 493,
+      "mediaId": "f5b7effc-d24e-4f68-9bb5-0bc6d6c7099a",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "7c6823d2-eb61-49ad-8b57-d7b50b36e8fa",
+      "name": "clip-00480 武夷山午饭 C4473",
+      "start": 27682,
+      "end": 28093,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4473.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 28,
+      "sourceEnd": 849,
+      "mediaId": "51b721ef-f0b0-41af-9ebf-7761c7770a3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "d1ad561e-278f-4efb-a027-03eeca4ebbe4",
+      "name": "clip-00480 武夷山午饭 C4473",
+      "start": 28093,
+      "end": 28671,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4473.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3398,
+      "sourceEnd": 4553,
+      "mediaId": "51b721ef-f0b0-41af-9ebf-7761c7770a3f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e3358934-8e96-4960-864b-67586110b79a",
+      "name": "clip-00483 武夷山午饭 C4477",
+      "start": 28671,
+      "end": 29222,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4477.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 56,
+      "sourceEnd": 1157,
+      "mediaId": "59ff2631-418a-4557-8521-3e41c33c51bc",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "4b329524-86da-4321-9144-9f5a0929b07f",
+      "name": "clip-00632 武夷山街市晚饭与小吃 C4560",
+      "start": 29222,
+      "end": 29360,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4560.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 275,
+      "mediaId": "62c4bb9f-5628-4a69-bc0e-71aafe051c5f",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "e06a829e-2029-4aab-a918-8870b0eb4724",
+      "name": "clip-00633 武夷山街市晚饭与小吃 C4561",
+      "start": 29360,
+      "end": 29989,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4561.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 164,
+      "sourceEnd": 1421,
+      "mediaId": "efbd429e-3c2c-4080-9194-6a2ff8c4b1a8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "19a7a779-aeaa-4458-885c-cc96f9c211a2",
+      "name": "clip-00633 武夷山街市晚饭与小吃 C4561",
+      "start": 29989,
+      "end": 30133,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4561.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1699,
+      "sourceEnd": 1987,
+      "mediaId": "efbd429e-3c2c-4080-9194-6a2ff8c4b1a8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "2ee2e610-55f7-46e0-b516-cc468bdc89ce",
+      "name": "clip-00796 武夷山前往景德镇沿途 C4683",
+      "start": 30133,
+      "end": 30223,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 268,
+      "sourceEnd": 448,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "96975131-f191-49e4-ad8f-77aa78ef9591",
+      "name": "clip-00798 武夷山前往景德镇沿途 C4683",
+      "start": 30223,
+      "end": 30323,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2097,
+      "sourceEnd": 2297,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "2961a05c-2db8-4f55-8b71-c0f90d230a4d",
+      "name": "clip-00799 武夷山前往景德镇沿途 C4683",
+      "start": 30323,
+      "end": 30527,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4683.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 2939,
+      "sourceEnd": 3347,
+      "mediaId": "42e8dcce-2b12-4785-a09f-c094144e6063",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "86aa87e8-e912-4547-8a2c-3fabff2f1f9b",
+      "name": "clip-00662 九曲溪竹筏漂流 C4586",
+      "start": 30527,
+      "end": 30904,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4586.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 114,
+      "sourceEnd": 867,
+      "mediaId": "b4751288-e156-4d52-b068-80187a6dd851",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "be40afbc-a187-4404-98e7-68f4ccf257c7",
+      "name": "clip-00664 九曲溪竹筏漂流 C4588",
+      "start": 30904,
+      "end": 31037,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4588.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 147,
+      "sourceEnd": 413,
+      "mediaId": "b47731f0-1486-44c2-b959-6dde39034445",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "75a7784d-14e4-4b80-a965-e0ff7e526277",
+      "name": "clip-00665 九曲溪竹筏漂流 C4589",
+      "start": 31037,
+      "end": 31197,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4589.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 0,
+      "sourceEnd": 319,
+      "mediaId": "7d5633a0-cdc8-4eb8-a199-0c67214c0453",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "9b536a0b-fa4e-4b43-a568-05fc6698a5bf",
+      "name": "clip-00733 九曲溪竹筏漂流 C4660",
+      "start": 31197,
+      "end": 31581,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4660.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 23,
+      "sourceEnd": 790,
+      "mediaId": "eee9ccc1-0290-4127-8d8d-35c1e23cb1b8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "43c758ee-8048-41e0-b126-925dffa4d535",
+      "name": "clip-00217 天游峰片区游览、山路与书院 C4340",
+      "start": 31581,
+      "end": 31905,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4340.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 75,
+      "sourceEnd": 723,
+      "mediaId": "be46e0e6-c936-43b8-be5f-b99c5bfaa985",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "6680e7e9-5170-4086-8f15-043aca3830bd",
+      "name": "clip-00217 天游峰片区游览、山路与书院 C4340",
+      "start": 31905,
+      "end": 32060,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4340.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1908,
+      "sourceEnd": 2217,
+      "mediaId": "be46e0e6-c936-43b8-be5f-b99c5bfaa985",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "03391537-42de-4539-a231-56830115de9f",
+      "name": "clip-00695 九曲溪竹筏漂流 C4618",
+      "start": 32060,
+      "end": 32286,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4618.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 3,
+      "sourceEnd": 455,
+      "mediaId": "9632f801-6ad4-4f1a-b590-ab6748eddde4",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "241a5824-e09c-4f27-bdb5-f5d34f2247a4",
+      "name": "clip-00741 九曲溪竹筏漂流 C4666",
+      "start": 32286,
+      "end": 32429,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4666.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 124,
+      "sourceEnd": 409,
+      "mediaId": "acc12426-a87c-43b7-9826-0d4cce211032",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "ce3b6227-56c0-4266-a7c0-73be966c7893",
+      "name": "clip-00782 竹筏结束后小吃与回停车处 C4670",
+      "start": 32429,
+      "end": 32910,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day7\\C4670.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 112,
+      "sourceEnd": 1073,
+      "mediaId": "cbfeaff7-6078-4426-bcb3-f7589d991c19",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "c6389b12-99a3-46f8-8c4a-467a4bb402fa",
+      "name": "clip-00031 齐云峰附近车宿准备 C4244",
+      "start": 32910,
+      "end": 33576,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day4\\C4244.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 91,
+      "sourceEnd": 1422,
+      "mediaId": "e447d351-a465-4216-921e-79db4fbae491",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "3d2d822b-9033-4f0a-bb7d-33f0bd472cd4",
+      "name": "clip-00524 武夷山茶园、山谷步道与岩壁游览 C4506",
+      "start": 33576,
+      "end": 34124,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4506.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 452,
+      "sourceEnd": 1547,
+      "mediaId": "7d059b15-8243-4ec2-9759-4a8a415a088b",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "b706c95c-09ed-4102-931b-b5ae88721433",
+      "name": "clip-00570 武夷山茶园、山谷步道与岩壁游览 C4545",
+      "start": 34124,
+      "end": 34508,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4545.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 62,
+      "sourceEnd": 829,
+      "mediaId": "68a4d6a4-5633-4b65-964e-444fcfc7593d",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "f5272232-0d02-4ef4-8e69-943545495961",
+      "name": "clip-00037 齐云峰清晨山景、航拍与离开前口述 C4249",
+      "start": 34508,
+      "end": 35009,
+      "enabled": true,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day5\\C4249.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 1528,
+      "sourceEnd": 2529,
+      "mediaId": "56f5918e-4e69-424a-ba85-fdb8947168f8",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    },
+    {
+      "kind": "audio",
+      "track": 1,
+      "id": "08bc70d6-5532-4c46-a59b-e9afbbcc5164",
+      "name": "clip-00321 下梅古村街巷与水渠 C4393",
+      "start": 36050,
+      "end": 36350,
+      "enabled": false,
+      "file": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\zve1\\day6\\C4393.mp4",
+      "sourceFps": 59.94,
+      "sourceStart": 13,
+      "sourceEnd": 613,
+      "mediaId": "1e865e84-7e43-4fe4-bebf-b8c53eacec9e",
+      "speed": {
+        "Percentage": 100.0,
+        "PitchCorrection": true
+      },
+      "fades": {
+        "FadeIn": 0.0,
+        "FadeOut": 0.0
+      },
+      "color": "Orange"
+    }
+  ]
+}

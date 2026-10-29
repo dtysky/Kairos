@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-10-29T10:41:16.267Z",
+  "updatedAt": "2026-10-29T16:28:34.611Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-29T10:40:21Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-10-29T16:28:31Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,17 +19,13 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "f4a609b1-cd46-4dc4-bb40-cef2b7a32ec7",
-        "status": "failed",
-        "startedAt": "2026-10-29T10:41:16.206Z",
-        "finishedAt": "2026-10-29T10:41:16.267Z",
-        "mode": "auto",
+        "attemptId": "71d3f323-3118-469f-b54f-92b6d33f5f7b",
+        "status": "succeeded",
+        "startedAt": "2026-10-29T16:28:31.066Z",
+        "finishedAt": "2026-10-29T16:28:34.610Z",
+        "mode": "manual",
         "retention": "latest-only",
-        "action": "save_min_gan_before_commit",
-        "error": {
-          "code": "resolve_app_unavailable",
-          "message": "Unable to connect to DaVinci Resolve. Make sure Resolve Studio is running and external scripting is enabled."
-        }
+        "action": "manual"
       },
       "snapshotAttempts": [
         {
@@ -249,10 +245,55 @@
             "code": "resolve_app_unavailable",
             "message": "Unable to connect to DaVinci Resolve. Make sure Resolve Studio is running and external scripting is enabled."
           }
+        },
+        {
+          "attemptId": "e37356a9-f518-481c-9dd8-de7810a72313",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T16:08:27.766Z",
+          "finishedAt": "2026-10-29T16:08:31.221Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "f5665ca3-ba8b-4421-93dc-890ed2c2abb6",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T16:19:01.308Z",
+          "finishedAt": "2026-10-29T16:19:05.408Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "9e5a3c18-5f80-4b52-b21d-55fd67cc00a4",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T16:27:06.324Z",
+          "finishedAt": "2026-10-29T16:27:10.690Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "39167748-e8ae-4c06-9917-dfacc546914e",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T16:27:35.440Z",
+          "finishedAt": "2026-10-29T16:27:39.182Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "71d3f323-3118-469f-b54f-92b6d33f5f7b",
+          "status": "succeeded",
+          "startedAt": "2026-10-29T16:28:31.066Z",
+          "finishedAt": "2026-10-29T16:28:34.610Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-10-29T10:41:16.267Z"
+      "updatedAt": "2026-10-29T16:28:34.611Z"
     }
   }
 }
