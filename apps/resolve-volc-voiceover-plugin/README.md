@@ -88,10 +88,32 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
   timeline items.
 - Uses a compact voice profile selector backed by the Supervisor summary of
   workspace global `config/runtime.json`.
-- Synthesizes one audio file for a single selected subtitle, or one merged
-  audio file for all selected subtitles when multiple rows are selected. Merged
-  text strips terminal `。` / `.` from each subtitle line and never auto-adds a
-  period; `？`, `！`, and internal punctuation are preserved.
+- `Align to subtitles` is on by default (plugin 0.3.3). Selected rows are
+  synthesized together once with TTS2.0/ICL2.0 word timestamps. Each original
+  subtitle gets an independent audio item at its original start, referencing a
+  different source range of the same imported audio file. Sentence tails retain
+  the pause through the midpoint to the next sentence; the final tail reaches
+  the media end. Audio source end frames are not reduced by one frame. Subtitle text, timing
+  and video edits remain unchanged. Merged text strips terminal `。` / `.` from
+  each subtitle line; `？`, `！`, and internal punctuation are preserved.
+- Aligned sentences are inserted in full at each
+  original subtitle start, even when the natural speech extends beyond its end.
+  The visible `Voiceover` column reports `Inserted +Nms` using Resolve's actual
+  end frame. There is no option to skip overlong sentences.
+  Missing/invalid timing still blocks the affected rows. Subtitles and video
+  remain unchanged; there is no automatic speed change, text rewrite or ripple edit.
+- Uncheck `Align to subtitles` for the previous single merged insertion at the
+  first subtitle's start. Old Supervisor versions block aligned generation
+  before calling the paid provider; update/restart Supervisor first.
+- Audio and timing are cached together. Ordinary retries reuse the audio;
+  `Force regenerate` explicitly requests new synthesis. Missing/corrupt timing
+  never triggers another paid request automatically. New audio never overwrites
+  an older file already used by Resolve. Identical inserted ranges are skipped;
+  manually moved/trimmed generated items are retained and reported.
+- Before inserting, recheck project/timeline and selected subtitle identities,
+  text and frame bounds. Keep a temporary recovery timeline until placement
+  readback and saving succeed. Failure rolls back only this batch's new audio
+  and retains the named recovery copy; existing user audio is never deleted.
 - Imports generated audio into Media Pool bin `Kairos Voiceover / <timeline>`.
   Timeline insertion prefers the lowest empty enabled audio track from A2
   upward, then reuses a non-overlapping `Kairos VO` track, then creates a new
@@ -107,7 +129,7 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 The media directory intentionally contains only Resolve-importable audio:
 
 ```text
-vo_<unit>_<request>.mp3
+vo_<unit>_<request>_<audioHash>.mp3
 ```
 
 Request / insertion debug JSON is project-local under
@@ -190,8 +212,9 @@ headers for synthesis requests.
 
 ## Limitations
 
-Resolve scripting does not expose stable Edit-page selected subtitle timeline
-items. Selection is therefore maintained in the plugin's subtitle list. The
+The plugin maintains selection in its subtitle list. Resolve 21.0.4+ has a
+native timeline selection API, but this plugin retains the explicit narration
+track boundary. The
 playhead button scrolls to and selects the subtitle covering the current
 playhead frame and stores that row as the range anchor; the `Range` button then
 selects every row from that anchor to the currently clicked row using the
@@ -222,6 +245,12 @@ If Resolve is launched without a project that can be matched to a Kairos project
 brief, early bootstrap logs fall back to workspace `.tmp/resolve-volc-voiceover-plugin/`.
 
 ## Debug Smoke Test
+
+The alignment contract and recorded verification are in
+[`designs/resolve-voiceover-alignment.md`](../../designs/resolve-voiceover-alignment.md).
+Alignment currently supports Chinese/English TTS2.0 and ICL2.0 profiles; a
+provider word spanning two original subtitle rows is reported for review, never
+split by character-count estimates. Only validated timing is inserted.
 
 Start the Kairos Supervisor, install the plugin, open Resolve, choose:
 

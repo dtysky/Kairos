@@ -1,5 +1,14 @@
 # Kairos — 架构设计 v2
 
+## 2026-10-29 Resolve 21.1.2 适配边界
+
+官方执行链仍是 Node/Agent -> vendored Resolve Python host -> Scripting API。新增无工程副作用的版本能力查询，按版本报告最低要求并区分文档支持与实际执行验证。21.1+ 使用 `README.md + DaVinciResolveScript.pyi + CHANGELOG.md`，旧版文档仅作兼容参考。
+
+`scripts/resolve-edit-tools.py` 是 Agent 的明确维护入口：读取当前工程中唯一匹配的时间线和原生选区，以 item unique id 为写目标；帧预览按 timeline-relative frame offset 返回编码图片或写入全新文件。视频淡入淡出、转场和白名单属性复制要求显式 apply、当前时间线匹配、目标存在且视频轨未锁定；修改前复制时间线并保存恢复点，恢复原目标为当前时间线后执行；验证后保存，成功和失败都保留恢复副本，失败明确报告可能已有部分改动，不重建原时间线或默认处理全片。此入口不新增 Supervisor API、项目 schema 或 Flow Plan capability。
+
+`timeline.generate` 恒速变速在单次 append 后、实际帧读取和下一 clip cursor 更新前执行，校验 `GetSpeed`、源区间与实际时长，保留已确认 source windows、clip 编号和字幕真值；速度写入 KTEP，字幕按实际 clip 位置及速度映射。能力不足在清空/续建前阻塞。音频处理、调色及转录/字幕正文写入不属于本次适配。
+
+
 照片收尾维护脚本的原生 Fusion 图、既有素材引用、素材池不变校验及幂等边界见 [Resolve 照片收尾脚本](./resolve-photo-finishing.md)；它是现有 Resolve 时间线维护能力，不新增 Supervisor API 或 Flow Plan 阶段。
 
 ## 2026-10-18 Resolve 剪辑工程备份尝试
@@ -252,11 +261,11 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 本轮冻结后的正式口径如下：
 
 - 插件目录固定为 `apps/resolve-volc-voiceover-plugin/`，安装到 Resolve `Fusion/Scripts/Edit` 菜单；它是独立 Resolve Lua/Fusion UI 脚本，通过本机 `127.0.0.1:8940` Supervisor TSV API 请求火山合成音频，若 Resolve Lua 缺少 socket/TCP 能力则自动改用 Supervisor 管理的 workspace 文件 IPC（`.tmp/resolve-volc-voiceover-plugin/ipc/requests|responses`），Lua 自己完成 Resolve Media Pool 导入、音轨选择、timeline append、marker 与保存。插件不再依赖 Python backend、`.cmd`、curl 或代理链；HTTP 与文件 IPC 都必须保持本地、command-free。
-- 插件负责枚举当前 timeline 的 subtitle tracks，并要求用户在插件面板里指定旁白字幕轨道；字幕列表只加载该轨条目，列表支持鼠标多选 / 范围选择 / 追加选择，播放头定位和 Resolve In/Out 批量选择也只作用于所选轨道。多字幕轨时间线不得默认全轨混扫，避免把 source-speech / 原声字幕误当旁白合成。官方 Resolve scripting API 当前没有稳定 `GetSelectedTimelineItems()`，所以第一版不承诺读取 Edit 页原生多选字幕。
+- 插件负责枚举当前 timeline 的 subtitle tracks，并要求用户在插件面板里指定旁白字幕轨道；字幕列表只加载该轨条目，列表支持鼠标多选 / 范围选择 / 追加选择，播放头定位和 Resolve In/Out 批量选择也只作用于所选轨道。多字幕轨时间线不得默认全轨混扫，避免把 source-speech / 原声字幕误当旁白合成。Resolve 21.0.4+ 已提供 `Timeline.GetSelectedClips()`，但本轮配音插件不改接；其字幕选择仍由轨道限定的面板维护，非空原生字幕多选尚待实测。
 - 插件提供四个正式选择入口：面板多选、当前播放头定位并选中覆盖字幕、当前 Mark In/Out 范围重叠字幕、清空当前选择。
 - 字幕文本读取只能来自 Resolve subtitle `TimelineItem` 可暴露字段：`GetName()`、`GetProperty().Text / Subtitle / Caption`、`GetClipProperty()`。如果当前 Resolve 版本不暴露字幕正文，插件必须阻塞合成并提示用户导入 SRT 或粘贴文本，不能猜内容。
 - 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。`volcApiKey`、默认 voice profile 和 profiles 注册表统一写在 workspace 全局 `config/runtime.json` 的 `voiceover` 块中。插件面板只展示 profile 下拉选择，不允许在 Resolve 面板里临时输入 API key / speaker / resource / model / language，避免配置散落到 Resolve 工程或插件私有文件。
-- 单选字幕时生成一个音频文件和一个 timeline audio item；多选字幕时不做启发式拆分，直接把用户选中的所有字幕按 timeline 时间排序、移除每行末尾 `。` / `.`、拼成一个 TTS 文本、生成一个 merged audio item，并插入到第一条所选字幕的起始帧。merged unit 的 debug record 必须记录 `isMergedGroup / groupSize / sourceSubtitleIds / sourceSubtitles`，便于排查和后续 replacement。Supervisor 负责项目匹配、`voiceoverMedia` 候选选择、runtime profile 读取、火山 direct fetch、cache、音频落盘、duration probe 与 manifest 写入，但不连接 Resolve。生成文件必须落在当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 声明的配音媒体根下。`voiceoverMedia.path` 是主路径，`voiceoverMedia.alternatePaths[].path` 是多设备候选路径，`voiceoverMedia.resolveProjectAliases[]` 可显式把临时 / debug Resolve 工程名归属到该 Kairos 项目；Supervisor 按当前设备上第一个可写候选路径创建 `<safe Resolve project>/<safe timeline>/` 正式媒体目录，目录中只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。请求缓存、debug manifest 和插件日志必须写到匹配项目的 `projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/` 下；只有无法匹配项目的早期 bootstrap 日志可退到 workspace `.tmp/resolve-volc-voiceover-plugin/`。若当前 Resolve 工程名无法唯一匹配 Kairos 项目，或项目未配置可写 `voiceoverMedia`，合成必须阻塞并提示配置，不再把正式音频产物写到 `~/Movies/KairosVoiceover/`。
+- 插件默认开启 `Align to subtitles`：选中字幕仍整组合成一次，通过火山 TTS2.0 / ICL2.0 `enable_subtitle` 返回的字词时间戳逐句对齐，多个 audio item 引用同一完整音频的不同源区间，分别落到各条原字幕起点。句尾保留至相邻句停顿中点，最后一句保留至媒体尾部；按自然时长完整插入，超出字幕结束只提示；不提供超长跳过选项。无法可靠对齐时显示逐句阻塞原因；不自动变速、不移动字幕或画面。关闭该选项保留旧的整段插入。音频和时间戳一起缓存，Force 才重新生成，正式媒体以内容 hash 区分且不覆盖旧音频；重复落轨跳过同一生成片段。详见 [字幕配音分句对齐](./resolve-voiceover-alignment.md)。 合并文本继续移除每行末尾 `。` / `.`，保留问号、叹号和句内标点。merged unit 的 debug record 必须记录 `isMergedGroup / groupSize / sourceSubtitleIds / sourceSubtitles`，便于排查和后续 replacement。Supervisor 负责项目匹配、`voiceoverMedia` 候选选择、runtime profile 读取、火山 direct fetch、cache、音频落盘、duration probe 与 manifest 写入，但不连接 Resolve。生成文件必须落在当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 声明的配音媒体根下。`voiceoverMedia.path` 是主路径，`voiceoverMedia.alternatePaths[].path` 是多设备候选路径，`voiceoverMedia.resolveProjectAliases[]` 可显式把临时 / debug Resolve 工程名归属到该 Kairos 项目；Supervisor 按当前设备上第一个可写候选路径创建 `<safe Resolve project>/<safe timeline>/` 正式媒体目录，目录中只保存 Resolve 直接导入的 `vo_<unit>_<request>_<audioHash>.mp3`。请求缓存、debug manifest 和插件日志必须写到匹配项目的 `projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/` 下；只有无法匹配项目的早期 bootstrap 日志可退到 workspace `.tmp/resolve-volc-voiceover-plugin/`。若当前 Resolve 工程名无法唯一匹配 Kairos 项目，或项目未配置可写 `voiceoverMedia`，合成必须阻塞并提示配置，不再把正式音频产物写到 `~/Movies/KairosVoiceover/`。
 - 插入时间线时创建或复用 `Kairos VO` 音频轨，导入前创建或复用 Media Pool bin `Kairos Voiceover / <timelineName>` 并切到该 bin，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；Resolve 面板只暴露 paid generation 的正式路径 `Insert`，不再提供只打开系统播放器的 Preview 按钮。后端 preview mode 仅保留为命令行调试入口。默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
 - `voiceoverMedia` 与项目级 `audioMedia` 在 `/ingest-gps` 编辑，后者共享 BGM/SFX/手工音频目录，不拆角色字段。工程重链统一合并两者的 primary/alternate 映射，在整个 Media Pool 查找文件，素材移动到其他 bin 后仍参与重链；不以 bin 是否存在判断是否跳过。
 - 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把项目 `.tmp` 中的 debug manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。
@@ -266,9 +275,9 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 当前 DaVinci Resolve scripting 不再只依赖外部链接或历史实现记忆：
 
 - Kairos 已新增本地工作文档 `.ai/knowledge/davinci-resolve-scripting.md`
-- 该文档吸收用户指定的 X-Raym Gist 镜像与本机 Resolve 官方 `README.txt` 的关键 API 口径
+- 该文档吸收用户指定的 X-Raym Gist 镜像与本机 Resolve 官方 `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) 的关键 API 口径
 - 任何 DaVinci Resolve scripting、`/color`、Resolve export、DRX/DRT、LUT automation、render job、Group、node graph 或 vendored Resolve host 任务，必须先读该本地文档
-- 版本敏感方法仍需按当前安装版 Resolve `README.txt` 实测/核对，不能从记忆或旧设计推断
+- 版本敏感方法仍需按当前安装版 Resolve `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) 实测/核对，不能从记忆或旧设计推断
 - 当前明确记录的高风险点包括：官方 docs 有 `SetNodeEnabled()` 但没有可靠 `GetNodeEnabled()`，`GetToolsInNode()` 只能证明 OFX shell 存在，不能证明 Gyroflow 已完成 source-specific load
 
 ## 0.11 2026-04-23 DaVinci color 固定节点图与项目级批处理补记
@@ -1154,7 +1163,7 @@ vendor/resolve-color-host/
 - `timeline.generate` 不再调用 LLM / Agent reviewer，不写 `rough-cut-base / segment-cuts / reviews / agent-pipeline` 作为正式门槛
 - `material-slots.json.treatments` 是音量/加速唯一正式覆盖来源：缺省 `{audio:0,speed:1}`，默认字段可省略；`audio` 单位 dB，静音 `-100`；非照片非航拍 span 只要有 transcript、transcriptSegments 或 `semanticKind=speech/mixed` 就不得静音；航拍音轨总是在 timeline.generate 中强制 disabled；`speed` 单位倍速，但只能写 `1..5` 的整数倍
 - Resolve media pool 的 edit namespace 必须按 chronology event title 组织，不得把 spanId/assetId 作为正式审查一级分组
-- `speed > 1` 当前不应用到 Resolve rough cut；host 只记录 ignored/pending，不生成 proxy media、不走 FCPXML，也不猜未公开的 `TimelineItem` speed key
+- 显式行车／航拍 `speed > 1` 在 Resolve 21.1+ 使用原生 `TimelineItem.SetSpeed`；清空/续建前检查版本，append 后只变速一次并校验源范围、速度、实际帧位和 linked items。照片保持 1 倍；既有允许加速的类型不变。不生成 proxy、不走 FCPXML、不再静默 ignored/pending。
 - `timeline.generate` 的 `runs/current.json` record 只记录 timeline 名称、clipCount、subtitleCueCount、验证摘要和输出路径；完整 KTEP/manifest/clip 明细只保存在 `.tmp/edit-flow/<editId>/timeline/current.json`，源语音字幕正文只保存在 `.tmp/edit-flow/<editId>/timeline/current.srt`。
 - source-speech SRT 的 cue 文本与素材内相对时间仍来自 transcriptSegments，但 timeline 绝对时间必须基于 Resolve 单遍落片后返回的实际 clip 帧位，不能基于预估毫秒 cursor；speech/mixed clip 以 timed transcriptSegments 为核心并只扩展一次前后各 `250ms` 的实际 Resolve clip 边界，不把字幕铺满前后静音余量；航拍 clip 因强制静音不进入 source-speech SRT。transcript segment 是上游时间单元，SRT 输出必须重新校验正式 36 文本单位句界：只有 `，` / `,` 是软标点，其余 Unicode 标点一律结束句子；超长句通过动态规划选择满足上限所需的最少逗号边界，并在该段数下最小化各段相对平均长度的偏差，只有单个无可用逗号的 clause 仍超限时才允许字符兜底。同一 Resolve clip 内相邻候选在映射 gap `<1500ms` 且合并正文 `<=36` 时继续合并；一个最终 cue 若以软逗号结尾，必须把该逗号提升为 `。`，source-speech SRT 导出不得再删除这个句界。拆分后的 cue 在原 segment 时间内按文本单位比例连续分配，不能修改 span 文本和 segment 时间。`timeline.generate` 在落片完成后生成严格对齐的 SRT，不为字幕再次重建视频时间线，也不把 SRT 导入列为已执行能力。
 - `audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item；照片可无 audio item。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`

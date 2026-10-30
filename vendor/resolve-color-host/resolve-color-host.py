@@ -67,6 +67,9 @@ def main() -> int:
             result = export_edit_timeline_clip_packet(resolve, request_input)
         elif operation == "save_drp_snapshot":
             result = save_drp_snapshot(resolve, request_input)
+        elif operation == "edit_tools":
+            from resolve_edit_tools import execute
+            result = execute(sys.modules[__name__], resolve, request_input)
         else:
             raise HostError("invalid_operation", f"Unsupported operation: {operation}")
 
@@ -544,6 +547,7 @@ def create_rough_cut_timeline(resolve, payload):
     clips = normalize_rough_cut_clips(payload.get("clips"))
     if not clips:
         raise HostError("resolve_timeline_empty", "create_rough_cut_timeline requires at least one clip.")
+    require_rough_cut_speed_support(resolve, clips)
 
     namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Project Media"
     timeline_folder_name = stringify_signal_value(payload.get("timelineFolderName")) or "Kairos Timelines"
@@ -658,7 +662,7 @@ def create_rough_cut_timeline(resolve, payload):
     }
     existing_rough_cut_groups_by_name = collect_color_groups_by_name(project)
     rough_cut_visual_groups_by_category = {}
-    speed_ignored = 0
+    speed_applied = 0
     source_range_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "direct-native-append"}
     still_duration_validation = {"checked": 0, "passed": 0, "failed": 0, "expectedMs": parse_float(payload.get("stillDurationMs"))}
     timeline_placement_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "sequential-actual-end"}
@@ -708,6 +712,11 @@ def create_rough_cut_timeline(resolve, payload):
                 validate_rough_cut_still_duration(item, clip, fps, payload.get("stillDurationMs"), still_duration_validation)
             else:
                 validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation, fps)
+                if clip["speed"] != 1:
+                    apply_rough_cut_speed(item, clip, fps)
+                    validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation, fps, retimed=True)
+        if clip["speed"] != 1:
+            speed_applied += 1
         actual_start_frame = min(
             (frame for frame in (parse_int(safe_call(item, "GetStart")) for item in video_items) if frame is not None),
             default=None,
@@ -747,9 +756,6 @@ def create_rough_cut_timeline(resolve, payload):
         if (not clip["muteAudio"]) and clip["audioGainDb"] != 0:
             apply_timeline_item_audio_gain(audio_items, clip)
             audio_gain_applied += 1
-        requested_speed = parse_float(clip.get("requestedSpeed")) or clip["speed"]
-        if abs(requested_speed - 1.0) > 0.001:
-            speed_ignored += 1
         appended.append({
             "clipId": clip["clipId"],
             "assetId": clip["assetId"],
@@ -764,11 +770,16 @@ def create_rough_cut_timeline(resolve, payload):
             "muteAudio": clip["muteAudio"],
             "audioGainDb": clip["audioGainDb"],
             "speed": clip["speed"],
+            "actualSpeed": clip["speed"],
+            "actualSourceRanges": [{
+                "startFrame": safe_call(item, "GetSourceStartFrame"),
+                "endFrame": safe_call(item, "GetSourceEndFrame"),
+            } for item in video_items],
             "spanType": clip.get("spanType"),
             **({"videoClipColor": visual_clip_color} if visual_clip_color else {}),
             **({"videoClipGroup": visual_clip_group} if visual_clip_group else {}),
             **({"audibleClipColor": audible_clip_color} if audible_clip_color else {}),
-            **({"requestedSpeed": requested_speed, "speedIgnored": True} if abs(requested_speed - 1.0) > 0.001 else {}),
+            "requestedSpeed": clip["speed"],
         })
 
     timeline_gap_validation = validate_rough_cut_timeline_no_gaps(timeline)
@@ -793,10 +804,10 @@ def create_rough_cut_timeline(resolve, payload):
             "audibleClipColoring": audible_clip_coloring,
             "visualClipColoring": visual_clip_coloring,
             "visualClipGrouping": visual_clip_grouping,
-            "speedAppliedCount": 0,
-            "speedIgnoredCount": speed_ignored,
+            "speedAppliedCount": speed_applied,
+            "speedIgnoredCount": 0,
             "timelineCreate": "native-api",
-            "speedStrategy": "ignored",
+            "speedStrategy": "native-SetSpeed",
             "syncSummary": {
                 "mode": "existing-media-pool",
                 "imported": 0,
@@ -1625,7 +1636,48 @@ def resolve_expected_source_frame_range(media_pool_item, clip, timeline_fps):
         )
     return start_frame, end_frame, source_fps
 
-def validate_rough_cut_source_range(item, media_pool_item, clip, summary, timeline_fps=None):
+def require_rough_cut_speed_support(resolve, clips):
+    if not any(clip.get("speed", 1) != 1 for clip in clips):
+        return
+    version, parts, _ = get_resolve_version_info(resolve)
+    if parts is None or tuple(parts[:3]) < (21, 1):
+        raise HostError("resolve_speed_unsupported", "Native rough-cut speed requires Resolve 21.1 or newer; timeline was not modified.", {"version": version})
+
+
+def apply_rough_cut_speed(item, clip, timeline_fps):
+    speed = clip["speed"]
+    start, end = safe_call(item, "GetStart"), safe_call(item, "GetEnd")
+    source_start, source_end = safe_call(item, "GetSourceStartFrame"), safe_call(item, "GetSourceEndFrame")
+    if any(not isinstance(value, (int, float)) for value in (start, end, source_start, source_end)):
+        raise HostError("resolve_speed_bounds_missing", "Cannot validate speed without source and timeline bounds.", {"clipId": clip["clipId"]})
+    if (safe_call(item, "GetSpeed") or {}).get("Percentage") != 100:
+        raise HostError("resolve_speed_initial_state_invalid", "Only a newly appended normal-speed item may enter rough-cut retiming.", {"clipId": clip["clipId"]})
+    # Change a newly appended item once, before placing its successor. Resolve also
+    # retimes its linked audio; leave the existing pitch-correction setting intact.
+    if safe_call(item, "SetSpeed", {"Percentage": speed * 100, "RippleTimeline": True}) is not True:
+        raise HostError("resolve_speed_failed", "Resolve rejected SetSpeed.", {"clipId": clip["clipId"], "speed": speed})
+    actual = safe_call(item, "GetSpeed") or {}
+    actual_start, actual_end = safe_call(item, "GetStart"), safe_call(item, "GetEnd")
+    source_step = max(1, math.ceil(speed * (clip.get("fps") or timeline_fps) / timeline_fps))
+    new_source_start, new_source_end = safe_call(item, "GetSourceStartFrame"), safe_call(item, "GetSourceEndFrame")
+    valid = (
+        actual.get("Percentage") == speed * 100
+        and actual_start == start and isinstance(actual_end, (int, float)) and actual_end > start
+        and abs((actual_end - start) - (end - start) / speed) <= 1
+        and new_source_start == source_start and isinstance(new_source_end, (int, float))
+        and abs(new_source_end - source_end) <= source_step
+    )
+    if not valid:
+        raise HostError("resolve_speed_validation_failed", "Native speed changed the source window or produced unexpected timing.", {"clipId": clip["clipId"], "requestedSpeed": speed, "actualSpeed": actual, "before": [start, end, source_start, source_end], "after": [actual_start, actual_end, new_source_start, new_source_end]})
+    for linked in collect_linked_timeline_items([item]):
+        linked_start, linked_end = safe_call(linked, "GetStart"), safe_call(linked, "GetEnd")
+        if ((safe_call(linked, "GetSpeed") or {}).get("Percentage") != speed * 100
+                or not isinstance(linked_start, (int, float)) or not isinstance(linked_end, (int, float))
+                or abs(linked_start - actual_start) > 1 or abs(linked_end - actual_end) > 1):
+            raise HostError("resolve_speed_linked_mismatch", "Linked item did not retain the retimed video's bounds and speed.", {"clipId": clip["clipId"]})
+
+
+def validate_rough_cut_source_range(item, media_pool_item, clip, summary, timeline_fps=None, retimed=False):
     expected_start, expected_end, source_fps = resolve_expected_source_frame_range(
         media_pool_item,
         clip,
@@ -1634,13 +1686,14 @@ def validate_rough_cut_source_range(item, media_pool_item, clip, summary, timeli
     actual_start = parse_int(safe_call(item, "GetSourceStartFrame"))
     actual_end = parse_int(safe_call(item, "GetSourceEndFrame"))
     tolerance = resolve_source_range_validation_tolerance(source_fps, timeline_fps)
+    end_tolerance = tolerance + (math.ceil(clip["speed"] * source_fps / timeline_fps) if retimed else 0)
     summary["checked"] = int(summary.get("checked") or 0) + 1
-    summary["maxToleranceFrames"] = max(int(summary.get("maxToleranceFrames") or 0), tolerance)
+    summary["maxToleranceFrames"] = max(int(summary.get("maxToleranceFrames") or 0), end_tolerance)
     if (
         actual_start is not None
         and actual_end is not None
         and abs(actual_start - expected_start) <= tolerance
-        and abs(actual_end - expected_end) <= tolerance
+        and abs(actual_end - expected_end) <= end_tolerance
     ):
         summary["passed"] = int(summary.get("passed") or 0) + 1
         return
@@ -1661,6 +1714,7 @@ def validate_rough_cut_source_range(item, media_pool_item, clip, summary, timeli
             "sourceOutMs": clip.get("sourceOutMs"),
             "timelineFps": timeline_fps,
             "toleranceFrames": tolerance,
+            "endToleranceFrames": end_tolerance,
         },
     )
 
@@ -4078,6 +4132,12 @@ def normalize_rough_cut_clips(clips):
                 f"Rough-cut clip requires numeric audioGainDb and positive speed: {clip_id}",
                 {"clipId": clip_id, "audioGainDb": clip.get("audioGainDb"), "speed": clip.get("speed")},
             )
+        requested_speed = parse_float(clip.get("requestedSpeed")) if clip.get("requestedSpeed") is not None else speed
+        if requested_speed is None or not math.isfinite(requested_speed) or requested_speed not in (1, 2, 3, 4, 5):
+            raise HostError("resolve_rough_cut_speed_invalid", "Rough-cut speed must be an integer from 1 through 5.", {"clipId": clip_id})
+        speed = requested_speed
+        if speed != 1 and (asset_kind == "photo" or clip.get("spanType") not in ("drive", "aerial")):
+            raise HostError("resolve_rough_cut_speed_invalid", "Only explicit drive/aerial treatments may accelerate rough cuts.", {"clipId": clip_id})
         source_in_ms = parse_float(clip.get("sourceInMs"))
         source_out_ms = parse_float(clip.get("sourceOutMs"))
         if source_in_ms is not None and source_out_ms is not None and source_out_ms <= source_in_ms:

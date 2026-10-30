@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, copyFile, mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import nodeFetch from 'node-fetch';
 import type { IProjectBriefConfig } from '../../protocol/schema.js';
@@ -8,6 +8,7 @@ import { loadProjectBriefConfig, loadRuntimeConfig, writeJson } from '../../stor
 import type { IRuntimeConfig } from '../../store/project.js';
 import { probe } from '../media/probe.js';
 import { stripGeneratedSubtitlePeriods } from '../nle/subtitle-text.js';
+import { alignVoiceoverSubtitles, CVOICEOVER_ALIGNMENT_VERSION, voiceoverMatchText, type IVoiceoverAlignment, type IVoiceoverWord } from './subtitle-alignment.js';
 
 const CDEFAULT_TTS_ENDPOINT = 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
 const CDEFAULT_RESOURCE_ID = 'seed-icl-2.0';
@@ -54,12 +55,14 @@ export interface IResolveVoiceoverJobInput {
   resolveProjectName: string;
   timelineId: string;
   timelineName?: string;
+  timelineFrameRate?: number;
   subtitles: IResolveVoiceoverSubtitleInput[];
   settings?: {
     profileName?: string;
     speedRatio?: number;
     loudnessRatio?: number;
     force?: boolean;
+    placementMode?: 'merged' | 'subtitle-aligned';
   };
   runId?: string;
 }
@@ -91,6 +94,8 @@ export interface IResolveVoiceoverUnitManifest {
   targetDurationMs?: number | null;
   overflowMs?: number | null;
   durationStatus: 'ok' | 'overflow' | 'unknown';
+  alignment?: IVoiceoverAlignment;
+  groupUnitId?: string;
 }
 
 export interface IResolveVoiceoverSynthesizeResult {
@@ -110,6 +115,7 @@ export interface IVolcTtsPublicSettings {
   speedRatio?: number;
   loudnessRatio?: number;
   contextText: string;
+  enableSubtitle?: boolean;
 }
 
 interface IVolcTtsSettings extends IVolcTtsPublicSettings {
@@ -188,7 +194,8 @@ export async function buildResolveVolcVoiceoverConfigSummaryTsv(input: {
 }): Promise<string> {
   const runtime = await loadRuntimeConfig(input.workspaceRoot);
   const rows: string[][] = [
-    ['VERSION', 'resolve-volc-voiceover-supervisor-v1'],
+    ['VERSION', 'resolve-volc-voiceover-supervisor-v2'],
+    ['FEATURE', CVOICEOVER_ALIGNMENT_VERSION],
     ['CONFIG', join(resolve(input.workspaceRoot), 'config', 'runtime.json')],
     ['HAS_API_KEY', runtime.voiceover?.volcApiKey ? '1' : '0'],
     ['DEFAULT', runtime.voiceover?.defaultProfile ?? ''],
@@ -225,6 +232,7 @@ export function formatResolveVolcVoiceoverSynthesizeTsv(result: IResolveVoiceove
   const rows: string[][] = [
     ['OK', result.manifestPath, String(result.units.length)],
   ];
+  if (result.manifest.alignmentVersion) rows.push(['ALIGNMENT', CVOICEOVER_ALIGNMENT_VERSION]);
   for (const unit of result.units) {
     rows.push([
       'UNIT',
@@ -235,6 +243,13 @@ export function formatResolveVolcVoiceoverSynthesizeTsv(result: IResolveVoiceove
       numberOrBlank(unit.durationMs),
       numberOrBlank(unit.targetDurationMs),
       numberOrBlank(unit.overflowMs),
+      unit.alignment?.status ?? '',
+      unit.alignment?.reason ?? '',
+      numberOrBlank(unit.alignment?.sourceStartMs),
+      numberOrBlank(unit.alignment?.sourceEndMs),
+      stringify(unit.subtitle.subtitleIndex),
+      unit.requestHash,
+      numberOrBlank(unit.subtitle.endFrame),
     ]);
   }
   return formatTsv(rows);
@@ -248,6 +263,13 @@ export async function synthesizeResolveVolcVoiceoverJob(input: {
   const job = normalizeJobInput(input.job);
   const runtime = await loadRuntimeConfig(input.workspaceRoot);
   const settings = resolveTtsSettings(runtime, job.settings);
+  const aligned = job.settings?.placementMode === 'subtitle-aligned';
+  if (aligned) {
+    if (!['seed-tts-2.0', 'seed-icl-2.0'].includes(settings.resourceId)) {
+      throw new ResolveVolcVoiceoverError('alignment_resource_unsupported', 'Subtitle alignment requires a TTS2.0 or ICL2.0 voice profile.');
+    }
+    settings.enableSubtitle = true;
+  }
   const project = await findKairosProjectForResolve(input.workspaceRoot, job.resolveProjectName);
   const { runDir, metadata } = await buildProjectVoiceoverRunDir({
     workspaceRoot: input.workspaceRoot,
@@ -258,12 +280,12 @@ export async function synthesizeResolveVolcVoiceoverJob(input: {
   });
   const tmpDir = join(project.projectRoot, '.tmp', 'resolve-volc-voiceover-plugin');
   const cacheRoot = join(tmpDir, 'cache');
-  const manifestRoot = join(tmpDir, 'manifests', safeSegment(job.runId || new Date().toISOString().replace(/[:.]/gu, '-'), randomUUID()));
+  const manifestRoot = join(tmpDir, 'manifests', `${safeSegment(job.runId || new Date().toISOString().replace(/[:.]/gu, '-'))}-${randomUUID()}`);
   await mkdir(manifestRoot, { recursive: true });
 
   const units: IResolveVoiceoverUnitManifest[] = [];
   for (const subtitle of mergeSelectedSubtitlesForSynthesis(job.subtitles)) {
-    units.push(await synthesizeUnit({
+    const merged = await synthesizeUnit({
       subtitle,
       timelineId: job.timelineId,
       runDir,
@@ -273,11 +295,34 @@ export async function synthesizeResolveVolcVoiceoverJob(input: {
       settings,
       client: input.client,
       force: Boolean(job.settings?.force),
-    }));
+    });
+    if (aligned) {
+      const sources = [...job.subtitles].sort(subtitleSortCompare);
+      const texts = sources.map(row => stripGeneratedSubtitlePeriods(cleanSubtitleText(row.text ?? row.name)));
+      const words = merged.provider.alignedWords as IVoiceoverWord[] ?? [];
+      const alignments = alignVoiceoverSubtitles(texts, words, merged.durationMs);
+      for (const [index, source] of sources.entries()) {
+        const text = texts[index]!;
+        const alignment = alignments[index]!;
+        if (merged.provider.alignmentCacheError) {
+          Object.assign(alignment, { status: 'blocked', reason: String(merged.provider.alignmentCacheError) });
+        }
+        const durationMs = alignment.status === 'aligned' ? alignment.sourceEndMs! - alignment.sourceStartMs! : null;
+        const targetDurationMs = (Number(source.endFrame) - Number(source.startFrame)) * 1000 / job.timelineFrameRate!;
+        // Informational only; Lua reports overruns using Resolve's actual returned bounds.
+        const overflowMs = durationMs == null ? null : Math.ceil(durationMs * job.timelineFrameRate! / 1000 - 1e-7) * 1000 / job.timelineFrameRate! - targetDurationMs;
+        units.push({ ...merged, groupUnitId: merged.unitId,
+          unitId: unitIdForSubtitle(job.timelineId, { ...source, text }),
+          text, subtitle: { ...source, text }, alignment, durationMs, targetDurationMs, overflowMs,
+          durationStatus: overflowMs == null ? 'unknown' : overflowMs > 1e-5 ? 'overflow' : 'ok',
+        });
+      }
+    } else units.push(merged);
   }
 
   const manifest = {
     manifestVersion: 'resolve-volc-voiceover-supervisor-v1',
+    alignmentVersion: aligned ? CVOICEOVER_ALIGNMENT_VERSION : undefined,
     createdAt: new Date().toISOString(),
     job,
     project: metadata,
@@ -521,6 +566,8 @@ export function parseTtsResponse(body: Buffer): {
           ? value.words
           : [];
     subtitles.push(...subtitleValue);
+    // Both HTTP chunked and SSE use sentence.words, not the top-level words field.
+    if (isRecord(value.sentence) && Array.isArray(value.sentence.words)) subtitles.push(...value.sentence.words);
     const chunk = extractAudioPayload(value);
     if (chunk) audioChunks.push(chunk);
     const code = value.code ?? value.Code;
@@ -686,6 +733,29 @@ function normalizeJobInput(job: IResolveVoiceoverJobInput): IResolveVoiceoverJob
   if (!Array.isArray(job.subtitles) || job.subtitles.length === 0) {
     throw new ResolveVolcVoiceoverError('subtitle_selection_missing', 'Select at least one subtitle row.');
   }
+  if (job.settings?.placementMode && !['merged', 'subtitle-aligned'].includes(job.settings.placementMode)) {
+    throw new ResolveVolcVoiceoverError('placement_mode_invalid', 'Unknown voiceover placement mode.');
+  }
+  if (job.settings?.placementMode === 'subtitle-aligned') {
+    if (!Number.isFinite(job.timelineFrameRate) || job.timelineFrameRate! <= 0) {
+      throw new ResolveVolcVoiceoverError('timeline_fps_missing', 'Subtitle alignment requires the actual timeline frame rate.');
+    }
+    const ids = new Set<string>();
+    let track: number | undefined;
+    for (const row of job.subtitles) {
+      const id = `${row?.trackIndex}:${row?.subtitleIndex}`;
+      if (!row || !voiceoverMatchText(stripGeneratedSubtitlePeriods(cleanSubtitleText(row.text ?? row.name)))
+        || !Number.isInteger(row.trackIndex) || Number(row.trackIndex) < 1
+        || !Number.isInteger(row.subtitleIndex) || Number(row.subtitleIndex) < 1
+        || !Number.isInteger(row.startFrame) || !Number.isInteger(row.endFrame)
+        || Number(row.startFrame) < 0 || Number(row.endFrame) <= Number(row.startFrame)
+        || ids.has(id) || (track != null && track !== row.trackIndex)) {
+        throw new ResolveVolcVoiceoverError('subtitle_alignment_input_invalid', 'Select distinct readable subtitles on one track with valid frame bounds.');
+      }
+      ids.add(id);
+      track = Number(row.trackIndex);
+    }
+  }
   return job;
 }
 
@@ -778,26 +848,59 @@ async function synthesizeUnit(input: {
   const publicSettings = publicTtsSettings(input.settings);
   const cacheKey = requestHash(text, publicSettings);
   const extension = input.settings.audioFormat.toLowerCase().replace(/^\./u, '') || CDEFAULT_FORMAT;
-  const rawPath = join(input.runDir, `${unitId}_${cacheKey.slice(0, 8)}.${extension}`);
   const cachePath = join(input.cacheRoot, `${cacheKey}.${extension}`);
+  const timingPath = join(input.cacheRoot, `${cacheKey}.alignment.json`);
   let requestId = '';
   let provider: Record<string, unknown> = {};
   let cacheHit = false;
+  let audio: Buffer;
 
   if (!input.force && await pathExists(cachePath)) {
-    await copyFile(cachePath, rawPath);
+    audio = await readFile(cachePath);
     cacheHit = true;
+    if (input.settings.enableSubtitle) {
+      try {
+        const cached = JSON.parse(await readFile(timingPath, 'utf-8'));
+        if (cached.version !== CVOICEOVER_ALIGNMENT_VERSION || cached.requestHash !== cacheKey
+          || cached.audioSha256 !== audioSha256(audio) || !Array.isArray(cached.words)) throw new Error('invalid cache');
+        requestId = String(cached.requestId ?? '');
+        provider = { ...cached.provider, alignedWords: cached.words };
+      } catch {
+        provider = { alignedWords: [], alignmentCacheError: 'alignment_cache_invalid_use_force' };
+      }
+    }
   } else {
+    if (!input.force && input.settings.enableSubtitle && await pathExists(timingPath)) {
+      throw new ResolveVolcVoiceoverError('alignment_cache_audio_missing', 'Cached timing exists but its audio is missing. Use Force regenerate explicitly.');
+    }
     const result = await (input.client ?? new VolcTtsHttpClient()).synthesize(text, input.settings);
     requestId = result.requestId;
+    audio = result.audio;
     provider = {
       headers: result.headers ?? {},
       usage: result.usage ?? {},
       eventCount: result.events?.length ?? 0,
       subtitleCount: result.subtitles?.length ?? 0,
     };
-    await writeFile(rawPath, result.audio);
-    await writeFile(cachePath, result.audio);
+    if (input.settings.enableSubtitle) provider.alignedWords = result.subtitles ?? [];
+    await atomicWriteVoiceoverCache(cachePath, audio);
+    if (input.settings.enableSubtitle) {
+      await atomicWriteVoiceoverCache(timingPath, JSON.stringify({
+        version: CVOICEOVER_ALIGNMENT_VERSION, requestHash: cacheKey, audioSha256: audioSha256(audio),
+        requestId, words: result.subtitles ?? [], provider,
+      }));
+    }
+  }
+
+  // Content-addressed outputs never overwrite media already referenced by Resolve, even on Force.
+  const rawPath = join(input.runDir, `${unitId}_${cacheKey.slice(0, 8)}_${audioSha256(audio).slice(0, 16)}.${extension}`);
+  try {
+    await writeFile(rawPath, audio, { flag: 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    if (audioSha256(await readFile(rawPath)) !== audioSha256(audio)) {
+      throw new ResolveVolcVoiceoverError('voiceover_media_changed', 'Existing generated audio differs from the cache; refusing to overwrite it.', { rawPath });
+    }
   }
 
   const durationMs = await probe(rawPath, input.runtime)
@@ -840,7 +943,22 @@ function publicTtsSettings(settings: IVolcTtsSettings): IVolcTtsPublicSettings {
     speedRatio: settings.speedRatio,
     loudnessRatio: settings.loudnessRatio,
     contextText: settings.contextText,
+    ...(settings.enableSubtitle ? { enableSubtitle: true } : {}),
   };
+}
+
+function audioSha256(audio: Buffer): string {
+  return createHash('sha256').update(audio).digest('hex');
+}
+
+async function atomicWriteVoiceoverCache(path: string, data: string | Buffer): Promise<void> {
+  const temporary = `${path}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, data, { flag: 'wx' });
+    await rename(temporary, path);
+  } finally {
+    await unlink(temporary).catch(() => undefined);
+  }
 }
 
 function voiceoverMatchKeys(projectId: string, brief: IProjectBriefConfig): Set<string> {
@@ -1027,6 +1145,7 @@ function ttsRequestParams(text: string, settings: IVolcTtsSettings): Record<stri
     audio_params: {
       format: settings.audioFormat,
       sample_rate: settings.sampleRate,
+      ...(settings.enableSubtitle ? { enable_subtitle: true } : {}),
     },
     explicit_language: settings.language,
   };

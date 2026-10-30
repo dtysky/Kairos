@@ -21,7 +21,7 @@ description: >-
 
 ## 前置条件
 
-- 如果本轮涉及任何 DaVinci Resolve scripting API、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 行为，先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.txt` 校验版本敏感方法。
+- 如果本轮涉及任何 DaVinci Resolve scripting API、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 行为，先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) 校验版本敏感方法。
 - `.tmp/edit-flow/<editId>/timeline/current.json` 存在且通过 KTEP 校验，或已有正式 Resolve timeline / locked rough-cut 可继续操作
 - 宿主环境已具备同机 vendored Resolve backend 条件
   - `vendor/resolve-color-host/.venv` 可调用
@@ -110,3 +110,7 @@ description: >-
 
 - 这个 skill 是 Phase 5 的 Resolve 目标实现
 - 如果当前设备尚未准备好 vendored Resolve backend，本 skill 应明确指出阻塞条件
+
+## Resolve 21.1.2 bounded maintenance
+
+Use `scripts/resolve-edit-tools.py` and [its contract](../../../designs/resolve-edit-tools.md) for capability queries, native timeline selection, explicit frame export and video-only fades/transitions/Inspector copying. Inspect exact project/timeline/item ids first; apply only explicitly authorized targets, preserve the reported recovery timeline and report partial changes on failure. This does not change voiceover, audio processing, grading or subtitle text. An available `--apply` flag does not require another approval when the user has already authorized the concrete action.

@@ -1,6 +1,8 @@
 local WINDOW_ID = "kairosVolcVoiceover"
-local PLUGIN_VERSION = "0.2.8"
+local PLUGIN_VERSION = "0.3.3"
+local ALIGNMENT_VERSION = "subtitle-alignment-v1"
 local VOICE_TRACK_NAME = "Kairos VO"
+local SUBTITLE_COLUMN_COUNT = 7
 
 local subtitles = {}
 local subtitleTrackOptions = {}
@@ -22,6 +24,7 @@ local subtitleSelectionAnchorId = nil
 local subtitleLocateAnchorId = nil
 local subtitleSelectedIds = {}
 local repairingSubtitleSelection = false
+local synthesisBusy = false
 
 local function dirname(path)
     return tostring(path):match("^(.*)[/\\][^/\\]*$") or "."
@@ -399,6 +402,8 @@ local function loadVoiceoverConfigSummary()
         local kind = fields[1]
         if kind == "VERSION" then
             result.backendVersion = fields[2] or ""
+        elseif kind == "FEATURE" and fields[2] == ALIGNMENT_VERSION then
+            result.supportsAlignment = true
         elseif kind == "CONFIG" then
             result.runtimeConfigPath = fields[2] or ""
         elseif kind == "HAS_API_KEY" then
@@ -747,6 +752,7 @@ local function summarizeItem(item, trackIndex, index, frameRate)
         clipProperty = {}
     end
     local summary = {
+        itemId = tostring(safeCall(item, "GetUniqueId") or ""),
         trackType = "subtitle",
         trackIndex = trackIndex,
         subtitleIndex = index,
@@ -769,8 +775,8 @@ end
 local function countTableValues(value)
     local count = 0
     if type(value) == "table" then
-        for _, _ in pairs(value) do
-            count = count + 1
+        for key, _ in pairs(value) do
+            if key ~= "__flags" then count = count + 1 end
         end
     end
     return count
@@ -784,7 +790,11 @@ local function getTrackItems(timeline, trackType, trackIndex)
     if type(trackItems) ~= "table" then
         return {}
     end
-    return trackItems
+    local result = {}
+    for _, item in pairs(trackItems) do
+        if type(item) == "table" or type(item) == "userdata" then table.insert(result, item) end
+    end
+    return result
 end
 
 local function subtitleTrackLabel(track)
@@ -983,16 +993,14 @@ local function newTreeItem(tree)
     return nil
 end
 
-local function applySubtitleTreeColumns()
-    if not (items and items.subtitleTree) then
-        return
-    end
-    local tree = items.subtitleTree
+local function applySubtitleTreeColumns(tree)
+    tree = tree or (items and items.subtitleTree)
+    if not tree then return end
     pcall(function()
-        tree.ColumnCount = 6
+        tree.ColumnCount = SUBTITLE_COLUMN_COUNT
     end)
     pcall(function()
-        tree:SetHeaderLabels({"ID", "Track", "In", "Out", "Ms", "Text"})
+        tree:SetHeaderLabels({"ID", "Track", "In", "Out", "Ms", "Text", "Voiceover"})
     end)
     pcall(function()
         tree.ColumnWidth[0] = 42
@@ -1000,7 +1008,8 @@ local function applySubtitleTreeColumns()
         tree.ColumnWidth[2] = 88
         tree.ColumnWidth[3] = 88
         tree.ColumnWidth[4] = 58
-        tree.ColumnWidth[5] = 390
+        tree.ColumnWidth[5] = 190
+        tree.ColumnWidth[6] = 130
     end)
 end
 
@@ -1609,11 +1618,11 @@ local function firstTableValue(value)
     if type(value) ~= "table" then
         return nil
     end
-    if value[1] ~= nil then
+    if type(value[1]) == "table" or type(value[1]) == "userdata" then
         return value[1]
     end
     for _, item in pairs(value) do
-        return item
+        if type(item) == "table" or type(item) == "userdata" then return item end
     end
     return nil
 end
@@ -1688,7 +1697,7 @@ end
 local function trackIsUsable(timeline, index)
     local enabled = safeCall(timeline, "GetIsTrackEnabled", "audio", index)
     local locked = safeCall(timeline, "GetIsTrackLocked", "audio", index)
-    return enabled ~= false and locked ~= true
+    return enabled == true and locked == false
 end
 
 local function trackItems(timeline, index)
@@ -1702,7 +1711,7 @@ end
 local function trackHasOverlap(timeline, index, startFrame, endFrame)
     for _, item in pairs(trackItems(timeline, index)) do
         local itemStart, itemEnd = timelineItemBounds(item)
-        if itemStart ~= nil and itemEnd ~= nil and rangesOverlap(startFrame, endFrame, itemStart, itemEnd) then
+        if itemStart == nil or itemEnd == nil or rangesOverlap(startFrame, endFrame, itemStart, itemEnd) then
             return true
         end
     end
@@ -1721,7 +1730,7 @@ local function chooseVoiceTrack(unit)
     local trackCount = tonumber(safeCall(timeline, "GetTrackCount", "audio") or 0) or 0
     local recordFrame = tonumber(unit.recordFrame) or 0
     local durationFrames = tonumber(unit.durationFrames) or nil
-    local targetDurationMs = tonumber(unit.targetDurationMs) or nil
+    local targetDurationMs = tonumber(unit.durationMs) or tonumber(unit.targetDurationMs) or nil
     if durationFrames == nil and targetDurationMs ~= nil then
         durationFrames = math.max(1, math.floor(targetDurationMs * fps() / 1000.0 + 0.5))
     end
@@ -1751,6 +1760,7 @@ local function chooseVoiceTrack(unit)
         return nil, "Unable to add audio track for " .. VOICE_TRACK_NAME .. "."
     end
     local newIndex = (tonumber(safeCall(timeline, "GetTrackCount", "audio") or 0) or trackCount + 1)
+    if not trackIsUsable(timeline, newIndex) then return nil, "New audio track is unavailable or locked." end
     safeCall(timeline, "SetTrackName", "audio", newIndex, VOICE_TRACK_NAME)
     return newIndex, nil
 end
@@ -1759,6 +1769,9 @@ local function importAudioToMediaPool(mediaFolder, audioPath)
     local mediaPool = getMediaPool()
     if not mediaPool then
         return nil, "Resolve Media Pool is unavailable."
+    end
+    for _, clip in pairs(safeCall(mediaFolder, "GetClipList") or {}) do
+        if safeCall(clip, "GetClipProperty", "File Path") == audioPath then return clip, nil end
     end
     local previousFolder = safeCall(mediaPool, "GetCurrentFolder")
     safeCall(mediaPool, "SetCurrentFolder", mediaFolder)
@@ -1826,6 +1839,8 @@ local function parseSynthesizeTsv(output)
             result.ok = true
             result.manifestPath = fields[2] or ""
             result.unitCount = tonumber(fields[3]) or 0
+        elseif kind == "ALIGNMENT" then
+            result.alignmentVersion = fields[2]
         elseif kind == "UNIT" then
             table.insert(result.units, {
                 unitId = fields[2] or "",
@@ -1835,6 +1850,13 @@ local function parseSynthesizeTsv(output)
                 durationMs = tonumber(fields[6] or ""),
                 targetDurationMs = tonumber(fields[7] or ""),
                 overflowMs = tonumber(fields[8] or ""),
+                alignmentStatus = fields[9],
+                alignmentReason = fields[10],
+                sourceStartMs = tonumber(fields[11] or ""),
+                sourceEndMs = tonumber(fields[12] or ""),
+                subtitleIndex = tonumber(fields[13] or ""),
+                requestHash = fields[14],
+                subtitleEndFrame = tonumber(fields[15] or ""),
             })
         elseif kind == "ERROR" then
             local code = fields[2] or "error"
@@ -1874,6 +1896,8 @@ local function currentSettings()
     local profile = selectedProfile()
     local settings = {
         profileName = profile and profile.name or "",
+        placementMode = items.alignSubtitles.Checked and "subtitle-aligned" or "merged",
+        force = items.forceRegenerate.Checked == true,
     }
     local speed = tonumber(trim(items.speed.Text or ""))
     local loudness = tonumber(trim(items.loudness.Text or ""))
@@ -1964,6 +1988,244 @@ local function reloadVoiceoverConfig(silent)
     return updated
 end
 
+local function voiceoverStatus(unit, message)
+    local row = subtitleTreeItems[tonumber(unit.subtitleIndex)]
+    if row then setTreeItemText(row, 6, message) end
+    uiLog("Subtitle #" .. tostring(unit.subtitleIndex or "?") .. ": " .. message)
+end
+
+local function verifySubtitleSnapshot(job)
+    if getProjectName() ~= job.resolveProjectName or stableTimelineId() ~= job.timelineId
+        or math.abs(fps() - job.timelineFrameRate) > 0.0001 then
+        return false, "Project, timeline or frame rate changed. Refresh and select again."
+    end
+    local rows = collectSubtitles(job.subtitleTrackIndex)
+    for _, expected in ipairs(job.subtitles) do
+        local found = nil
+        for _, row in ipairs(rows) do
+            if expected.itemId ~= "" and row.itemId == expected.itemId then found = row; break end
+        end
+        if not found or found.text ~= expected.text or found.startFrame ~= expected.startFrame
+            or found.endFrame ~= expected.endFrame then
+            return false, "Selected subtitle #" .. tostring(expected.subtitleIndex) .. " changed. Refresh and select again."
+        end
+    end
+    return true
+end
+
+local function timelineInventory(timeline)
+    local result = {}
+    for _, kind in ipairs({"video", "audio", "subtitle"}) do
+        for track = 1, tonumber(safeCall(timeline, "GetTrackCount", kind) or 0) do
+            for _, item in pairs(getTrackItems(timeline, kind, track)) do
+                local id = safeCall(item, "GetUniqueId")
+                local startFrame, endFrame = timelineItemBounds(item)
+                if not id or not startFrame or not endFrame then error("Cannot read original timeline inventory") end
+                result[tostring(id)] = table.concat({kind, track, startFrame, endFrame, tostring(safeCall(item, "GetName"))}, "|")
+            end
+        end
+    end
+    return result
+end
+
+local function verifyOriginalItems(timeline, original, added)
+    local actual = timelineInventory(timeline)
+    local expectedIds = {}
+    for id, value in pairs(original) do
+        if actual[id] ~= value then error("An existing timeline item changed: " .. id) end
+        expectedIds[id] = true
+    end
+    for _, item in ipairs(added) do expectedIds[tostring(safeCall(item, "GetUniqueId"))] = true end
+    for id, _ in pairs(actual) do
+        if not expectedIds[id] then error("Unexpected timeline item added: " .. id) end
+    end
+end
+
+local function planAlignedUnit(unit, mediaItem, timelineFps)
+    local sourceFps = tonumber(safeCall(mediaItem, "GetClipProperty", "FPS"))
+    if not sourceFps or sourceFps <= 0 then return nil, "Cannot read imported audio FPS" end
+    if unit.alignmentStatus ~= "aligned" or not unit.sourceStartMs or not unit.sourceEndMs
+        or unit.sourceStartMs < 0 or unit.sourceEndMs <= unit.sourceStartMs or not unit.subtitleEndFrame then
+        return nil, "Invalid aligned source range"
+    end
+    local sourceStart = math.floor(unit.sourceStartMs * sourceFps / 1000 + 0.0000001)
+    local sourceEnd = math.ceil(unit.sourceEndMs * sourceFps / 1000 - 0.0000001)
+    -- MP3 container duration can include encoder padding that Resolve does not expose.
+    local mediaFrames = timecodeToFrame(safeCall(mediaItem, "GetClipProperty", "Duration"), sourceFps)
+    if mediaFrames and mediaFrames > 0 then sourceEnd = math.min(sourceEnd, mediaFrames) end
+    local duration = math.ceil((sourceEnd - sourceStart) * timelineFps / sourceFps - 0.0000001)
+    if duration < 1 then return nil, "Empty audio source range" end
+    unit.durationFrames = duration
+    return { mediaPoolItem = mediaItem, mediaType = 2, startFrame = sourceStart,
+        endFrame = sourceEnd, recordFrame = unit.recordFrame, sourceFps = sourceFps }, nil
+end
+
+local function alignedIdentity(unit)
+    return "kairosVoiceoverUnitId=" .. unit.unitId .. ";request=" .. unit.requestHash
+        .. ";audio=" .. unit.resolveAudioPath
+end
+
+local function alignedMarker(unit)
+    return alignedIdentity(unit) .. ";range=" .. unit.sourceStartMs .. "-" .. unit.sourceEndMs
+end
+
+local function verifyAlignedItem(item, unit, plan, timelineFps)
+    local actualStart, actualEnd = timelineItemBounds(item)
+    local sourceStart = tonumber(safeCall(item, "GetSourceStartFrame"))
+    local sourceEnd = tonumber(safeCall(item, "GetSourceEndFrame"))
+    local sourceTolerance = math.max(1, plan.sourceFps / timelineFps)
+    if not actualStart or not actualEnd or math.abs(actualStart - unit.recordFrame) > 0.001
+        or math.abs((actualEnd - actualStart) - unit.durationFrames) > 1.001
+        or not sourceStart or not sourceEnd
+        or math.abs(sourceStart - plan.startFrame) > sourceTolerance
+        or math.abs(sourceEnd - plan.endFrame) > sourceTolerance then
+        return false
+    end
+    local media = safeCall(item, "GetMediaPoolItem")
+    if safeCall(media, "GetClipProperty", "File Path") ~= unit.resolveAudioPath then return false end
+    for _, marker in pairs(safeCall(item, "GetMarkers") or {}) do
+        if type(marker) == "table" and marker.customData == alignedMarker(unit) then return true end
+    end
+    return false
+end
+
+local function findAlignedItem(timeline, unit)
+    local identity = alignedIdentity(unit) .. ";range="
+    for track = 1, tonumber(safeCall(timeline, "GetTrackCount", "audio") or 0) do
+        for _, item in pairs(trackItems(timeline, track)) do
+            for _, marker in pairs(safeCall(item, "GetMarkers") or {}) do
+                if type(marker) == "table" and type(marker.customData) == "string"
+                    and marker.customData:sub(1, #identity) == identity then return item end
+            end
+        end
+    end
+    return nil
+end
+
+local function insertAlignedResult(job, result)
+    if result.alignmentVersion ~= ALIGNMENT_VERSION or #result.units ~= #job.subtitles
+        or result.unitCount ~= #result.units then error("Supervisor alignment response is missing or incompatible") end
+    local verified, reason = verifySubtitleSnapshot(job)
+    if not verified then error(reason) end
+    local selectedByIndex, seen = {}, {}
+    for _, row in ipairs(job.subtitles) do selectedByIndex[row.subtitleIndex] = row end
+    for _, unit in ipairs(result.units) do
+        local row = selectedByIndex[unit.subtitleIndex]
+        if not row or seen[unit.subtitleIndex] or row.startFrame ~= unit.recordFrame
+            or row.endFrame ~= unit.subtitleEndFrame or not unit.requestHash or unit.requestHash == ""
+            or (unit.alignmentStatus ~= "aligned" and unit.alignmentStatus ~= "blocked") then
+            error("Supervisor returned an invalid subtitle mapping")
+        end
+        seen[unit.subtitleIndex] = true
+    end
+    local timeline, project, pool = getTimeline(), getProject(), getMediaPool()
+    local mediaFolder, imported, plans = nil, {}, {}
+    local skipped = 0
+    for _, unit in ipairs(result.units) do
+        if unit.alignmentStatus == "blocked" then
+            skipped = skipped + 1
+            local reasons = {
+                timestamps_missing = "No word timing returned",
+                timestamp_text_mismatch = "Text does not match audio timing",
+                word_crosses_subtitle_boundary = "One spoken word crosses two rows",
+                timestamp_range_invalid = "Invalid word timing",
+                audio_duration_unknown = "Cannot measure audio duration",
+                alignment_cache_invalid_use_force = "Timing cache damaged; use Force",
+            }
+            voiceoverStatus(unit, reasons[unit.alignmentReason] or "Timing needs review")
+        else
+            if not mediaFolder then
+                local message
+                mediaFolder, message = ensureVoiceoverMediaFolder(job.timelineName)
+                if not mediaFolder then error(message) end
+            end
+            local mediaItem = imported[unit.resolveAudioPath]
+            if not mediaItem then
+                local message
+                mediaItem, message = importAudioToMediaPool(mediaFolder, unit.resolveAudioPath)
+                if not mediaItem then error(message) end
+                imported[unit.resolveAudioPath] = mediaItem
+            end
+            local plan, message = planAlignedUnit(unit, mediaItem, job.timelineFrameRate)
+            if not plan then error(message) end
+            local existing = findAlignedItem(timeline, unit)
+            if existing then
+                skipped = skipped + 1
+                voiceoverStatus(unit, verifyAlignedItem(existing, unit, plan, job.timelineFrameRate)
+                    and "Already inserted" or "Existing clip edited; kept")
+            else table.insert(plans, { unit = unit, plan = plan }) end
+        end
+    end
+    if #plans == 0 then return { inserted = 0, skipped = skipped, overflow = 0 } end
+    local original = timelineInventory(timeline)
+    local recovery = safeCall(timeline, "DuplicateTimeline", "Kairos VO recovery " .. os.date("%Y%m%d-%H%M%S") .. " " .. tostring(math.random(100000, 999999)))
+    if not recovery then error("Unable to create voiceover recovery timeline") end
+    local recoveryName = tostring(safeCall(recovery, "GetName"))
+    local currentId = tostring(safeCall(getTimeline(), "GetUniqueId"))
+    if currentId == tostring(safeCall(recovery, "GetUniqueId")) then
+        if safeCall(project, "SetCurrentTimeline", timeline) ~= true then error("Unable to restore target; recovery=" .. recoveryName) end
+    elseif currentId ~= job.timelineId then error("Timeline changed; recovery=" .. recoveryName) end
+    if saveProject() ~= true then error("Unable to save recovery timeline: " .. recoveryName) end
+    local added = {}
+    local ok, failure = pcall(function()
+        for _, entry in ipairs(plans) do
+            local matches, message = verifySubtitleSnapshot(job)
+            if not matches then error(message) end
+            local unit, plan = entry.unit, entry.plan
+            local track, trackError = chooseVoiceTrack(unit)
+            if not track then error(trackError) end
+            plan.trackIndex = track
+            local appended = safeCall(pool, "AppendToTimeline", {{ mediaPoolItem = plan.mediaPoolItem,
+                mediaType = 2, startFrame = plan.startFrame, endFrame = plan.endFrame,
+                recordFrame = plan.recordFrame, trackIndex = track }})
+            local item = firstTableValue(appended)
+            if not item then error("AppendToTimeline failed for subtitle #" .. unit.subtitleIndex) end
+            for _, appendedItem in pairs(appended) do
+                if type(appendedItem) == "table" or type(appendedItem) == "userdata" then table.insert(added, appendedItem) end
+            end
+            if countTableValues(appended) ~= 1 then error("Unexpected append result") end
+            if safeCall(item, "SetName", "Kairos VO #" .. unit.subtitleIndex .. " " .. unit.unitId) ~= true
+                or safeCall(item, "AddMarker", 0, "Blue", "Kairos VO", "Subtitle #" .. unit.subtitleIndex, 1, alignedMarker(unit)) ~= true
+                or not verifyAlignedItem(item, unit, plan, job.timelineFrameRate) then
+                error("Audio placement readback failed for subtitle #" .. unit.subtitleIndex)
+            end
+            local actualStart, actualEnd = timelineItemBounds(item)
+            for _, other in pairs(trackItems(timeline, track)) do
+                if safeCall(other, "GetUniqueId") ~= safeCall(item, "GetUniqueId") then
+                    local a, b = timelineItemBounds(other)
+                    if not a or not b or rangesOverlap(actualStart, actualEnd, a, b) then error("Audio overlap after placement") end
+                end
+            end
+        end
+        verifyOriginalItems(timeline, original, added)
+        local stillMatches, changed = verifySubtitleSnapshot(job)
+        if not stillMatches then error(changed) end
+        if saveProject() ~= true then error("SaveProject failed") end
+    end)
+    if not ok then
+        local rolledBack = #added == 0 or safeCall(timeline, "DeleteClips", added, false) == true
+        local inventoryOk = pcall(verifyOriginalItems, timeline, original, {})
+        local saved = getProjectName() == job.resolveProjectName and stableTimelineId() == job.timelineId and saveProject() == true
+        for _, entry in ipairs(plans) do voiceoverStatus(entry.unit, "Insert failed") end
+        error(tostring(failure) .. "; rollback=" .. tostring(rolledBack and inventoryOk and saved) .. "; recovery=" .. recoveryName)
+    end
+    local overflow = 0
+    for index, entry in ipairs(plans) do
+        local _, actualEnd = timelineItemBounds(added[index])
+        local overflowMs = math.max(0, actualEnd - entry.unit.subtitleEndFrame) * 1000 / job.timelineFrameRate
+        if overflowMs > 0.001 then
+            overflow = overflow + 1
+            voiceoverStatus(entry.unit, "Inserted +" .. string.format("%.0f", overflowMs) .. "ms")
+        else voiceoverStatus(entry.unit, "Inserted") end
+    end
+    if safeCall(pool, "DeleteTimelines", {recovery}) ~= true then
+        uiLog("Voiceover saved; recovery retained: " .. recoveryName)
+    elseif saveProject() ~= true then
+        error("Voiceover was saved, but saving recovery cleanup failed")
+    end
+    return { inserted = #added, skipped = skipped, overflow = overflow }
+end
+
 local function synthesizeAndInsert()
     reloadVoiceoverConfig(true)
     if not ensureSelectedSubtitleTrackLoaded() then
@@ -1983,16 +2245,26 @@ local function synthesizeAndInsert()
         uiLog("Volcengine API key missing. Set voiceover.volcApiKey in config/runtime.json.")
         return
     end
+    if voiceConfig.error ~= "" then uiLog(voiceConfig.error); return end
+    if items.alignSubtitles.Checked and not voiceConfig.supportsAlignment then
+        uiLog("Supervisor update required for subtitle alignment. Restart Kairos Supervisor.")
+        return
+    end
     local job = {
         resolveProjectName = getProjectName(),
         timelineName = getTimelineName(),
         timelineId = stableTimelineId(),
+        timelineFrameRate = fps(),
         runId = os.date("%Y%m%d-%H%M%S"),
         subtitleTrackIndex = selectedSubtitleTrackIndex,
         subtitles = selected,
         settings = currentSettings(),
     }
-    if #selected > 1 then
+    local snapshotOk, snapshotError = verifySubtitleSnapshot(job)
+    if not snapshotOk then uiLog(snapshotError); return end
+    if job.settings.placementMode == "subtitle-aligned" then
+        uiLog("Synthesizing " .. tostring(#selected) .. " subtitle(s) together, then aligning each sentence...")
+    elseif #selected > 1 then
         uiLog("Requesting Supervisor synthesis for " .. tostring(#selected) .. " subtitle(s) as one merged voiceover...")
     else
         uiLog("Requesting Supervisor synthesis for 1 subtitle...")
@@ -2019,6 +2291,17 @@ local function synthesizeAndInsert()
         uiLog("Supervisor returned no audio units.")
         return
     end
+    if job.settings.placementMode == "subtitle-aligned" then
+        local ok, summary = pcall(insertAlignedResult, job, result)
+        if ok then
+            uiLog("Voiceover alignment result: inserted=" .. summary.inserted .. "/" .. #job.subtitles
+                .. ", skipped=" .. summary.skipped .. ", extending past subtitle=" .. summary.overflow
+                .. ". See each row's Voiceover status. Manifest=" .. result.manifestPath)
+        else uiLog("Voiceover alignment failed: " .. tostring(summary) .. ", manifest=" .. result.manifestPath) end
+        return
+    end
+    local stillMatches, changedReason = verifySubtitleSnapshot(job)
+    if not stillMatches then uiLog(changedReason); return end
 
     local mediaFolder, folderError = ensureVoiceoverMediaFolder(getTimelineName())
     if not mediaFolder then
@@ -2027,19 +2310,13 @@ local function synthesizeAndInsert()
     end
 
     local inserted = 0
-    local skipped = 0
     for _, unit in ipairs(result.units) do
-        if items.skipOverflow.Checked == true and unit.durationStatus == "overflow" then
-            skipped = skipped + 1
-            uiLog("Skipped overflow unit " .. tostring(unit.unitId) .. " (" .. tostring(unit.overflowMs or "?") .. "ms over).")
+        local ok, message = appendVoiceoverUnit(mediaFolder, unit)
+        if ok then
+            inserted = inserted + 1
+            uiLog(message)
         else
-            local ok, message = appendVoiceoverUnit(mediaFolder, unit)
-            if ok then
-                inserted = inserted + 1
-                uiLog(message)
-            else
-                uiLog("Insert failed for " .. tostring(unit.unitId) .. ": " .. tostring(message))
-            end
+            uiLog("Insert failed for " .. tostring(unit.unitId) .. ": " .. tostring(message))
         end
     end
     saveProject()
@@ -2047,11 +2324,17 @@ local function synthesizeAndInsert()
     if result.manifestPath ~= "" then
         suffix = ", manifest=" .. result.manifestPath
     end
-    uiLog("Voiceover insert complete: inserted=" .. tostring(inserted) .. ", skipped=" .. tostring(skipped) .. suffix)
+    uiLog("Voiceover insert complete: inserted=" .. tostring(inserted) .. suffix)
 end
 
 local function synthesizeInsert(ev)
-    synthesizeAndInsert()
+    if synthesisBusy then return end
+    synthesisBusy = true
+    items.synthesizeInsert.Enabled = false
+    local ok, message = pcall(synthesizeAndInsert)
+    items.synthesizeInsert.Enabled = true
+    synthesisBusy = false
+    if not ok then uiLog("Voiceover failed: " .. tostring(message)) end
 end
 
 local function probe(ev)
@@ -2073,6 +2356,14 @@ end
 
 local function openLogs(ev)
     uiLog("Log directory path: " .. logDir())
+end
+
+-- Headless harness exercises the same insertion implementation without creating the panel.
+if _G.KAIROS_VOICEOVER_TEST then
+    return { parseSynthesizeTsv = parseSynthesizeTsv, insertAlignedResult = insertAlignedResult,
+        planAlignedUnit = planAlignedUnit, verifySubtitleSnapshot = verifySubtitleSnapshot,
+        applySubtitleTreeColumns = applySubtitleTreeColumns,
+        alignMarker = alignedMarker, collectSubtitles = collectSubtitles, timelineInventory = timelineInventory }
 end
 
 appendLog("lua plugin start root=" .. tostring(root))
@@ -2172,7 +2463,7 @@ ui:VGroup({
     ui:Tree({
         ID = "subtitleTree",
         Weight = 0.74,
-        ColumnCount = 6,
+        ColumnCount = SUBTITLE_COLUMN_COUNT,
         HeaderHidden = false,
         RootIsDecorated = false,
         AlternatingRowColors = true,
@@ -2202,13 +2493,12 @@ ui:VGroup({
     }),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         ui:CheckBox({
-            ID = "skipOverflow",
-            Text = "Skip overflow",
-            Checked = false,
-            Weight = 0,
-            Font = smallFont,
-            MinimumSize = {120, 24},
-            MaximumSize = {120, 24},
+            ID = "alignSubtitles", Text = "Align to subtitles", Checked = true,
+            Weight = 0, Font = smallFont, MinimumSize = {150, 24}, MaximumSize = {150, 24},
+        }),
+        ui:CheckBox({
+            ID = "forceRegenerate", Text = "Force regenerate", Checked = false,
+            Weight = 0, Font = smallFont, MinimumSize = {140, 24}, MaximumSize = {140, 24},
         }),
         button("playhead", "Locate", 68),
         button("rangeSelect", "Range", 68),

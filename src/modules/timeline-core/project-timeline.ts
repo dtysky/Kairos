@@ -123,6 +123,7 @@ interface IResolveHostClipPlacement {
   clipId: string;
   actualStartFrame: number;
   actualEndFrame: number;
+  actualSpeed?: number;
 }
 
 interface IResolvedResolveMediaClip {
@@ -446,6 +447,11 @@ export function rebaseDeterministicTimelineToResolvePlacements(input: {
     if (!placement) {
       throw new Error(`Resolve actual-frame reconciliation missing clip placement: ${clip.id}`);
     }
+    const requestedSpeed = clip.speed ?? 1;
+    if ((requestedSpeed !== 1 && placement.actualSpeed === undefined)
+      || (placement.actualSpeed !== undefined && Math.abs(placement.actualSpeed - requestedSpeed) > 0.001)) {
+      throw new Error(`Resolve actual-frame reconciliation speed mismatch: ${clip.id}`);
+    }
     return {
       ...clip,
       timelineInMs: timelineFrameToMs(placement.actualStartFrame, input.fps),
@@ -504,7 +510,11 @@ function readResolveHostClipPlacements(resolveTimeline: IResolveRoughCutTimeline
       throw new Error(`Resolve host clip placement contains duplicate clipId: ${clipId}`);
     }
     seen.add(clipId);
-    return { clipId, actualStartFrame, actualEndFrame };
+    const actualSpeed = row.actualSpeed === undefined ? undefined : readFiniteInteger(row.actualSpeed);
+    if (row.actualSpeed !== undefined && (actualSpeed === undefined || actualSpeed < 1 || actualSpeed > 5)) {
+      throw new Error(`Resolve host clip placement ${index} has invalid speed`);
+    }
+    return { clipId, actualStartFrame, actualEndFrame, actualSpeed };
   });
 }
 
@@ -597,7 +607,10 @@ export function buildDeterministicTimeline(input: {
           speechRanges: selectedSpeechRangesByAsset.get(asset.id) ?? [],
         });
         const requestedSpeed = treatment.speed;
-        const speed = 1;
+        const speed = asset.kind === 'photo' ? 1 : requestedSpeed;
+        if (speed !== 1 && span.type !== 'drive' && span.type !== 'aerial') {
+          throw new Error(`timeline.generate speed is only allowed for drive/aerial spans: ${span.id}`);
+        }
         if (asset.kind !== 'photo' && spanRequiresSourceAudioProtection(span) && effectiveAudioGainDb <= -100) {
           throw new Error(
             `timeline.generate blocked muted speech span: clipId=${baseClipId} spanId=${span.id} assetId=${asset.id}`,
@@ -622,7 +635,7 @@ export function buildDeterministicTimeline(input: {
           }
           const durationMs = asset.kind === 'photo'
             ? photoStillDurationMs
-            : Math.max(1, Math.round(window.sourceOutMs - window.sourceInMs));
+            : Math.max(1, Math.round((window.sourceOutMs - window.sourceInMs) / speed));
           const durationFrames = Math.max(1, msToTimelineFrame(durationMs, input.cfg.fps));
           const timelineInMs = timelineFrameToMs(cursorFrame, input.cfg.fps);
           const timelineOutMs = timelineFrameToMs(cursorFrame + durationFrames, input.cfg.fps);
@@ -640,6 +653,7 @@ export function buildDeterministicTimeline(input: {
             audioGainDb: effectiveAudioGainDb,
             timelineInMs,
             timelineOutMs,
+            ...(speed !== 1 ? { speed } : {}),
             ...(muteAudio ? { muteAudio: true } : {}),
             linkedScriptSegmentId: segment.segmentId,
             linkedScriptBeatId: slot.id,
@@ -670,7 +684,7 @@ export function buildDeterministicTimeline(input: {
             audioGainDb: effectiveAudioGainDb,
             muteAudio,
             speed,
-            requestedSpeed,
+            requestedSpeed: speed,
           });
           cursorFrame += durationFrames;
         }

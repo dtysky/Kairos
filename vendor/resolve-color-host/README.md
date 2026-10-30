@@ -7,11 +7,12 @@ Before changing this backend, read the local DaVinci Resolve scripting documenta
 - `../../.ai/knowledge/davinci-resolve-scripting.md`
 
 Then verify version-sensitive API methods against the installed Resolve scripting
-`README.txt` for the target machine.
+`README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) for the target machine.
 
 Expected local layout:
 
 - `vendor/resolve-color-host/resolve-color-host.py`
+- `vendor/resolve-color-host/resolve_edit_tools.py` (bounded edit maintenance; [contract](../../designs/resolve-edit-tools.md))
 - `vendor/resolve-color-host/.venv/...`
 - `<workspaceRoot>/config/default.drt` (preferred when present)
 - optional explicit external DRX path (manual diagnostics only; no default repo fallback)

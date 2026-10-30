@@ -12,6 +12,20 @@ import type {
 } from '../../src/protocol/schema.js';
 
 describe('timeline speech source handles', () => {
+  it('maps confirmed drive speed into subtitle timing while keeping source handles exactly once', () => {
+    const slots = structuredClone(MATERIAL_SLOTS);
+    slots.segments[0].slots[0].treatments = { 'span-speech': { speed: 2 } };
+    const spans: IKtepSpan[] = SPANS.map(span => span.id === 'span-speech' ? { ...span, type: 'drive' } : span);
+    const build = buildDeterministicTimeline({ project: PROJECT, editId: 'main', assets: ASSETS,
+      spans, materialSlots: slots, chronologyEvents: EVENTS, ingestRoots: [],
+      cfg: { fps: 30, width: 1920, height: 1080, name: 'Speed', stillDurationMs: 1000 },
+    });
+    expect(build.doc.timeline.clips[0]).toMatchObject({ speed: 2, sourceInMs: 850, sourceOutMs: 3250,
+      timelineInMs: 0, timelineOutMs: 1200 });
+    expect(buildTimelineSourceSpeechSubtitles({ clips: build.doc.timeline.clips, spans: build.doc.spans })[0])
+      .toMatchObject({ startMs: 125, endMs: 1075, text: '句尾要留住' });
+  });
+
   it('expands audible speech clips without stretching source-speech subtitles', () => {
     const build = buildDeterministicTimeline({
       project: PROJECT,

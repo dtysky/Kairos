@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -128,6 +128,81 @@ describe('Resolve Volc voiceover Supervisor service', () => {
 
     expect(parsed.audio.equals(audio)).toBe(true);
     expect(parsed.usage.characters).toBe(8);
+  });
+
+  it('parses delayed sentence.words events from HTTP and SSE responses', () => {
+    const bytes = Buffer.from('ID3test');
+    const lines = [
+      `data: ${JSON.stringify({ code: 0, data: bytes.toString('base64') })}`,
+      `data: ${JSON.stringify({ code: 0, data: null, sentence: { text: '你好', words: [{ word: '你好', startTime: 0.1, endTime: 1 }] } })}`,
+      'data: {"code":20000000,"data":null}',
+    ];
+    const result = parseTtsResponse(Buffer.from(lines.join('\n')));
+    expect(result.audio).toEqual(bytes);
+    expect(result.subtitles).toEqual([{ word: '你好', startTime: 0.1, endTime: 1 }]);
+  });
+
+  it('synthesizes once, reuses timed cache, and returns independent source ranges at original frames', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    const first = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    const second = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(client.calls).toBe(1);
+    expect(first.units).toHaveLength(2);
+    expect(first.units.map(unit => unit.subtitle.startFrame)).toEqual([108000, 108300]);
+    expect(first.units[0]?.resolveAudioPath).toBe(first.units[1]?.resolveAudioPath);
+    expect(first.units.map(unit => unit.alignment?.status)).toEqual(['aligned', 'aligned']);
+    expect(second.units[0]?.alignment).toEqual(first.units[0]?.alignment);
+    expect(second.units.every(unit => unit.cacheHit)).toBe(true);
+    const tsv = await synthesizeResolveVolcVoiceoverTsv({ workspaceRoot, job, client });
+    expect(tsv).toContain('ALIGNMENT\tsubtitle-alignment-v1');
+    expect(tsv).toContain('\taligned\t\t150\t1150\t1\t');
+  });
+
+  it('marks overflow per subtitle, including frame rounding', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    job.subtitles[0]!.endFrame = 108010;
+    const result = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(result.units.map(unit => unit.durationStatus)).toEqual(['overflow', 'ok']);
+    expect(result.units[0]?.overflowMs).toBeGreaterThan(300);
+  });
+
+  it('does not silently pay again when the alignment sidecar is damaged', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    const cache = join(workspaceRoot, 'projects/proj-a/.tmp/resolve-volc-voiceover-plugin/cache');
+    const sidecar = (await readdir(cache)).find(file => file.endsWith('.alignment.json'))!;
+    await writeFile(join(cache, sidecar), '{}');
+    const result = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(client.calls).toBe(1);
+    expect(result.units.every(unit => unit.alignment?.reason === 'alignment_cache_invalid_use_force')).toBe(true);
+  });
+
+  it('blocks unsupported resources and invalid selections before calling the paid provider', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    await expect(synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job: { ...job, timelineFrameRate: 0 }, client })).rejects.toMatchObject({ code: 'timeline_fps_missing' });
+    await expect(synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job: { ...job, subtitles: [job.subtitles[0]!, job.subtitles[0]!] }, client })).rejects.toMatchObject({ code: 'subtitle_alignment_input_invalid' });
+    const runtimePath = join(workspaceRoot, 'config/runtime.json');
+    const runtime = JSON.parse(await readFile(runtimePath, 'utf8'));
+    runtime.voiceover.profiles[0].resourceId = 'seed-tts-1.0';
+    await writeFile(runtimePath, JSON.stringify(runtime));
+    await expect(synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client })).rejects.toMatchObject({ code: 'alignment_resource_unsupported' });
+    expect(client.calls).toBe(0);
+  });
+
+  it('Force preserves earlier media and uses a new content-addressed file', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    const first = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    const original = await readFile(first.units[0]!.resolveAudioPath);
+    const originalSynthesize = client.synthesize.bind(client);
+    client.synthesize = async (...args) => {
+      const result = await originalSynthesize(...args);
+      result.audio = Buffer.from(result.audio);
+      result.audio[100] = 1;
+      return result;
+    };
+    const forced = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job: { ...job, settings: { ...job.settings, force: true } }, client });
+    expect(forced.units[0]?.resolveAudioPath).not.toBe(first.units[0]?.resolveAudioPath);
+    expect(await readFile(first.units[0]!.resolveAudioPath)).toEqual(original);
   });
 
   it('merges selected subtitles without adding terminal periods', () => {
@@ -331,4 +406,41 @@ function createFakeTtsClient(audio: Buffer): IVolcTtsClient & { calls: number } 
       };
     },
   };
+}
+
+async function alignedFixture() {
+  const workspaceRoot = await createWorkspaceFixture({
+    brief: { name: '测试', voiceoverMedia: { path: 'PLACEHOLDER' } },
+    runtime: { voiceover: { volcApiKey: 'test-key', defaultProfile: 'narrator', profiles: [
+      { name: 'narrator', speakerId: 'test-speaker', resourceId: 'seed-icl-2.0' },
+    ] } },
+  });
+  await rewriteProjectBrief(workspaceRoot, brief => ({ ...brief, voiceoverMedia: { path: join(workspaceRoot, 'voiceover') } }));
+  // Real decodable WAV in an .mp3-named fixture exercises the production ffprobe duration path.
+  const audio = Buffer.alloc(44 + 24000 * 2 * 3);
+  audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
+  audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22);
+  audio.writeUInt32LE(24000, 24); audio.writeUInt32LE(48000, 28); audio.writeUInt16LE(2, 32);
+  audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(audio.length - 44, 40);
+  const client: IVolcTtsClient & { calls: number } = {
+    calls: 0,
+    async synthesize(text, settings) {
+      expect(text).toBe('你好 再见');
+      expect(settings.enableSubtitle).toBe(true);
+      this.calls++;
+      return { audio, requestId: 'test-timing', subtitles: [
+        { word: '你好', startTime: 0.2, endTime: 0.8 },
+        { word: '再见', startTime: 1.5, endTime: 2.5 },
+      ] };
+    },
+  };
+  const job = {
+    resolveProjectName: '测试 [Edit]', timelineId: 't1', timelineFrameRate: 30,
+    subtitles: [
+      { trackIndex: 2, subtitleIndex: 2, startFrame: 108300, endFrame: 108360, text: '再见。' },
+      { trackIndex: 2, subtitleIndex: 1, startFrame: 108000, endFrame: 108030, text: '你好。' },
+    ].sort((a, b) => a.startFrame - b.startFrame),
+    settings: { placementMode: 'subtitle-aligned' as const },
+  };
+  return { workspaceRoot, job, client };
 }

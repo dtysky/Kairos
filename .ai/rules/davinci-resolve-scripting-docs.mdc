@@ -13,9 +13,9 @@ host, first read:
 
 Then verify any version-sensitive method against the installed official Resolve scripting docs:
 
-- macOS: `/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting/README.txt`
-- Windows: `%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\README.txt`
-- Linux: `/opt/resolve/Developer/Scripting/README.txt`
+- macOS: `/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting/README.md`
+- Windows: `%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\README.md`
+- Linux: `/opt/resolve/Developer/Scripting/README.md`
 
 The user-requested online mirror is:
 
@@ -30,3 +30,7 @@ The user-requested online mirror is:
 - Do not claim an OFX such as Gyroflow has loaded source-specific data merely because `GetToolsInNode()` shows the OFX shell.
 - Prefer live-verified clean DRT donor paths over DRX-only assumptions for Gyroflow source loading; a DRX repair template is layout evidence, not load evidence, unless a live probe proves otherwise.
 - If live Resolve verification is required, report the exact project/timeline/clips used.
+
+- For Resolve 21.1+, read the installed `DaVinciResolveScript.pyi` and `CHANGELOG.md` alongside `README.md`; `README.txt` is a legacy fallback. Version support is not execution verification.
+- Native selection uses `Timeline.GetSelectedClips()`. Subtitle text readback/movement does not establish subtitle-text writing support; `SetTranscription` is media transcription. Follow `designs/resolve-edit-tools.md` for the tested boundary.
+- Subtitle-to-voiceover alignment follows `designs/resolve-voiceover-alignment.md`: preserve original subtitle/video bounds, use validated provider word timing, and read back audio source ranges and actual placement. Resolve Lua API tables can contain numeric `__flags`; exclude it from item counts and marker traversal. Never infer successful alignment from a non-empty append response alone.

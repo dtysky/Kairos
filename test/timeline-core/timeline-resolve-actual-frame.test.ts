@@ -83,7 +83,7 @@ function createBuild(): IDeterministicTimelineBuild {
 }
 
 function createResolveResult(
-  placements: Array<{ clipId: string; actualStartFrame: number; actualEndFrame: number }>,
+  placements: Array<{ clipId: string; actualStartFrame: number; actualEndFrame: number; actualSpeed?: number }>,
   subtitleImport?: Record<string, unknown>,
 ): IResolveRoughCutTimelineResult {
   return {
@@ -99,6 +99,27 @@ function createResolveResult(
 }
 
 describe('Resolve actual-frame timeline reconciliation', () => {
+  it('requires verified matching speed before accepting retimed placements', () => {
+    const build = createBuild();
+    build.doc.timeline.clips[1].speed = 2;
+    build.resolveClips[1].speed = 2;
+    for (const actualSpeed of [undefined, 1, 3, NaN]) {
+      expect(() => rebaseDeterministicTimelineToResolvePlacements({ build, fps: 30,
+        resolveTimeline: createResolveResult([
+          { clipId: 'clip-00001', actualStartFrame: 0, actualEndFrame: 7 },
+          { clipId: 'clip-00002', actualStartFrame: 7, actualEndFrame: 194, actualSpeed },
+        ]),
+      })).toThrow(/speed/);
+    }
+    const result = rebaseDeterministicTimelineToResolvePlacements({ build, fps: 30,
+      resolveTimeline: createResolveResult([
+        { clipId: 'clip-00001', actualStartFrame: 0, actualEndFrame: 7 },
+        { clipId: 'clip-00002', actualStartFrame: 7, actualEndFrame: 194, actualSpeed: 2 },
+      ]),
+    });
+    expect(result.build.doc.timeline.clips[1]).toMatchObject({ speed: 2, timelineInMs: 233, timelineOutMs: 6467 });
+  });
+
   it('selects only host-confirmed suffix clips after the preserved playhead anchor', () => {
     const build = createBuild();
     const selected = selectDeterministicTimelineSuffix(build, {

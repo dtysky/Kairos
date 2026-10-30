@@ -84,6 +84,25 @@ describe('project-level Resolve media preparation', () => {
 });
 
 describe('project timeline generation', () => {
+  it('applies confirmed drive speed to planned duration and KTEP without changing source bounds', async () => {
+    const fixture = await createTimelineProjectFixture({
+      materialSlotsOverride: createMaterialSlots({ 'slice-drive': { speed: 5 } }),
+    });
+    const project = await loadProject(fixture.projectRoot);
+    const result = buildDeterministicTimeline({
+      project, editId: 'main', assets: fixture.assets, spans: fixture.spans,
+      materialSlots: fixture.materialSlots, chronologyEvents: fixture.events,
+      ingestRoots: [], cfg: createTimelineConfig(),
+    });
+    const clip = result.doc.timeline.clips[0];
+    const sourceDuration = clip.sourceOutMs! - clip.sourceInMs!;
+    expect(clip.speed).toBe(5);
+    expect(Math.abs((clip.timelineOutMs - clip.timelineInMs) - sourceDuration / 5)).toBeLessThan(34);
+    expect(result.doc.timeline.clips[1].timelineInMs).toBe(clip.timelineOutMs);
+    expect(result.resolveClips[0]).toMatchObject({ speed: 5, requestedSpeed: 5,
+      sourceInMs: clip.sourceInMs, sourceOutMs: clip.sourceOutMs });
+  });
+
   it('blocks legacy chronology before building timeline', async () => {
     const { projectRoot } = await createTimelineProjectFixture({ legacyChronology: true });
 
