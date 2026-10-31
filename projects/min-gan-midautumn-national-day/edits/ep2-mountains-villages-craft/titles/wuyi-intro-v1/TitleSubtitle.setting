@@ -1,0 +1,30 @@
+{
+	Tools = ordered() {
+		TitleSubtitle = TextPlus {
+			Inputs = {
+				GlobalIn = Input { Value = -470, },
+				GlobalOut = Input { Value = 468, },
+				Width = Input { Value = 8190, },
+				Height = Input { Value = 5460, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input { Value = { 0.42, 0.545 }, },
+				LayoutRotation = Input { Value = 1, },
+				CharacterSpacing = Input { Value = 1.15, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.95, },
+				Green1 = Input { Value = 0.91, },
+				Blue1 = Input { Value = 0.82, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "山水、村落与手艺", },
+				Font = Input { Value = "STSong", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.038, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			Version = 1
+		}
+	}
+}

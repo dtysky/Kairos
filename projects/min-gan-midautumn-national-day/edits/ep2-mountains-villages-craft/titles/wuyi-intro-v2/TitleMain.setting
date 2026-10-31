@@ -1,0 +1,27 @@
+{
+	Tools = ordered() {
+		TitleMain = TextPlus {
+			Inputs = {
+				GlobalIn = Input { Value = -470, },
+				GlobalOut = Input { Value = 468, },
+				Width = Input { Value = 8190, },
+				Height = Input { Value = 5460, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input { Value = { 0.5, 0.638 }, },
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "武夷山", },
+				Font = Input { Value = "STXingkai", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.2, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+			Version = 1
+		}
+	}
+}

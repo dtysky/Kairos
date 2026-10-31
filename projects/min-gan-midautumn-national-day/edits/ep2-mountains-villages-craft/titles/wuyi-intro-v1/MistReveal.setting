@@ -1,0 +1,29 @@
+{
+	Tools = ordered() {
+		MistReveal = Dissolve {
+			Transitions = {
+				[0] = "DFTDissolve",
+				"DFTLumaRamp"
+			},
+			Inputs = {
+				Operation = Input { Value = FuID { "DFTLumaRamp" }, },
+				Mix = Input {
+					Value = 0,
+					Expression = "min(max((time-53)/72,0),1)",
+				},
+				Background = Input {
+					SourceOp = "Transparent",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "TitleMain",
+					Source = "Output",
+				},
+				Map = Input {
+					SourceOp = "RevealNoise",
+					Source = "Output",
+				}
+			},
+		}
+	}
+}

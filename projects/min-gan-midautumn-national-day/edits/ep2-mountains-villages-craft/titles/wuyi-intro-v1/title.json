@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "wuyi-intro-title-v1",
+  "title": "武夷山",
+  "subtitle": "山水、村落与手艺",
+  "projectId": "08c5a89e-bf9f-4332-9dbc-8f2a9c15684e",
+  "timelineId": "c82558e6-cf57-4fe6-b1cf-7b34b240d7cc",
+  "videoItemId": "69a2ed24-bf13-4e2f-96ca-292738040323",
+  "sourceInFrame": 494,
+  "sourceOutFrame": 902,
+  "timelineInFrame": 2867,
+  "timelineOutFrame": 3122,
+  "timelineFps": 30,
+  "sourceFps": 24,
+  "speedPercentage": 200,
+  "compVisibleRange": [
+    24,
+    432
+  ],
+  "compFramesPerTimelineFrame": 1.6,
+  "mainFont": "STXinwei",
+  "subtitleFont": "STSong",
+  "mainInCompFrames": [
+    53,
+    125
+  ],
+  "subtitleInCompFrames": [
+    77,
+    125
+  ],
+  "outCompFrames": [
+    346,
+    394
+  ],
+  "implementation": "Native AddFusionComp with editable TextPlus and noise dissolve; source MediaIn is preserved. Per-node settings are not standalone footage imports.",
+  "preview": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\.tmp\\intro-title-20261031-v1\\render-v1\\Wuyi-title-v1_V1-0042.mp4",
+  "testTimelineId": "a3f76603-e9cd-409e-9077-b525619f9020",
+  "sourceFrameFormat": [
+    8190,
+    5460
+  ]
+}

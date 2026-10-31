@@ -1,0 +1,22 @@
+{
+	Tools = ordered() {
+		TitleMerge = Merge {
+			Inputs = {
+				Blend = Input {
+					Value = 0,
+					Expression = "min(max((time-53)/24,0),1)*min(max((394-time)/48,0),1)",
+				},
+				Background = Input {
+					SourceOp = "MediaIn1",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "MistReveal",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+		}
+	}
+}

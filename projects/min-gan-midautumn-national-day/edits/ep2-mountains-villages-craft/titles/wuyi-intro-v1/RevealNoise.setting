@@ -1,0 +1,19 @@
+{
+	Tools = ordered() {
+		RevealNoise = FastNoise {
+			Inputs = {
+				GlobalIn = Input { Value = -470, },
+				GlobalOut = Input { Value = 468, },
+				Width = Input { Value = 8190, },
+				Height = Input { Value = 5460, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Detail = Input { Value = 3, },
+				Contrast = Input { Value = 1.6, },
+				XScale = Input { Value = 2.6, },
+				YScale = Input { Value = 1.5, },
+				SeetheRate = Input { Value = 0.018, }
+			},
+		}
+	}
+}

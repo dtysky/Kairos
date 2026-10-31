@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-10-30T09:25:30.612Z",
+  "updatedAt": "2026-10-31T06:38:31.674Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-30T09:25:28Z",
-        "mode": "manual",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-10-31T06:38:28Z",
+        "mode": "auto",
         "retention": "latest-only",
-        "action": "manual",
+        "action": "ep2-photo-finishing",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -19,13 +19,13 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "e4b17a36-5439-4234-9bc5-647f6a5209dd",
+        "attemptId": "209f5060-758c-42ea-9ffa-1317607fec5c",
         "status": "succeeded",
-        "startedAt": "2026-10-30T09:25:28.708Z",
-        "finishedAt": "2026-10-30T09:25:30.611Z",
-        "mode": "manual",
+        "startedAt": "2026-10-31T06:38:27.848Z",
+        "finishedAt": "2026-10-31T06:38:31.674Z",
+        "mode": "auto",
         "retention": "latest-only",
-        "action": "manual"
+        "action": "ep2-photo-finishing"
       },
       "snapshotAttempts": [
         {
@@ -299,10 +299,55 @@
           "mode": "manual",
           "retention": "latest-only",
           "action": "manual"
+        },
+        {
+          "attemptId": "1347ef2e-ccec-4640-ae29-df8339b452ef",
+          "status": "succeeded",
+          "startedAt": "2026-10-30T13:11:59.631Z",
+          "finishedAt": "2026-10-30T13:12:03.350Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "aba0c94d-052b-4afb-be48-740b028a5bcd",
+          "status": "succeeded",
+          "startedAt": "2026-10-30T15:40:14.863Z",
+          "finishedAt": "2026-10-30T15:40:18.672Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "e8fac364-a9b3-4b58-abb3-c1153b5ec2bf",
+          "status": "succeeded",
+          "startedAt": "2026-10-30T16:00:23.894Z",
+          "finishedAt": "2026-10-30T16:00:27.781Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "intro-title-v1"
+        },
+        {
+          "attemptId": "2ac0a56c-6c57-41cb-983c-c3bc3778ba36",
+          "status": "succeeded",
+          "startedAt": "2026-10-31T04:20:09.380Z",
+          "finishedAt": "2026-10-31T04:20:13.248Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "intro-title-v2"
+        },
+        {
+          "attemptId": "209f5060-758c-42ea-9ffa-1317607fec5c",
+          "status": "succeeded",
+          "startedAt": "2026-10-31T06:38:27.848Z",
+          "finishedAt": "2026-10-31T06:38:31.674Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "ep2-photo-finishing"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-10-30T09:25:30.612Z"
+      "updatedAt": "2026-10-31T06:38:31.674Z"
     }
   }
 }

@@ -1,0 +1,20 @@
+{
+	Tools = ordered() {
+		SubtitleMerge = Merge {
+			CtrlWZoom = false,
+			Inputs = {
+				Blend = Input { Expression = "min(max((time-77)/48,0),1)*min(max((394-time)/48,0),1)", },
+				Background = Input {
+					SourceOp = "TitleMerge",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "TitleSubtitle",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+		}
+	}
+}
