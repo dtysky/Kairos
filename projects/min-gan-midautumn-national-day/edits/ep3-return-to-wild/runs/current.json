@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "editId": "ep3-return-to-wild",
-  "updatedAt": "2026-10-17T10:14:59.984Z",
+  "updatedAt": "2026-11-01T09:15:03.422Z",
   "records": [
     {
       "schemaVersion": "1.0",
@@ -12,9 +12,9 @@
       "stepId": "edit-framework-v1",
       "capabilityId": "edit.framework",
       "runner": "agent",
-      "status": "awaiting_review",
+      "status": "completed",
       "startedAt": "2026-10-17T10:08:54.732Z",
-      "updatedAt": "2026-10-17T10:14:59.984Z",
+      "updatedAt": "2026-11-01T08:57:01.337Z",
       "completedAt": "2026-10-17T10:14:59.984Z",
       "inputRefs": [
         "config/edit-rules/travel-vlog.md",
@@ -64,7 +64,7 @@
         "edits/ep3-return-to-wild/planning/edit-framework.md"
       ],
       "summary": {
-        "stage": "framework_awaiting_review",
+        "stage": "framework_confirmed",
         "chapterCount": 7,
         "frameworkRowCount": 104,
         "candidateSpanCount": 645,
@@ -77,9 +77,394 @@
         "nextStep": "material-recall-v1"
       },
       "review": {
-        "status": "pending",
-        "note": "框架已生成并校验完整范围，等待用户审查；尚未执行素材召回或时间线生成。"
+        "status": "confirmed",
+        "confirmedAt": "2026-11-01T08:57:01.337Z",
+        "confirmedBy": "user",
+        "note": "用户于2026-11-01明确指令：按已审框架召回“回程进入山野”素材。框架正文hash未变；保留原审查中的素材类型疑点，在召回审查中列明，未获授权修改素材类型。"
       }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-recall-ep3-return-to-wild-20261101",
+      "editId": "ep3-return-to-wild",
+      "flowPlanId": "edit-flow-ep3-return-to-wild-vlog-20261017",
+      "flowPlanHash": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064",
+      "stepId": "material-recall-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-11-01T08:57:01.337Z",
+      "updatedAt": "2026-11-01T09:06:48.713Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-clean-context-subagent",
+        "frameworkHash": "6e8f8a18308bda160b4b2763fb0fa822c91841bf5f3934efdafb0649d1310a9c",
+        "packetPath": ".tmp/edit-flow/ep3-return-to-wild/recall-20261101/manifest.json",
+        "candidateSpanCount": 645,
+        "shardCount": 1,
+        "sourceHashes": {
+          "store/spans.json": "fcaff7d311ad175bfad8b4e2d708d2ea37ddb41b04de2cbd1cef9d120da2b1cc",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep3-return-to-wild/planning/edit-framework.md": "6e8f8a18308bda160b4b2763fb0fa822c91841bf5f3934efdafb0649d1310a9c",
+          "edits/ep3-return-to-wild/planning/flow-plan.json": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064"
+        },
+        "execution": {
+          "mode": "sharded-agent",
+          "shardBy": "day",
+          "shardPacking": {
+            "base": "day",
+            "metric": "materialRefCount",
+            "maxPerShard": 2000,
+            "preserveOrder": true
+          },
+          "codexSubagentProfile": {
+            "reasoningEffort": "high",
+            "forkContext": false,
+            "speed": "standard"
+          }
+        },
+        "subagentTask": "/root/recall_ep3",
+        "scope": {
+          "startAt": "2026-10-02T13:25:21.000Z",
+          "endAt": "2026-10-06T08:28:45.000Z",
+          "candidateSpanCount": 645,
+          "assetCount": 524,
+          "frameworkRowCount": 104
+        }
+      },
+      "outputPaths": [
+        "edits/ep3-return-to-wild/script/material-slots.json"
+      ],
+      "summary": {
+        "stage": "material_recall_confirmed",
+        "candidateSpanCount": 645,
+        "chosenSpanCount": 631,
+        "excludedSpanCount": 14,
+        "frameworkRowCount": 104,
+        "speechBackedAvailable": 336,
+        "speechBackedChosen": 336,
+        "protectedSpeechAvailable": 336,
+        "protectedSpeechChosen": 336,
+        "byType": [
+          {
+            "type": "broll",
+            "available": 227,
+            "chosen": 224,
+            "dropped": 3
+          },
+          {
+            "type": "drive",
+            "available": 198,
+            "chosen": 187,
+            "dropped": 11
+          },
+          {
+            "type": "photo",
+            "available": 129,
+            "chosen": 129,
+            "dropped": 0
+          },
+          {
+            "type": "aerial",
+            "available": 73,
+            "chosen": 73,
+            "dropped": 0
+          },
+          {
+            "type": "talking-head",
+            "available": 17,
+            "chosen": 17,
+            "dropped": 0
+          },
+          {
+            "type": "timelapse",
+            "available": 1,
+            "chosen": 1,
+            "dropped": 0
+          }
+        ],
+        "explicitMuteCount": 249,
+        "speedChangedCount": 41,
+        "overlongSilentDriveCount": 10,
+        "validationStatus": "passed",
+        "validationPath": ".tmp/edit-flow/ep3-return-to-wild/recall-20261101/validation.json",
+        "reviewPath": ".tmp/edit-flow/ep3-return-to-wild/recall-20261101/review.md",
+        "decisionAuditPath": ".tmp/edit-flow/ep3-return-to-wild/recall-20261101/decisions.json",
+        "materialSlotsHash": "32fe70863d8adebcb32310e045d33a8d41278d5dc280e41c74977d9e7d59a46f",
+        "reviewBlockers": [],
+        "nextStep": "timeline-generate-v1",
+        "resolvedReviewBlockers": [
+          {
+            "code": "aerial-controller-speech",
+            "spanId": "C4861_zve1_day9_aerial_speech_s0-17",
+            "resolution": "user-confirmed broll with source audio",
+            "resolvedAt": "2026-11-01T09:06:48.713Z"
+          }
+        ]
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-11-01T09:06:48.713Z",
+        "confirmedBy": "user",
+        "note": "用户明确要求生成正文粗剪及原声SRT，并明确选择将C4861更正为普通视频、保留讲解。其余631项选择与既定处理保持原样；10项四倍后仍超10秒的静音行车保留完整范围供人工精剪。"
+      },
+      "completedAt": "2026-11-01T09:02:07.986Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-ep3-return-to-wild-20261101",
+      "editId": "ep3-return-to-wild",
+      "flowPlanId": "edit-flow-ep3-return-to-wild-vlog-20261017",
+      "flowPlanHash": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064",
+      "stepId": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-11-01T09:10:00.324Z",
+      "updatedAt": "2026-11-01T09:12:32.237Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 回程进入山野 [ep3-return-to-wild]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "sourceHashes": {
+          "store/spans.json": "10599282c4a4641e59293de5e2730895f95d48a85517b8badef86c8b02842f51",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep3-return-to-wild/script/material-slots.json": "32fe70863d8adebcb32310e045d33a8d41278d5dc280e41c74977d9e7d59a46f",
+          "edits/ep3-return-to-wild/planning/edit-framework.md": "c8c8e2d481fbdca0d5c387e807ecf1cbcae06a3f69bde874867aa01ace36eb6f",
+          "edits/ep3-return-to-wild/planning/flow-plan.json": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064"
+        },
+        "preflightPath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/input-verification.json",
+        "resolveStatePath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/ready-resolve-state.json",
+        "resolveProjectId": "08c5a89e-bf9f-4332-9dbc-8f2a9c15684e",
+        "requiredMediaCount": 524,
+        "protectedTimelineCount": 13,
+        "authorizedCorrection": "C4861 type=broll; source narration audible",
+        "supplementalMediaImported": 7
+      },
+      "outputPaths": [],
+      "summary": {
+        "stage": "native_resolve_placement",
+        "plannedClipCount": 631
+      },
+      "review": {
+        "status": "pending"
+      },
+      "error": "Native speed changed the source window or produced unexpected timing.",
+      "completedAt": "2026-11-01T09:12:32.237Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-ep3-return-to-wild-20261101-recovery",
+      "editId": "ep3-return-to-wild",
+      "flowPlanId": "edit-flow-ep3-return-to-wild-vlog-20261017",
+      "flowPlanHash": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064",
+      "stepId": "timeline-generate-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-11-01T09:14:09.462Z",
+      "updatedAt": "2026-11-01T09:15:03.422Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline: 回程进入山野 [ep3-return-to-wild]",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "sourceHashes": {
+          "store/spans.json": "10599282c4a4641e59293de5e2730895f95d48a85517b8badef86c8b02842f51",
+          "store/assets.json": "91402890161143c7e154000a1367cf3c3ed8e6d9aba888aa4abbe5c43ef667bc",
+          "store/spans.meta.json": "7689b66dadb986b06b467a21b4c420011cf8988b85ce6964431b0b53237f3887",
+          "media/chronology.json": "ddf72efb95de54878adc5577bca8339a187e863b15df806ccb97463b23cc1205",
+          "edits/ep3-return-to-wild/script/material-slots.json": "32fe70863d8adebcb32310e045d33a8d41278d5dc280e41c74977d9e7d59a46f",
+          "edits/ep3-return-to-wild/planning/edit-framework.md": "c8c8e2d481fbdca0d5c387e807ecf1cbcae06a3f69bde874867aa01ace36eb6f",
+          "edits/ep3-return-to-wild/planning/flow-plan.json": "8818311d1be3e5e4ad2edf53a0ae3551d1d0313d503dcf4ca01618341070d064"
+        },
+        "preflightPath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/input-verification.json",
+        "resolveStatePath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/ready-resolve-state.json",
+        "resolveProjectId": "08c5a89e-bf9f-4332-9dbc-8f2a9c15684e",
+        "requiredMediaCount": 524,
+        "protectedTimelineCount": 13,
+        "authorizedCorrection": "C4861 type=broll; source narration audible",
+        "supplementalMediaImported": 7,
+        "recoveryOf": "run-timeline-ep3-return-to-wild-20261101",
+        "timelineId": "0f717fef-f7ad-45e7-a2a9-fc16219a4b4e",
+        "completedClipCount": 598
+      },
+      "outputPaths": [
+        ".tmp/edit-flow/ep3-return-to-wild/timeline/current.json",
+        ".tmp/edit-flow/ep3-return-to-wild/timeline/current.srt",
+        "edits/resolve-project-map.json"
+      ],
+      "summary": {
+        "stage": "rough_cut_ready_for_review",
+        "resolveProjectName": "中秋国庆闽赣自驾 [Edit]",
+        "timelineName": "回程进入山野 [ep3-return-to-wild]",
+        "clipCount": 631,
+        "subtitleCueCount": 750,
+        "subtitleSrtPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\.tmp\\edit-flow\\ep3-return-to-wild\\timeline\\current.srt",
+        "actualFrameTiming": {
+          "policyVersion": "resolve-actual-frame-v1",
+          "placementPasses": 1,
+          "plannedDurationMs": 7693267,
+          "actualDurationMs": 7679800,
+          "durationDeltaMs": -13467,
+          "subtitlePreloaded": false
+        },
+        "hostSummary": {
+          "namespace": "Kairos Project Media",
+          "timelineName": "回程进入山野 [ep3-return-to-wild]",
+          "clipCount": 631,
+          "mutedClipCount": 249,
+          "speedAppliedCount": 41,
+          "speedIgnoredCount": 0,
+          "timelineCreate": "native-api",
+          "speedStrategy": "native-SetSpeed",
+          "sourceRangeValidation": {
+            "checked": 535,
+            "passed": 535,
+            "failed": 0,
+            "strategy": "native-source-readback",
+            "maxToleranceFrames": 10
+          },
+          "stillDurationValidation": {
+            "checked": 129,
+            "passed": 129,
+            "failed": 0,
+            "expectedMs": 1000
+          },
+          "timelinePlacementValidation": {
+            "checked": 631,
+            "passed": 631,
+            "failed": 0,
+            "strategy": "sequential-actual-end"
+          },
+          "timelineGapValidation": {
+            "checked": 631,
+            "gapCount": 0,
+            "overlapCount": 0,
+            "maxGapFrames": 0,
+            "firstGaps": [],
+            "passed": true
+          },
+          "subtitleImport": {
+            "enabled": false
+          },
+          "syncSummary": {
+            "mode": "existing-media-pool",
+            "imported": 0,
+            "moved": 0,
+            "reused": 524
+          },
+          "interruptedRunRecovery": {
+            "preservedClipCount": 598,
+            "appendedClipCount": 33,
+            "deletedClipCount": 0,
+            "floatChecks": [
+              {
+                "clipId": "clip-00598",
+                "requestedPercentage": 300,
+                "actualPercentage": 300.00000000000006,
+                "absoluteTolerance": 1e-9,
+                "before": [
+                  212934,
+                  213624,
+                  0,
+                  1378
+                ],
+                "after": [
+                  212934,
+                  213164,
+                  0,
+                  1378
+                ],
+                "sourceAndDurationValidated": true
+              },
+              {
+                "clipId": "clip-00614",
+                "requestedPercentage": 300,
+                "actualPercentage": 299.99999999999994,
+                "absoluteTolerance": 1e-9,
+                "before": [
+                  221762,
+                  222437,
+                  0,
+                  1348
+                ],
+                "after": [
+                  221762,
+                  221987,
+                  0,
+                  1348
+                ],
+                "sourceAndDurationValidated": true
+              }
+            ],
+            "prefixRangesAndIdentityUnchanged": true
+          }
+        },
+        "drpSnapshot": {
+          "projectName": "中秋国庆闽赣自驾 [Edit]",
+          "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+          "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+          "createdAt": "2026-11-01T09:14:45Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline.generate",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+        },
+        "subtitleImported": false,
+        "validationStatus": "passed",
+        "resolveTimelineId": "0f717fef-f7ad-45e7-a2a9-fc16219a4b4e",
+        "durationSeconds": 7679.8,
+        "protectedTimelinesUnchanged": 13,
+        "sourceSpeechClipCount": 336,
+        "controllerNarrationPreserved": true,
+        "independentResolveValidationPath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/independent-resolve-verification.json",
+        "independentSubtitleValidationPath": ".tmp/edit-flow/ep3-return-to-wild/timeline-preflight-20261101/independent-subtitle-verification.json"
+      },
+      "review": {
+        "status": "pending",
+        "note": "正文粗剪及原声SRT已生成，待人工精剪审查；未锁片。中断恢复保留598段既有落片，只补入33段。"
+      },
+      "completedAt": "2026-11-01T09:14:48.866Z"
     }
   ]
 }

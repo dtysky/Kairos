@@ -1,0 +1,3522 @@
+{
+  "id": "material-slots-ep3-return-to-wild-20261101",
+  "projectId": "min-gan-midautumn-national-day",
+  "generatedAt": "2026-11-01T09:00:54.434897Z",
+  "status": "current",
+  "segments": [
+    {
+      "segmentId": "FW-01-01",
+      "slots": [
+        {
+          "id": "FW-01-01-materials",
+          "query": "夜间高速路面反光，雨水和前车水雾遮挡视野；车内说突然下起暴雨、路面出现团雾，同时响起巡航与方向盘控制提示。",
+          "requirement": "required",
+          "targetBundles": [
+            "暴雨与团雾"
+          ],
+          "chosenSpanIds": [
+            "C4814_zve1_day8_drive_speech_s0-49",
+            "C4815_zve1_day8_drive_speech_s0-14",
+            "C4816_zve1_day8_drive_speech_s2-9",
+            "C4817_zve1_day8_drive_speech_s0-10",
+            "C4818_zve1_day8_drive_speech_s2-4",
+            "C4818_zve1_day8_drive_visual_s4-11"
+          ],
+          "treatments": {
+            "C4818_zve1_day8_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-02",
+      "slots": [
+        {
+          "id": "FW-01-02-materials",
+          "query": "车辆跟随货车前行，经过亮灯的收费站；车内说已到庐山星子、鄱阳湖西侧，导航继续提示转向。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜路、货车与星子出口"
+          ],
+          "chosenSpanIds": [
+            "C4819_zve1_day8_drive_speech_s0-2",
+            "C4820_zve1_day8_drive_speech_s0-15",
+            "C4821_zve1_day8_drive_speech_s9-21",
+            "C4821_zve1_day8_drive_speech_s28-35"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-03",
+      "slots": [
+        {
+          "id": "FW-01-03-materials",
+          "query": "湿路两侧有路灯、装饰结和彩色光带；车内谈到道路宽平，并表达对湖边城市建设与原先想象不同的感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "湖边城镇灯光"
+          ],
+          "chosenSpanIds": [
+            "C4822_zve1_day8_drive_speech_s1-14",
+            "C4823_zve1_day8_drive_speech_s0-20"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-01",
+      "slots": [
+        {
+          "id": "FW-02-01-materials",
+          "query": "凌晨的停车场人少，两人穿雨衣从阶梯走向湖滩草地；口述毛毛雨、寻找蓝调日出的打算，并提醒草地深浅和泥坑。",
+          "requirement": "required",
+          "targetBundles": [
+            "紫阳广场出发"
+          ],
+          "chosenSpanIds": [
+            "C4824_zve1_day9_broll_speech_s0-7",
+            "C4825_zve1_day9_broll_speech_s0-1",
+            "C4826_zve1_day9_talking-head_speech_s1-11",
+            "C4827_zve1_day9_broll_speech_s0-11",
+            "C4828_zve1_day9_broll_speech_s0-16",
+            "C4829_zve1_day9_broll_speech_s1-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-02",
+      "slots": [
+        {
+          "id": "FW-02-02-materials",
+          "query": "手电照见裂土、积水和泥地，人物寻找跨河通路，展示沾泥鞋子；随后拍到小桥，过桥后继续向落星墩走。",
+          "requirement": "required",
+          "targetBundles": [
+            "摸黑找桥与泥鞋"
+          ],
+          "chosenSpanIds": [
+            "C4830_zve1_day9_broll_speech_s0-9",
+            "C4831_zve1_day9_broll_speech_s0-10",
+            "C4832_zve1_day9_broll_speech_s0-11",
+            "C4833_zve1_day9_broll_speech_s0-3",
+            "C4834_zve1_day9_broll_speech_s0-12",
+            "C4835_zve1_day9_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-03",
+      "slots": [
+        {
+          "id": "FW-02-03-materials",
+          "query": "人物穿过泥泞草地，在塔与亭前介绍到达过程、湿鞋和清新空气；口述落星墩历史、水位季节和此行期待，这些为人物当场讲述。",
+          "requirement": "required",
+          "targetBundles": [
+            "抵达石台前"
+          ],
+          "chosenSpanIds": [
+            "C4836_zve1_day9_broll_speech_s0-2",
+            "C4836_zve1_day9_broll_speech_s4-21",
+            "C4837_zve1_day9_broll_s0-3",
+            "C4840_zve1_day9_broll_speech_s2-98",
+            "C4840_zve1_day9_broll_speech_s101-105"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-04",
+      "slots": [
+        {
+          "id": "FW-02-04-materials",
+          "query": "湖面停泊船只，远处城市隐在雾中；人物绕向入口，沿湿滑石阶手脚并用向上，站在塔旁望向船和湖滩。关于当年最低水位的说法带有“好像”的推测。",
+          "requirement": "required",
+          "targetBundles": [
+            "沿湖绕行与登上石台"
+          ],
+          "chosenSpanIds": [
+            "C4841_zve1_day9_broll_speech_s0-20",
+            "C4842_zve1_day9_broll_speech_s0-6",
+            "C4842_zve1_day9_broll_speech_s15-21",
+            "C4843_zve1_day9_broll_speech_s0-28",
+            "C4844_zve1_day9_broll_speech_s8-11",
+            "C4845_zve1_day9_broll_speech_s0-1",
+            "C4846_zve1_day9_broll_speech_s1-22",
+            "C4846_zve1_day9_broll_speech_s25-32"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-05",
+      "slots": [
+        {
+          "id": "FW-02-05-materials",
+          "query": "镜头经过寺门、供像、遗址介绍牌、台阶和上锁房间，随后望向草滩、城楼与湖船；人物读牌、猜测供像来历，并表达对装饰灯的审美意见。",
+          "requirement": "required",
+          "targetBundles": [
+            "寺门、碑牌与亭外景色"
+          ],
+          "chosenSpanIds": [
+            "C4847_zve1_day9_broll_speech_s0-28",
+            "C4848_zve1_day9_broll_speech_s0-12",
+            "C4848_zve1_day9_broll_speech_s15-21",
+            "C4848_zve1_day9_broll_speech_s28-32",
+            "C4849_zve1_day9_broll_speech_s0-28",
+            "C4850_zve1_day9_broll_speech_s0-16",
+            "C4851_zve1_day9_broll_speech_s0-34",
+            "C4852_zve1_day9_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-06",
+      "slots": [
+        {
+          "id": "FW-02-06-materials",
+          "query": "窗边可见碎玻璃，塔内是窄阶、剥落墙面、供像和食品供品；人物边登阶边说高度与体感，最后沿旋梯向下。",
+          "requirement": "required",
+          "targetBundles": [
+            "窗边与塔内阶梯"
+          ],
+          "chosenSpanIds": [
+            "C4853_zve1_day9_broll_speech_s1-13",
+            "C4854_zve1_day9_broll_speech_s0-13",
+            "C4854_zve1_day9_broll_speech_s19-38",
+            "C4855_zve1_day9_broll_speech_s0-15",
+            "C4856_zve1_day9_broll_speech_s1-21",
+            "C4857_zve1_day9_broll_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-07",
+      "slots": [
+        {
+          "id": "FW-02-07-materials",
+          "query": "人物从高处辨认湖滩上已走出的通路，回看早晨绕桥与湿鞋的经历；自拍中可见湿发和泥裤，并说这次体验虽艰难仍值得。",
+          "requirement": "required",
+          "targetBundles": [
+            "发现另一条路"
+          ],
+          "chosenSpanIds": [
+            "C4858_zve1_day9_broll_speech_s0-23",
+            "C4859_zve1_day9_talking-head_speech_s0-10",
+            "C4860_zve1_day9_talking-head_speech_s0-9",
+            "C4860_zve1_day9_talking-head_speech_s11-24"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-08",
+      "slots": [
+        {
+          "id": "FW-02-08-materials",
+          "query": "湖岸绿色浅滩、停船与亭阁屋檐出现在镜头中，背景是城区和低云山体。",
+          "requirement": "required",
+          "targetBundles": [
+            "湖岸与亭檐近景"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261003071243_0560_D_drone_broll_s0-4",
+            "DJI_20261003072805_0648_D_drone_broll_s0-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-09",
+      "slots": [
+        {
+          "id": "FW-02-09-materials",
+          "query": "视角围绕石台上的塔亭展开，逐步显出水道、绿色湖滩、船只和城市；后段人物在大草地行走。组内另有遥控器屏幕讲解，人物据画面回顾早晨绕路和桥口位置。",
+          "requirement": "required",
+          "targetBundles": [
+            "湖滩、古建与人物航拍组"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261003071325_0561_D_drone_aerial_s0-21",
+            "DJI_20261003071431_0562_D_drone_aerial_s0-18",
+            "DJI_20261003071606_0573_D_drone_aerial_s0-8",
+            "DJI_20261003071631_0577_D_drone_aerial_s0-61",
+            "DJI_20261003071744_0581_D_drone_aerial_s0-16",
+            "DJI_20261003071838_0588_D_drone_aerial_s0-13",
+            "DJI_20261003071905_0589_D_drone_aerial_s0-40",
+            "DJI_20261003072033_0590_D_drone_aerial_s0-30",
+            "C4861_zve1_day9_aerial_speech_s0-17",
+            "DJI_20261003072232_0603_D_drone_aerial_s0-27",
+            "DJI_20261003072340_0613_D_drone_aerial_s0-18",
+            "DJI_20261003072408_0617_D_drone_aerial_s0-45",
+            "DJI_20261003072853_0649_D_drone_aerial_s0-29",
+            "DJI_20261003072955_0650_D_drone_aerial_s0-10",
+            "DJI_20261003073034_0651_D_drone_aerial_s0-20",
+            "DJI_20261003075041_0700_D_drone_aerial_s0-11",
+            "DJI_20261003075440_0707_D_drone_aerial_s0-14",
+            "DJI_20261003075704_0720_D_drone_aerial_s0-11",
+            "DJI_20261003075722_0721_D_drone_aerial_s0-14",
+            "DJI_20261003075800_0722_D_drone_aerial_s0-34",
+            "DJI_20261003075837_0723_D_drone_aerial_s0-8",
+            "DJI_20261003080353_0735_D_drone_aerial_s0-7",
+            "DJI_20261003080512_0736_D_drone_aerial_s0-101",
+            "DJI_20261003081113_0764_D_drone_aerial_s0-10",
+            "DJI_20261003081600_0766_D_drone_aerial_s0-12",
+            "DJI_20261003081825_0767_D_drone_aerial_s0-13",
+            "DJI_20261003082220_0770_D_drone_aerial_s0-17",
+            "DJI_20261003082331_0773_D_drone_aerial_s0-32"
+          ],
+          "treatments": {
+            "DJI_20261003071325_0561_D_drone_aerial_s0-21": {
+              "audio": -100
+            },
+            "DJI_20261003071431_0562_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20261003071606_0573_D_drone_aerial_s0-8": {
+              "audio": -100
+            },
+            "DJI_20261003071631_0577_D_drone_aerial_s0-61": {
+              "audio": -100
+            },
+            "DJI_20261003071744_0581_D_drone_aerial_s0-16": {
+              "audio": -100
+            },
+            "DJI_20261003071838_0588_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261003071905_0589_D_drone_aerial_s0-40": {
+              "audio": -100
+            },
+            "DJI_20261003072033_0590_D_drone_aerial_s0-30": {
+              "audio": -100
+            },
+            "DJI_20261003072232_0603_D_drone_aerial_s0-27": {
+              "audio": -100
+            },
+            "DJI_20261003072340_0613_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20261003072408_0617_D_drone_aerial_s0-45": {
+              "audio": -100
+            },
+            "DJI_20261003072853_0649_D_drone_aerial_s0-29": {
+              "audio": -100
+            },
+            "DJI_20261003072955_0650_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20261003073034_0651_D_drone_aerial_s0-20": {
+              "audio": -100
+            },
+            "DJI_20261003075041_0700_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20261003075440_0707_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20261003075704_0720_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20261003075722_0721_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20261003075800_0722_D_drone_aerial_s0-34": {
+              "audio": -100
+            },
+            "DJI_20261003075837_0723_D_drone_aerial_s0-8": {
+              "audio": -100
+            },
+            "DJI_20261003080353_0735_D_drone_aerial_s0-7": {
+              "audio": -100
+            },
+            "DJI_20261003080512_0736_D_drone_aerial_s0-101": {
+              "audio": -100
+            },
+            "DJI_20261003081113_0764_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20261003081600_0766_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20261003081825_0767_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261003082220_0770_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20261003082331_0773_D_drone_aerial_s0-32": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-10",
+      "slots": [
+        {
+          "id": "FW-02-10-materials",
+          "query": "草滩颜色清晰，远处山间可见云雾；人物说雾散后景色清新，并发现一条较缓的上下通路。",
+          "requirement": "required",
+          "targetBundles": [
+            "雾散后的下台阶"
+          ],
+          "chosenSpanIds": [
+            "C4863_zve1_day9_broll_speech_s0-16",
+            "C4864_zve1_day9_broll_speech_s1-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-11",
+      "slots": [
+        {
+          "id": "FW-02-11-materials",
+          "query": "人物在草地上站立、行走和回望；塔、亭和石墙持续出现在背景，湖上的货船与草地构成人物身后的空间。",
+          "requirement": "required",
+          "targetBundles": [
+            "草地人物与古建全景"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261003075130_0701_D_drone_broll_s0-2",
+            "DJI_20261003075137_0702_D_drone_broll_s0-16",
+            "DJI_20261003075200_0703_D_drone_broll_s0-9",
+            "DJI_20261003075220_0704_D_drone_broll_s0-25",
+            "DJI_20261003075306_0705_D_drone_broll_s0-19",
+            "DJI_20261003075350_0706_D_drone_broll_s0-31",
+            "DJI_20261003075902_0724_D_drone_broll_s0-20",
+            "DJI_20261003075940_0725_D_drone_broll_s0-17",
+            "DJI_20261003080023_0726_D_drone_broll_s0-1",
+            "DJI_20261003080038_0727_D_drone_broll_s0-104",
+            "DJI_20261003080325_0734_D_drone_broll_s0-19",
+            "DJI_20261003081132_0765_D_drone_broll_s0-33",
+            "DJI_20261003081951_0768_D_drone_broll_s0-29",
+            "DJI_20261003082123_0769_D_drone_broll_s0-34",
+            "DJI_20261003082247_0771_D_drone_broll_s0-7",
+            "DJI_20261003082304_0772_D_drone_broll_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-12",
+      "slots": [
+        {
+          "id": "FW-02-12-materials",
+          "query": "人物在塔前回顾拍摄，说未等到预想的日出和雾景，但觉得雨天仍有风味；随后指向返程草路，并讲述对湖水与分散水面的理解。",
+          "requirement": "required",
+          "targetBundles": [
+            "拍摄后的天气回顾"
+          ],
+          "chosenSpanIds": [
+            "C4869_zve1_day9_talking-head_speech_s0-37",
+            "C4871_zve1_day9_broll_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-13",
+      "slots": [
+        {
+          "id": "FW-02-13-materials",
+          "query": "镜头观察草叶水滴、泥路和零散水面；人物沿明显草路返回，陆续发现与来时不同的通路、台阶和桥口。",
+          "requirement": "required",
+          "targetBundles": [
+            "露水、草路与返程入口"
+          ],
+          "chosenSpanIds": [
+            "C4872_zve1_day9_broll_s0-1",
+            "C4872_zve1_day9_broll_speech_s0-7",
+            "C4873_zve1_day9_broll_speech_s0-9",
+            "C4874_zve1_day9_broll_speech_s2-13",
+            "C4875_zve1_day9_broll_speech_s0-11",
+            "C4876_zve1_day9_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-14",
+      "slots": [
+        {
+          "id": "FW-02-14-materials",
+          "query": "照片涵盖蓝调塔亭、人物与石台、湖船、亭内供像与旋梯、湿地水道、草叶水滴和返程远望；补充的清晨末尾照片同样呈现雾中草地、塔和船。",
+          "requirement": "required",
+          "targetBundles": [
+            "落星墩照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC02091_photos_photo",
+            "DSC02092_photos_photo",
+            "DSC02096_photos_photo",
+            "DSC02097_photos_photo",
+            "DSC02103_photos_photo",
+            "DSC02105_photos_photo",
+            "DSC02106_photos_photo",
+            "DSC02115_photos_photo",
+            "DSC02117_photos_photo",
+            "DSC02119_photos_photo",
+            "DSC02123_photos_photo",
+            "DSC02124_photos_photo",
+            "DSC02129_photos_photo",
+            "DSC09565_photos_photo",
+            "DSC09566_photos_photo",
+            "DSC09567_photos_photo",
+            "DSC09568_photos_photo",
+            "DSC09573_photos_photo",
+            "DSC09575_photos_photo",
+            "DSC09577_photos_photo",
+            "DSC02388_photos_photo",
+            "DSC09587_photos_photo",
+            "DSC02130_photos_photo",
+            "DSC02134_photos_photo",
+            "DJI_20261003071549_0570_D-HDR_photos_photo",
+            "DJI_20261003071616_0574_D-HDR_photos_photo",
+            "DJI_20261003071830_0585_D-HDR_photos_photo",
+            "DJI_20261003072200_0594_D-HDR_photos_photo",
+            "DJI_20261003072226_0600_D-HDR_photos_photo",
+            "DJI_20261003072327_0610_D-HDR_photos_photo",
+            "DJI_20261003072528_0621_D-HDR_photos_photo",
+            "DJI_20261003072547_0624_D-HDR_photos_photo",
+            "DJI_20261003072639_0630_D-HDR_photos_photo",
+            "DJI_20261003072735_0641_D-HDR_photos_photo",
+            "DJI_20261003073129_0655_D-HDR_photos_photo",
+            "DJI_20261003073316_0688_D-HDR_photos_photo",
+            "DJI_20261003075531_0716_D-HDR_photos_photo",
+            "DJI_20261003080232_0730_D-HDR_photos_photo",
+            "DJI_20261003080249_0733_D-HDR_photos_photo",
+            "DJI_20261003081106_0763_D-HDR_photos_photo",
+            "DSC02144_photos_photo",
+            "DSC02147_photos_photo",
+            "DSC02149_photos_photo"
+          ],
+          "treatments": {
+            "DSC02091_photos_photo": {
+              "audio": -100
+            },
+            "DSC02092_photos_photo": {
+              "audio": -100
+            },
+            "DSC02096_photos_photo": {
+              "audio": -100
+            },
+            "DSC02097_photos_photo": {
+              "audio": -100
+            },
+            "DSC02103_photos_photo": {
+              "audio": -100
+            },
+            "DSC02105_photos_photo": {
+              "audio": -100
+            },
+            "DSC02106_photos_photo": {
+              "audio": -100
+            },
+            "DSC02115_photos_photo": {
+              "audio": -100
+            },
+            "DSC02117_photos_photo": {
+              "audio": -100
+            },
+            "DSC02119_photos_photo": {
+              "audio": -100
+            },
+            "DSC02123_photos_photo": {
+              "audio": -100
+            },
+            "DSC02124_photos_photo": {
+              "audio": -100
+            },
+            "DSC02129_photos_photo": {
+              "audio": -100
+            },
+            "DSC09565_photos_photo": {
+              "audio": -100
+            },
+            "DSC09566_photos_photo": {
+              "audio": -100
+            },
+            "DSC09567_photos_photo": {
+              "audio": -100
+            },
+            "DSC09568_photos_photo": {
+              "audio": -100
+            },
+            "DSC09573_photos_photo": {
+              "audio": -100
+            },
+            "DSC09575_photos_photo": {
+              "audio": -100
+            },
+            "DSC09577_photos_photo": {
+              "audio": -100
+            },
+            "DSC02388_photos_photo": {
+              "audio": -100
+            },
+            "DSC09587_photos_photo": {
+              "audio": -100
+            },
+            "DSC02130_photos_photo": {
+              "audio": -100
+            },
+            "DSC02134_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003071549_0570_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003071616_0574_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003071830_0585_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072200_0594_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072226_0600_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072327_0610_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072528_0621_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072547_0624_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072639_0630_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003072735_0641_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003073129_0655_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003073316_0688_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003075531_0716_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003080232_0730_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003080249_0733_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261003081106_0763_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC02144_photos_photo": {
+              "audio": -100
+            },
+            "DSC02147_photos_photo": {
+              "audio": -100
+            },
+            "DSC02149_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-01",
+      "slots": [
+        {
+          "id": "FW-03-01-materials",
+          "query": "车辆驶上湿路并经过庐山星子收费站；人物比较旅程前后半段的天气，说再来星子。",
+          "requirement": "required",
+          "targetBundles": [
+            "离开星子"
+          ],
+          "chosenSpanIds": [
+            "C4877_zve1_day9_drive_speech_s1-8",
+            "C4878_zve1_day9_drive_speech_s0-2",
+            "C4878_zve1_day9_drive_speech_s6-17",
+            "C4879_zve1_day9_drive_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-02",
+      "slots": [
+        {
+          "id": "FW-03-02-materials",
+          "query": "雨刮扫过挡风玻璃，车辆经过货车、山林和隧道入口；人物说巡航无法启用、自己疲惫，也惊叹前方雾中山色并猜测是庐山。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨中山色与驾驶疲惫"
+          ],
+          "chosenSpanIds": [
+            "C4880_zve1_day9_drive_visual_s18-47",
+            "C4880_zve1_day9_drive_speech_s50-52",
+            "C4881_zve1_day9_drive_speech_s2-3",
+            "C4881_zve1_day9_drive_speech_s24-66",
+            "C4881_zve1_day9_drive_visual_s27-102"
+          ],
+          "treatments": {
+            "C4880_zve1_day9_drive_visual_s18-47": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4881_zve1_day9_drive_visual_s27-102": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-03",
+      "slots": [
+        {
+          "id": "FW-03-03-materials",
+          "query": "车进入湿漉漉的充电停车区，与现场人员询问排队数量和可用位置；镜头中可见等候车辆、停车棚及等待区标识。",
+          "requirement": "required",
+          "targetBundles": [
+            "充电等待区"
+          ],
+          "chosenSpanIds": [
+            "C4882_zve1_day9_drive_speech_s0-9",
+            "C4882_zve1_day9_drive_speech_s35-75",
+            "C4882_zve1_day9_drive_visual_s74-134",
+            "C4882_zve1_day9_drive_speech_s105-114",
+            "C4882_zve1_day9_drive_speech_s129-150"
+          ],
+          "treatments": {
+            "C4882_zve1_day9_drive_visual_s74-134": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-04",
+      "slots": [
+        {
+          "id": "FW-03-04-materials",
+          "query": "雨中高速、货车与车流持续出现；人物读到观鸟与遗址相关标识，讨论天气和到南昌车辆服务店的打算，并对前车驾驶表达不满。",
+          "requirement": "required",
+          "targetBundles": [
+            "继续往南昌"
+          ],
+          "chosenSpanIds": [
+            "C4883_zve1_day9_drive_speech_s3-22",
+            "C4884_zve1_day9_drive_speech_s0-6",
+            "C4885_zve1_day9_drive_speech_s0-192",
+            "C4885_zve1_day9_drive_visual_s180-228",
+            "C4885_zve1_day9_drive_speech_s249-259"
+          ],
+          "treatments": {
+            "C4885_zve1_day9_drive_visual_s180-228": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-05",
+      "slots": [
+        {
+          "id": "FW-03-05-materials",
+          "query": "车辆经过南昌西收费站、城市主干道和白色拱架桥；口述提到修车、生米大桥和赣江，并对桥名来历作即时猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入南昌与过桥"
+          ],
+          "chosenSpanIds": [
+            "C4886_zve1_day9_drive_speech_s1-16",
+            "C4886_zve1_day9_drive_visual_s10-31",
+            "C4886_zve1_day9_drive_speech_s33-34",
+            "C4887_zve1_day9_drive_speech_s1-28",
+            "C4888_zve1_day9_drive_speech_s1-29",
+            "C4888_zve1_day9_drive_visual_s13-51",
+            "C4888_zve1_day9_drive_speech_s40-43",
+            "C4888_zve1_day9_drive_speech_s54-63"
+          ],
+          "treatments": {
+            "C4886_zve1_day9_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4888_zve1_day9_drive_visual_s13-51": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-06",
+      "slots": [
+        {
+          "id": "FW-03-06-materials",
+          "query": "车窗前依次出现道路绿化、立交、摩天轮、红旗和汽车门店；人物观察城市景观并寻找到店道路。",
+          "requirement": "required",
+          "targetBundles": [
+            "城市街景与车辆服务店"
+          ],
+          "chosenSpanIds": [
+            "C4889_zve1_day9_drive_speech_s1-14",
+            "C4890_zve1_day9_drive_speech_s1-45",
+            "C4891_zve1_day9_drive_speech_s0-22",
+            "C4891_zve1_day9_drive_speech_s29-41"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-07",
+      "slots": [
+        {
+          "id": "FW-03-07-materials",
+          "query": "车辆行经井冈山大道附近和湿街，随后镜头对准汤店门头；人物寻找停车位置，准备尝瓦罐汤。",
+          "requirement": "required",
+          "targetBundles": [
+            "村街找午饭"
+          ],
+          "chosenSpanIds": [
+            "C4892_zve1_day9_drive_speech_s1-7",
+            "C4893_zve1_day9_drive_speech_s1-8",
+            "C4893_zve1_day9_drive_speech_s12-22",
+            "C4894_zve1_day9_broll_s0-1",
+            "C4894_zve1_day9_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-08",
+      "slots": [
+        {
+          "id": "FW-03-08-materials",
+          "query": "餐桌上是拌粉、皮蛋肉饼汤，人物吃粉、喝汤，谈价格、皮蛋味与肉饼口感，并与自己在深圳吃过的味道比较。",
+          "requirement": "required",
+          "targetBundles": [
+            "拌粉与瓦罐汤"
+          ],
+          "chosenSpanIds": [
+            "C4895_zve1_day9_broll_s0-2",
+            "C4896_zve1_day9_broll_speech_s0-13",
+            "C4897_zve1_day9_talking-head_speech_s5-13",
+            "C4897_zve1_day9_talking-head_speech_s18-19",
+            "C4897_zve1_day9_talking-head_speech_s30-43",
+            "C4898_zve1_day9_broll_speech_s0-8",
+            "C4899_zve1_day9_broll_speech_s8-14",
+            "C4899_zve1_day9_broll_speech_s18-23",
+            "C4899_zve1_day9_broll_speech_s27-36"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-09",
+      "slots": [
+        {
+          "id": "FW-03-09-materials",
+          "query": "镜头记录炒肉类菜品、辣椒和进餐；人物先后说出猪肝与腰花两种名称，随后围绕腰花火候、辣椒软硬和辣味评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "腰花与辣椒炒肉"
+          ],
+          "chosenSpanIds": [
+            "C4900_zve1_day9_broll_s0-1",
+            "C4900_zve1_day9_broll_speech_s0-11",
+            "C4901_zve1_day9_broll_speech_s0-6",
+            "C4901_zve1_day9_broll_s5-6",
+            "C4902_zve1_day9_broll_speech_s1-32",
+            "C4903_zve1_day9_broll_speech_s0-10",
+            "C4904_zve1_day9_talking-head_speech_s8-43"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-10",
+      "slots": [
+        {
+          "id": "FW-03-10-materials",
+          "query": "高架桥、楼群和宽阔城市道路从车前经过；人物评价道路与建筑，并说这次先离开、以后再来拍城市风光。",
+          "requirement": "required",
+          "targetBundles": [
+            "离开南昌高架"
+          ],
+          "chosenSpanIds": [
+            "C4905_zve1_day9_drive_speech_s1-28",
+            "C4906_zve1_day9_drive_speech_s3-13",
+            "C4906_zve1_day9_drive_speech_s17-24",
+            "C4907_zve1_day9_drive_speech_s1-24",
+            "C4908_zve1_day9_drive_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-11",
+      "slots": [
+        {
+          "id": "FW-03-11-materials",
+          "query": "雨夜收费站和高速被车灯照亮，雨水在路面反光；人物反复说视线差，车内响起多次方向盘控制退出提示。",
+          "requirement": "required",
+          "targetBundles": [
+            "雨夜高速与巡航提示"
+          ],
+          "chosenSpanIds": [
+            "C4909_zve1_day9_drive_speech_s0-15",
+            "C4910_zve1_day9_drive_speech_s2-52",
+            "C4910_zve1_day9_drive_visual_s52-70",
+            "C4911_zve1_day9_drive_speech_s0-8",
+            "C4912_zve1_day9_drive_speech_s1-11",
+            "C4912_zve1_day9_drive_speech_s15-18",
+            "C4913_zve1_day9_drive_speech_s3-5",
+            "C4913_zve1_day9_drive_speech_s8-11",
+            "C4913_zve1_day9_drive_visual_s12-27",
+            "C4913_zve1_day9_drive_speech_s27-31"
+          ],
+          "treatments": {
+            "C4910_zve1_day9_drive_visual_s52-70": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4913_zve1_day9_drive_visual_s12-27": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-12",
+      "slots": [
+        {
+          "id": "FW-03-12-materials",
+          "query": "车经过吉安南收费站和挂有星形灯饰的街道；人物说明临时来吉安停留，并观察国庆装饰。",
+          "requirement": "required",
+          "targetBundles": [
+            "临时到吉安休息"
+          ],
+          "chosenSpanIds": [
+            "C4914_zve1_day9_drive_speech_s3-12",
+            "C4914_zve1_day9_drive_visual_s8-27",
+            "C4914_zve1_day9_drive_speech_s27-30",
+            "C4915_zve1_day9_drive_speech_s3-13"
+          ],
+          "treatments": {
+            "C4914_zve1_day9_drive_visual_s8-27": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-13",
+      "slots": [
+        {
+          "id": "FW-03-13-materials",
+          "query": "手中展示白色小食，人物称其为神仙粉果或神仙粉汤圆，转述制作方法和宴席吃法，并描述甜糯弹性的口感。",
+          "requirement": "required",
+          "targetBundles": [
+            "吉安早餐小吃"
+          ],
+          "chosenSpanIds": [
+            "C4917_zve1_day10_broll_speech_s0-36"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-14",
+      "slots": [
+        {
+          "id": "FW-03-14-materials",
+          "query": "人物在充电车旁谈休息和电价，随后沿雨中的道路出发；口述因连续下雨暂不去白鹭洲书院，改为吃本地菜再往赣州方向。",
+          "requirement": "required",
+          "targetBundles": [
+            "充电与雨天改行程"
+          ],
+          "chosenSpanIds": [
+            "C4918_zve1_day10_talking-head_speech_s0-15",
+            "C4919_zve1_day10_drive_visual_s1-6",
+            "C4920_zve1_day10_drive_speech_s2-31",
+            "C4921_zve1_day10_drive_speech_s2-16",
+            "C4921_zve1_day10_drive_visual_s9-22"
+          ],
+          "treatments": {
+            "C4919_zve1_day10_drive_visual_s1-6": {
+              "audio": -100
+            },
+            "C4921_zve1_day10_drive_visual_s9-22": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-15",
+      "slots": [
+        {
+          "id": "FW-03-15-materials",
+          "query": "路边停车、餐馆门头、取签选菜台和楼梯包间依次出现；人物谈停车遮挡、点菜方式、服务感受与大包间。",
+          "requirement": "required",
+          "targetBundles": [
+            "农家菜门口与包间"
+          ],
+          "chosenSpanIds": [
+            "C4922_zve1_day10_broll_s0-1",
+            "C4922_zve1_day10_broll_speech_s0-8",
+            "C4923_zve1_day10_drive_s0-1",
+            "C4923_zve1_day10_drive_speech_s0-5",
+            "C4924_zve1_day10_broll_s0-1",
+            "C4924_zve1_day10_broll_speech_s0-10",
+            "C4925_zve1_day10_broll_speech_s0-17",
+            "C4926_zve1_day10_broll_speech_s0-5",
+            "C4927_zve1_day10_broll_speech_s1-4",
+            "C4928_zve1_day10_broll_speech_s1-4"
+          ],
+          "treatments": {
+            "C4923_zve1_day10_drive_s0-1": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-16",
+      "slots": [
+        {
+          "id": "FW-03-16-materials",
+          "query": "餐桌出现炸卷、蘸酱、香煎米粉肉、血鸭和豆腐；人物试吃并介绍菜名，对炸卷与客家或闽南风味的联系作个人猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "鹅颈与菜品上桌"
+          ],
+          "chosenSpanIds": [
+            "C4929_zve1_day10_broll_speech_s0-10",
+            "C4930_zve1_day10_broll_speech_s1-44",
+            "C4932_zve1_day10_broll_speech_s0-28",
+            "C4933_zve1_day10_broll_speech_s0-2"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-17",
+      "slots": [
+        {
+          "id": "FW-03-17-materials",
+          "query": "人物逐一尝米粉肉、豆腐和血鸭，谈外焦里嫩、料汁、辣味与价格；随后补充米粉肉较油腻、配辣椒的个人感受。",
+          "requirement": "required",
+          "targetBundles": [
+            "午饭口味回顾"
+          ],
+          "chosenSpanIds": [
+            "C4935_zve1_day10_talking-head_speech_s0-130",
+            "C4936_zve1_day10_broll_speech_s0-29"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-01",
+      "slots": [
+        {
+          "id": "FW-04-01-materials",
+          "query": "车辆经过吉安南收费站与雨中高速车流，人物说下次再去书院，车内响起巡航和导航提示。",
+          "requirement": "required",
+          "targetBundles": [
+            "告别吉安与雨中高速"
+          ],
+          "chosenSpanIds": [
+            "C4937_zve1_day10_drive_speech_s4-20",
+            "C4938_zve1_day10_drive_speech_s9-11",
+            "C4938_zve1_day10_drive_visual_s14-63",
+            "C4938_zve1_day10_drive_speech_s27-29",
+            "C4938_zve1_day10_drive_speech_s32-37",
+            "C4939_zve1_day10_drive_speech_s0-16"
+          ],
+          "treatments": {
+            "C4938_zve1_day10_drive_visual_s14-63": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-02",
+      "slots": [
+        {
+          "id": "FW-04-02-materials",
+          "query": "湿高速穿过绿山和隧道口，山间有雾；车内导航提示隧道，人物提到井冈山方向。",
+          "requirement": "required",
+          "targetBundles": [
+            "山林与隧道"
+          ],
+          "chosenSpanIds": [
+            "C4940_zve1_day10_drive_s0-29",
+            "C4941_zve1_day10_drive_speech_s0-5",
+            "C4941_zve1_day10_drive_visual_s24-93",
+            "C4941_zve1_day10_drive_speech_s81-88",
+            "C4942_zve1_day10_drive_s0-34",
+            "C4943_zve1_day10_drive_speech_s0-7"
+          ],
+          "treatments": {
+            "C4940_zve1_day10_drive_s0-29": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4941_zve1_day10_drive_visual_s24-93": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C4942_zve1_day10_drive_s0-34": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-03",
+      "slots": [
+        {
+          "id": "FW-04-03-materials",
+          "query": "服务区人车密集，镜头经过充电排队位置、广场和红色展示设施；人物说充电等了很久，并转述有关景区入口的说法。",
+          "requirement": "required",
+          "targetBundles": [
+            "井冈山东服务区"
+          ],
+          "chosenSpanIds": [
+            "C4944_zve1_day10_drive_speech_s0-12",
+            "C4945_zve1_day10_broll_speech_s0-8",
+            "C4946_zve1_day10_broll_speech_s3-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-04",
+      "slots": [
+        {
+          "id": "FW-04-04-materials",
+          "query": "车辆沿山间高速行进，远山与林地在阴天光线中逐渐变暗；人物说蓝调时刻山雾升起。",
+          "requirement": "required",
+          "targetBundles": [
+            "高速上的山间暮色"
+          ],
+          "chosenSpanIds": [
+            "C4947_zve1_day10_drive_visual_s7-19",
+            "C4948_zve1_day10_drive_s0-17",
+            "C4949_zve1_day10_drive_visual_s11-32",
+            "C4950_zve1_day10_drive_visual_s3-13",
+            "C4950_zve1_day10_drive_speech_s8-15"
+          ],
+          "treatments": {
+            "C4947_zve1_day10_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4948_zve1_day10_drive_s0-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4949_zve1_day10_drive_visual_s11-32": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4950_zve1_day10_drive_visual_s3-13": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-05",
+      "slots": [
+        {
+          "id": "FW-04-05-materials",
+          "query": "车辆夜间驶出收费站，进入有中心线的山路和限宽设施；人物说堵车后还要开较长国道县道，并讨论道路宽度。",
+          "requirement": "required",
+          "targetBundles": [
+            "崇义出口与窄路限宽"
+          ],
+          "chosenSpanIds": [
+            "C4951_zve1_day10_drive_speech_s2-20",
+            "C4951_zve1_day10_drive_visual_s9-29",
+            "C4952_zve1_day10_drive_speech_s0-20",
+            "C4952_zve1_day10_drive_visual_s10-31",
+            "C4953_zve1_day10_drive_speech_s0-4",
+            "C4953_zve1_day10_drive_speech_s7-8",
+            "C4953_zve1_day10_drive_visual_s11-32",
+            "C4953_zve1_day10_drive_speech_s27-34"
+          ],
+          "treatments": {
+            "C4951_zve1_day10_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4952_zve1_day10_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4953_zve1_day10_drive_visual_s11-32": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-06",
+      "slots": [
+        {
+          "id": "FW-04-06-materials",
+          "query": "车灯照亮弯道、草边、货车尾灯与警示牌；人物说路上环境很暗，表达对星空的期待和对货车远光的抱怨。",
+          "requirement": "required",
+          "targetBundles": [
+            "暗山路、货车与路标"
+          ],
+          "chosenSpanIds": [
+            "C4954_zve1_day10_drive_s0-1",
+            "C4955_zve1_day10_drive_speech_s1-25",
+            "C4956_zve1_day10_drive_visual_s4-9",
+            "C4956_zve1_day10_drive_speech_s11-12",
+            "C4957_zve1_day10_drive_speech_s0-10",
+            "C4957_zve1_day10_drive_visual_s5-16",
+            "C4958_zve1_day10_drive_s0-7"
+          ],
+          "treatments": {
+            "C4954_zve1_day10_drive_s0-1": {
+              "audio": -100
+            },
+            "C4956_zve1_day10_drive_visual_s4-9": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C4957_zve1_day10_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C4958_zve1_day10_drive_s0-7": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-07",
+      "slots": [
+        {
+          "id": "FW-04-07-materials",
+          "query": "路旁逐渐出现亮灯建筑，人物确认到上堡梯田旁的上堡乡，并回顾夜间国道县道难开。",
+          "requirement": "required",
+          "targetBundles": [
+            "上堡乡到达"
+          ],
+          "chosenSpanIds": [
+            "C4959_zve1_day10_drive_speech_s2-17"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-01",
+      "slots": [
+        {
+          "id": "FW-05-01-materials",
+          "query": "车辆驶在云雾山头下的弯道，人物观察早晨游客不多；口述先说十月四日，随后更正为十月五日。",
+          "requirement": "required",
+          "targetBundles": [
+            "早晨山路"
+          ],
+          "chosenSpanIds": [
+            "C4960_zve1_day11_drive_speech_s1-12",
+            "C4960_zve1_day11_drive_speech_s17-37"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-02",
+      "slots": [
+        {
+          "id": "FW-05-02-materials",
+          "query": "路边有人蹲在桶边处理东西，旁边停着车辆；人物说正在杀鸡，远近景可见村屋与停车位置。",
+          "requirement": "required",
+          "targetBundles": [
+            "村边清晨"
+          ],
+          "chosenSpanIds": [
+            "C4961_zve1_day11_broll_speech_s1-6",
+            "DJI_20261005083030_0774_D_drone_broll_s0-1"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-03",
+      "slots": [
+        {
+          "id": "FW-05-03-materials",
+          "query": "梯田沿绿山坡铺展，竹林、村屋、道路和水渠交织，云雾停在山头；不同角度展示梯田层次、林地边界与村落分布。",
+          "requirement": "required",
+          "targetBundles": [
+            "晨间梯田航拍组"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261005083044_0775_D_drone_aerial_s0-21",
+            "DJI_20261005083140_0779_D_drone_aerial_s0-19",
+            "DJI_20261005083228_0783_D_drone_aerial_s0-10",
+            "DJI_20261005083306_0790_D_drone_aerial_s0-25",
+            "DJI_20261005083357_0794_D_drone_aerial_s0-11",
+            "DJI_20261005083448_0804_D_drone_aerial_s0-13",
+            "DJI_20261005083523_0808_D_drone_aerial_s0-13",
+            "DJI_20261005083753_0842_D_drone_aerial_s0-10",
+            "DJI_20261005083806_0843_D_drone_aerial_s0-26",
+            "DJI_20261005083909_0850_D_drone_aerial_s0-9",
+            "DJI_20261005083922_0851_D_drone_aerial_s0-2",
+            "DJI_20261005083957_0855_D_drone_aerial_s0-4",
+            "DJI_20261005084006_0856_D_drone_aerial_s0-9",
+            "DJI_20261005084130_0869_D_drone_aerial_s0-8",
+            "DJI_20261005084211_0873_D_drone_aerial_s0-12",
+            "DJI_20261005084348_0889_D_drone_aerial_s0-14"
+          ],
+          "treatments": {
+            "DJI_20261005083044_0775_D_drone_aerial_s0-21": {
+              "audio": -100
+            },
+            "DJI_20261005083140_0779_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20261005083228_0783_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20261005083306_0790_D_drone_aerial_s0-25": {
+              "audio": -100
+            },
+            "DJI_20261005083357_0794_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20261005083448_0804_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261005083523_0808_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261005083753_0842_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20261005083806_0843_D_drone_aerial_s0-26": {
+              "audio": -100
+            },
+            "DJI_20261005083909_0850_D_drone_aerial_s0-9": {
+              "audio": -100
+            },
+            "DJI_20261005083922_0851_D_drone_aerial_s0-2": {
+              "audio": -100
+            },
+            "DJI_20261005083957_0855_D_drone_aerial_s0-4": {
+              "audio": -100
+            },
+            "DJI_20261005084006_0856_D_drone_aerial_s0-9": {
+              "audio": -100
+            },
+            "DJI_20261005084130_0869_D_drone_aerial_s0-8": {
+              "audio": -100
+            },
+            "DJI_20261005084211_0873_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20261005084348_0889_D_drone_aerial_s0-14": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-04",
+      "slots": [
+        {
+          "id": "FW-05-04-materials",
+          "query": "路边人物、桶和蔬菜状物件的照片；静帧描述与现场“杀鸡”口述并不完全一致。",
+          "requirement": "required",
+          "targetBundles": [
+            "村边照片"
+          ],
+          "chosenSpanIds": [
+            "DSC02412_photos_photo"
+          ],
+          "treatments": {
+            "DSC02412_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-05",
+      "slots": [
+        {
+          "id": "FW-05-05-materials",
+          "query": "坡面景区字牌、停车场和带车顶帐篷的车出现在镜头中；人物回顾自己考虑过该帐篷，并对重量及承载情况作判断。",
+          "requirement": "required",
+          "targetBundles": [
+            "游客中心与车顶帐篷"
+          ],
+          "chosenSpanIds": [
+            "C4962_zve1_day11_broll_speech_s0-13",
+            "C4963_zve1_day11_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-06",
+      "slots": [
+        {
+          "id": "FW-05-06-materials",
+          "query": "人物向摊主询价、挑选并请对方处理根茎小食，随后展示购买结果；旁边有黄元米果和糯米米果，交谈涉及价格、吃法和甜味。",
+          "requirement": "required",
+          "targetBundles": [
+            "集市买地瓜和米果"
+          ],
+          "chosenSpanIds": [
+            "C4964_zve1_day11_broll_speech_s0-21",
+            "C4965_zve1_day11_broll_speech_s0-18",
+            "C4966_zve1_day11_talking-head_speech_s0-9",
+            "C4967_zve1_day11_broll_speech_s1-8",
+            "C4968_zve1_day11_broll_speech_s0-7"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-07",
+      "slots": [
+        {
+          "id": "FW-05-07-materials",
+          "query": "人物登台阶，经过小狗、粮食布景、壁画和景交车购票点；现场对布景粮食真假先后有不同判断。",
+          "requirement": "required",
+          "targetBundles": [
+            "入园台阶与丰收布景"
+          ],
+          "chosenSpanIds": [
+            "C4969_zve1_day11_broll_speech_s0-13",
+            "C4970_zve1_day11_broll_speech_s0-3",
+            "C4971_zve1_day11_broll_speech_s0-12",
+            "C4972_zve1_day11_broll_speech_s0-21",
+            "C4973_zve1_day11_broll_speech_s0-9",
+            "C4974_zve1_day11_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-08",
+      "slots": [
+        {
+          "id": "FW-05-08-materials",
+          "query": "草棚装饰着玉米与南瓜，台阶和游客位于背景。",
+          "requirement": "required",
+          "targetBundles": [
+            "入园照片"
+          ],
+          "chosenSpanIds": [
+            "DSC02415_photos_photo"
+          ],
+          "treatments": {
+            "DSC02415_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-09",
+      "slots": [
+        {
+          "id": "FW-05-09-materials",
+          "query": "人物坐在车上吃糯米米果，剥开并品尝地瓜，谈童年味道、清甜口感与价格。",
+          "requirement": "required",
+          "targetBundles": [
+            "大巴上的小吃"
+          ],
+          "chosenSpanIds": [
+            "C4975_zve1_day11_broll_speech_s0-22",
+            "C4976_zve1_day11_drive_speech_s0-16",
+            "C4976_zve1_day11_drive_speech_s28-31",
+            "C4976_zve1_day11_drive_speech_s33-42"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-10",
+      "slots": [
+        {
+          "id": "FW-05-10-materials",
+          "query": "从车内看到两辆大巴在山路弯道交会、调整位置；乘客讨论会车空间，并发表对司机操作的看法。",
+          "requirement": "required",
+          "targetBundles": [
+            "弯道会车"
+          ],
+          "chosenSpanIds": [
+            "C4977_zve1_day11_drive_speech_s0-5",
+            "C4977_zve1_day11_drive_visual_s4-11",
+            "C4978_zve1_day11_drive_speech_s0-11",
+            "C4979_zve1_day11_drive_speech_s1-11"
+          ],
+          "treatments": {
+            "C4977_zve1_day11_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-11",
+      "slots": [
+        {
+          "id": "FW-05-11-materials",
+          "query": "车辆到终点附近，人物沿竹林与稻田边道路走下去；金黄稻田、木步道、草叶和小花进入画面，人物说到达八卦田。",
+          "requirement": "required",
+          "targetBundles": [
+            "走向八卦田"
+          ],
+          "chosenSpanIds": [
+            "C4981_zve1_day11_drive_s0-1",
+            "C4981_zve1_day11_drive_speech_s0-7",
+            "C4982_zve1_day11_broll_speech_s0-8",
+            "C4983_zve1_day11_broll_speech_s1-4",
+            "C4984_zve1_day11_broll_speech_s0-4",
+            "C4985_zve1_day11_broll_s0-1",
+            "C4985_zve1_day11_broll_speech_s0-9"
+          ],
+          "treatments": {
+            "C4981_zve1_day11_drive_s0-1": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-12",
+      "slots": [
+        {
+          "id": "FW-05-12-materials",
+          "query": "人物在围栏鸭群边投圈，与同伴交谈并数次尝试；现场说明奖品是一包米，也询问是否算套中。",
+          "requirement": "required",
+          "targetBundles": [
+            "套圈活动"
+          ],
+          "chosenSpanIds": [
+            "C4986_zve1_day11_broll_speech_s0-13",
+            "C4987_zve1_day11_broll_speech_s3-16",
+            "C4988_zve1_day11_broll_speech_s0-23",
+            "C4989_zve1_day11_broll_speech_s0-11",
+            "C4990_zve1_day11_broll_speech_s1-2"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-13",
+      "slots": [
+        {
+          "id": "FW-05-13-materials",
+          "query": "近景拍到稻穗上的暗色物，人物说搜索后认为是稻曲病；随后有人指导使用竹竿高跷，体验者摇晃、尝试站稳并走出一小步。",
+          "requirement": "required",
+          "targetBundles": [
+            "稻穗观察与踩高跷"
+          ],
+          "chosenSpanIds": [
+            "C4992_zve1_day11_broll_speech_s0-10",
+            "C4993_zve1_day11_broll_speech_s3-14",
+            "C4994_zve1_day11_broll_speech_s0-3",
+            "C4995_zve1_day11_broll_speech_s9-45"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-14",
+      "slots": [
+        {
+          "id": "FW-05-14-materials",
+          "query": "人物站在稻田边介绍上堡梯田、眼前八卦田和金黄水稻，讲述听来的建造年代、高差及灌溉协作，并对病害影响表达猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "田间介绍"
+          ],
+          "chosenSpanIds": [
+            "C4996_zve1_day11_broll_speech_s0-97"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-15",
+      "slots": [
+        {
+          "id": "FW-05-15-materials",
+          "query": "镜头观察稻田间的小花和沿沟渠搭起的竹水槽；人物说出花名，并说明自己看到的上下输水关系。",
+          "requirement": "required",
+          "targetBundles": [
+            "稻田小花与竹水槽"
+          ],
+          "chosenSpanIds": [
+            "C4997_zve1_day11_broll_s0-1",
+            "C4997_zve1_day11_broll_speech_s0-12",
+            "C4998_zve1_day11_broll_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-16",
+      "slots": [
+        {
+          "id": "FW-05-16-materials",
+          "query": "摊位展示九层皮与米果，人物观看装碗、近看黄白层次后品尝；口述介绍听来的制作与寓意，再把口感与厚凉皮比较。",
+          "requirement": "required",
+          "targetBundles": [
+            "九层皮小摊"
+          ],
+          "chosenSpanIds": [
+            "C4999_zve1_day11_broll_speech_s0-7",
+            "C5000_zve1_day11_broll_speech_s0-9",
+            "C5001_zve1_day11_broll_s0-7",
+            "C5002_zve1_day11_broll_speech_s0-25",
+            "C5003_zve1_day11_talking-head_speech_s54-68",
+            "C5004_zve1_day11_talking-head_speech_s1-24"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-17",
+      "slots": [
+        {
+          "id": "FW-05-17-materials",
+          "query": "镜头观察树上小果和相机屏幕，人物判断是梨；随后在田边遇到西游装扮人员，双方交谈，对方说由景区邀请。",
+          "requirement": "required",
+          "targetBundles": [
+            "树上果实与西游人物"
+          ],
+          "chosenSpanIds": [
+            "C5005_zve1_day11_broll_speech_s0-2",
+            "C5006_zve1_day11_broll_speech_s0-8",
+            "C5007_zve1_day11_broll_speech_s0-8",
+            "C5008_zve1_day11_broll_speech_s0-14",
+            "C5009_zve1_day11_broll_speech_s0-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-18",
+      "slots": [
+        {
+          "id": "FW-05-18-materials",
+          "query": "镜头追踪木桌面及桌沿的一只小虫，人物说童年见过并注意到尾部分叉，但未确定名称。",
+          "requirement": "required",
+          "targetBundles": [
+            "桌边小虫"
+          ],
+          "chosenSpanIds": [
+            "C0121_a7r6_broll_speech_s0-7",
+            "C0122_a7r6_broll_speech_s0-2",
+            "C0123_a7r6_broll_speech_s0-3",
+            "C0124_a7r6_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-19",
+      "slots": [
+        {
+          "id": "FW-05-19-materials",
+          "query": "人物沿坡向观景台走，途中拍到小风车、豆角架和叶间盘着的绿蛇；现场猜测是否为竹叶青，画面只确认可见一条绿蛇。",
+          "requirement": "required",
+          "targetBundles": [
+            "上坡、菜架与绿蛇"
+          ],
+          "chosenSpanIds": [
+            "C5010_zve1_day11_broll_speech_s0-14",
+            "C5011_zve1_day11_broll_s0-1",
+            "C5011_zve1_day11_broll_speech_s0-6",
+            "C5012_zve1_day11_broll_speech_s0-6",
+            "C0125_a7r6_broll_speech_s1-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-20",
+      "slots": [
+        {
+          "id": "FW-05-20-materials",
+          "query": "镜头经过分水石说明牌、沟渠、作物、辣椒、蝴蝶和白色绒状草头；人物读牌解释分水，并对作物名称和草头作即时识别、尝试吹散。",
+          "requirement": "required",
+          "targetBundles": [
+            "分水设施与田边草木"
+          ],
+          "chosenSpanIds": [
+            "C5013_zve1_day11_broll_s0-1",
+            "C5013_zve1_day11_broll_speech_s0-14",
+            "C5014_zve1_day11_broll_speech_s0-13",
+            "C5015_zve1_day11_broll_speech_s2-8",
+            "C5016_zve1_day11_broll_speech_s0-10",
+            "C5017_zve1_day11_broll_s0-1",
+            "C5017_zve1_day11_broll_speech_s0-21"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-21",
+      "slots": [
+        {
+          "id": "FW-05-21-materials",
+          "query": "从观景处看到曲折梯田、水路、游客和景观图案；人物说爬高后变冷，转述灌溉路径，并评价人工八卦造景。",
+          "requirement": "required",
+          "targetBundles": [
+            "高处看梯田"
+          ],
+          "chosenSpanIds": [
+            "C5018_zve1_day11_broll_speech_s0-23",
+            "C5019_zve1_day11_broll_speech_s0-15",
+            "C5020_zve1_day11_talking-head_speech_s0-12",
+            "C0126_a7r6_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-22",
+      "slots": [
+        {
+          "id": "FW-05-22-materials",
+          "query": "一人或两人站在田间蓝色平台，背景是稻田与村屋；人物总结景色体验，口述历史、高差和后续品尝米果的打算。",
+          "requirement": "required",
+          "targetBundles": [
+            "田间平台人物"
+          ],
+          "chosenSpanIds": [
+            "C0127_a7r6_broll_visual_s0-2",
+            "C0128_a7r6_broll_visual_s23-25",
+            "C0129_a7r6_broll_speech_s0-66"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-23",
+      "slots": [
+        {
+          "id": "FW-05-23-materials",
+          "query": "镜头经过深竹林、竹竿标记和毛豆，随后拍到路旁带长凳的小屋；人物观察植物和遮雨空间，并对标记用途作猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "竹林、毛豆与路旁小屋"
+          ],
+          "chosenSpanIds": [
+            "C5021_zve1_day11_broll_s0-1",
+            "C5021_zve1_day11_broll_speech_s0-13",
+            "C5022_zve1_day11_broll_s0-1",
+            "C5022_zve1_day11_broll_speech_s0-8",
+            "C5023_zve1_day11_broll_speech_s0-14"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-24",
+      "slots": [
+        {
+          "id": "FW-05-24-materials",
+          "query": "红衣人物在舞台跳舞、摆姿势，旁人拍照；人物随后走过田边活动区域，提到钓青蛙。",
+          "requirement": "required",
+          "targetBundles": [
+            "舞台人物与田边活动"
+          ],
+          "chosenSpanIds": [
+            "C5024_zve1_day11_broll_speech_s0-10",
+            "C5024_zve1_day11_broll_speech_s19-25",
+            "C5025_zve1_day11_broll_s0-1",
+            "C5025_zve1_day11_broll_speech_s0-8",
+            "C5026_zve1_day11_broll_speech_s1-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-25",
+      "slots": [
+        {
+          "id": "FW-05-25-materials",
+          "query": "照片记录金黄梯田与村屋、木步道和游客、田间人物、花虫水滴、豆角毛豆、绿蛇、竹林、遮雨小屋、舞台舞者与装饰拖拉机。",
+          "requirement": "required",
+          "targetBundles": [
+            "八卦田照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC02151_photos_photo",
+            "DSC02153_photos_photo",
+            "DSC02154_photos_photo",
+            "DSC02155_photos_photo",
+            "DSC02157_photos_photo",
+            "DSC02162_photos_photo",
+            "DSC02166_photos_photo",
+            "DSC02169_photos_photo",
+            "DSC02172_photos_photo",
+            "DSC02174_photos_photo",
+            "DSC02177_photos_photo",
+            "DSC02421_photos_photo",
+            "DSC02178_photos_photo",
+            "DSC02200_photos_photo",
+            "DSC02201_photos_photo",
+            "DSC02203_photos_photo",
+            "DSC02205_photos_photo",
+            "DSC02211_photos_photo",
+            "DSC02216_photos_photo",
+            "DSC02220_photos_photo",
+            "DSC02225_photos_photo",
+            "DSC02226_photos_photo",
+            "DSC02229_photos_photo",
+            "DSC02239_photos_photo",
+            "DSC02449_photos_photo",
+            "DSC02249_photos_photo",
+            "DSC02251_photos_photo",
+            "DSC02252_photos_photo",
+            "DSC02253_photos_photo",
+            "DSC02254_photos_photo",
+            "DSC02454_photos_photo",
+            "DSC02455_photos_photo",
+            "DSC02461_photos_photo"
+          ],
+          "treatments": {
+            "DSC02151_photos_photo": {
+              "audio": -100
+            },
+            "DSC02153_photos_photo": {
+              "audio": -100
+            },
+            "DSC02154_photos_photo": {
+              "audio": -100
+            },
+            "DSC02155_photos_photo": {
+              "audio": -100
+            },
+            "DSC02157_photos_photo": {
+              "audio": -100
+            },
+            "DSC02162_photos_photo": {
+              "audio": -100
+            },
+            "DSC02166_photos_photo": {
+              "audio": -100
+            },
+            "DSC02169_photos_photo": {
+              "audio": -100
+            },
+            "DSC02172_photos_photo": {
+              "audio": -100
+            },
+            "DSC02174_photos_photo": {
+              "audio": -100
+            },
+            "DSC02177_photos_photo": {
+              "audio": -100
+            },
+            "DSC02421_photos_photo": {
+              "audio": -100
+            },
+            "DSC02178_photos_photo": {
+              "audio": -100
+            },
+            "DSC02200_photos_photo": {
+              "audio": -100
+            },
+            "DSC02201_photos_photo": {
+              "audio": -100
+            },
+            "DSC02203_photos_photo": {
+              "audio": -100
+            },
+            "DSC02205_photos_photo": {
+              "audio": -100
+            },
+            "DSC02211_photos_photo": {
+              "audio": -100
+            },
+            "DSC02216_photos_photo": {
+              "audio": -100
+            },
+            "DSC02220_photos_photo": {
+              "audio": -100
+            },
+            "DSC02225_photos_photo": {
+              "audio": -100
+            },
+            "DSC02226_photos_photo": {
+              "audio": -100
+            },
+            "DSC02229_photos_photo": {
+              "audio": -100
+            },
+            "DSC02239_photos_photo": {
+              "audio": -100
+            },
+            "DSC02449_photos_photo": {
+              "audio": -100
+            },
+            "DSC02249_photos_photo": {
+              "audio": -100
+            },
+            "DSC02251_photos_photo": {
+              "audio": -100
+            },
+            "DSC02252_photos_photo": {
+              "audio": -100
+            },
+            "DSC02253_photos_photo": {
+              "audio": -100
+            },
+            "DSC02254_photos_photo": {
+              "audio": -100
+            },
+            "DSC02454_photos_photo": {
+              "audio": -100
+            },
+            "DSC02455_photos_photo": {
+              "audio": -100
+            },
+            "DSC02461_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-26",
+      "slots": [
+        {
+          "id": "FW-05-26-materials",
+          "query": "竹林旁的路灯带有弯曲造型，人物认为它像水稻。",
+          "requirement": "required",
+          "targetBundles": [
+            "两处观景点之间"
+          ],
+          "chosenSpanIds": [
+            "C5027_zve1_day11_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-27",
+      "slots": [
+        {
+          "id": "FW-05-27-materials",
+          "query": "曲折道路穿过稻田与绿坡，另一张照片中白屋被竹林遮住。",
+          "requirement": "required",
+          "targetBundles": [
+            "过渡路段补充照片"
+          ],
+          "chosenSpanIds": [
+            "DSC02255_photos_photo",
+            "DSC02256_photos_photo"
+          ],
+          "treatments": {
+            "DSC02255_photos_photo": {
+              "audio": -100
+            },
+            "DSC02256_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-28",
+      "slots": [
+        {
+          "id": "FW-05-28-materials",
+          "query": "人物经过入口牌楼并走上系红绳的吊桥，镜头俯看桥下绿谷；现场谈桥的高度和走到中间后的晃动。",
+          "requirement": "required",
+          "targetBundles": [
+            "岭顶子入口与吊桥"
+          ],
+          "chosenSpanIds": [
+            "C5028_zve1_day11_broll_speech_s0-5",
+            "C5029_zve1_day11_broll_speech_s0-37",
+            "C5030_zve1_day11_drive_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-29",
+      "slots": [
+        {
+          "id": "FW-05-29-materials",
+          "query": "步道穿行竹林，镜头近看竹节、拍到遗产说明牌，再从平台俯看开阔梯田；人物读牌并注意到大稻草人。",
+          "requirement": "required",
+          "targetBundles": [
+            "竹林步道与观景台"
+          ],
+          "chosenSpanIds": [
+            "C5031_zve1_day11_broll_speech_s1-21",
+            "C5032_zve1_day11_broll_s0-1",
+            "C5032_zve1_day11_broll_speech_s0-6",
+            "C5033_zve1_day11_broll_speech_s0-14",
+            "C5034_zve1_day11_broll_speech_s0-7",
+            "C5035_zve1_day11_broll_speech_s0-19"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-30",
+      "slots": [
+        {
+          "id": "FW-05-30-materials",
+          "query": "沿途有草穗、花木、山景泳池、宣传照片与交叉倒竹；人物说泳池当时关闭，对未见收割提出自己的推测，并把倒竹形状比作游戏特效。",
+          "requirement": "required",
+          "targetBundles": [
+            "草木、泳池与竹林"
+          ],
+          "chosenSpanIds": [
+            "C5036_zve1_day11_broll_s0-1",
+            "C5036_zve1_day11_broll_speech_s0-9",
+            "C5037_zve1_day11_broll_speech_s0-22",
+            "C5038_zve1_day11_broll_speech_s0-13",
+            "C5039_zve1_day11_broll_speech_s0-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-31",
+      "slots": [
+        {
+          "id": "FW-05-31-materials",
+          "query": "照片涵盖入口人物、吊桥红绳、竹节、梯田、稻草人与人物、稻穗花草和竹林；后续三张补充照片继续记录吊桥与返程人物。",
+          "requirement": "required",
+          "targetBundles": [
+            "岭顶子照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC02467_photos_photo",
+            "DSC02258_photos_photo",
+            "DSC02259_photos_photo",
+            "DSC02260_photos_photo",
+            "DSC09592_photos_photo",
+            "DSC02474_photos_photo",
+            "DSC02476_photos_photo",
+            "DSC02480_photos_photo",
+            "DSC02485_photos_photo",
+            "DSC02266_photos_photo",
+            "DSC02270_photos_photo",
+            "DSC02277_photos_photo",
+            "DSC02278_photos_photo",
+            "DSC02279_photos_photo",
+            "DSC02280_photos_photo",
+            "DSC02283_photos_photo",
+            "DSC02288_photos_photo",
+            "DSC02310_photos_photo",
+            "DSC02319_photos_photo"
+          ],
+          "treatments": {
+            "DSC02467_photos_photo": {
+              "audio": -100
+            },
+            "DSC02258_photos_photo": {
+              "audio": -100
+            },
+            "DSC02259_photos_photo": {
+              "audio": -100
+            },
+            "DSC02260_photos_photo": {
+              "audio": -100
+            },
+            "DSC09592_photos_photo": {
+              "audio": -100
+            },
+            "DSC02474_photos_photo": {
+              "audio": -100
+            },
+            "DSC02476_photos_photo": {
+              "audio": -100
+            },
+            "DSC02480_photos_photo": {
+              "audio": -100
+            },
+            "DSC02485_photos_photo": {
+              "audio": -100
+            },
+            "DSC02266_photos_photo": {
+              "audio": -100
+            },
+            "DSC02270_photos_photo": {
+              "audio": -100
+            },
+            "DSC02277_photos_photo": {
+              "audio": -100
+            },
+            "DSC02278_photos_photo": {
+              "audio": -100
+            },
+            "DSC02279_photos_photo": {
+              "audio": -100
+            },
+            "DSC02280_photos_photo": {
+              "audio": -100
+            },
+            "DSC02283_photos_photo": {
+              "audio": -100
+            },
+            "DSC02288_photos_photo": {
+              "audio": -100
+            },
+            "DSC02310_photos_photo": {
+              "audio": -100
+            },
+            "DSC02319_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-32",
+      "slots": [
+        {
+          "id": "FW-05-32-materials",
+          "query": "人物在乘车点回顾游览时间、说接下来去筑峰顶；摊主现炒米果，交谈涉及原料与染色做法，人物试吃后将口感比作年糕。",
+          "requirement": "required",
+          "targetBundles": [
+            "游览回顾与黄元米果"
+          ],
+          "chosenSpanIds": [
+            "C5040_zve1_day11_talking-head_speech_s0-21",
+            "C5041_zve1_day11_broll_speech_s0-25",
+            "C5042_zve1_day11_broll_speech_s0-20",
+            "C5043_zve1_day11_broll_speech_s1-48"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-01",
+      "slots": [
+        {
+          "id": "FW-06-01-materials",
+          "query": "车辆沿密集弯道下山，路旁有竹林、村屋和显示屏；人物辨认昨夜经过的位置，并谈道路急弯和驾驶秩序。",
+          "requirement": "required",
+          "targetBundles": [
+            "白天再走上堡山路"
+          ],
+          "chosenSpanIds": [
+            "C5044_zve1_day11_drive_speech_s0-58",
+            "C5045_zve1_day11_drive_speech_s0-18",
+            "C5046_zve1_day11_drive_visual_s5-16",
+            "C5047_zve1_day11_drive_speech_s4-14",
+            "C5047_zve1_day11_drive_visual_s14-63",
+            "C5047_zve1_day11_drive_speech_s24-37"
+          ],
+          "treatments": {
+            "C5046_zve1_day11_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C5047_zve1_day11_drive_visual_s14-63": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-02",
+      "slots": [
+        {
+          "id": "FW-06-02-materials",
+          "query": "车辆从林间道路进入沿水村街，镜头中有摩托、行人和孩子；人物寻找充电与饭馆，并对节日里的孩子数量表达惊讶。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入村镇"
+          ],
+          "chosenSpanIds": [
+            "C5048_zve1_day11_drive_speech_s0-1",
+            "C5048_zve1_day11_drive_visual_s4-11",
+            "C5049_zve1_day11_drive_speech_s0-17",
+            "C5050_zve1_day11_drive_speech_s1-14",
+            "C5050_zve1_day11_drive_visual_s18-63",
+            "C5050_zve1_day11_drive_speech_s22-30",
+            "C5050_zve1_day11_drive_speech_s36-53",
+            "C5050_zve1_day11_drive_speech_s76-78"
+          ],
+          "treatments": {
+            "C5048_zve1_day11_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C5050_zve1_day11_drive_visual_s18-63": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-03",
+      "slots": [
+        {
+          "id": "FW-06-03-materials",
+          "query": "车辆经过整齐街道和白色楼房，在充电位置停下；人物步行遇见翻找垃圾的狗，随后读到蛛岭村牌子，表达对村镇规模和整洁的印象。",
+          "requirement": "required",
+          "targetBundles": [
+            "蛛岭村街道与充电"
+          ],
+          "chosenSpanIds": [
+            "C5051_zve1_day11_drive_speech_s2-22",
+            "C5052_zve1_day11_drive_speech_s2-24",
+            "C5053_zve1_day11_broll_s0-1",
+            "C5053_zve1_day11_broll_speech_s0-11",
+            "C5054_zve1_day11_broll_speech_s0-11",
+            "C5055_zve1_day11_broll_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-04",
+      "slots": [
+        {
+          "id": "FW-06-04-materials",
+          "query": "路边摊摆水果，人物询价并讨论梨；随后查看街边店面，进入一家门头写着老店的餐馆。",
+          "requirement": "required",
+          "targetBundles": [
+            "买水果与找餐馆"
+          ],
+          "chosenSpanIds": [
+            "C5056_zve1_day11_broll_speech_s0-23",
+            "C5057_zve1_day11_broll_speech_s0-8",
+            "C5058_zve1_day11_broll_speech_s0-10"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-05",
+      "slots": [
+        {
+          "id": "FW-06-05-materials",
+          "query": "桌上有农家一碗香、西红柿蛋汤和豆腐，人物拌饭、试吃，对锅气、咸淡及与四川麻婆豆腐的差异作个人评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "家常晚饭"
+          ],
+          "chosenSpanIds": [
+            "C5059_zve1_day11_broll_speech_s0-12",
+            "C5060_zve1_day11_broll_speech_s1-59",
+            "C5061_zve1_day11_broll_speech_s0-7",
+            "C5062_zve1_day11_broll_speech_s0-9",
+            "C5062_zve1_day11_broll_speech_s17-26"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-06",
+      "slots": [
+        {
+          "id": "FW-06-06-materials",
+          "query": "人物在车里转述饭馆叔叔关于山顶风大、寒冷的提醒；车离开村镇，口述回顾街道整洁、店铺和工厂的印象。",
+          "requirement": "required",
+          "targetBundles": [
+            "出发前的提醒"
+          ],
+          "chosenSpanIds": [
+            "C5063_zve1_day11_talking-head_speech_s2-16",
+            "C5064_zve1_day11_drive_speech_s1-34"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-07",
+      "slots": [
+        {
+          "id": "FW-06-07-materials",
+          "query": "车灯照见警示设施、路障和锥桶；人物讨论能否通过，并说现场像有山体滑坡。",
+          "requirement": "required",
+          "targetBundles": [
+            "夜路施工区域"
+          ],
+          "chosenSpanIds": [
+            "C5065_zve1_day11_drive_speech_s0-14",
+            "C5066_zve1_day11_drive_speech_s0-24"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-08",
+      "slots": [
+        {
+          "id": "FW-06-08-materials",
+          "query": "车灯照亮窄路、护栏和弯道，导航不断报转向；人物不确定路线是否变化，注意到预计时间改变，与其他车辆交会。",
+          "requirement": "required",
+          "targetBundles": [
+            "黑暗中的岔路"
+          ],
+          "chosenSpanIds": [
+            "C5067_zve1_day11_drive_speech_s1-78",
+            "C5067_zve1_day11_drive_speech_s87-102",
+            "C5067_zve1_day11_drive_speech_s112-138",
+            "C5067_zve1_day11_drive_visual_s137-148",
+            "C5067_zve1_day11_drive_speech_s154-165"
+          ],
+          "treatments": {
+            "C5067_zve1_day11_drive_visual_s137-148": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-09",
+      "slots": [
+        {
+          "id": "FW-06-09-materials",
+          "query": "车辆经过筑峰顶方向牌、彩色路面标线、岗亭与护栏；人物确认上山方向，描述正式进入盘山路。",
+          "requirement": "required",
+          "targetBundles": [
+            "筑峰顶路牌与盘山道"
+          ],
+          "chosenSpanIds": [
+            "C5068_zve1_day11_drive_speech_s0-5",
+            "C5068_zve1_day11_drive_visual_s12-35",
+            "C5069_zve1_day11_drive_speech_s0-12",
+            "C5069_zve1_day11_drive_visual_s14-39",
+            "C5069_zve1_day11_drive_speech_s14-18"
+          ],
+          "treatments": {
+            "C5068_zve1_day11_drive_visual_s12-35": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C5069_zve1_day11_drive_visual_s14-39": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-10",
+      "slots": [
+        {
+          "id": "FW-06-10-materials",
+          "query": "前车与道路曲线在车灯里反复出现；人物抱怨压线和弯道超车，同时描述铺装双车道、漫长弯路及开窗后的虫鸣清香，期待次日天气转好。",
+          "requirement": "required",
+          "targetBundles": [
+            "连续发卡弯与期待"
+          ],
+          "chosenSpanIds": [
+            "C5070_zve1_day11_drive_speech_s0-21",
+            "C5070_zve1_day11_drive_visual_s19-49",
+            "C5070_zve1_day11_drive_speech_s52-58",
+            "C5072_zve1_day11_drive_speech_s2-43"
+          ],
+          "treatments": {
+            "C5070_zve1_day11_drive_visual_s19-49": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-11",
+      "slots": [
+        {
+          "id": "FW-06-11-materials",
+          "query": "车辆继续经过下坡、分岔、标牌和停在路边的车，最后看到餐饮设施；人物读到海拔数字，谈它与自己预想的荒野环境不同。",
+          "requirement": "required",
+          "targetBundles": [
+            "山顶前的下坡与灯光"
+          ],
+          "chosenSpanIds": [
+            "C5073_zve1_day11_drive_speech_s1-17",
+            "C5074_zve1_day11_drive_speech_s0-33",
+            "C5074_zve1_day11_drive_visual_s32-60",
+            "C5074_zve1_day11_drive_speech_s59-104",
+            "C5075_zve1_day11_drive_speech_s0-7"
+          ],
+          "treatments": {
+            "C5074_zve1_day11_drive_visual_s32-60": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-12",
+      "slots": [
+        {
+          "id": "FW-06-12-materials",
+          "query": "夜间停车区车辆密集，旁边有风机；人物说风机声很大、有人露营，决定在此休息，转而期待第二天的日出。",
+          "requirement": "required",
+          "targetBundles": [
+            "山顶停车过夜"
+          ],
+          "chosenSpanIds": [
+            "C5076_zve1_day11_broll_speech_s0-20"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-01",
+      "slots": [
+        {
+          "id": "FW-07-01-materials",
+          "query": "清晨山脊上的风机、停车场和观景人群渐渐清晰，山路排着车，远山、桥和谷间低云在视野中展开。",
+          "requirement": "required",
+          "targetBundles": [
+            "日出前山脊航拍"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261006060004_0899_D_drone_aerial_s0-15",
+            "DJI_20261006060100_0903_D_drone_aerial_s0-12",
+            "DJI_20261006060132_0904_D_drone_aerial_s0-28",
+            "DJI_20261006060232_0911_D_drone_aerial_s0-11",
+            "DJI_20261006060315_0918_D_drone_aerial_s0-13",
+            "DJI_20261006060340_0922_D_drone_aerial_s0-30",
+            "DJI_20261006060535_0935_D_drone_aerial_s0-18",
+            "DJI_20261006060617_0936_D_drone_aerial_s0-8",
+            "DJI_20261006060629_0937_D_drone_aerial_s0-16",
+            "DJI_20261006060714_0944_D_drone_aerial_s0-17"
+          ],
+          "treatments": {
+            "DJI_20261006060004_0899_D_drone_aerial_s0-15": {
+              "audio": -100
+            },
+            "DJI_20261006060100_0903_D_drone_aerial_s0-12": {
+              "audio": -100
+            },
+            "DJI_20261006060132_0904_D_drone_aerial_s0-28": {
+              "audio": -100
+            },
+            "DJI_20261006060232_0911_D_drone_aerial_s0-11": {
+              "audio": -100
+            },
+            "DJI_20261006060315_0918_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261006060340_0922_D_drone_aerial_s0-30": {
+              "audio": -100
+            },
+            "DJI_20261006060535_0935_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20261006060617_0936_D_drone_aerial_s0-8": {
+              "audio": -100
+            },
+            "DJI_20261006060629_0937_D_drone_aerial_s0-16": {
+              "audio": -100
+            },
+            "DJI_20261006060714_0944_D_drone_aerial_s0-17": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-02",
+      "slots": [
+        {
+          "id": "FW-07-02-materials",
+          "query": "延时从月亮、星点和山脊红灯开始，天空逐渐转为紫色与橙色，日出天光显出远处风机和层叠山体。",
+          "requirement": "required",
+          "targetBundles": [
+            "天色变化延时"
+          ],
+          "chosenSpanIds": [
+            "20261006_上犹筑峰顶日出_timelapse_timelapse_s0-44"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-03",
+      "slots": [
+        {
+          "id": "FW-07-03-materials",
+          "query": "人物在两台脚架相机旁介绍筑峰顶，称夜间后来放晴、未赶上预想的星空拍摄，当时未见云海；又谈设施、人车和日出体验。另有停放车辆之间的人群景象。",
+          "requirement": "required",
+          "targetBundles": [
+            "人物的日出回顾"
+          ],
+          "chosenSpanIds": [
+            "C5080_zve1_day12_broll_speech_s0-79",
+            "DJI_20261006062331_0960_D_drone_broll_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-04",
+      "slots": [
+        {
+          "id": "FW-07-04-materials",
+          "query": "晨光照亮层叠山脊、风机和曲折车道，低云铺在谷中，远近视角展现停车场、人群与山脊道路的关系；较晚画面天空已转蓝。",
+          "requirement": "required",
+          "targetBundles": [
+            "金色山脊与云海航拍组"
+          ],
+          "chosenSpanIds": [
+            "DJI_20261006062349_0961_D_drone_aerial_s0-8",
+            "DJI_20261006062410_0962_D_drone_aerial_s0-7",
+            "DJI_20261006062418_0963_D_drone_aerial_s0-38",
+            "DJI_20261006062533_0973_D_drone_aerial_s0-10",
+            "DJI_20261006062608_0974_D_drone_aerial_s0-9",
+            "DJI_20261006062625_0975_D_drone_aerial_s0-23",
+            "DJI_20261006062744_0985_D_drone_aerial_s0-26",
+            "DJI_20261006062827_0989_D_drone_aerial_s0-32",
+            "DJI_20261006062936_0996_D_drone_aerial_s0-13",
+            "DJI_20261006063014_0004_D_drone_aerial_s0-17",
+            "DJI_20261006063036_0005_D_drone_aerial_s0-19",
+            "DJI_20261006063112_0009_D_drone_aerial_s0-19",
+            "DJI_20261006063210_0022_D_drone_aerial_s0-15",
+            "DJI_20261006063235_0023_D_drone_aerial_s0-34",
+            "DJI_20261006063331_0030_D_drone_aerial_s0-18",
+            "DJI_20261006063353_0031_D_drone_aerial_s0-14",
+            "DJI_20261006063431_0032_D_drone_aerial_s0-18",
+            "DJI_20261006063619_0048_D_drone_aerial_s0-24",
+            "DJI_20261006063721_0058_D_drone_aerial_s0-19",
+            "DJI_20261006071709_0065_D_drone_aerial_s0-11"
+          ],
+          "treatments": {
+            "DJI_20261006062349_0961_D_drone_aerial_s0-8": {
+              "audio": -100
+            },
+            "DJI_20261006062410_0962_D_drone_aerial_s0-7": {
+              "audio": -100
+            },
+            "DJI_20261006062418_0963_D_drone_aerial_s0-38": {
+              "audio": -100
+            },
+            "DJI_20261006062533_0973_D_drone_aerial_s0-10": {
+              "audio": -100
+            },
+            "DJI_20261006062608_0974_D_drone_aerial_s0-9": {
+              "audio": -100
+            },
+            "DJI_20261006062625_0975_D_drone_aerial_s0-23": {
+              "audio": -100
+            },
+            "DJI_20261006062744_0985_D_drone_aerial_s0-26": {
+              "audio": -100
+            },
+            "DJI_20261006062827_0989_D_drone_aerial_s0-32": {
+              "audio": -100
+            },
+            "DJI_20261006062936_0996_D_drone_aerial_s0-13": {
+              "audio": -100
+            },
+            "DJI_20261006063014_0004_D_drone_aerial_s0-17": {
+              "audio": -100
+            },
+            "DJI_20261006063036_0005_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20261006063112_0009_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20261006063210_0022_D_drone_aerial_s0-15": {
+              "audio": -100
+            },
+            "DJI_20261006063235_0023_D_drone_aerial_s0-34": {
+              "audio": -100
+            },
+            "DJI_20261006063331_0030_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20261006063353_0031_D_drone_aerial_s0-14": {
+              "audio": -100
+            },
+            "DJI_20261006063431_0032_D_drone_aerial_s0-18": {
+              "audio": -100
+            },
+            "DJI_20261006063619_0048_D_drone_aerial_s0-24": {
+              "audio": -100
+            },
+            "DJI_20261006063721_0058_D_drone_aerial_s0-19": {
+              "audio": -100
+            },
+            "DJI_20261006071709_0065_D_drone_aerial_s0-11": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-05",
+      "slots": [
+        {
+          "id": "FW-07-05-materials",
+          "query": "人物经过山顶建筑和厕所，随后看到车辆占据路边及弯道，表达对通行受阻的不满。",
+          "requirement": "required",
+          "targetBundles": [
+            "山顶设施与堵车"
+          ],
+          "chosenSpanIds": [
+            "C5081_zve1_day12_broll_speech_s1-11",
+            "C5082_zve1_day12_broll_speech_s0-10",
+            "C5083_zve1_day12_drive_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-06",
+      "slots": [
+        {
+          "id": "FW-07-06-materials",
+          "query": "从山路一侧看到谷间云层，人物说云海位于日出的另一面，停车拍摄后继续通行；镜头也记录路边停靠车辆、风机与沿路缓行。",
+          "requirement": "required",
+          "targetBundles": [
+            "转到云海这一侧"
+          ],
+          "chosenSpanIds": [
+            "C5083_zve1_day12_drive_speech_s22-41",
+            "C5083_zve1_day12_drive_speech_s69-74",
+            "C5083_zve1_day12_drive_visual_s72-78",
+            "C5084_zve1_day12_broll_speech_s0-8",
+            "C5085_zve1_day12_drive_speech_s0-9",
+            "C5086_zve1_day12_drive_speech_s21-60",
+            "C5087_zve1_day12_drive_speech_s2-24",
+            "C5088_zve1_day12_drive_visual_s3-17",
+            "C5088_zve1_day12_drive_speech_s12-16",
+            "C5089_zve1_day12_drive_speech_s7-20",
+            "C5089_zve1_day12_drive_visual_s18-36",
+            "C5089_zve1_day12_drive_speech_s48-55"
+          ],
+          "treatments": {
+            "C5083_zve1_day12_drive_visual_s72-78": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C5088_zve1_day12_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C5089_zve1_day12_drive_visual_s18-36": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-07",
+      "slots": [
+        {
+          "id": "FW-07-07-materials",
+          "query": "车辆沿风机山脊的弯道行驶，车内前视与空中跟车呈现同一时段道路、其他车辆、绿山及谷下云海；现场只有短促语音。",
+          "requirement": "required",
+          "targetBundles": [
+            "云海旁山路与无人机跟车"
+          ],
+          "chosenSpanIds": [
+            "C5090_zve1_day12_drive_speech_s0-253",
+            "DJI_20261006072521_0096_D_drone_drive_s0-4",
+            "DJI_20261006072533_0097_D_drone_drive_s0-230"
+          ],
+          "treatments": {
+            "DJI_20261006072521_0096_D_drone_drive_s0-4": {
+              "audio": -100
+            },
+            "DJI_20261006072533_0097_D_drone_drive_s0-230": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-08",
+      "slots": [
+        {
+          "id": "FW-07-08-materials",
+          "query": "照片从黎明前月亮、星点与山脊红灯延续到日出、人物脚架、风机山脊和谷间云海，另有桥、村落、停车场与车；现场时刻均为清晨，暖光照片不代表日落。",
+          "requirement": "required",
+          "targetBundles": [
+            "筑峰顶照片组"
+          ],
+          "chosenSpanIds": [
+            "DSC09638_photos_photo",
+            "DJI_20261006060332_0921_D-HDR_photos_photo",
+            "DJI_20261006060454_0931_D-HDR_photos_photo",
+            "DJI_20261006060658_0940_D-HDR_photos_photo",
+            "DJI_20261006060820_0953_D-HDR_photos_photo",
+            "DJI_20261006060942_0959_D-HDR_photos_photo",
+            "DSC02419_photos_photo",
+            "DSC00324_photos_photo",
+            "DSC02470_photos_photo",
+            "DSC02505_photos_photo",
+            "DJI_20261006062503_0964_D-HDR_photos_photo",
+            "DJI_20261006062700_0976_D_photos_photo",
+            "DJI_20261006062818_0988_D-HDR_photos_photo",
+            "DJI_20261006063006_0003_D-HDR_photos_photo",
+            "DJI_20261006063100_0008_D-HDR_photos_photo",
+            "DJI_20261006063148_0018_D-HDR_photos_photo",
+            "DJI_20261006063313_0026_D-HDR_photos_photo",
+            "DJI_20261006063459_0035_D-HDR_photos_photo",
+            "DJI_20261006063541_0041_D-HDR_photos_photo",
+            "DJI_20261006063548_0044_D-HDR_photos_photo",
+            "DJI_20261006063559_0047_D-HDR_photos_photo",
+            "DJI_20261006063648_0051_D-HDR_photos_photo",
+            "DJI_20261006063715_0057_D-HDR_photos_photo",
+            "DJI_20261006063800_0061_D-HDR_photos_photo",
+            "DSC02857_photos_photo",
+            "DSC02858_photos_photo",
+            "DSC02859_photos_photo",
+            "DSC02860_photos_photo",
+            "DSC02867_photos_photo",
+            "DJI_20261006072353_0089_D-HDR_photos_photo"
+          ],
+          "treatments": {
+            "DSC09638_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006060332_0921_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006060454_0931_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006060658_0940_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006060820_0953_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006060942_0959_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC02419_photos_photo": {
+              "audio": -100
+            },
+            "DSC00324_photos_photo": {
+              "audio": -100
+            },
+            "DSC02470_photos_photo": {
+              "audio": -100
+            },
+            "DSC02505_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006062503_0964_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006062700_0976_D_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006062818_0988_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063006_0003_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063100_0008_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063148_0018_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063313_0026_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063459_0035_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063541_0041_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063548_0044_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063559_0047_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063648_0051_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063715_0057_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006063800_0061_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC02857_photos_photo": {
+              "audio": -100
+            },
+            "DSC02858_photos_photo": {
+              "audio": -100
+            },
+            "DSC02859_photos_photo": {
+              "audio": -100
+            },
+            "DSC02860_photos_photo": {
+              "audio": -100
+            },
+            "DSC02867_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20261006072353_0089_D-HDR_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-09",
+      "slots": [
+        {
+          "id": "FW-07-09-materials",
+          "query": "车从云海旁山路下行，经过林地和村屋后到收费站；人物回顾山顶交通与设施，随后说旅程进入高速回家的阶段。",
+          "requirement": "required",
+          "targetBundles": [
+            "下山与上犹道别"
+          ],
+          "chosenSpanIds": [
+            "C5091_zve1_day12_drive_speech_s1-30",
+            "C5092_zve1_day12_drive_s0-24",
+            "C5093_zve1_day12_drive_s0-44",
+            "C5094_zve1_day12_drive_speech_s0-14"
+          ],
+          "treatments": {
+            "C5092_zve1_day12_drive_s0-24": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C5093_zve1_day12_drive_s0-44": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-10",
+      "slots": [
+        {
+          "id": "FW-07-10-materials",
+          "query": "车辆驶向服务区和收费设施，随后步行拍摄建筑、客房标识及带遮棚停车位；人物对服务区设施表达惊喜。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入阳明湖服务区"
+          ],
+          "chosenSpanIds": [
+            "C5095_zve1_day12_drive_speech_s0-22",
+            "C5096_zve1_day12_broll_speech_s0-11",
+            "C5097_zve1_day12_broll_speech_s0-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-11",
+      "slots": [
+        {
+          "id": "FW-07-11-materials",
+          "query": "镜头经过带文字的墙面、庭院与卫生间标识；人物读到良知相关文字，观察庭院水池，并介绍自己看到的潮汐卫生间。",
+          "requirement": "required",
+          "targetBundles": [
+            "服务区室内与卫生间"
+          ],
+          "chosenSpanIds": [
+            "C5098_zve1_day12_broll_speech_s0-11",
+            "C5099_zve1_day12_broll_speech_s1-23",
+            "C5100_zve1_day12_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-12",
+      "slots": [
+        {
+          "id": "FW-07-12-materials",
+          "query": "人物在打开的后备厢展示磁吸水泵、慢煮棒和水箱，操作温度设定并讲述自己组合设备的想法、部件价格与预计加热时间。",
+          "requirement": "required",
+          "targetBundles": [
+            "车尾洗漱装置介绍"
+          ],
+          "chosenSpanIds": [
+            "C5106_zve1_day12_broll_speech_s0-70",
+            "C5106_zve1_day12_broll_speech_s73-92"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-13",
+      "slots": [
+        {
+          "id": "FW-07-13-materials",
+          "query": "人物展示热水出水、固定水泵与接废水的容器，说明现场操作过程；随后同伴在车尾洗漱，人物说已经洗完。温度与用时均为当场读数或口述。",
+          "requirement": "required",
+          "targetBundles": [
+            "热水和洗漱演示"
+          ],
+          "chosenSpanIds": [
+            "C5107_zve1_day12_broll_speech_s1-84",
+            "C5108_zve1_day12_broll_speech_s0-3",
+            "C5109_zve1_day12_broll_s0-2",
+            "C5110_zve1_day12_broll_s0-1",
+            "C5110_zve1_day12_broll_speech_s0-5"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-14",
+      "slots": [
+        {
+          "id": "FW-07-14-materials",
+          "query": "车辆驶过晴天山间高速、拥堵车流与隧道；人物说看到追尾和隧道内事故，并对事故经过作猜测。",
+          "requirement": "required",
+          "targetBundles": [
+            "返程高速与事故现场"
+          ],
+          "chosenSpanIds": [
+            "C5111_zve1_day12_drive_s0-23",
+            "C5112_zve1_day12_drive_speech_s1-40",
+            "C5113_zve1_day12_drive_speech_s1-13"
+          ],
+          "treatments": {
+            "C5111_zve1_day12_drive_s0-23": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-15",
+      "slots": [
+        {
+          "id": "FW-07-15-materials",
+          "query": "经过收费站、兰花与九仙桃之乡标识、兰花雕塑和城镇道路；人物说来吃午饭，对楼房与县城面貌发表即时印象。",
+          "requirement": "required",
+          "targetBundles": [
+            "进入翁源"
+          ],
+          "chosenSpanIds": [
+            "C5114_zve1_day12_drive_speech_s1-21",
+            "C5115_zve1_day12_drive_speech_s0-14",
+            "C5116_zve1_day12_drive_speech_s0-6",
+            "C5116_zve1_day12_drive_speech_s11-53"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-16",
+      "slots": [
+        {
+          "id": "FW-07-16-materials",
+          "query": "镜头记录餐馆门口、高台阶和宴会厅；人物说按当地推荐来吃午饭，并观察大厅当时已散席。",
+          "requirement": "required",
+          "targetBundles": [
+            "小桃园酒家"
+          ],
+          "chosenSpanIds": [
+            "C5117_zve1_day12_drive_speech_s1-13",
+            "C5118_zve1_day12_broll_speech_s0-8",
+            "C5119_zve1_day12_broll_speech_s0-6"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-17",
+      "slots": [
+        {
+          "id": "FW-07-17-materials",
+          "query": "桌上有艾糍、叶包肉和炖肉，人物依次试吃，描述艾糍清香、芝麻馅与叶包肉味道，并评价肉的口感和价格。",
+          "requirement": "required",
+          "targetBundles": [
+            "翁源客家午饭"
+          ],
+          "chosenSpanIds": [
+            "C5120_zve1_day12_broll_speech_s0-23",
+            "C5121_zve1_day12_broll_speech_s0-6",
+            "C5121_zve1_day12_broll_speech_s14-61",
+            "C5121_zve1_day12_broll_speech_s78-97"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-18",
+      "slots": [
+        {
+          "id": "FW-07-18-materials",
+          "query": "高速两旁是山和绿植，车内观察一座像“山”字的山体，以及远处云层中露出的亮缝。",
+          "requirement": "required",
+          "targetBundles": [
+            "返程山形与云缝"
+          ],
+          "chosenSpanIds": [
+            "C5122_zve1_day12_drive_speech_s0-27",
+            "C5123_zve1_day12_drive_speech_s1-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-19",
+      "slots": [
+        {
+          "id": "FW-07-19-materials",
+          "query": "车辆继续与高速车流同行，进入带花纹装饰的隧道；车内谈节日驾驶感受，并注意到隧道口的小花图案。",
+          "requirement": "required",
+          "targetBundles": [
+            "现有素材的最后一段"
+          ],
+          "chosenSpanIds": [
+            "C5124_zve1_day12_drive_speech_s0-13",
+            "C5125_zve1_day12_drive_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    }
+  ],
+  "coverageAudit": {
+    "generatedAt": "2026-11-01T09:06:48.701Z",
+    "byType": [
+      {
+        "key": "broll",
+        "available": 227,
+        "chosen": 224,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4830_zve1_day9_broll_s8-10",
+          "C4917_zve1_day10_broll_s35-36",
+          "C0122_a7r6_broll_s0-1"
+        ]
+      },
+      {
+        "key": "drive",
+        "available": 198,
+        "chosen": 187,
+        "dropped": 11,
+        "droppedSpanIds": [
+          "C4880_zve1_day9_drive_visual_s41-46",
+          "C4885_zve1_day9_drive_visual_s69-117",
+          "C4947_zve1_day10_drive_visual_s8-16",
+          "C4949_zve1_day10_drive_visual_s29-34",
+          "C4976_zve1_day11_drive_visual_s0-3",
+          "C5047_zve1_day11_drive_visual_s49-62",
+          "C5068_zve1_day11_drive_visual_s9-13",
+          "C5068_zve1_day11_drive_visual_s20-22",
+          "C5068_zve1_day11_drive_visual_s30-33",
+          "C5090_zve1_day12_drive_visual_s67-114",
+          "C5090_zve1_day12_drive_visual_s176-223"
+        ]
+      },
+      {
+        "key": "photo",
+        "available": 129,
+        "chosen": 129,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "aerial",
+        "available": 73,
+        "chosen": 73,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "talking-head",
+        "available": 17,
+        "chosen": 17,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "timelapse",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byDay": [
+      {
+        "key": "2026-10-02",
+        "label": "2026-10-02",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-10-03",
+        "label": "2026-10-03",
+        "available": 216,
+        "chosen": 213,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4830_zve1_day9_broll_s8-10",
+          "C4880_zve1_day9_drive_visual_s41-46",
+          "C4885_zve1_day9_drive_visual_s69-117"
+        ]
+      },
+      {
+        "key": "2026-10-04",
+        "label": "2026-10-04",
+        "available": 61,
+        "chosen": 58,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C4917_zve1_day10_broll_s35-36",
+          "C4947_zve1_day10_drive_visual_s8-16",
+          "C4949_zve1_day10_drive_visual_s29-34"
+        ]
+      },
+      {
+        "key": "2026-10-05",
+        "label": "2026-10-05",
+        "available": 238,
+        "chosen": 232,
+        "dropped": 6,
+        "droppedSpanIds": [
+          "C4976_zve1_day11_drive_visual_s0-3",
+          "C0122_a7r6_broll_s0-1",
+          "C5047_zve1_day11_drive_visual_s49-62",
+          "C5068_zve1_day11_drive_visual_s9-13",
+          "C5068_zve1_day11_drive_visual_s20-22",
+          "C5068_zve1_day11_drive_visual_s30-33"
+        ]
+      },
+      {
+        "key": "2026-10-06",
+        "label": "2026-10-06",
+        "available": 118,
+        "chosen": 116,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C5090_zve1_day12_drive_visual_s67-114",
+          "C5090_zve1_day12_drive_visual_s176-223"
+        ]
+      }
+    ],
+    "byEvent": [
+      {
+        "key": "event-pharos-3ba68c5d41be",
+        "label": "event-pharos-3ba68c5d41be",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-1d3f0c6bd7d2",
+        "label": "event-pharos-1d3f0c6bd7d2",
+        "available": 142,
+        "chosen": 141,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4830_zve1_day9_broll_s8-10"
+        ]
+      },
+      {
+        "key": "event-pharos-107958d354f8",
+        "label": "event-pharos-107958d354f8",
+        "available": 33,
+        "chosen": 31,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4880_zve1_day9_drive_visual_s41-46",
+          "C4885_zve1_day9_drive_visual_s69-117"
+        ]
+      },
+      {
+        "key": "event-pharos-26d942c6be08",
+        "label": "event-pharos-26d942c6be08",
+        "available": 21,
+        "chosen": 21,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-976e825bfac9",
+        "label": "event-pharos-976e825bfac9",
+        "available": 19,
+        "chosen": 19,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-813326bd00ec",
+        "label": "event-pharos-813326bd00ec",
+        "available": 2,
+        "chosen": 1,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4917_zve1_day10_broll_s35-36"
+        ]
+      },
+      {
+        "key": "event-pharos-7576cabe9e65",
+        "label": "event-pharos-7576cabe9e65",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-3de59cb64f6b",
+        "label": "event-pharos-3de59cb64f6b",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-348dbf28db55",
+        "label": "event-pharos-348dbf28db55",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-e5e0149c4a0e",
+        "label": "event-pharos-e5e0149c4a0e",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-232b923bec4b",
+        "label": "event-pharos-232b923bec4b",
+        "available": 23,
+        "chosen": 21,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C4947_zve1_day10_drive_visual_s8-16",
+          "C4949_zve1_day10_drive_visual_s29-34"
+        ]
+      },
+      {
+        "key": "event-pharos-59f008b5b3c5",
+        "label": "event-pharos-59f008b5b3c5",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-9d0eebb6d3c7",
+        "label": "event-pharos-9d0eebb6d3c7",
+        "available": 19,
+        "chosen": 19,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-0b4e5f7e818b",
+        "label": "event-pharos-0b4e5f7e818b",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-c26e95967d84",
+        "label": "event-pharos-c26e95967d84",
+        "available": 9,
+        "chosen": 8,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C4976_zve1_day11_drive_visual_s0-3"
+        ]
+      },
+      {
+        "key": "event-pharos-a844e5c96e1a",
+        "label": "event-pharos-a844e5c96e1a",
+        "available": 98,
+        "chosen": 97,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C0122_a7r6_broll_s0-1"
+        ]
+      },
+      {
+        "key": "event-pharos-ae7cc62e12bc",
+        "label": "event-pharos-ae7cc62e12bc",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-73a65eac2a14",
+        "label": "event-pharos-73a65eac2a14",
+        "available": 30,
+        "chosen": 30,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-16161b152db3",
+        "label": "event-pharos-16161b152db3",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-11922bd8572f",
+        "label": "event-pharos-11922bd8572f",
+        "available": 15,
+        "chosen": 14,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C5047_zve1_day11_drive_visual_s49-62"
+        ]
+      },
+      {
+        "key": "event-pharos-1d9966bc88cc",
+        "label": "event-pharos-1d9966bc88cc",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-ea1702978547",
+        "label": "event-pharos-ea1702978547",
+        "available": 26,
+        "chosen": 23,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "C5068_zve1_day11_drive_visual_s9-13",
+          "C5068_zve1_day11_drive_visual_s20-22",
+          "C5068_zve1_day11_drive_visual_s30-33"
+        ]
+      },
+      {
+        "key": "event-pharos-21a98646c5b3",
+        "label": "event-pharos-21a98646c5b3",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-e9559fe1f6d6",
+        "label": "event-pharos-e9559fe1f6d6",
+        "available": 82,
+        "chosen": 80,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C5090_zve1_day12_drive_visual_s67-114",
+          "C5090_zve1_day12_drive_visual_s176-223"
+        ]
+      },
+      {
+        "key": "event-pharos-ba689ec8bf09",
+        "label": "event-pharos-ba689ec8bf09",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-d1bc08467c73",
+        "label": "event-pharos-d1bc08467c73",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-40c8fbc45feb",
+        "label": "event-pharos-40c8fbc45feb",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-d58f21467aeb",
+        "label": "event-pharos-d58f21467aeb",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "event-pharos-7c514fe17bea",
+        "label": "event-pharos-7c514fe17bea",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "speechProtected": {
+      "available": 336,
+      "chosen": 336,
+      "dropped": 0,
+      "droppedSpanIds": []
+    },
+    "notes": [
+      "仅统计已审框架内645个候选；源事实来自当前spans/assets，按已修正capturedAt和sourceInMs计算当地日期。",
+      "byEvent在召回选择完成后，仅按已校验未变的编年史事件id/spanIds作结构审计；编年史未进入Agent语义选择接口。",
+      "7个事件外补充候选按已审框架归组，在byType/byDay及逐项决策中完整核验，不伪造正式事件归属。",
+      "所有未选候选的逐项理由见同目录decisions.json；类型与声音风险见review.md。",
+      "human gate为pending，不能以current数据状态或本次调用作为召回已审/粗剪授权。",
+      "2026-11-01 用户明确确认C4861更正为普通视频并保留讲解；仅type由aerial改broll、撤销该项静音，ID/选择/源区间/字幕保持不变。"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-31T06:38:31.674Z",
+  "updatedAt": "2026-11-01T14:55:55.970Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
@@ -8,10 +8,10 @@
         "projectName": "中秋国庆闽赣自驾 [Edit]",
         "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
         "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-10-31T06:38:28Z",
-        "mode": "auto",
+        "createdAt": "2026-11-01T14:55:52Z",
+        "mode": "manual",
         "retention": "latest-only",
-        "action": "ep2-photo-finishing",
+        "action": "manual",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -19,13 +19,13 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "209f5060-758c-42ea-9ffa-1317607fec5c",
+        "attemptId": "84b8da1b-7fc7-43e1-88cb-b35c7d634e2b",
         "status": "succeeded",
-        "startedAt": "2026-10-31T06:38:27.848Z",
-        "finishedAt": "2026-10-31T06:38:31.674Z",
-        "mode": "auto",
+        "startedAt": "2026-11-01T14:55:51.492Z",
+        "finishedAt": "2026-11-01T14:55:55.969Z",
+        "mode": "manual",
         "retention": "latest-only",
-        "action": "ep2-photo-finishing"
+        "action": "manual"
       },
       "snapshotAttempts": [
         {
@@ -344,10 +344,37 @@
           "mode": "auto",
           "retention": "latest-only",
           "action": "ep2-photo-finishing"
+        },
+        {
+          "attemptId": "4f7d1212-5f07-4fe2-a160-50fd06a46383",
+          "status": "succeeded",
+          "startedAt": "2026-11-01T09:14:44.996Z",
+          "finishedAt": "2026-11-01T09:14:48.842Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline.generate"
+        },
+        {
+          "attemptId": "70310f8a-2188-4ff1-9a64-21d595089d08",
+          "status": "succeeded",
+          "startedAt": "2026-11-01T10:17:31.065Z",
+          "finishedAt": "2026-11-01T10:17:34.814Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "84b8da1b-7fc7-43e1-88cb-b35c7d634e2b",
+          "status": "succeeded",
+          "startedAt": "2026-11-01T14:55:51.492Z",
+          "finishedAt": "2026-11-01T14:55:55.969Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-10-31T06:38:31.674Z"
+      "updatedAt": "2026-11-01T14:55:55.970Z"
     }
   }
 }

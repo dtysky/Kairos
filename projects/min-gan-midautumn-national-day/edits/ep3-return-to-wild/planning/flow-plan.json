@@ -7,9 +7,9 @@
   "projectId": "min-gan-midautumn-national-day",
   "editId": "ep3-return-to-wild",
   "editRuleCategory": "travel-vlog",
-  "editRuleHash": "0748d3df434eaec8a0b4daa659fff545f0214f730cd97bddc0fcb33a8e322efc",
+  "editRuleHash": "092b1b2b4cec667fca7bd3643adbb821d6102f478780155006c48c0272322b11",
   "generatedAt": "2026-10-17T10:06:37.733Z",
-  "updatedAt": "2026-10-17T10:06:37.733Z",
+  "updatedAt": "2026-11-01T08:57:01.337Z",
   "status": "confirmed",
   "confirmedAt": "2026-10-17T10:06:37.733Z",
   "summary": "回程进入山野：本轮优先完成正文框架 → 框架审查 → 素材召回 → 召回审查 → 独立 Resolve 正文粗剪与原声 SRT；与另一剩余专题集中推进。人工精剪、短片头、锁片、按需旁白及最终字幕留待正文粗剪完成后。",
@@ -22,7 +22,8 @@
     "先集中审查两份框架，再集中审查两份召回结果，随后分别生成粗剪；每份产物的人工门独立保留，不为批量推进而跳过。粗剪阶段不进入片头、旁白或最终字幕制作。",
     "共享素材池属于项目级准备，生成各集前只读核实本集实际需要的 Media Pool 项；缺失时执行项目级准备。两份计划不含 resolve.media_sync，不重跑 Ingest、ASR、Analyze、span-builder 或 chronology。",
     "不需要独立事件表、素材档案或前置逐镜脚本，因此不添加 trip.event_table / material.archive / script.generate；未配置 styleCategory，不引入默认风格档案。",
-    "Pharos story group 只作专题采集标签，范围由已确认编年史及素材确定；研究资料或计划内容不得补写成拍到的事实。"
+    "Pharos story group 只作专题采集标签，范围由已确认编年史及素材确定；研究资料或计划内容不得补写成拍到的事实。",
+    "2026-11-01 用户明确要求按已审框架执行 material-recall-v1；已核对原规则与当前规则的正文框架、素材召回要求一致，本专题645个候选事实未变。仅续接当前已审框架与素材召回，后续片头/旁白步骤在执行前需按当前规则重新核对notes；本轮不确认召回结果、不推进粗剪或后续人工门。"
   ],
   "steps": [
     {

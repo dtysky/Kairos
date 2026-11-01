@@ -63317,7 +63317,7 @@
   {
     "id": "C4861_zve1_day9_aerial_speech_s0-17",
     "assetId": "C4861_zve1_day9",
-    "type": "aerial",
+    "type": "broll",
     "semanticKind": "speech",
     "sourceInMs": 640,
     "sourceOutMs": 16800,
