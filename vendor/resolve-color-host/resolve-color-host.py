@@ -21,6 +21,7 @@ CROUGH_CUT_DRIVE_CLIP_COLOR = "Brown"
 CROUGH_CUT_AERIAL_CLIP_COLOR = "Teal"
 CROUGH_CUT_PHOTO_COLOR_GROUP = "Kairos Photos"
 CROUGH_CUT_TIMELAPSE_COLOR_GROUP = "Kairos Timelapse"
+CROUGH_CUT_MEDIA_IMPORT_BATCH_SIZE = 50
 
 
 def configure_stdio() -> None:
@@ -469,8 +470,8 @@ def write_rough_cut_media_progress(payload, phase, current, total, file_name=Non
     progress = {
         "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "status": "running",
-        "pipelineKey": "resolve-media-sync",
-        "pipelineLabel": "剪辑素材池准备",
+        "pipelineKey": "resolve-extra-media-sync" if payload.get("mode") == "extra-media" else "resolve-media-sync",
+        "pipelineLabel": "额外素材导入" if payload.get("mode") == "extra-media" else "剪辑素材池准备",
         "phaseKey": phase,
         "phaseLabel": {"scan": "检查共享素材池", "import": "同步素材", "save": "保存剪辑工程"}[phase],
         "current": current,
@@ -487,10 +488,20 @@ def write_rough_cut_media_progress(payload, phase, current, total, file_name=Non
 def sync_rough_cut_media(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
     media_pool = require_method(project, "GetMediaPool")()
+    previous_folder = safe_call(media_pool, "GetCurrentFolder")
+    try:
+        return sync_rough_cut_media_in_project(resolve, payload, project, media_pool)
+    finally:
+        # AddSubFolder/MoveClips can change the selection too, outside the import helper.
+        if previous_folder is not None:
+            safe_call(media_pool, "SetCurrentFolder", previous_folder)
+
+
+def sync_rough_cut_media_in_project(resolve, payload, project, media_pool):
     media_storage = require_method(resolve, "GetMediaStorage")()
     namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Project Media"
     clip_requests = normalize_rough_cut_media_requests(payload.get("clips"))
-    if not clip_requests:
+    if not clip_requests and payload.get("mode") != "extra-media":
         raise HostError("resolve_media_sync_empty", "sync_rough_cut_media requires at least one media clip.")
 
     write_rough_cut_media_progress(payload, "scan", 0, len(clip_requests))
@@ -505,7 +516,9 @@ def sync_rough_cut_media(resolve, payload):
         clip_requests,
         dedupe_by_source_path=True,
         fallback_state=media_pool_state,
-        cleanup_empty_folders=True,
+        cleanup_empty_folders=payload.get("mode") != "extra-media",
+        preserve_existing_folders=payload.get("mode") == "extra-media",
+        import_batch_size=CROUGH_CUT_MEDIA_IMPORT_BATCH_SIZE,
         progress_callback=lambda current, clip, counts: write_rough_cut_media_progress(
             payload, "import", current, len(clip_requests),
             Path(clip["sourceAbsolutePath"]).name, **counts,
@@ -2646,6 +2659,8 @@ def sync_namespace_clips(
     fallback_state=None,
     cleanup_empty_folders=False,
     progress_callback=None,
+    import_batch_size=1,
+    preserve_existing_folders=False,
 ):
     imported = 0
     moved = 0
@@ -2658,8 +2673,9 @@ def sync_namespace_clips(
     fallback_clip_by_source_path = (fallback_state or {}).get("clipBySourcePath", {}) if fallback_state else {}
     fallback_clip_folder_by_source_path = (fallback_state or {}).get("clipFolderBySourcePath", {}) if fallback_state else {}
     fallback_clip_relative_dir_by_source_path = (fallback_state or {}).get("clipRelativeDirBySourcePath", {}) if fallback_state else {}
+    pending_imported_paths = set()
 
-    for clip_request in clip_requests:
+    for request_index, clip_request in enumerate(clip_requests):
         if progress_callback:
             progress_callback(len(prepared_entries), clip_request, {"imported": imported, "moved": moved, "reused": reused})
         relative_dir = portable_parent_dir(clip_request["rawRelativePath"])
@@ -2672,11 +2688,57 @@ def sync_namespace_clips(
             media_pool_item = fallback_clip_by_source_path.get(source_path)
             current_folder = fallback_clip_folder_by_source_path.get(source_path)
             current_relative_dir = fallback_clip_relative_dir_by_source_path.get(source_path)
-        if media_pool_item is None:
-            media_pool_item = import_media_pool_item(media_storage, media_pool, target_folder, source_path)
+        if source_path in pending_imported_paths:
+            pending_imported_paths.remove(source_path)
+            imported += 1
+        elif media_pool_item is None:
+            if import_batch_size > 1 and dedupe_by_source_path:
+                # Resolve's current folder is shared state: batch within one bin, never in threads.
+                # A multi-file ImportMedia call can fold numbered stills into a sequence.
+                # Keep each photo as an individual source while batching video requests.
+                batch_paths = []
+                batch_seen = set()
+                for candidate_index in range(request_index, len(clip_requests)):
+                    candidate = clip_requests[candidate_index]
+                    if portable_parent_dir(candidate["rawRelativePath"]) != relative_dir:
+                        break
+                    if candidate.get("assetKind") == "photo":
+                        if candidate_index == request_index:
+                            batch_paths.append(source_path)
+                        break
+                    candidate_path = candidate["sourceAbsolutePath"]
+                    if candidate_path in clip_by_source_path or candidate_path in fallback_clip_by_source_path or candidate_path in batch_seen:
+                        continue
+                    batch_paths.append(candidate_path)
+                    batch_seen.add(candidate_path)
+                    if len(batch_paths) >= import_batch_size:
+                        break
+                try:
+                    batch_items = import_media_pool_batch(media_storage, media_pool, target_folder, batch_paths)
+                except HostError as error:
+                    details = error.details or {}
+                    partial_count = len(details.get("importedSourcePaths", []))
+                    counts = {"imported": imported + partial_count, "moved": moved, "reused": reused}
+                    error.details = {**details, "syncSummary": counts}
+                    if progress_callback:
+                        progress_callback(len(prepared_entries) + partial_count, clip_request, counts)
+                    raise
+                for batch_path, item in batch_items.items():
+                    clip_by_source_path[batch_path] = item
+                    clip_folder_by_source_path[batch_path] = target_folder
+                    clip_relative_dir_by_source_path[batch_path] = normalize_portable_path(relative_dir)
+                pending_imported_paths.update(batch_items)
+                pending_imported_paths.remove(source_path)
+                media_pool_item = batch_items[source_path]
+            else:
+                media_pool_item = import_media_pool_item(media_storage, media_pool, target_folder, source_path)
             imported += 1
         else:
-            if normalize_portable_path(current_relative_dir) != normalize_portable_path(relative_dir):
+            if preserve_existing_folders:
+                target_folder = current_folder or target_folder
+                relative_dir = current_relative_dir
+                reused += 1
+            elif normalize_portable_path(current_relative_dir) != normalize_portable_path(relative_dir):
                 result = safe_call(media_pool, "MoveClips", [media_pool_item], target_folder)
                 if result is False:
                     raise HostError(
@@ -2765,6 +2827,62 @@ def ensure_folder_chain(media_pool, namespace_folder, folder_by_relative_dir, re
             folder_by_relative_dir[key] = folder
         current = folder
     return current
+
+
+def import_media_pool_batch(media_storage, media_pool, target_folder, source_paths):
+    """Resolve may import files without returning every item; reconcile before retrying."""
+    source_paths = list(dict.fromkeys(source_paths))
+    expected_paths = set(source_paths)
+    matched = {}
+    returned_items = []
+    previous_folder = safe_call(media_pool, "GetCurrentFolder")
+
+    def reconcile(returned=None):
+        for candidate in iter_values(returned or []):
+            file_path = normalize_filesystem_path(extract_media_pool_item_file_path(candidate))
+            returned_items.append({
+                "name": safe_call(candidate, "GetName"),
+                "filePath": file_path,
+            })
+            if file_path in expected_paths:
+                matched[file_path] = candidate
+        if len(matched) < len(expected_paths):
+            # Also reconcile empty responses and exceptions before retrying. Full responses
+            # need no bin rescan, avoiding quadratic RPC work for large event folders.
+            for candidate in iter_values(safe_call(target_folder, "GetClipList") or []):
+                file_path = normalize_filesystem_path(extract_media_pool_item_file_path(candidate))
+                if file_path in expected_paths:
+                    matched[file_path] = candidate
+
+    try:
+        if safe_call(media_pool, "SetCurrentFolder", target_folder) is not True:
+            raise HostError("resolve_media_pool_folder_failed", "Unable to select the target media folder before import.")
+        # 21.1.2 documents FilePath dicts, but live simple-file imports return nothing for
+        # that form. The still-supported path list imports videos; photos are submitted singly.
+        reconcile(safe_call(media_pool, "ImportMedia", source_paths))
+        for source_path in source_paths:
+            if source_path in matched:
+                continue
+            if len(source_paths) > 1:
+                reconcile(safe_call(media_pool, "ImportMedia", [source_path]))
+            if source_path not in matched:
+                # Preserve the single-file compatibility fallback; never retry successful batch members.
+                reconcile(safe_call(media_storage, "AddItemListToMediaPool", [{"media": source_path}]))
+        missing = [path for path in source_paths if path not in matched]
+        if missing:
+            raise HostError(
+                "resolve_media_pool_import_failed",
+                f"Unable to import {len(missing)} media file(s) into Resolve: {', '.join(missing)}",
+                {
+                    "missingSourcePaths": missing,
+                    "importedSourcePaths": [path for path in source_paths if path in matched],
+                    "returnedItems": returned_items,
+                },
+            )
+        return matched
+    finally:
+        if previous_folder is not None:
+            safe_call(media_pool, "SetCurrentFolder", previous_folder)
 
 
 def import_media_pool_item(media_storage, media_pool, target_folder, source_path):

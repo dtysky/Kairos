@@ -204,6 +204,7 @@ export async function saveProjectRoots(root: string, projectRoots: IProjectRoots
     pharos: currentBrief?.pharos,
     voiceoverMedia: currentBrief?.voiceoverMedia,
     audioMedia: currentBrief?.audioMedia,
+    extraMedia: currentBrief?.extraMedia,
     materialPatternPhrases: currentBrief?.materialPatternPhrases ?? [],
   });
   return IProjectRoots.parse({

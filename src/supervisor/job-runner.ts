@@ -1,3 +1,4 @@
+import { syncProjectExtraMedia } from '../modules/timeline-core/extra-media.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
@@ -73,7 +74,7 @@ async function main(): Promise<void> {
   let shouldStopMlAfterRun = false;
   const mediaAbort = new AbortController();
   const stopMediaSync = () => mediaAbort.abort();
-  if (record.jobType === 'resolve-media-sync') process.once('SIGTERM', stopMediaSync);
+  if (['resolve-media-sync', 'resolve-extra-media-sync'].includes(record.jobType)) process.once('SIGTERM', stopMediaSync);
   try {
     const shouldManageMl = await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId);
     if (shouldManageMl) {
@@ -156,6 +157,10 @@ async function runJob(
   signal?: AbortSignal,
 ): Promise<IJobExecutionResult> {
   switch (jobType) {
+    case 'resolve-extra-media-sync': {
+      if (!projectId) throw new BlockedJobError(['额外素材导入需要 projectId']);
+      return { result: await syncProjectExtraMedia({ projectRoot: resolveWorkspaceProjectRoot(workspaceRoot, projectId), jobId, progressPath, signal }) };
+    }
     case 'resolve-media-sync': {
       if (!projectId) throw new BlockedJobError(['素材池准备需要 projectId']);
       return { result: await syncProjectResolveMedia({
@@ -182,13 +187,9 @@ async function runJob(
         projectRoot,
         runtimeConfig,
       });
-      return {
-        result: await ingestWorkspaceProjectMedia({
-          workspaceRoot,
-          projectId,
-          reverseGeocodeService,
-        }),
-      };
+      const result = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId, reverseGeocodeService, jobId, progressPath });
+      console.log(`Ingest 完成：新增 ${result.merge.added.length} 个素材；元数据读取 ${result.metadata.probedFileCount} 个、复用 ${result.metadata.reusedFileCount} 个、失败 ${result.metadata.failedFileCount} 个（含保护音轨）。`);
+      return { result };
     }
     case 'gps-refresh': {
       if (!projectId) {

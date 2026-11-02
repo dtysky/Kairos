@@ -118,8 +118,12 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - chronology 只用于 Resolve bin/path/context，不参与 `material.recall` 语义选择。
 - 不新增 `media-archive.json`；达芬奇 Media Pool 是素材归档真相。
 - 重复运行必须复用已有 MediaPoolItem：素材已在正确事件分类子目录时跳过；素材已存在但事件分类子目录变化时只移动到新目录，不重导入；同步结束后清理 `Kairos Project Media` 下的空事件目录。
+- 缺失视频按同目标目录分批导入（内部每批至多 50 个，不限制素材总数）；照片逐张导入，避免编号照片被合成序列。Resolve 21.1.2 实测使用 `ImportMedia([paths])`，文档推荐的 `[{FilePath}]` 简单文件形式返回空。按实际源路径匹配，不依赖返回顺序；部分/空响应或异常先回读目录，补导仅针对仍缺失项，失败报告已成功与未完成路径。再次运行重新核对实际 Media Pool，不整批重导。整个同步结束恢复仍存在的原选中 bin，不触碰时间线。
 
 ### `/edit` Resolve 工程维护
+
+- 手动补漏目录通过 `/ingest-gps` 的 `extraMedia` 配置和 `resolve-extra-media-sync` 独立任务进入“额外素材”bin；它不遵循常规素材池的 fresh spans / confirmed chronology gate，也不是 Flow Plan capability。既有 MediaPoolItem 留在原 bin，视频/音频批量、照片逐张导入，不能改动时间线。跨设备工程级重链合并 extraMedia 主/备选路径并单列统计。
+
 
 - `/edit` 可以提供 Resolve `[Edit]` 工程维护按钮，例如素材路径重链与 DRP 保存/登记。
 - 素材路径重链不是 Flow Plan capability，不写 run record，不生成/确认/推进任何 step。

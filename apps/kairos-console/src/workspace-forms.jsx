@@ -1,5 +1,5 @@
 import React from 'react';
-import { Checkbox, Drawer, Radio, Table } from 'antd';
+import { Checkbox, Drawer, Radio, Table, Progress } from 'antd';
 import { Button, Card, Divider, Modal, Tag } from './ui-compat.tsx';
 import { buildSpeechReviewAudioUrl } from './api.js';
 
@@ -37,7 +37,7 @@ export function WorkflowPrompt({
   );
 }
 
-export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setConfig, onSave, busy }) {
+export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setConfig, onSave, busy, extraMediaJobs = [], projectId, onImportExtra, extraMediaBusy }) {
   if (!config) return null;
   const summariesByRootId = new Map(
     (Array.isArray(summaries) ? summaries : [])
@@ -261,59 +261,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 rows={2}
               />
             </div>
-            <section className="structured-root-alternates">
-              <ListToolbar
-                title="备选路径"
-                onAdd={() => updateAlternates([...alternates, createAlternatePathDraft()])}
-              />
-              {alternates.length === 0 ? (
-                <p className="muted">没有备选路径。主路径不可读时不会自动切换到其他目录。</p>
-              ) : null}
-              {alternates.map((alternate, alternateIndex) => (
-                <div key={`alternate-${mapping.rootId || index}-${alternateIndex}`} className="alternate-path-row">
-                  <strong className="alternate-path-index">{String(alternateIndex + 1).padStart(2, '0')}</strong>
-                  <Field
-                    label="备选路径"
-                    value={alternate.path || ''}
-                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
-                      ...alternate,
-                      path: value,
-                    }))}
-                  />
-                  <Field
-                    label="原始路径"
-                    value={alternate.rawPath || ''}
-                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
-                      ...alternate,
-                      rawPath: value,
-                    }))}
-                  />
-                  <div className="capture-time-actions alternate-path-actions">
-                    <Button
-                      size="small"
-                      disabled={alternateIndex === 0}
-                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex - 1))}
-                    >
-                      上移
-                    </Button>
-                    <Button
-                      size="small"
-                      disabled={alternateIndex === alternates.length - 1}
-                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex + 1))}
-                    >
-                      下移
-                    </Button>
-                    <Button
-                      type="error"
-                      size="small"
-                      onClick={() => updateAlternates(alternates.filter((_, itemIndex) => itemIndex !== alternateIndex))}
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </section>
+            <AlternatePathsEditor alternates={alternates} onChange={updateAlternates} />
             <div className="structured-root-footer">
               <Button
                 type="error"
@@ -327,6 +275,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
           </details>
         );
       })}
+      <Divider />
+      <ExtraMediaEditor config={config} setConfig={setConfig} jobs={extraMediaJobs} projectId={projectId} onImport={onImportExtra} busy={busy || extraMediaBusy} />
       <Divider />
       <ListToolbar
         title="配音媒体 Root"
@@ -4942,3 +4892,77 @@ const SCRIPT_WORKFLOW_STATUS_TEXT = {
   ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 审查 Codex Agent 产物。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };
+
+function AlternatePathsEditor({ alternates, onChange, includeRawPath = true }) {
+  return <section className="structured-root-alternates" aria-label="备选路径">
+    <ListToolbar title="备选路径" onAdd={() => onChange([...alternates, includeRawPath ? createAlternatePathDraft() : { path: '' }])} />
+    {alternates.length === 0 ? <p className="muted">没有备选路径。主路径不可读时不会自动切换到其他目录。</p> : null}
+    {alternates.map((alternate, index) => (
+      <div key={index} className={`alternate-path-row${includeRawPath ? '' : ' alternate-path-row-single'}`}>
+        <strong className="alternate-path-index">{String(index + 1).padStart(2, '0')}</strong>
+        <Field label="备选路径" value={alternate.path || ''}
+          onChange={path => onChange(replaceArrayItem(alternates, index, { ...alternate, path }))} />
+        {includeRawPath ? <Field label="原始路径" value={alternate.rawPath || ''}
+          onChange={rawPath => onChange(replaceArrayItem(alternates, index, { ...alternate, rawPath }))} /> : null}
+        <div className="capture-time-actions alternate-path-actions">
+          <Button size="small" disabled={index === 0} onClick={() => onChange(moveArrayItem(alternates, index, index - 1))}>上移</Button>
+          <Button size="small" disabled={index === alternates.length - 1} onClick={() => onChange(moveArrayItem(alternates, index, index + 1))}>下移</Button>
+          <Button type="error" size="small" onClick={() => onChange(alternates.filter((_, rowIndex) => rowIndex !== index))}>删除</Button>
+        </div>
+      </div>
+    ))}
+  </section>;
+}
+
+export function ExtraMediaEditor({ config, setConfig, jobs = [], projectId, onImport, busy }) {
+  const media = config.extraMedia;
+  const alternates = normalizeAlternatePathDrafts(media?.alternatePaths).map(({ path }) => ({ path }));
+  const [expanded, setExpanded] = React.useState(!media?.path);
+  const update = patch => setConfig(current => ({ ...current, extraMedia: { ...current.extraMedia, ...patch } }));
+  const ownJobs = jobs.filter(job => job.projectId === projectId && job.jobType === 'resolve-extra-media-sync');
+  const latest = ownJobs.find(job => ['queued', 'running'].includes(job.status)) || ownJobs[0];
+  const active = latest && ['queued', 'running'].includes(latest.status);
+  const conflict = jobs.some(job => ['queued', 'running'].includes(job.status) && (
+    ['color', 'resolve-media-sync', 'resolve-extra-media-sync', 'resolve-maintenance'].includes(job.jobType)
+    || (job.projectId === projectId && ['ingest', 'gps-refresh', 'analyze', 'spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType))
+  ));
+  const progress = latest?.progress?.extra?.jobId === latest?.jobId ? latest?.progress : null;
+  const summary = latest?.status === 'completed' ? latest.result?.hostSummary : progress?.extra;
+  return <section aria-label="额外素材目录">
+    <ListToolbar title="额外素材目录" disabled={Boolean(media)} onAdd={!media ? () => { setExpanded(true); setConfig(current => ({
+      ...current, extraMedia: { rootId: 'extra', path: '', alternatePaths: [] },
+    })); } : undefined} />
+    <p className="field-help">用于补漏和手动剪辑。直接导入 Resolve 的“额外素材”目录，已有素材会跳过；无需分析，不改动时间线。跨设备时保持相同的相对目录结构，通过“重链素材路径”恢复。</p>
+    {media ? <>
+      <details className="row-card structured-root-details" open={expanded} onToggle={event => setExpanded(event.currentTarget.open)}>
+        <summary className="row-top structured-root-summary">
+          <div><strong>额外素材</strong><div className="muted capture-time-reason">{media.path || '待填写额外素材路径'}</div></div>
+          <div className="capture-time-tags">{alternates.length > 0 ? <Tag>{`${alternates.length} 组备选`}</Tag> : null}</div>
+        </summary>
+        <div className="structured-root-body">
+          <Field label="路径" value={media.path || ''} onChange={path => update({ path })} />
+          <div className="structured-root-description">
+            <TextAreaField label="说明" value={media.description || ''} rows={2} onChange={description => update({ description })} />
+          </div>
+          <AlternatePathsEditor alternates={alternates} includeRawPath={false} onChange={alternatePaths => update({ alternatePaths })} />
+        </div>
+      </details>
+      <div className="inline-actions" style={{ marginTop: 12 }}>
+        <Button type="primary" onClick={onImport} disabled={busy || conflict || !media.path?.trim() || !onImport}>
+          {active ? '额外素材导入中…' : busy ? '保存中…' : '保存并导入额外素材到 Resolve'}
+        </Button>
+        <Button type="danger" disabled={busy || active} onClick={() => setConfig(current => ({ ...current, extraMedia: undefined }))}>移除额外素材配置</Button>
+      </div>
+      {conflict && !active ? <p role="status">请等待当前素材或 Resolve 任务结束。</p> : null}
+    </> : null}
+    {latest ? <div role="status" className="ingest-progress">
+      <strong>{active ? progress?.phaseLabel || '等待导入启动' : latest.status === 'completed' ? '额外素材导入完成' : latest.status === 'stopped' ? '额外素材导入已停止' : '额外素材导入未完成'}</strong>
+      {progress?.fileName ? <div className="ingest-progress-file" title={progress.fileName}>{progress.fileName}</div> : null}
+      {progress?.total > 0 ? <><Progress size="small" percent={Math.min(100, Math.floor((progress.current || 0) / progress.total * 100))} status={['failed', 'blocked'].includes(latest.status) ? 'exception' : active ? 'active' : 'normal'} /><span>{progress.current || 0} / {progress.total} 个素材</span></> : null}
+      {active && progress?.phaseKey === 'scan' ? <span>已发现 {progress.current || 0} 个素材</span> : null}
+      {summary ? <span>新增 {summary.imported || 0} · 复用 {summary.reused || 0}</span> : null}
+      {['failed', 'blocked'].includes(latest.status) ? <p role="alert">{latest.lastError || latest.blockers?.join('；') || '导入失败，请在任务中心查看详情。'}</p> : null}
+      {active ? <span className="muted">可在任务中心查看日志或停止。</span> : null}
+    </div> : null}
+  </section>;
+}

@@ -112,6 +112,10 @@ const ILegacyProjectBriefConfig = z.object({
     resolveProjectAliases: z.array(z.string()).optional(),
     description: z.string().optional(),
   }).optional(),
+  extraMedia: z.object({
+    rootId: z.string().optional(), path: z.string(), description: z.string().optional(),
+    alternatePaths: z.array(z.object({ path: z.string().optional() })).optional(),
+  }).optional(),
   audioMedia: z.object({
     rootId: z.string().optional(),
     path: z.string().optional(),

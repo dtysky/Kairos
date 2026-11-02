@@ -8,6 +8,14 @@ import { assertMediaPreparationJobAvailable, progressBelongsToSupervisorJob } fr
 import { createServer } from 'node:net';
 
 describe('supervisor runtime ML lifecycle helpers', () => {
+  it.each(['running', 'completed', 'stopped', 'failed'] as const)('isolates ingest %s snapshots by exact job id', status => {
+    const job = { jobId: 'ingest-2', jobType: 'ingest', executionMode: 'deterministic' as const,
+      projectId: 'trip', args: {}, status, updatedAt: '2026-11-02', blockers: [] };
+    expect(progressBelongsToSupervisorJob(job, { status: 'running' })).toBe(false);
+    expect(progressBelongsToSupervisorJob(job, { extra: { jobId: 'ingest-1' } })).toBe(false);
+    expect(progressBelongsToSupervisorJob(job, { extra: { jobId: 'ingest-2' } })).toBe(true);
+  });
+
   it('isolates media preparation progress and prevents overlapping Resolve or project fact jobs', () => {
     const job = { jobId: 'media-2', jobType: 'resolve-media-sync', executionMode: 'deterministic' as const,
       projectId: 'trip', args: {}, status: 'running' as const, updatedAt: '2026-10-14', blockers: [] };
@@ -117,4 +125,18 @@ describe('supervisor runtime ML lifecycle helpers', () => {
       await new Promise<void>((resolve, reject) => blocker.close(error => error ? reject(error) : resolve()));
     }
   });
+});
+
+it('serializes extra media import with Resolve jobs and requires its own progress identity', () => {
+  const job = { jobId: 'extra-1', jobType: 'resolve-extra-media-sync', projectId: 'trip', status: 'running' as const,
+    executionMode: 'deterministic' as const, args: {}, updatedAt: '2026-11-02', blockers: [] };
+  for (const jobType of ['resolve-media-sync', 'resolve-extra-media-sync', 'color', 'resolve-maintenance']) {
+    expect(() => assertMediaPreparationJobAvailable(jobType, 'trip', [job])).toThrow('请先等待');
+  }
+  expect(progressBelongsToSupervisorJob(job, { extra: { jobId: 'old-job' } })).toBe(false);
+  expect(progressBelongsToSupervisorJob(job, { extra: { jobId: 'extra-1' } })).toBe(true);
+  for (const status of ['completed', 'stopped'] as const) {
+    expect(progressBelongsToSupervisorJob({ ...job, status }, { extra: { jobId: 'extra-1' } })).toBe(true);
+    expect(progressBelongsToSupervisorJob({ ...job, status }, { extra: { jobId: 'old-job' } })).toBe(false);
+  }
 });

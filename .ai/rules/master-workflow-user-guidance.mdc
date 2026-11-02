@@ -28,6 +28,9 @@ alwaysApply: true
 
 ## 对用户的标准流程口径
 
+- 手动补漏的“额外素材目录”是独立旁路：`/ingest-gps` 保存 extraMedia 并启动 `resolve-extra-media-sync`，无需 Analyze / fresh spans / confirmed chronology，不生成 Flow Plan，不动时间线。不要把普通素材准备的分析 gate 套到此入口；跨设备使用工程级重链。
+
+
 Kairos 的标准顺序是：
 
 1. `Edit Rules` + 可选的 `Style Analysis`
@@ -98,8 +101,8 @@ Kairos 的标准顺序是：
 
 如果用户是追加素材，不要回到全新项目口径；应按：
 
-- 增量 `Ingest`
-- 增量 `Analyze`
+- `Ingest` 追加/同步资产；并行 probe、复用未变化文件的原始元数据，时间修正与 sidecar/GPS 绑定仍刷新。结果的 `metadata` 统计含保护音轨，不得把 `merge.duplicateCount` 当作跳过 probe 数。
+- `Analyze` 默认处理缺少 report 的素材。当前 Ingest 仍标记 spans/chronology stale，变化素材的旧 report 失效、审查续接与调色稳定分块尚未形成完整增量链；不得承诺已有人工成果可自动无损合并。分期见 `designs/incremental-media-ingest.md`。
 - 由 Codex Agent 重做或续跑受影响的 Flow Plan steps
 - 重新 `Export`
 

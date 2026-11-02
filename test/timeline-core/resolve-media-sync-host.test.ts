@@ -72,29 +72,58 @@ class FakeMediaPool:
         self.root = root
         self.current_folder = root
         self.import_calls = []
+        self.batch_calls = []
+        self.storage_calls = []
         self.move_calls = []
         self.delete_calls = []
+        self.failed_paths = set(payload.get("failedPaths", []))
 
     def GetRootFolder(self):
         return self.root
 
     def SetCurrentFolder(self, folder):
+        if payload.get("rejectFolderSelection") and folder is not self.root:
+            return False
         self.current_folder = folder
         return True
+
+    def GetCurrentFolder(self):
+        return self.current_folder
 
     def AddSubFolder(self, parent, name):
         folder = FakeFolder(name, parent)
         parent.subfolders.append(folder)
+        if payload.get("selectCreatedFolders"):
+            self.current_folder = folder
         return folder
 
     def ImportMedia(self, paths):
+        paths = [item.get("FilePath") if isinstance(item, dict) else item for item in paths]
+        self.batch_calls.append({"paths": paths, "folder": folder_path(self.current_folder)})
+        paths = [path for path in paths if path not in payload.get("poolFailedPaths", [])]
+        return self.import_paths(paths, payload.get("importBehavior") if len(self.batch_calls) == 1 else None)
+
+    def import_paths(self, paths, behavior=None):
         imported = []
         for source_path in paths:
+            if source_path in self.failed_paths:
+                continue
+            if behavior in ["partial", "exception-partial"] and imported:
+                break
+            source_path = payload.get("returnedPathOverrides", {}).get(source_path, source_path)
             clip = FakeClip(source_path)
             clip.folder = self.current_folder
             self.current_folder.clips.append(clip)
             imported.append(clip)
             self.import_calls.append({"path": clip.source_path, "folder": folder_path(self.current_folder)})
+        if behavior == "empty-after-import":
+            return []
+        if behavior == "omit-after-import":
+            return imported[:1]
+        if behavior in ["exception-after-import", "exception-partial"]:
+            raise RuntimeError("API failure after importing media")
+        if behavior == "reverse":
+            return {index + 1: clip for index, clip in enumerate(reversed(imported))}
         return imported
 
     def MoveClips(self, clips, target_folder):
@@ -127,7 +156,9 @@ class FakeMediaStorage:
         self.media_pool = media_pool
 
     def AddItemListToMediaPool(self, paths):
-        return self.media_pool.ImportMedia(paths)
+        paths = [item.get("media") if isinstance(item, dict) else item for item in paths]
+        self.media_pool.storage_calls.append(paths)
+        return self.media_pool.import_paths(paths)
 
 
 def folder_path(folder):
@@ -180,20 +211,31 @@ for entry in payload.get("rootClips", []):
 
 namespace_state = module.collect_namespace_state(namespace)
 fallback_state = module.collect_namespace_state(root) if payload.get("useFallback") else None
-prepared_entries, summary = module.sync_namespace_clips(
-    media_pool,
-    media_storage,
-    namespace,
-    namespace_state,
-    payload["clipRequests"],
-    dedupe_by_source_path=True,
-    fallback_state=fallback_state,
-    cleanup_empty_folders=bool(payload.get("cleanupEmptyFolders")),
-)
+prepared_entries, summary, error = [], None, None
+initial_progress = []
+try:
+    prepared_entries, summary = module.sync_namespace_clips(
+        media_pool,
+        media_storage,
+        namespace,
+        namespace_state,
+        payload["clipRequests"],
+        dedupe_by_source_path=True,
+        fallback_state=fallback_state,
+        cleanup_empty_folders=bool(payload.get("cleanupEmptyFolders")),
+        preserve_existing_folders=payload.get("mode") == "extra-media",
+        import_batch_size=payload.get("importBatchSize", 50),
+        progress_callback=lambda current, clip, counts: initial_progress.append({"current": current, **counts}),
+    )
+except module.HostError as caught:
+    error = caught.to_payload()
 
 repeat_summary = None
 progress = []
-if payload.get("repeatThroughProjectEntry"):
+if payload.get("repeatThroughProjectEntry") or payload.get("retryAfterFailure"):
+    media_pool.current_folder = root
+    if payload.get("retryAfterFailure"):
+        media_pool.failed_paths.clear()
     class FakeProject:
         def GetMediaPool(self): return media_pool
     class FakeResolve:
@@ -207,13 +249,20 @@ if payload.get("repeatThroughProjectEntry"):
     module.write_rough_cut_media_progress = record_progress
     with tempfile.TemporaryDirectory() as temporary:
         repeat_summary = module.sync_rough_cut_media(FakeResolve(), {
-            "resolveProjectName": "Trip [Edit]", "clips": payload["clipRequests"],
+            "mode": payload.get("mode"),
+            "resolveProjectName": "Trip [Edit]", "clips": payload.get("projectEntryClips", payload["clipRequests"]),
             "jobId": "media-job", "progressPath": str(Path(temporary) / "progress.json"),
         })["hostSummary"]
 
 print(json.dumps({
     "summary": summary,
     "preparedCount": len(prepared_entries),
+    "preparedPaths": [entry["sourceAbsolutePath"] for entry in prepared_entries],
+    "error": error,
+    "batches": media_pool.batch_calls,
+    "storageCalls": media_pool.storage_calls,
+    "currentFolder": folder_path(media_pool.current_folder),
+    "initialProgress": initial_progress,
     "tree": folder_tree(namespace),
     "imports": media_pool.import_calls,
     "moves": media_pool.move_calls,
@@ -239,6 +288,12 @@ print(json.dumps({
       emptyFoldersDeleted: number;
     };
     preparedCount: number;
+    preparedPaths: string[];
+    error: { code: string; details?: { missingSourcePaths: string[]; importedSourcePaths: string[]; syncSummary: { imported: number } } } | null;
+    batches: Array<{ paths: string[]; folder: string }>;
+    storageCalls: string[][];
+    currentFolder: string;
+    initialProgress: Array<{ current: number; imported: number; reused: number; moved: number }>;
     tree: {
       name: string;
       clips: string[];
@@ -248,7 +303,7 @@ print(json.dumps({
     moves: Array<{ path: string; from: string; to: string }>;
     deletes: string[];
     repeatSummary: { imported: number; reused: number; moved: number; mediaItemCount: number };
-    progress: Array<{ phaseKey: string; current: number; total: number; extra: { jobId: string } }>;
+    progress: Array<{ pipelineKey: string; phaseKey: string; current: number; total: number; extra: { jobId: string } }>;
   };
 }
 
@@ -936,6 +991,130 @@ print(json.dumps({
 }
 
 describe('Resolve edit media sync host', () => {
+  const requests = (names: string[], folder = '001-Arrival') => names.map((name, index) => ({
+    assetId: `asset-${index}`, rawRelativePath: `${folder}/${name}`,
+    assetKind: name.endsWith('.jpg') ? 'photo' : 'video',
+    sourceAbsolutePath: fixturePath(name), sourceStem: name,
+  }));
+
+  it('imports bounded batches within each folder and preserves request order', async () => {
+    const clips = Array.from({ length: 125 }, (_, index) => ({
+      assetId: `asset-${index}`, sourceAbsolutePath: fixturePath(`C${index}.mp4`),
+      rawRelativePath: `${index < 120 ? 'Arrival' : 'Evening'}/C${index}.mp4`,
+    }));
+    const result = await inspectMediaSync({ clipRequests: clips });
+    expect(result.error).toBeNull();
+    expect(result.batches.map(batch => batch.paths.length)).toEqual([50, 50, 20, 5]);
+    expect(result.batches.map(batch => batch.folder)).toEqual([
+      'Root/Kairos Project Media/Arrival', 'Root/Kairos Project Media/Arrival',
+      'Root/Kairos Project Media/Arrival', 'Root/Kairos Project Media/Evening',
+    ]);
+    expect(result.preparedPaths).toEqual(clips.map(clip => clip.sourceAbsolutePath));
+    expect(result.summary.imported).toBe(125);
+    expect(result.currentFolder).toBe('Root');
+    expect(result.initialProgress.at(-1)).toEqual({ current: 125, imported: 125, moved: 0, reused: 0 });
+  });
+
+  it('excludes existing and duplicate sources from a batch and imports nothing on repeat', async () => {
+    const clips = requests(['existing.mp4', 'new-a.mp4', 'new-b.mp4']);
+    const result = await inspectMediaSync({
+      clipRequests: [clips[0], clips[1], clips[1], clips[2]],
+      rootClips: [{ relativeDir: 'Loose', sourcePath: clips[0]!.sourceAbsolutePath }],
+      useFallback: true, repeatThroughProjectEntry: true,
+    });
+    expect(result.error).toBeNull();
+    expect(result.batches.map(batch => batch.paths)).toEqual([[clips[1]!.sourceAbsolutePath, clips[2]!.sourceAbsolutePath]]);
+    expect(result.summary).toMatchObject({ imported: 2, moved: 1, reused: 1 });
+    expect(result.repeatSummary).toMatchObject({ imported: 0, moved: 0, reused: 3 });
+    expect(result.imports).toHaveLength(2);
+  });
+
+  it('batches videos but submits numbered photos individually to avoid image sequences', async () => {
+    const clips = requests(['A.mp4', 'B.mp4', 'DSC0001.jpg', 'DSC0002.jpg', 'C.mp4']);
+    const paths = clips.map(clip => clip.sourceAbsolutePath);
+    const result = await inspectMediaSync({ clipRequests: clips });
+    expect(result.error).toBeNull();
+    expect(result.batches.map(batch => batch.paths)).toEqual([paths.slice(0, 2), [paths[2]], [paths[3]], [paths[4]]]);
+    expect(result.preparedPaths).toEqual(paths);
+    expect(result.imports).toHaveLength(5);
+  });
+
+  it.each(['reverse', 'empty-after-import', 'omit-after-import', 'exception-after-import'])(
+    'reconciles %s responses by actual file path without importing duplicates', async importBehavior => {
+      const clips = requests(['A.mp4', 'B.mp4', 'C.mp4']);
+      const result = await inspectMediaSync({ clipRequests: clips, importBehavior });
+      expect(result.error).toBeNull();
+      expect(result.preparedPaths).toEqual(clips.map(clip => clip.sourceAbsolutePath));
+      expect(result.imports).toHaveLength(3);
+      expect(result.batches).toHaveLength(1);
+      expect(result.storageCalls).toEqual([]);
+      expect(result.currentFolder).toBe('Root');
+    },
+  );
+
+  it.each(['partial', 'exception-partial'])('retries only missing members after a %s import', async importBehavior => {
+    const clips = requests(['A.mp4', 'B.mp4', 'C.mp4']);
+    const paths = clips.map(clip => clip.sourceAbsolutePath);
+    const result = await inspectMediaSync({ clipRequests: clips, importBehavior });
+    expect(result.error).toBeNull();
+    expect(result.batches.map(batch => batch.paths)).toEqual([paths, [paths[1]], [paths[2]]]);
+    expect(result.imports).toHaveLength(3);
+    expect(result.storageCalls).toEqual([]);
+    expect(result.summary.imported).toBe(3);
+  });
+
+  it('uses storage fallback only for the unresolved file', async () => {
+    const clips = requests(['A.mp4', 'B.mp4']);
+    const result = await inspectMediaSync({ clipRequests: clips, poolFailedPaths: [clips[1]!.sourceAbsolutePath] });
+    expect(result.error).toBeNull();
+    expect(result.storageCalls).toEqual([[clips[1]!.sourceAbsolutePath]]);
+    expect(result.imports).toHaveLength(2);
+  });
+
+  it('reports partial success and resumes from the actual pool after failure', async () => {
+    const clips = requests(['A.mp4', 'B.mp4', 'C.mp4']);
+    const paths = clips.map(clip => clip.sourceAbsolutePath);
+    const result = await inspectMediaSync({ clipRequests: clips, failedPaths: [paths[1]], retryAfterFailure: true });
+    expect(result.error).toMatchObject({
+      code: 'resolve_media_pool_import_failed', details: {
+        missingSourcePaths: [paths[1]], importedSourcePaths: [paths[0], paths[2]], syncSummary: { imported: 2 },
+      },
+    });
+    expect(result.initialProgress.at(-1)).toEqual({ current: 2, imported: 2, moved: 0, reused: 0 });
+    expect(result.repeatSummary).toMatchObject({ imported: 1, moved: 0, reused: 2, mediaItemCount: 3 });
+    expect(result.batches.at(-1)?.paths).toEqual([paths[1]]);
+    expect(result.imports).toHaveLength(3);
+    expect(result.currentFolder).toBe('Root');
+  });
+
+  it('rejects a photo sequence returned in place of the requested still', async () => {
+    const clips = requests(['DSC0001.jpg', 'DSC0002.jpg']);
+    const result = await inspectMediaSync({
+      clipRequests: clips,
+      returnedPathOverrides: Object.fromEntries(clips.map(clip => [clip.sourceAbsolutePath, fixturePath('DSC[0001-0002].jpg')])),
+    });
+    expect(result.error).toMatchObject({
+      code: 'resolve_media_pool_import_failed',
+      details: { missingSourcePaths: [clips[0]!.sourceAbsolutePath], importedSourcePaths: [] },
+    });
+    expect(result.currentFolder).toBe('Root');
+  });
+
+  it('does not import into the wrong folder when selecting the target fails', async () => {
+    const result = await inspectMediaSync({ clipRequests: requests(['A.mp4', 'B.mp4']), rejectFolderSelection: true });
+    expect(result.error?.code).toBe('resolve_media_pool_folder_failed');
+    expect(result.batches).toEqual([]);
+    expect(result.storageCalls).toEqual([]);
+    expect(result.currentFolder).toBe('Root');
+  });
+
+  it('keeps the single-file default used by color preparation', async () => {
+    const clips = requests(['A.mp4', 'B.mp4']);
+    const result = await inspectMediaSync({ clipRequests: clips, importBatchSize: 1 });
+    expect(result.error).toBeNull();
+    expect(result.batches.map(batch => batch.paths)).toEqual(clips.map(clip => [clip.sourceAbsolutePath]));
+  });
+
   it('skips an existing MediaPoolItem already in the target event folder', async () => {
     const sourcePath = fixturePath('same-event.mp4');
 
@@ -1245,6 +1424,16 @@ describe('Resolve rough-cut clip color marking', () => {
 });
 
 describe('project media preparation and timeline preflight', () => {
+  it('restores the selected bin even when native folder creation selects a new folder', async () => {
+    const result = await inspectMediaSync({
+      clipRequests: [], repeatThroughProjectEntry: true, selectCreatedFolders: true,
+      projectEntryClips: [{ assetId: 'a', assetKind: 'video', sourceAbsolutePath: fixturePath('new-bin.mp4'),
+        rawRelativePath: 'New Event/new-bin.mp4', sourceStem: 'new-bin' }],
+    });
+    expect(result.repeatSummary).toMatchObject({ imported: 1, reused: 0 });
+    expect(result.currentFolder).toBe('Root');
+  });
+
   it('reuses imported media on a project-level retry and writes job-scoped file progress', async () => {
     const result = await inspectMediaSync({
       repeatThroughProjectEntry: true,
@@ -1296,5 +1485,20 @@ except module.HostError as error:
 `;
     const { stdout } = await exec(pythonPath, ['-c', code, hostPath, String(namespaceExists)], { encoding: 'utf8' });
     expect(JSON.parse(stdout)).toEqual({ error: expect.stringContaining('准备剪辑素材池'), mutations: [] });
+  });
+});
+
+
+describe('extra media pool import', () => {
+  it('reuses manually organized items without moving or pruning them, including on repeat', async () => {
+    const source = join(realpathSync(tmpdir()), 'manual-extra.mp4');
+    const result = await inspectMediaSync({ mode: 'extra-media', useFallback: true,
+      rootClips: [{ sourcePath: source, relativeDir: 'Manual / Favorites' }],
+      namespaceEmptyDirs: ['User empty folder'], repeatThroughProjectEntry: true,
+      clipRequests: [{ assetId: 'extra', sourceAbsolutePath: source, rawRelativePath: 'day1/manual-extra.mp4', assetKind: 'video' }],
+    });
+    expect(result.imports).toEqual([]); expect(result.moves).toEqual([]); expect(result.deletes).toEqual([]);
+    expect(result.repeatSummary).toMatchObject({ imported: 0, reused: 1, moved: 0 });
+    expect(result.progress.every(row => row.pipelineKey === 'resolve-extra-media-sync')).toBe(true);
   });
 });

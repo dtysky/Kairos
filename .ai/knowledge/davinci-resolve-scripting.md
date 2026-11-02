@@ -16,7 +16,7 @@ project/timeline automation.
 - Online readable mirror from that Gist: `https://extremraym.com/cloud/resolve-scripting-doc/`
 - Current installed version: **DaVinci Resolve Studio 21.1.2.10** (2026-10-29); local `CHANGELOG.md` updated 22 Oct 2026. Read `README.md`, `DaVinciResolveScript.pyi`, and `CHANGELOG.md` together. `README.txt` is a legacy fallback only.
 - Historical Gist reference: `DaVinci Resolve Scripting API Doc v20.3`; use installed 21.1.2 docs for current signatures.
-- Last checked in Kairos: `2026-10-29`
+- Last checked in Kairos: `2026-11-02` (media import batch signatures and live behavior; other API checks retain their dated scope below)
 
 Rule of thumb: this local document is the Kairos starting point, but exact signatures must
 still be verified against the installed Resolve `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) before implementation when a
@@ -127,8 +127,13 @@ That plugin is a direct Resolve UI helper, not the official `/color` or `/edit` 
 
 ### Media Pool And Timelines
 
+- Extra manual media uses the same batch import API in `mode=extra-media`, namespace `额外素材`. Reuse existing file items throughout the entire pool without moving them; do not prune folders or manipulate timelines. Keep photo imports individual. Project-wide relink combines extraMedia primary/alternate paths just like other configured roots.
+
+
 - `mediaPool.ImportMedia([paths])` and `mediaStorage.AddItemListToMediaPool([paths])` can import media.
 - For rough-cut still-photo sync, prefer `mediaPool.ImportMedia([path])` and verify the returned `MediaPoolItem` `File Path` equals the requested file. Live probing on 2026-05-19 showed `mediaStorage.AddItemListToMediaPool([path])` can interpret numbered JPEG photos as an image sequence, e.g. `DSC07686.jpg` became `DSC[07686-07688].jpg` with `Type=Video`, which breaks single-photo timeline lookup and review.
+- 2026-11-02, Studio 21.1.2.10: `README.md` and `.pyi` recommend `ImportMedia([{FilePath: path}])`, but live simple-file calls returned no items and left the target bin empty. The still-supported `ImportMedia([paths])` imported videos in a single call. A mixed video/JPEG batch folded `DSC0001.jpg / DSC0002.jpg` into `DSC[0001-0002].jpg` (`Type=Video`); importing each JPEG singly produced separate `Still` items. Therefore project media sync batches videos within a target bin and imports photos individually, verifying exact source paths. Never accept a sequence as a requested still.
+- Import returns may be incomplete or empty after mutation. Reconcile unresolved paths with the target bin before retrying only missing files; retain successful item identities and report partial success on failure. Avoid rescanning the entire bin when all requested paths were returned. `AddSubFolder`/moves can also change the selected bin, so restore selection around the whole project sync, not just `ImportMedia`. This scope does not change color prepare or create/modify timelines.
 - `mediaPool.CreateEmptyTimeline(name)` creates a blank timeline.
 - `mediaPool.CreateTimelineFromClips(name, [clips])` creates a timeline and appends clips.
 - `mediaPool.AppendToTimeline([mediaPoolItems])` appends clips to the current timeline.

@@ -1430,6 +1430,9 @@ export const IProjectBriefAudioMediaConfig = z.object({
 });
 export type IProjectBriefAudioMediaConfig = z.infer<typeof IProjectBriefAudioMediaConfig>;
 
+export const IProjectBriefExtraMediaConfig = IProjectBriefAudioMediaConfig.extend({});
+export type IProjectBriefExtraMediaConfig = z.infer<typeof IProjectBriefExtraMediaConfig>;
+
 export const IColorRenderPreset = z.object({
   container: z.string().optional(),
   videoCodec: z.string().optional(),
@@ -1993,6 +1996,7 @@ export const IProjectBriefConfig = z.object({
   pharos: IProjectBriefPharosConfig.optional(),
   voiceoverMedia: IProjectBriefVoiceoverMediaConfig.optional(),
   audioMedia: IProjectBriefAudioMediaConfig.optional(),
+  extraMedia: IProjectBriefExtraMediaConfig.optional(),
   materialPatternPhrases: z.array(z.string()).default([]),
 });
 export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;

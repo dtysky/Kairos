@@ -29,6 +29,7 @@ export interface IRelinkProjectEditMediaResult extends IResolveEditMediaRelinkRe
   rootMappingCount: number;
   voiceoverRootMappingCount?: number;
   audioRootMappingCount?: number;
+  extraRootMappingCount?: number;
   blockingReasons: string[];
 }
 
@@ -85,14 +86,15 @@ export async function relinkProjectEditMedia(
 
   const voiceover = prepareExternalAudioRelink(projectBrief.voiceoverMedia, 'voiceover', '配音');
   const audio = prepareExternalAudioRelink(projectBrief.audioMedia, 'audio', '音频');
-  const allMappings = [...mappings, ...[voiceover.mapping, audio.mapping].filter(
+  const extra = prepareExternalAudioRelink(projectBrief.extraMedia, 'extra', '额外素材');
+  const allMappings = [...mappings, ...[voiceover.mapping, audio.mapping, extra.mapping].filter(
     (mapping): mapping is IResolveEditMediaRelinkRoot => Boolean(mapping),
   )];
   if (allMappings.length === 0) {
     throw new ProjectEditMediaRelinkBlockedError(['没有可用于 Resolve 剪辑工程重链的可读素材或音频 Root。']);
   }
   if (new Set(allMappings.map(mapping => mapping.rootId)).size !== allMappings.length) {
-    throw new ProjectEditMediaRelinkBlockedError(['素材、配音和音频的重链 rootId 必须互不重复。']);
+    throw new ProjectEditMediaRelinkBlockedError(['素材、配音、音频和额外素材的重链 rootId 必须互不重复。']);
   }
   const result = await relinkResolveEditMedia({
     projectId: input.projectId ?? project.id,
@@ -106,6 +108,7 @@ export async function relinkProjectEditMedia(
     ...(result.hostSummary ?? {}),
     voiceover: voiceoverSummary,
     audio: audioSummary,
+    extra: { ...extra.summary, ...(extra.mapping ? rootSummaries[extra.mapping.rootId] : {}) },
   };
   return {
     ...result,
@@ -114,6 +117,7 @@ export async function relinkProjectEditMedia(
     rootMappingCount: allMappings.length,
     voiceoverRootMappingCount: voiceoverSummary.mappingCount,
     audioRootMappingCount: audioSummary.mappingCount,
+    extraRootMappingCount: extra.summary.mappingCount,
     blockingReasons: [],
   };
 }
@@ -127,7 +131,7 @@ type TProjectAudioMediaConfig = {
 
 function prepareExternalAudioRelink(
   media: TProjectAudioMediaConfig | undefined,
-  kind: 'voiceover' | 'audio',
+  kind: 'voiceover' | 'audio' | 'extra',
   label: string,
 ): { mapping?: IResolveEditMediaRelinkRoot; summary: Record<string, unknown> & { mappingCount: number } } {
   const prepared = buildExternalAudioRelinkMapping(media, {

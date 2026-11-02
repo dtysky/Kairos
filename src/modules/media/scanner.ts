@@ -1,6 +1,7 @@
 import { readdir, stat } from 'node:fs/promises';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import type { EAssetKind } from '../../protocol/schema.js';
+import { mapWithConcurrency } from './concurrency.js';
 
 const CEXT_VIDEO = new Set([
   '.mp4', '.mov', '.avi', '.mkv', '.mts', '.m2ts', '.webm', '.mxf',
@@ -19,6 +20,8 @@ export interface IScannedFile {
 
 export interface IScanDirectoryOptions {
   excludeSubtrees?: string[];
+  onFile?: (file: IScannedFile) => void | Promise<void>;
+  onDirectory?: (directory: string) => void | Promise<void>;
 }
 
 export function classifyExt(ext: string): EAssetKind | null {
@@ -35,7 +38,7 @@ export async function scanDirectory(
 ): Promise<IScannedFile[]> {
   const results: IScannedFile[] = [];
   const excludeSubtrees = (options.excludeSubtrees ?? []).map(normalizeComparablePath);
-  await walk(dir, results, excludeSubtrees);
+  await walk(dir, results, excludeSubtrees, options);
   return results;
 }
 
@@ -43,7 +46,10 @@ async function walk(
   dir: string,
   out: IScannedFile[],
   excludeSubtrees: string[],
+  options: IScanDirectoryOptions,
 ): Promise<void> {
+  if (shouldExcludePath(dir, excludeSubtrees)) return;
+  await options.onDirectory?.(dir);
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -51,19 +57,25 @@ async function walk(
     return;
   }
 
-  for (const entry of entries) {
+  const files = await mapWithConcurrency(entries, 16, async entry => {
+    const kind = entry.isFile() ? classifyExt(extname(entry.name)) : null;
+    if (!kind) return null;
+    const path = join(dir, entry.name);
+    const info = await stat(path);
+    const file = { path, kind, sizeBytes: info.size };
+    await options.onFile?.(file);
+    return file;
+  });
+
+  for (const [index, entry] of entries.entries()) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (shouldExcludePath(full, excludeSubtrees)) {
         continue;
       }
-      await walk(full, out, excludeSubtrees);
-    } else if (entry.isFile()) {
-      const kind = classifyExt(extname(entry.name));
-      if (kind) {
-        const info = await stat(full);
-        out.push({ path: full, kind, sizeBytes: info.size });
-      }
+      await walk(full, out, excludeSubtrees, options);
+    } else if (files[index]) {
+      out.push(files[index]!);
     }
   }
 }

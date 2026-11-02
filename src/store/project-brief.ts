@@ -85,6 +85,7 @@ export function buildProjectBriefWithMappings(input: {
     flightRecordPath?: string;
     captureTimePolicy?: IProjectBriefPathMapping['captureTimePolicy'];
   }>;
+  extraMedia?: { rootId?: string; path: string; alternatePaths?: Array<{path?: string}>; description?: string };
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
 }): string {
@@ -140,6 +141,10 @@ export function buildProjectBriefWithMappings(input: {
     '## 路径映射',
     '',
     ...mappingLines,
+    ...(input.extraMedia ? ['## 额外素材（仅供手动剪辑）', '', `主路径：${input.extraMedia.path}`,
+      ...(input.extraMedia.alternatePaths ?? []).filter(row => row.path).map(row => `备选路径：${row.path}`),
+      ...(input.extraMedia.description ? [`说明：${input.extraMedia.description}`] : []), '',
+    ] : []),
     '## Pharos',
     '',
     ...pharosLines,

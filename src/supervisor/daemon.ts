@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { projectBriefAffectsAnalysis } from '../store/project-root-truth.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { access, mkdir, readFile, stat } from 'node:fs/promises';
@@ -6,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { summarizeSpanMaterialPatternIntegrity } from '../protocol/material-pattern-integrity.js';
 import {
+  IKairosProgress,
   getProjectProgressPath,
   getWorkspaceStyleAnalysisProgressPath,
   loadAssets,
@@ -264,6 +266,7 @@ async function routeRequest(
 	        { jobType: 'spatial-refresh', executionMode: 'deterministic', supported: true, note: 'refreshes existing Analyze GPS / Pharos report fields and marks spans/chronology stale without running ML' },
         { jobType: 'span-rebuild', executionMode: 'deterministic', supported: true, note: 'deterministically builds candidate spans, then uses the local qwen text LM to generate provisional Chinese materialPatterns; speech/mixed candidates require Codex Agent speech-window review before chronology-build' },
         { jobType: 'chronology-build', executionMode: 'deterministic', supported: true, note: 'requires fresh spans and rebuilds draft Chronology V2 for review' },
+        { jobType: 'resolve-extra-media-sync', executionMode: 'deterministic', supported: true, note: 'manual extra media import without Analyze or Chronology' },
         { jobType: 'resolve-media-sync', executionMode: 'deterministic', supported: true, note: 'project-level Resolve media preparation after confirmed chronology; independent of Edit Unit and Flow Plan' },
 	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports relink_media / prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / relink_all_roots / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
@@ -627,12 +630,15 @@ async function routeRequest(
     const projectId = decodeURIComponent(projectBriefMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
+    const previous = await loadProjectBriefConfig(projectRoot);
     const saved = await saveProjectBriefConfig(projectRoot, payload);
-    await Promise.all([
-      syncWorkspaceProjectBrief(options.workspaceRoot, projectId),
-      markSpansStale(projectRoot, 'project-brief changed; rerun /chronology span-rebuild'),
-      markChronologyStale(projectRoot),
-    ]);
+    if (projectBriefAffectsAnalysis(previous, saved)) {
+      await Promise.all([
+        syncWorkspaceProjectBrief(options.workspaceRoot, projectId),
+        markSpansStale(projectRoot, 'project-brief changed; rerun /chronology span-rebuild'),
+        markChronologyStale(projectRoot),
+      ]);
+    }
     await touchProjectUpdatedAt(projectRoot);
     sendJson(response, 200, saved);
     return;
@@ -840,7 +846,7 @@ async function routeRequest(
     sendJson(response, 200, {
       ...job,
       progress: await readJobProgressForStatus(job),
-      result: job.status === 'awaiting_agent' || (job.jobType === 'resolve-media-sync' && job.status === 'completed')
+      result: job.status === 'awaiting_agent' || (['resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType) && job.status === 'completed')
         ? await readJsonFile(job.resultPath) : undefined,
     });
     return;
@@ -865,7 +871,7 @@ async function routeRequest(
     if (action === 'stop') {
       if (current.pid) {
         try {
-          if (current.jobType === 'resolve-media-sync' && process.platform === 'win32') {
+          if (['resolve-media-sync', 'resolve-extra-media-sync'].includes(current.jobType) && process.platform === 'win32') {
             // Windows does not deliver SIGTERM to Node handlers; stop its Python child too.
             await killPid(current.pid);
           } else {
@@ -961,7 +967,7 @@ async function startJobUnlocked(
 ): Promise<ISupervisorJobRecord> {
   await reconcileInterruptedJobs(workspaceRoot);
   assertMediaPreparationJobAvailable(payload.jobType, payload.projectId, await listJobRecords(workspaceRoot));
-  if (payload.jobType === 'resolve-media-sync') {
+  if (['resolve-media-sync', 'resolve-extra-media-sync'].includes(payload.jobType)) {
     await loadProject(join(workspaceRoot, 'projects', payload.projectId!));
   }
   if (payload.jobType === 'edit-flow') {
@@ -1002,8 +1008,10 @@ async function startJobUnlocked(
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'chronology')
     : payload.jobType === 'color' && payload.projectId
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
-    : payload.jobType === 'resolve-media-sync' && payload.projectId
-      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'resolve-media-sync')
+    : ['resolve-media-sync', 'resolve-extra-media-sync'].includes(payload.jobType) && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), payload.jobType)
+    : payload.jobType === 'ingest' && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'ingest')
     : payload.jobType === 'style-analysis'
       ? getWorkspaceStyleAnalysisProgressPath(
         workspaceRoot,
@@ -1014,7 +1022,7 @@ async function startJobUnlocked(
   const configSnapshotPath = join(jobRoot, 'config-snapshot.json');
   await writeFileSafe(inputSnapshotPath, JSON.stringify(payload.args ?? {}, null, 2));
 
-  if (payload.projectId && payload.jobType === 'resolve-media-sync') {
+  if (payload.projectId && ['resolve-media-sync', 'resolve-extra-media-sync'].includes(payload.jobType)) {
     const projectRoot = join(workspaceRoot, 'projects', payload.projectId);
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       projectBrief: await loadProjectBriefConfig(projectRoot),
@@ -1294,7 +1302,7 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
   const hydrated = await Promise.all(jobs.map(async job => ({
     ...job,
     progress: await readJobProgressForStatus(job),
-    result: job.status === 'awaiting_agent' || (job.jobType === 'resolve-media-sync' && job.status === 'completed')
+    result: job.status === 'awaiting_agent' || (['resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType) && job.status === 'completed')
       ? await readJsonFile(job.resultPath) : undefined,
   })));
   return hydrated;
@@ -1302,7 +1310,8 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
 
 async function readJobProgressForStatus(job: ISupervisorJobRecord): Promise<unknown> {
   if (!job.progressPath) return null;
-  if (!['queued', 'running', 'failed', 'blocked'].includes(job.status)) return null;
+  if (!['queued', 'running', 'failed', 'blocked'].includes(job.status)
+    && !(['ingest', 'resolve-extra-media-sync'].includes(job.jobType) && ['completed', 'stopped'].includes(job.status))) return null;
   const progress = await readJsonFile(job.progressPath);
   if (!progressBelongsToSupervisorJob(job, progress)) return null;
   return progress;
@@ -1312,7 +1321,7 @@ async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {
   const jobs = await listJobRecords(workspaceRoot);
   await Promise.all(
     jobs
-      .filter(job => (job.status === 'running' || (job.jobType === 'resolve-media-sync' && job.status === 'queued'))
+      .filter(job => (job.status === 'running' || (['resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType) && job.status === 'queued'))
         && typeof job.pid === 'number' && !isPidAlive(job.pid))
       .map(job => markJobInterrupted(workspaceRoot, job)),
   );
@@ -1329,7 +1338,15 @@ async function markJobInterrupted(workspaceRoot: string, job: ISupervisorJobReco
     lastError: detail,
     blockers: dedupeTextList([...(job.blockers ?? []), detail]),
   });
-  if (job.progressPath) {
+  if (job.progressPath && ['ingest', 'resolve-extra-media-sync'].includes(job.jobType)) {
+    const snapshot = IKairosProgress.safeParse(await readJsonFile(job.progressPath));
+    // Preserve the interrupted stage and counts, without overwriting a newer run.
+    if (snapshot.success && progressBelongsToSupervisorJob(job, snapshot.data)) {
+      await writeKairosProgress(job.progressPath, {
+        ...snapshot.data, updatedAt: now, status: 'failed', detail,
+      }).catch(() => undefined);
+    }
+  } else if (job.progressPath) {
     await writeKairosProgress(job.progressPath, {
       status: 'failed',
       pipelineKey: job.jobType === 'color' ? 'color' : job.jobType,

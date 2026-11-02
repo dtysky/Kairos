@@ -47,6 +47,7 @@ import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import { editSelectionStorageKey, resolveProjectEditId, splitEditFlowSteps } from './edit-flow-state.js';
 import { EditUnitEditor } from './components/edit-unit-editor.jsx';
 import { ResolveMediaPreparation } from './components/resolve-media-preparation.jsx';
+import { IngestJobProgress } from './components/ingest-job-progress.jsx';
 import { ResolveSnapshotStatus, resolveSnapshotStatusLabel } from './components/resolve-snapshot-status.jsx';
 import {
   CaptureTimeOverridesEditor,
@@ -524,8 +525,10 @@ export function AppShell() {
       await refreshStatus();
       setMessage(`已保存 ${sectionKey}`);
       setError('');
+      return true;
     } catch (caught) {
       handleError(caught);
+      return false;
     } finally {
       setBusy(current => ({ ...current, [sectionKey]: false }));
     }
@@ -879,7 +882,7 @@ export function AppShell() {
 
           <Routes>
             <Route path="/" element={<OverviewPage currentProject={currentProject} activeJobs={activeJobs} services={services} projectProgress={projectProgress} openReviewCount={openReviewCount} />} />
-            <Route path="/ingest-gps" element={<IngestGpsPage projectId={projectId} config={config} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} setManualItinerary={setManualItinerary} saveSection={saveSection} busy={busy} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} onRunIngest={() => runProjectWorkflow('ingest')} onRunGpsRefresh={() => runProjectWorkflow('gps-refresh')} />} />
+            <Route path="/ingest-gps" element={<IngestGpsPage projectId={projectId} config={config} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} setManualItinerary={setManualItinerary} saveSection={saveSection} busy={busy} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} onRunIngest={() => runProjectWorkflow('ingest')} onRunGpsRefresh={() => runProjectWorkflow('gps-refresh')} onImportExtra={async () => { if (await saveSection('project-brief')) await runProjectWorkflow('resolve-extra-media-sync'); }} />} />
             <Route path="/color" element={<ColorPage projectId={projectId} config={config} colorArchive={colorArchive} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} saveSection={saveSection} busy={busy} onRunColorAction={args => runProjectWorkflow('color', args)} onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)} onSaveDrpSnapshot={saveColorDrpSnapshot} onRegisterDrpSnapshot={registerColorDrpSnapshot} />} />
             <Route path="/analyze/monitor" element={<Navigate to="/analyze" replace />} />
             <Route path="/analyze" element={<AnalyzePage projectId={projectId} projectProgress={projectProgress} activeJobs={activeJobs} capabilities={capabilities} busy={busy} onRun={() => runProjectWorkflow('analyze')} />} />
@@ -1011,6 +1014,7 @@ function IngestGpsPage({
   resolveReview,
   onRunIngest,
   onRunGpsRefresh,
+  onImportExtra,
 }) {
   const [activeSection, setActiveSection] = useState('sources');
   if (!config) {
@@ -1034,7 +1038,7 @@ function IngestGpsPage({
         ))}
       </div>
       <div className="ingest-section-body">
-        {activeSection === 'sources' ? <ProjectBriefEditor config={config.projectBrief} pharosStatus={config.pharosStatus} summaries={config.ingestRootSummaries || []} setConfig={setProjectBrief} onSave={() => saveSection('project-brief')} busy={busy['project-brief']} /> : null}
+        {activeSection === 'sources' ? <ProjectBriefEditor projectId={projectId} extraMediaJobs={jobs} onImportExtra={onImportExtra} extraMediaBusy={busy['job:resolve-extra-media-sync']} config={config.projectBrief} pharosStatus={config.pharosStatus} summaries={config.ingestRootSummaries || []} setConfig={setProjectBrief} onSave={() => saveSection('project-brief')} busy={busy['project-brief']} /> : null}
         {activeSection === 'itinerary' ? <ManualItineraryEditor config={config.manualItinerary} setConfig={setManualItinerary} onSave={() => saveSection('manual-itinerary')} busy={busy['manual-itinerary']} /> : null}
         {activeSection === 'time' ? <><IngestRootClockEditor config={config.projectBrief} summaries={config.ingestRootSummaries || []} setConfig={setProjectBrief} onSave={() => saveSection('project-brief')} busy={busy['project-brief']} /><CaptureTimeOverridesEditor config={config.manualItinerary} setConfig={setManualItinerary} onSave={() => saveSection('manual-itinerary')} busy={busy['manual-itinerary']} /></> : null}
         {activeSection === 'review' ? <ReviewQueuePanel reviews={reviews} setReviews={setReviews} onResolve={resolveReview} title="导入 / GPS Review" emptyLabel="当前没有 ingest / gps 相关 review。" filter={review => review.kind !== 'capture-time-correction' && ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)} /> : null}
@@ -1046,7 +1050,7 @@ function IngestGpsPage({
   );
 }
 
-function IngestGpsActionPanel({
+export function IngestGpsActionPanel({
   projectId,
   capabilities,
   jobs,
@@ -1061,7 +1065,7 @@ function IngestGpsActionPanel({
     .filter(job => !projectId || job.projectId === projectId);
   const activeIngestJobs = workflowJobs.filter(job => job.jobType === 'ingest' && isLiveSupervisorJob(job));
   const activeGpsRefreshJobs = workflowJobs.filter(job => job.jobType === 'gps-refresh' && isLiveSupervisorJob(job));
-  const latestJob = workflowJobs[0] || null;
+  const latestJob = activeIngestJobs[0] || activeGpsRefreshJobs[0] || workflowJobs[0] || null;
   const canRunIngest = Boolean(projectId)
     && ingestCapability?.supported !== false
     && !busy['job:ingest']
@@ -1100,8 +1104,7 @@ function IngestGpsActionPanel({
           <div className="ingest-action-job">
             <div>
               <strong>{describeIngestGpsJobTitle(latestJob)}</strong>
-              <div className="muted">{describeIngestGpsJob(latestJob)}</div>
-              {latestJob.resultPath ? <div className="muted">{`结果：${latestJob.resultPath}`}</div> : null}
+              {latestJob.jobType !== 'ingest' ? <div className="muted">{describeIngestGpsJob(latestJob)}</div> : null}
             </div>
             <Tag>{formatIngestGpsJobStatus(latestJob.status)}</Tag>
           </div>
@@ -1114,13 +1117,18 @@ function IngestGpsActionPanel({
             <Tag>idle</Tag>
           </div>
         )}
-        {latestJob?.blockers?.length ? (
+        {latestJob?.jobType !== 'ingest' && latestJob?.blockers?.length ? (
           <div className="ingest-action-blocker">
             {`Blockers：${latestJob.blockers.join('；')}`}
           </div>
         ) : null}
-        <Tag>{latestJob ? formatIngestGpsJobStatus(latestJob.status) : '未运行'}</Tag>
       </div>
+      {latestJob?.jobType === 'ingest' ? <IngestJobProgress job={latestJob} /> : null}
+      {latestJob?.resultPath ? <details className="ingest-progress-diagnostics">
+        <summary>诊断信息</summary>
+        <div className="muted">{`任务：${latestJob.jobId}`}</div>
+        <div className="muted">{`结果：${latestJob.resultPath}`}</div>
+      </details> : null}
     </Card>
   );
 }
@@ -2596,7 +2604,7 @@ function EditFlowPage({
   const firstActionableStepId = flowSteps.find(step => latestRunByStep.get(step.id)?.status !== 'completed')?.id || '';
 
   const planStatus = editFlowPlan?.status || 'missing';
-  const mediaPreparationActive = (jobs || []).some(job => job.jobType === 'resolve-media-sync' && ['queued', 'running'].includes(job.status));
+  const mediaPreparationActive = (jobs || []).some(job => ['resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType) && ['queued', 'running'].includes(job.status));
   const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
   const registerResolveBusy = Boolean(busy['edit:resolve-register']);
   const installResolveAssetsBusy = Boolean(busy['edit:resolve-assets']);
@@ -2752,6 +2760,7 @@ function EditFlowPage({
             <span>{`重链 ${editRelinkSummary.relinked ?? 0}`}</span>
             <span>{`配音 ${formatVoiceoverRelinkSummary(editRelinkSummary.voiceover)}`}</span>
             <span>{`音频 ${formatExternalAudioRelinkSummary(editRelinkSummary.audio)}`}</span>
+            <span>{`额外素材 ${formatExternalAudioRelinkSummary(editRelinkSummary.extra)}`}</span>
             <span>{`旧路径 ${editRelinkSummary.oldPathRemaining ?? 0}`}</span>
             <span>{`不可读 ${editRelinkSummary.localUnreadable ?? 0}`}</span>
             <span>{`缺失目标 ${editRelinkSummary.missingTargetCount ?? 0}`}</span>
@@ -3405,7 +3414,7 @@ function formatEditRelinkMessage(result) {
   const missing = summary.missingTargetCount ?? 0;
   const unmapped = summary.unmappedCount ?? 0;
   const resolveAssets = summary.resolveAssetsInstall || result?.resolveAssetsInstall;
-  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}；插件/效果 ${formatResolveAssetsStatus(resolveAssets)}；配音 ${formatVoiceoverRelinkSummary(summary.voiceover)}；音频 ${formatExternalAudioRelinkSummary(summary.audio)}`;
+  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}；插件/效果 ${formatResolveAssetsStatus(resolveAssets)}；配音 ${formatVoiceoverRelinkSummary(summary.voiceover)}；音频 ${formatExternalAudioRelinkSummary(summary.audio)}；额外素材 ${formatExternalAudioRelinkSummary(summary.extra)}`;
 }
 
 function formatResolveAssetsMessage(result) {
@@ -3471,6 +3480,7 @@ function formatEditRelinkWarnings(summary) {
   const resolveAssetsWarning = formatResolveAssetsWarning(summary.resolveAssetsInstall);
   const voiceoverWarning = formatVoiceoverRelinkWarning(summary.voiceover);
   const audioWarning = formatExternalAudioRelinkWarning(summary.audio, '音频');
+  const extraWarning = formatExternalAudioRelinkWarning(summary.extra, '额外素材');
   if (
     missing
     + unmapped
@@ -3483,13 +3493,14 @@ function formatEditRelinkWarnings(summary) {
     && !resolveAssetsWarning
     && !voiceoverWarning
     && !audioWarning
+    && !extraWarning
   ) return '';
   const samples = [
     ...(summary.missingTargetSamples || []).slice(0, 3).map(item => item.target || item.path || item.name),
     ...(summary.unmappedSamples || []).slice(0, 3).map(item => item.path || item.name),
   ].filter(Boolean);
   const sampleText = samples.length > 0 ? `；样本：${samples.join('；')}` : '';
-  const externalWarnings = [resolveAssetsWarning, voiceoverWarning, audioWarning].filter(Boolean).map(text => `；${text}`).join('');
+  const externalWarnings = [resolveAssetsWarning, voiceoverWarning, audioWarning, extraWarning].filter(Boolean).map(text => `；${text}`).join('');
   return `重链完成，但仍有警告：旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}，时间线旧路径 ${timelineOld}，时间线不可读 ${timelineUnreadable}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${externalWarnings}${sampleText}`;
 }
 
@@ -3526,6 +3537,8 @@ function formatVoiceoverRelinkReason(reason) {
   if (normalized === 'voiceover_media_not_configured') return '未配置';
   if (normalized === 'voiceover_media_unreadable') return '路径不可读';
   if (normalized === 'voiceover_media_pool_bin_missing') return 'Media Pool 无 Kairos Voiceover';
+  if (normalized === 'extra_media_not_configured') return '未配置';
+  if (normalized === 'extra_media_unreadable') return '路径不可读';
   if (normalized === 'audio_media_not_configured') return '未配置';
   if (normalized === 'audio_media_unreadable') return '路径不可读';
   if (normalized === 'audio_media_pool_bin_missing') return 'Media Pool 无 Kairos Audio';
@@ -3622,6 +3635,8 @@ function resolveProgressPercent(progress) {
 
 function describeChronologyJobTitle(job) {
   if (!job) return 'Chronology 任务';
+  if (job.jobType === 'resolve-extra-media-sync') return '导入额外素材';
+  if (job.jobType === 'resolve-media-sync') return '准备剪辑素材池';
   if (job.jobType === 'span-rebuild') return '生成候选素材片段与模式';
   if (job.jobType === 'chronology-build') return '生成/刷新编年史';
   if (job.jobType === 'spatial-refresh') return '刷新时空真相';

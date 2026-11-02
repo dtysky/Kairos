@@ -1,5 +1,16 @@
 # Kairos — 架构设计 v2
 
+## 2026-11-02 Ingest 并行元数据与缓存
+
+手动补漏新增独立 `extraMedia` 配置和 `resolve-extra-media-sync` job。Console 与主素材 Root 共用结构化备选路径行组件，仅省略额外素材不需要的 rawPath 字段；已有 alternatePaths 数组无需迁移。Node 仅扫描选中的可读目录并产生源路径请求，不写 asset/span/chronology 事实；Python 复用 `sync_rough_cut_media` 批量 helper 的 extra-media 模式，使用“额外素材”namespace、禁止搬动既有 item、禁止目录清理，并保持时间线和原 bin 选择。extra-only 配置保存通过分析输入比较跳过 stale 标记；普通 Ingest 排除已配置额外子目录。重链合并 extraMedia 主/备选映射并独立报告统计；进度和取消沿用 Supervisor job 合同。
+
+
+Ingest 向项目 `.tmp/ingest/progress.json` 写入通用 Kairos progress，由 Supervisor 分配并传入 `jobId / progressPath`。扫描文件回调、并发 metadata worker 和顺序 GPS 绑定提供真实计数；进度有序、节流写入，阶段切换和最终状态立即写入。状态 API 精确校验 jobId，允许 Ingest 终态返回对应历史快照；Console 在原运行区域显示阶段进度和统计，优先活跃任务，未知总数不计算百分比。
+
+Resolve `sync_rough_cut_media` 的缺失视频按目标 bin 顺序分批导入，照片逐张调用以避免编号照片成为序列；共享 `sync_namespace_clips` 对调色调用保留单文件默认路径。新批量 helper 先验证当前目录切换，按规范化源路径匹配返回值；只在有缺项时回读目录，部分失败仅重试缺项。整个同步结束恢复仍存在的原选中 bin，覆盖 native AddSubFolder/MoveClips 产生的选择变化。已有 item 的移动/复用和 prepared entries 顺序保持稳定。细节与测试范围见同一分期设计。
+
+Ingest 将可并行的文件属性/probe 读取与共享资产/GPS 索引写入分开：前者有界并发并按扫描顺序汇合，后者保持有序提交。项目 `.tmp/ingest/metadata/` 缓存原始 probe 结果，按设备、绝对路径、文件大小、mtime/ctime、工具路径与版本失效，逐项原子写入；失败或读取期间变化的文件不缓存。拍摄时间、root/manual 修正、保护音轨发现和 GPS 绑定每轮仍刷新。此缓存不改变项目 schema、素材 ID 或下游 freshness 合同。分期与边界见 [持续追加素材设计](./incremental-media-ingest.md)。
+
 ## 2026-10-29 Resolve 21.1.2 适配边界
 
 官方执行链仍是 Node/Agent -> vendored Resolve Python host -> Scripting API。新增无工程副作用的版本能力查询，按版本报告最低要求并区分文档支持与实际执行验证。21.1+ 使用 `README.md + DaVinciResolveScript.pyi + CHANGELOG.md`，旧版文档仅作兼容参考。

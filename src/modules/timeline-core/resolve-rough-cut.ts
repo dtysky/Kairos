@@ -54,6 +54,7 @@ export interface IResolveRoughCutMediaSyncInput {
   resolveProjectName: string;
   namespace?: string;
   legacyNamespaces?: string[];
+  mode?: 'extra-media';
   progressPath?: string;
   jobId?: string;
   clips: Array<Pick<IResolveRoughCutClipInput,

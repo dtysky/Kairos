@@ -1,3 +1,4 @@
+export { syncProjectExtraMedia } from './extra-media.js';
 export { placeClips, type IPlacementConfig } from './placement.js';
 export { planTransitions, type ITransitionConfig } from './transition.js';
 export { planSubtitles, type ISubtitleConfig } from './subtitle.js';

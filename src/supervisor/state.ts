@@ -70,7 +70,8 @@ export function progressBelongsToSupervisorJob(
     && typeof (extra as Record<string, unknown>).jobId === 'string'
       ? (extra as Record<string, unknown>).jobId as string
       : undefined;
-  if (job.jobType === 'resolve-media-sync' && progressJobId !== job.jobId) return false;
+  if (['resolve-media-sync', 'resolve-extra-media-sync', 'ingest'].includes(job.jobType) && progressJobId !== job.jobId) return false;
+  if (['ingest', 'resolve-extra-media-sync'].includes(job.jobType) && ['completed', 'stopped'].includes(job.status)) return true;
   if (['queued', 'running'].includes(job.status)) {
     return progressJobId == null || progressJobId === job.jobId;
   }
@@ -85,15 +86,15 @@ export function assertMediaPreparationJobAvailable(
   projectId: string | undefined,
   jobs: ISupervisorJobRecord[],
 ): void {
-  if (jobType === 'resolve-media-sync' && !projectId) throw new Error('素材池准备需要 projectId');
+  if (['resolve-media-sync', 'resolve-extra-media-sync'].includes(jobType) && !projectId) throw new Error('素材池准备需要 projectId');
   const factJobs = ['ingest', 'gps-refresh', 'analyze', 'spatial-refresh', 'span-rebuild', 'chronology-build'];
   const conflict = jobs.find(job => {
     if (!['queued', 'running'].includes(job.status)) return false;
-    if (jobType === 'resolve-media-sync') {
-      return ['color', 'resolve-media-sync'].includes(job.jobType)
+    if (['resolve-media-sync', 'resolve-extra-media-sync'].includes(jobType)) {
+      return ['color', 'resolve-media-sync', 'resolve-extra-media-sync', 'resolve-maintenance'].includes(job.jobType)
         || (job.projectId === projectId && factJobs.includes(job.jobType));
     }
-    return job.jobType === 'resolve-media-sync'
+    return ['resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType)
       && (['color', 'resolve-maintenance'].includes(jobType) || (job.projectId === projectId && factJobs.includes(jobType)));
   });
   if (conflict) throw new Error(`请先等待当前素材准备或 Resolve 任务结束：${conflict.jobType} (${conflict.jobId})`);

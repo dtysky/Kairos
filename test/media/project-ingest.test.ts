@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,10 +13,14 @@ import {
 } from '../../src/store/index.js';
 import { ingestWorkspaceProjectMedia } from '../../src/modules/media/project-ingest.js';
 import { loadSameSourceTrackPoints } from '../../src/modules/media/same-source-gps.js';
+import * as probeModule from '../../src/modules/media/probe.js';
+import { testProbeResult } from './fixtures/ingest-probe.js';
+import * as progressStore from '../../src/store/progress.js';
 
 const workspaces: string[] = [];
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(
     workspaces.splice(0).map(path => rm(path, { recursive: true, force: true })),
   );
@@ -29,6 +33,80 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('ingestWorkspaceProjectMedia', () => {
+  it('reuses parallel probes while refreshing clock correction, sidecars and every GPS index entry', async () => {
+    const progressWrites = vi.spyOn(progressStore, 'writeKairosProgress');
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-incremental-metadata';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Incremental');
+    const mediaRoot = join(workspaceRoot, 'media');
+    await mkdir(mediaRoot);
+    const sidecar = (latitude: number) => `1\n00:00:00,000 --> 00:00:00,500\n[latitude: ${latitude}] [longitude: 168.662710]\n\n2\n00:00:01,000 --> 00:00:01,500\n[latitude: ${latitude}] [longitude: 168.662700]\n`;
+    for (let i = 0; i < 6; i++) {
+      await writeFile(join(mediaRoot, `DJI_${i}.MP4`), 'video');
+      await writeFile(join(mediaRoot, `DJI_${i}.SRT`), sidecar(-45.03));
+    }
+    const brief = {
+      name: 'Incremental', materialPatternPhrases: [],
+      mappings: [{ rootId: 'camera', rootCode: 'camera', path: mediaRoot, enabled: true, clockOffsetMs: 0 }],
+    };
+    await saveProjectBriefConfig(projectRoot, brief);
+    let active = 0;
+    let peak = 0;
+    const probe = vi.spyOn(probeModule, 'probe').mockImplementation(async () => {
+      peak = Math.max(peak, ++active);
+      await new Promise(resolve => setTimeout(resolve, 5));
+      active--;
+      return testProbeResult();
+    });
+    const first = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId, jobId: 'ingest-first' });
+    expect(peak).toBe(4);
+    expect(first.metadata).toEqual({ probedFileCount: 6, reusedFileCount: 0, failedFileCount: 0 });
+    const originalIds = first.merge.assets.map(asset => asset.id);
+    expect((await loadProjectSameSourceGpsIndex(projectRoot))?.trackCount).toBe(6);
+    const snapshots = progressWrites.mock.calls.map(call => call[1]);
+    expect(snapshots.map(row => row.phaseKey)).toEqual(expect.arrayContaining([
+      'prepare', 'context', 'root-gps', 'scan', 'metadata', 'bind', 'write', 'gps', 'validate', 'complete',
+    ]));
+    expect(snapshots.find(row => row.phaseKey === 'metadata')).toMatchObject({ current: 0, total: 6,
+      extra: { jobId: 'ingest-first', scannedFileCount: 6, rootIndex: 1, rootTotal: 1 } });
+    expect(snapshots.find(row => row.phaseKey === 'bind')?.extra).toMatchObject({ processedFileCount: 6, probedFileCount: 6 });
+    const savedProgress = JSON.parse(await readFile(join(projectRoot, '.tmp/ingest/progress.json'), 'utf8'));
+    expect(savedProgress).toMatchObject({ status: 'succeeded', current: 6, total: 6,
+      extra: { jobId: 'ingest-first', boundFileCount: 6, addedCount: 6, assetCount: 6 } });
+
+    await writeFile(join(mediaRoot, 'DJI_0.wav'), 'protection audio');
+    await writeFile(join(mediaRoot, 'DJI_0.SRT'), sidecar(-44.01));
+    brief.mappings[0]!.clockOffsetMs = 60_000;
+    await saveProjectBriefConfig(projectRoot, brief);
+    const second = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+    expect(second.metadata).toEqual({ probedFileCount: 1, reusedFileCount: 6, failedFileCount: 0 });
+    expect(probe).toHaveBeenCalledTimes(7);
+    expect(second.merge.assets.map(asset => asset.id)).toEqual(originalIds);
+    expect(second.merge.added).toHaveLength(0);
+    expect(second.merge.assets[0]).toMatchObject({
+      capturedAt: '2026-05-01T06:01:00.000Z', rawCapturedAt: '2026-05-01T06:00:00.000Z',
+      protectionAudio: { sourcePath: 'DJI_0.wav', alignment: 'exact' },
+    });
+    const points = await loadSameSourceTrackPoints(projectRoot, second.merge.assets[0]!.embeddedGps!.trackId!);
+    expect(points[0]?.lat).toBe(-44.01);
+    expect((await loadProjectSameSourceGpsIndex(projectRoot))?.trackCount).toBe(6);
+
+    await writeFile(join(projectRoot, 'config/manual-itinerary.md'), [
+      '## 素材时间校正', '',
+      '| 状态 | 素材源 | 路径 | 当前时间UTC | 当前来源 | 建议日期 | 建议时间 | 正确日期 | 正确时间 | 时区 | 备注 |',
+      '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+      '| 已填写 | camera | DJI_0.MP4 | 2026-05-01T06:01:00.000Z | container | | | 2026-05-01 | 15:00:00 | Asia/Shanghai | 手工修正 |',
+    ].join('\n'));
+    const third = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+    expect(third.metadata).toEqual({ probedFileCount: 0, reusedFileCount: 7, failedFileCount: 0 });
+    expect(third.merge.assets[0]).toMatchObject({
+      capturedAt: '2026-05-01T07:00:00.000Z', captureTimeSource: 'manual', appliedClockOffsetMs: 0,
+    });
+    await writeFile(join(mediaRoot, 'DJI_0.wav'), 'updated protection audio');
+    const fourth = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+    expect(fourth.metadata).toEqual({ probedFileCount: 1, reusedFileCount: 6, failedFileCount: 0 });
+  });
+
   it('binds same-stem protection audio without reopening generic audio ingest', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-protection-audio';
@@ -360,6 +438,9 @@ describe('ingestWorkspaceProjectMedia', () => {
     })).rejects.toThrow(/拍摄时间与项目时间线明显不一致/u);
 
     let manualItinerary = await readFile(join(projectRoot, 'config/manual-itinerary.md'), 'utf-8');
+    expect(JSON.parse(await readFile(join(projectRoot, '.tmp/ingest/progress.json'), 'utf8'))).toMatchObject({
+      status: 'failed', phaseKey: 'validate', detail: expect.stringContaining('拍摄时间与项目时间线明显不一致'),
+    });
     expect(manualItinerary).toContain('必须填日期');
     expect(manualItinerary).toContain('timelapse.mp4');
 
@@ -588,4 +669,24 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(manualItinerary).toContain('Pharos trip Trip A');
     expect(manualItinerary).toContain('20260331_081530.mp4');
   });
+});
+
+it('keeps nested manual extra media out of ordinary ingest and probe work', async () => {
+  const workspaceRoot = await createWorkspace();
+  const projectId = 'nested-extra';
+  const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Nested extra');
+  const media = join(workspaceRoot, 'camera');
+  const extra = join(media, 'manual-extra');
+  await mkdir(extra, { recursive: true });
+  await writeFile(join(media, 'A.mp4'), 'ordinary');
+  await writeFile(join(extra, 'B.mp4'), 'manual');
+  await saveProjectBriefConfig(projectRoot, { name: 'Nested extra', materialPatternPhrases: [],
+    mappings: [{ rootId: 'camera', rootCode: 'camera', path: media, description: 'camera' }],
+    extraMedia: { path: '/unavailable-device/manual-extra', alternatePaths: [{ path: extra }] },
+  });
+  const probe = vi.spyOn(probeModule, 'probe').mockResolvedValue(testProbeResult());
+  const result = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+  expect(result.merge.assets.map(asset => asset.sourcePath)).toEqual(['A.mp4']);
+  expect(probe).toHaveBeenCalledTimes(1);
+  expect(result.scannedRoots[0]?.scannedFileCount).toBe(1);
 });

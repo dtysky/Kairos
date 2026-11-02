@@ -4,6 +4,7 @@ import {
   EMediaRootCategory,
   type IColorRenderPreset,
   type IProjectBriefAudioMediaConfig,
+  type IProjectBriefExtraMediaConfig,
   type ICaptureTimePolicyConfig as TCaptureTimePolicyConfig,
   type IMediaRoot,
   type IProjectBriefConfig,
@@ -53,6 +54,7 @@ type TProjectBriefConfigInput = {
     resolveProjectAliases?: string[];
     description?: string;
   };
+  extraMedia?: IProjectBriefExtraMediaConfig;
   audioMedia?: {
     rootId?: string;
     path?: string;
@@ -339,6 +341,7 @@ export function materializeProjectBriefConfig(
     pharos: includedTripIds?.length ? { includedTripIds } : undefined,
     voiceoverMedia: normalizeVoiceoverMedia(input.voiceoverMedia),
     audioMedia: normalizeAudioMedia(input.audioMedia),
+    extraMedia: normalizeAudioMedia(input.extraMedia ? { ...input.extraMedia, rootId: input.extraMedia.rootId || 'extra' } : undefined),
     materialPatternPhrases: trimStringList(input.materialPatternPhrases) ?? [],
   };
 }
@@ -421,4 +424,11 @@ export function mediaRootsToProjectBriefMappings(
     });
     return result;
   }, []);
+}
+
+/** Extra media is independent of analysis and reviewed material indexes. */
+export function projectBriefAffectsAnalysis(previous: IProjectBriefConfig, next: IProjectBriefConfig): boolean {
+  const { extraMedia: _previousExtra, ...previousFacts } = previous;
+  const { extraMedia: _nextExtra, ...nextFacts } = next;
+  return JSON.stringify(previousFacts) !== JSON.stringify(nextFacts);
 }

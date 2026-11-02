@@ -3,21 +3,21 @@ name: kairos-ingest
 description: >-
   Phase 1: Ingest project media roots into a synced Kairos project. Resolves
   logical roots through device-local path maps, scans media, probes metadata,
-  resolves capture times, and writes project assets plus chronology. Use when
+  resolves capture times, and writes project assets and spatial caches. Use when
   importing raw footage, appending new media, or initializing a project's asset
   inventory.
 ---
 
 # Kairos: Phase 1 — Ingest
 
-把素材导入 **Kairos 工程内的项目目录**，生成可同步的资产主表和按拍摄时间排序的素材时序视图。
+把素材导入 **Kairos 工程内的项目目录**，生成可同步的资产主表和空间缓存；编年史由后续 `/chronology` 显式重建。
 
 这条 skill 只负责：
 - 逻辑素材源定义
 - 设备本地路径映射
 - 扫描和元信息提取
 - `store/assets.json`
-- `media/chronology.json`
+- 刷新空间缓存并标记既有 spans / chronology 过期
 
 它**不负责风格分析**，也不负责镜头级分析。
 
@@ -72,6 +72,8 @@ syncWorkspaceProjectBrief(
 ingestWorkspaceProjectMedia(input: {
   workspaceRoot: string;
   projectId: string;
+  jobId?: string;
+  progressPath?: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }): Promise<{
@@ -79,7 +81,9 @@ ingestWorkspaceProjectMedia(input: {
   scannedRoots: { rootId: string; label?: string; localPath: string; scannedFileCount: number }[];
   missingRoots: IMediaRoot[];
   merge: IMergeResult;
-  chronologyCount: number;
+  metadata: { probedFileCount: number; reusedFileCount: number; failedFileCount: number };
+  spansMarkedStale: boolean;
+  chronologyMarkedStale: boolean;
   warnings: string[];
 }>
 
@@ -179,9 +183,12 @@ importProjectGpxTracks(input: {
 
 5. 跑导入
 - Console 正式入口是 `/ingest-gps` 的 `运行 Ingest` 按钮，它触发 Supervisor `ingest` job；保存素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides 只保存配置，不会自动扫描大目录
+- Supervisor 传入 `jobId / progressPath`，在 `.tmp/ingest/progress.json` 上报配置、行程上下文、同源 GPS、扫描、元数据、时间/GPS 绑定、索引写入、空间缓存和时间校验阶段。Console 显示当前目录/文件、阶段完成数和累计读取／复用／失败数；扫描总数未知时不展示百分比，其余百分比仅代表当前阶段。只有匹配当前 job ID 的快照才可展示，终态快照不代表任务仍在运行。
 - 默认从 `project-brief` 主路径和备选路径中选择当前可读目录
 - 如果 `project-brief.md` 已有映射，`ingestWorkspaceProjectMedia()` 会先尝试自动同步一次
 - 对本次成功扫描到的 root，资产索引按扫描结果同步；磁盘上已删除的旧素材要从 `store/assets.json` 移除，missing root 的旧素材必须保留
+- 文件属性与媒体 probe 有界并行，输出保持扫描顺序；GPS 共享索引写入仍串行。原始 probe 缓存在项目 `.tmp/ingest/metadata/`，依据设备、绝对路径、大小、mtime/ctime、工具路径与版本复用。首次导入建立缓存，后续只重新 probe 新增/变化文件；失败、损坏缓存或 probe 期间变化的文件不能作为成功缓存复用。
+- 同名保护音轨使用同一缓存；时间解析、root/manual 时间修正、sidecar 发现和 GPS 绑定每轮重新计算。不要缓存这些派生结果，也不要把缓存命中解释为下游 freshness 已保留。
 - `.SRT` sidecar 会在素材旁自动发现，不需要单独配置
 - 保护音轨 sidecar 也会按“同目录同 basename”自动发现；第一阶段只做视频资产绑定，不把这些音频重新放回普通素材池
 - `飞行记录路径` 如果存在，会被当作该 root 的同源遥测输入，而不是普通项目 GPX
@@ -210,19 +217,29 @@ const result = await ingestWorkspaceProjectMedia({
 6. 向用户报告
 - 扫了几个 root
 - 新增多少素材
-- 跳过多少重复素材
+- 原始元数据读取、复用、失败各多少（`result.metadata`，含保护音轨；任务日志也报告）；资产合并的 `duplicateCount` 只代表既有资产匹配数
 - 当前总资产数
-- chronology 是否更新
+- spans / chronology 是否标记过期；当前 Ingest 不自动重建编年史，也未完成跨审查/调色的全流程增量保留
 - 是否有同源 GPS 绑定 warnings（例如 `FlightRecord` 缺失、未解密、未解析出坐标）
 - 如果本轮 ingest 为了观测进度或排查问题启动过临时辅助进程，结束后要主动清理；除非用户明确要求保留
 - 清理范围只包含 agent 本轮主动拉起的辅助进程，不包括用户本来就在跑的后台服务
 
 ## 导入结果
 
+### 仅供手动剪辑的额外素材
+
+- 在 `/ingest-gps` 的“额外素材目录”按主素材 Root 相同的结构化路径行配置主路径和备选路径，支持新增/上下移动/删除，点击“保存并导入额外素材到 Resolve”。独立 job `resolve-extra-media-sync` 只扫描并导入图片/视频/音频，不启动 Ingest 或 Analyze，不要求 spans/编年史。
+- 配置真相为 `project-brief.json.extraMedia`；仅修改该项不使现有审查成果过期。普通 Ingest 排除嵌套在普通 root 内的额外目录。
+- 新素材进入 `[Edit]` 工程“额外素材”bin；已有素材按实际源路径复用，不搬动用户手动整理的 bin，不删除目录或改动时间线。可在任务中心看进度、日志、停止和重试。
+- 用户可自行导入此目录中的素材到任意 bin；跨设备保持相对路径一致，在 `/edit` 执行工程级“重链素材路径”。不需要先分析这些素材。
+
+
 | 文件 | 内容 |
 |------|------|
 | `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径；`capturedAt` 是已修正项目时间，`rawCapturedAt` 保留原始解析时间；成功绑定的 `.SRT` / `FlightRecord` 同源 GPS 会写成轻量 `embeddedGps` 引用；同 basename 的保护音轨会写成视频资产上的 `protectionAudio` 绑定，而不是单独 reopen 通用 audio ingest |
-| `media/chronology.json` | 按拍摄时间排序的素材视图 |
+| `store/spans.meta.json` / `media/chronology.json` | 已有产物标记过期，由 `/chronology` 显式重建 |
+| `.tmp/ingest/metadata/*.json` | 本机原始 probe 缓存，可删除后重建，不是资产身份或分析事实 |
+| `.tmp/ingest/progress.json` | 带 `extra.jobId` 的最新导入进度；完成、停止或失败后可作历史摘要，不能作为 live job 的证据 |
 | `gps/same-source/index.json` + `gps/same-source/tracks/*.gpx` | dense same-source GPS 的项目内内部 cache，仅用于索引 / 惰性查找 |
 | `gps/derived.json` | 统一后的 `project-derived-track` 缓存 |
 | `analysis/pharos-context.json` | Ingest/GPS 阶段刷新的 Pharos context cache，带输入 fingerprint |

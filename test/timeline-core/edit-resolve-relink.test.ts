@@ -26,7 +26,7 @@ describe('project relink request boundary', () => {
 
   it('combines all project roots in one request without edit or timeline selectors', async () => {
     vi.mocked(loadProjectBriefConfig).mockResolvedValue({
-      voiceoverMedia: { path: '/voiceover' }, audioMedia: { path: '/audio' },
+      voiceoverMedia: { path: '/voiceover' }, audioMedia: { path: '/audio' }, extraMedia: { path: '/extra' },
     } as Awaited<ReturnType<typeof loadProjectBriefConfig>>);
     const result = await relinkProjectEditMedia({ projectRoot: '/trip' });
     expect(loadEditUnitConfig).not.toHaveBeenCalled();
@@ -37,10 +37,11 @@ describe('project relink request boundary', () => {
         { rootId: 'camera', localPath: '/camera', candidates: ['/camera', '/old/camera'] },
         { rootId: 'voiceover', label: '配音', localPath: '/voiceover', candidates: ['/voiceover', '/old/voiceover'] },
         { rootId: 'audio', label: '音频', localPath: '/audio', candidates: ['/audio', '/old/audio'] },
+        { rootId: 'extra', label: '额外素材', localPath: '/extra', candidates: ['/extra', '/old/extra'] },
       ],
     });
     expect(result).not.toHaveProperty('editId');
-    expect(result).toMatchObject({ scope: 'project', rootMappingCount: 3, hostSummary: {
+    expect(result).toMatchObject({ scope: 'project', rootMappingCount: 4, extraRootMappingCount: 1, hostSummary: {
       voiceover: { configured: true, skipped: false, relinked: 2 },
       audio: { configured: true, skipped: false, relinked: 3 },
     } });

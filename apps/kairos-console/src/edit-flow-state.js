@@ -38,7 +38,7 @@ export function resolveMediaPreparationState({ projectId, jobs = [], spansReady,
   const latest = ownJobs.find(job => ['queued', 'running'].includes(job.status)) || ownJobs[0];
   const active = latest && ['queued', 'running'].includes(latest.status);
   const conflict = jobs.find(job => ['queued', 'running'].includes(job.status) && (
-    ['color', 'resolve-media-sync'].includes(job.jobType)
+    ['color', 'resolve-media-sync', 'resolve-extra-media-sync'].includes(job.jobType)
     || (job.projectId === projectId && ['ingest', 'gps-refresh', 'analyze', 'spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType))
   ));
   const blocker = !projectId ? '请先选择项目'

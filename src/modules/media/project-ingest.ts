@@ -1,5 +1,5 @@
 import { basename, isAbsolute, relative, resolve } from 'node:path';
-import type { IKtepAsset, IMediaRoot, IProjectPharosContext } from '../../protocol/schema.js';
+import type { ICaptureTime, IKtepAsset, IMediaRoot, IProtectionAudioBinding } from '../../protocol/schema.js';
 import {
   appendAssets,
   loadIngestRoots,
@@ -13,16 +13,19 @@ import {
   type IMergeResult,
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
+import { mapWithConcurrency } from './concurrency.js';
+import { createIngestProbeCache, type IIngestMetadataStats } from './ingest-probe-cache.js';
+import { createIngestProgressReporter } from './ingest-progress.js';
 import { resolveEmbeddedGpsBinding } from './gps-embedded.js';
 import {
   findManualCaptureTimeOverride,
   loadManualCaptureTimeOverrides,
 } from './manual-capture-time.js';
 import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
-import { probe, type IMediaToolConfig } from './probe.js';
+import { probe, type IMediaToolConfig, type IProbeResult } from './probe.js';
 import { resolveProtectionAudioBinding } from './protection-audio.js';
 import type { IReverseGeocodeService } from './reverse-geocode.js';
-import { resolveMediaRoots, toPortableRelativePath } from './root-resolver.js';
+import { resolveMediaRoot, resolveMediaRoots, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
@@ -32,6 +35,8 @@ import { assertUniqueRootCodes, assignUniqueMaterialAssetIds, buildMaterialAsset
 export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
   projectId: string;
+  jobId?: string;
+  progressPath?: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
   reverseGeocodeService?: IReverseGeocodeService | null;
@@ -49,6 +54,7 @@ export interface IIngestWorkspaceProjectResult {
   scannedRoots: IIngestedRootSummary[];
   missingRoots: IMediaRoot[];
   merge: IMergeResult;
+  metadata: IIngestMetadataStats;
   spansMarkedStale: boolean;
   chronologyMarkedStale: boolean;
   warnings: string[];
@@ -58,6 +64,27 @@ export async function ingestWorkspaceProjectMedia(
   input: IIngestWorkspaceProjectInput,
 ): Promise<IIngestWorkspaceProjectResult> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progress = createIngestProgressReporter(projectRoot, input.jobId, input.progressPath);
+  try {
+    return await runProjectIngest(input, projectRoot, progress);
+  } catch (error) {
+    await progress.fail(error).catch(() => undefined);
+    throw error;
+  }
+}
+
+async function runProjectIngest(
+  input: IIngestWorkspaceProjectInput,
+  projectRoot: string,
+  progress: ReturnType<typeof createIngestProgressReporter>,
+): Promise<IIngestWorkspaceProjectResult> {
+  let scannedFileCount = 0;
+  let processedFileCount = 0;
+  let boundFileCount = 0;
+  let metadataStats: IIngestMetadataStats = { probedFileCount: 0, reusedFileCount: 0, failedFileCount: 0 };
+  let rootContext: Record<string, unknown> = {};
+  const counts = () => ({ ...metadataStats, scannedFileCount, processedFileCount, boundFileCount, ...rootContext });
+  await progress.report({ phaseKey: 'prepare', phaseLabel: '读取项目配置', extra: counts() }, true);
   await syncProjectBriefMappings({
     projectId: input.projectId,
     projectRoot,
@@ -67,6 +94,7 @@ export async function ingestWorkspaceProjectMedia(
     loadRuntimeConfig(projectRoot),
     loadProjectBriefConfig(projectRoot),
   ]);
+  await progress.report({ phaseKey: 'context', phaseLabel: '读取行程上下文', extra: counts() }, true);
   const pharosContext = await loadOrBuildProjectPharosContext({
     projectRoot,
     includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -79,8 +107,16 @@ export async function ingestWorkspaceProjectMedia(
   const scannedRoots: IIngestedRootSummary[] = [];
   const incoming: IKtepAsset[] = [];
   const warnings = new Set<string>();
+  const metadataCache = createIngestProbeCache(projectRoot, runtimeConfig, warning => warnings.add(warning));
+  metadataStats = metadataCache.stats;
 
-  for (const resolvedRoot of resolution.resolved) {
+  for (const [rootIndex, resolvedRoot] of resolution.resolved.entries()) {
+    rootContext = {
+      rootId: resolvedRoot.root.id,
+      rootLabel: resolvedRoot.root.label || resolvedRoot.root.rootCode || basename(resolvedRoot.localPath),
+      rootIndex: rootIndex + 1, rootTotal: resolution.resolved.length,
+    };
+    await progress.report({ phaseKey: 'root-gps', phaseLabel: '准备同源 GPS', extra: counts() }, true);
     const preparedRootGps = await prepareRootSameSourceGpsContext({
       projectRoot,
       flightRecordPath: resolvedRoot.flightRecordPath,
@@ -90,11 +126,24 @@ export async function ingestWorkspaceProjectMedia(
       warnings.add(warning);
     }
 
+    let rootScanned = 0;
+    const scanProgress = (fileName: string) => progress.report({
+      phaseKey: 'scan', phaseLabel: '扫描素材', current: rootScanned, unit: '个素材',
+      fileName, extra: counts(),
+    });
+    await progress.report({ phaseKey: 'scan', phaseLabel: '扫描素材', current: 0, unit: '个素材', extra: counts() }, true);
     const files = (await scanDirectory(resolvedRoot.localPath, {
-      excludeSubtrees: resolveNestedRawExclusions(
-        resolvedRoot.localPath,
-        resolvedRoot.rawLocalPath,
-      ),
+      excludeSubtrees: [
+        ...resolveNestedRawExclusions(resolvedRoot.localPath, resolvedRoot.rawLocalPath),
+        ...(projectBrief.extraMedia ? [resolveMediaRoot({ ...projectBrief.extraMedia, id: projectBrief.extraMedia.rootId || 'extra', enabled: true }).localPath].filter((path): path is string => Boolean(path)) : []),
+      ],
+      onDirectory: directory => scanProgress(toPortableRelativePath(resolvedRoot.localPath, directory) || '当前素材目录'),
+      onFile: file => {
+        if (file.kind === 'audio') return;
+        rootScanned++;
+        scannedFileCount++;
+        return scanProgress(toPortableRelativePath(resolvedRoot.localPath, file.path));
+      },
     }))
       .filter(file => file.kind !== 'audio');
     scannedRoots.push({
@@ -104,7 +153,43 @@ export async function ingestWorkspaceProjectMedia(
       scannedFileCount: files.length,
     });
 
-    for (const file of files) {
+    // Only independent reads run in parallel; GPS index updates below remain ordered.
+    let metadataCompleted = 0;
+    const activeFiles = new Set<string>();
+    const metadataProgress = () => progress.report({
+      phaseKey: 'metadata', phaseLabel: '读取素材元数据', current: metadataCompleted, total: files.length,
+      unit: '个素材', fileName: activeFiles.values().next().value,
+      extra: { ...counts(), activeFileCount: activeFiles.size },
+    });
+    await progress.report({ phaseKey: 'metadata', phaseLabel: '读取素材元数据', current: 0, total: files.length,
+      unit: '个素材', extra: counts() }, true);
+    const metadata = await mapWithConcurrency(files, 4, async file => {
+      const fileName = toPortableRelativePath(resolvedRoot.localPath, file.path);
+      activeFiles.add(fileName);
+      await metadataProgress();
+      const probeResult = await safeProbe(file.path, runtimeConfig, metadataCache.probe);
+      const rawCapture = await resolveCaptureTime(file.path, probeResult);
+      const protectionAudio = file.kind === 'video'
+        ? await resolveProtectionAudioBinding({
+          localPath: file.path,
+          localRootPath: resolvedRoot.localPath,
+          assetDurationMs: probeResult.durationMs ?? undefined,
+          tools: runtimeConfig,
+          probeMedia: metadataCache.probe,
+        })
+        : null;
+      metadataCompleted++;
+      processedFileCount++;
+      activeFiles.delete(fileName);
+      await metadataProgress();
+      return { probeResult, rawCapture, protectionAudio };
+    });
+    await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: 0, total: files.length,
+      unit: '个素材', extra: counts() }, true);
+    for (const [index, file] of files.entries()) {
+      const fileName = toPortableRelativePath(resolvedRoot.localPath, file.path);
+      await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: index,
+        total: files.length, unit: '个素材', fileName, extra: counts() });
       incoming.push(await buildAssetFromScan(
         projectRoot,
         file.path,
@@ -112,14 +197,19 @@ export async function ingestWorkspaceProjectMedia(
         file.sizeBytes,
         resolvedRoot.root,
         resolvedRoot.localPath,
-        runtimeConfig,
+        metadata[index]!,
         manualCaptureOverrides,
         preparedRootGps,
         warning => warnings.add(warning),
       ));
+      boundFileCount++;
+      await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: index + 1,
+        total: files.length, unit: '个素材', fileName, extra: counts() });
     }
   }
 
+  rootContext = {};
+  await progress.report({ phaseKey: 'write', phaseLabel: '写入素材索引', extra: counts() }, true);
   const rootById = new Map(roots.map(root => [root.id, root] as const));
   const uniqueIncoming = assignUniqueMaterialAssetIds(
     incoming,
@@ -128,6 +218,7 @@ export async function ingestWorkspaceProjectMedia(
   const merge = await appendAssets(projectRoot, uniqueIncoming, {
     replaceRootIds: scannedRoots.map(root => root.rootId),
   });
+  await progress.report({ phaseKey: 'gps', phaseLabel: '刷新空间缓存', extra: counts() }, true);
   await refreshProjectDerivedTrackCache({
     projectRoot,
     resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
@@ -139,17 +230,24 @@ export async function ingestWorkspaceProjectMedia(
     markChronologyStale(projectRoot),
   ]);
   await touchProjectUpdatedAt(projectRoot);
+  await progress.report({ phaseKey: 'validate', phaseLabel: '校验素材时间', extra: counts() }, true);
   await enforceProjectTimelineConsistency({
     projectRoot,
     assets: merge.assets,
     roots,
   });
 
+  await progress.report({ status: 'succeeded', phaseKey: 'complete', phaseLabel: '导入完成',
+    current: incoming.length, total: incoming.length, unit: '个素材',
+    extra: { ...counts(), addedCount: merge.added.length, prunedCount: merge.pruned.length,
+      assetCount: merge.assets.length, missingRootCount: resolution.missing.length, warningCount: warnings.size },
+  }, true);
   return {
     projectRoot,
     scannedRoots,
     missingRoots: resolution.missing,
     merge,
+    metadata: { ...metadataCache.stats },
     spansMarkedStale: staleSpans != null,
     chronologyMarkedStale: staleChronology != null,
     warnings: [...warnings],
@@ -173,14 +271,17 @@ async function buildAssetFromScan(
   sizeBytes: number,
   root: IMediaRoot,
   localRootPath: string,
-  tools: IMediaToolConfig,
+  metadata: {
+    probeResult: IProbeResult;
+    rawCapture: ICaptureTime;
+    protectionAudio: IProtectionAudioBinding | null;
+  },
   manualCaptureOverrides: Awaited<ReturnType<typeof loadManualCaptureTimeOverrides>>,
   preparedRootGps: Awaited<ReturnType<typeof prepareRootSameSourceGpsContext>>,
   onWarning: (warning: string) => void,
 ): Promise<IKtepAsset> {
   const sourcePath = toPortableRelativePath(localRootPath, localFilePath);
-  const probeResult = await safeProbe(localFilePath, tools);
-  const rawCapture = await resolveCaptureTime(localFilePath, probeResult);
+  const { probeResult, rawCapture, protectionAudio } = metadata;
   const manualOverride = findManualCaptureTimeOverride(manualCaptureOverrides, {
     rootRef: root.id,
     sourcePath,
@@ -222,15 +323,6 @@ async function buildAssetFromScan(
   for (const warning of sameSourceGps.warnings) {
     onWarning(warning);
   }
-
-  const protectionAudio = kind === 'video'
-    ? await resolveProtectionAudioBinding({
-      localPath: localFilePath,
-      localRootPath,
-      assetDurationMs: probeResult.durationMs ?? undefined,
-      tools,
-    })
-    : null;
 
   return {
     id: buildMaterialAssetIdForRoot({ root, sourcePath }),
@@ -284,9 +376,10 @@ function applyProjectClockOffset(
 async function safeProbe(
   filePath: string,
   tools: IMediaToolConfig,
+  probeMedia: typeof probe,
 ): Promise<Awaited<ReturnType<typeof probe>>> {
   try {
-    return await probe(filePath, tools);
+    return await probeMedia(filePath, tools);
   } catch {
     return {
       durationMs: null,

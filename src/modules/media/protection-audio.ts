@@ -17,13 +17,14 @@ export async function resolveProtectionAudioBinding(input: {
   localRootPath: string;
   assetDurationMs?: number;
   tools?: IMediaToolConfig;
+  probeMedia?: typeof probe;
 }): Promise<IProtectionAudioBinding | null> {
   const protectionPath = await findProtectionAudioPath(input.localPath);
   if (!protectionPath) return null;
 
   let probed: Awaited<ReturnType<typeof probe>> | null = null;
   try {
-    probed = await probe(protectionPath, input.tools);
+    probed = await (input.probeMedia ?? probe)(protectionPath, input.tools);
   } catch {
     probed = null;
   }
