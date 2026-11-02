@@ -1,8 +1,8 @@
 {
   "schemaVersion": "2.0",
-  "status": "confirmed",
+  "status": "stale",
   "generatedAt": "2026-10-13T17:09:06.946Z",
-  "updatedAt": "2026-10-13T17:12:54.119Z",
+  "updatedAt": "2026-11-02T07:46:00.534Z",
   "confirmedAt": "2026-10-13T17:12:54.119Z",
   "inputsHash": "42b86ec068013ea281eb405c7d5e6691d3e789b680be3036b22353fc07ccee3a",
   "assetIndex": [

@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-11-01T14:55:55.970Z",
+  "updatedAt": "2026-11-02T09:00:21.509Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-11-01T14:55:52Z",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-11-02T09:00:19Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,10 +19,10 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "84b8da1b-7fc7-43e1-88cb-b35c7d634e2b",
+        "attemptId": "4269601e-3376-4967-8127-d822493f0458",
         "status": "succeeded",
-        "startedAt": "2026-11-01T14:55:51.492Z",
-        "finishedAt": "2026-11-01T14:55:55.969Z",
+        "startedAt": "2026-11-02T09:00:19.397Z",
+        "finishedAt": "2026-11-02T09:00:21.508Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual"
@@ -371,10 +371,28 @@
           "mode": "manual",
           "retention": "latest-only",
           "action": "manual"
+        },
+        {
+          "attemptId": "0eae410a-eda3-46ad-87c5-51304b88f13a",
+          "status": "succeeded",
+          "startedAt": "2026-11-02T07:55:08.972Z",
+          "finishedAt": "2026-11-02T07:55:11.012Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "4269601e-3376-4967-8127-d822493f0458",
+          "status": "succeeded",
+          "startedAt": "2026-11-02T09:00:19.397Z",
+          "finishedAt": "2026-11-02T09:00:21.508Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-11-01T14:55:55.970Z"
+      "updatedAt": "2026-11-02T09:00:21.509Z"
     }
   }
 }

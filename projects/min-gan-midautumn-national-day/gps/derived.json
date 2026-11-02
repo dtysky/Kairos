@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-10-13T02:22:21.666Z",
-  "entryCount": 293,
+  "updatedAt": "2026-11-02T06:26:02.701Z",
+  "entryCount": 294,
   "entries": [
     {
       "id": "embedded-derived:DJI_20260925120847_0001_D_drone",
@@ -1874,6 +1874,18 @@
       "sourceAssetId": "DJI_20260929062948_0552_D_drone",
       "sourcePath": "DJI_20260929062948_0552_D.mp4",
       "summary": "derived-track embedded-derived 2026-09-28T22:29:53.571Z 27.629720,117.925139 DJI_20260929062948_0552_D.mp4"
+    },
+    {
+      "id": "embedded-derived:20261002_124651_phone",
+      "originType": "embedded-derived",
+      "matchKind": "point",
+      "lat": 29.3327,
+      "lng": 117.2088,
+      "confidence": 0.78,
+      "time": "2026-10-02T04:47:05.000Z",
+      "sourceAssetId": "20261002_124651_phone",
+      "sourcePath": "20261002_124651.mp4",
+      "summary": "derived-track embedded-derived 2026-10-02T04:47:05.000Z 29.332700,117.208800 20261002_124651.mp4"
     },
     {
       "id": "embedded-derived:DSC02105_photos",

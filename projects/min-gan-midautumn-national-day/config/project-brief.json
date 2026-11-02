@@ -163,5 +163,14 @@
     ],
     "description": "BGM/SFX手工音频"
   },
+  "extraMedia": {
+    "rootId": "extra",
+    "path": "/Volumes/SSDMAX/20260924_中秋国庆闽赣/additional",
+    "alternatePaths": [
+      {
+        "path": "F:\\vlog-proj\\20260924_中秋国庆闽赣自驾\\additional"
+      }
+    ]
+  },
   "materialPatternPhrases": []
 }

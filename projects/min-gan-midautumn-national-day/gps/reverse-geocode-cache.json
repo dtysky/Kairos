@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-10-13T11:24:22.980Z",
+  "updatedAt": "2026-11-02T06:26:02.890Z",
   "entries": [
     {
       "locationKey": "-0.000005,0.000001",
@@ -6878,6 +6878,19 @@
       "city": "景德镇市",
       "district": "昌江区",
       "fetchedAt": "2026-10-13T08:46:32.519Z"
+    },
+    {
+      "locationKey": "117.208800,29.332700",
+      "lat": 29.3327,
+      "lng": 117.2088,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "江西省，景德镇市，珠山区，竟成街道 · 游泳运动中心",
+      "country": "中国",
+      "province": "江西省",
+      "city": "景德镇市",
+      "district": "珠山区",
+      "fetchedAt": "2026-11-02T06:26:02.890Z"
     },
     {
       "locationKey": "117.208843,29.332798",

@@ -37,6 +37,11 @@ Root代号：photos
 备选路径1：F:\vlog-proj\20260924_中秋国庆闽赣自驾\photos
 说明：处理后的照片。
 
+## 额外素材（仅供手动剪辑）
+
+主路径：/Volumes/SSDMAX/20260924_中秋国庆闽赣/additional
+备选路径：F:\vlog-proj\20260924_中秋国庆闽赣自驾\additional
+
 ## Pharos
 
 包含 Trip：trip-20260924-d9fb5cfc-7b16-4af3-9e2b-4f86e26314dd
