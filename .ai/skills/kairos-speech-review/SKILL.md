@@ -14,8 +14,8 @@ description: >-
 
 每次首次审查或续接审查都先执行，不等待用户另行要求。
 
-1. 核对 handoff、项目 ID、inputsHash、meta 与当前审查产物。读取项目 brief 的 `pharos.includedTripIds`；未显式筛选时，以项目 `pharos/` 下有效 plan 的 trip ID 为范围，不扫描其它行程生成词条。按 `.ai/rules/pharos-protocol-sync.mdc` 校验协议。
-2. 按这些稳定 trip ID 查找 `../Pharos/carta/shots/<tripId>/field-guide.json`，结合 `research-request.md` 的发布状态和 `pothos_ref` 定位已确认调研。读取已发布 field guide 正文即可作为研究来源；计划、研究委托和未确认讨论不能冒充报告原文。多个纳入 trip 分别检查并记录。没有对应报告时记录检查范围及缺席原因，使用已有有效词表继续；用户明确指定的报告缺失或文件损坏则按缺失输入规则处理。跨设备只有来源快照时，明确注明快照与无法核验上游新版，不宣称已同步最新报告。
+1. 核对 handoff、项目 ID、inputsHash、meta 与当前审查产物。读取项目 brief 的 `pharos.includedTripIds`；未显式筛选时，以 `pharos.sourcePath`（留空使用项目 `pharos/`）下有效 plan 的 trip ID 为范围，不扫描其它行程生成词条。按 `.ai/rules/pharos-protocol-sync.mdc` 校验协议。
+2. 优先按 handoff / Pharos trip summary 的实际 `sourcePath` 查找 `field-guide.json`；仅旧本地镜像未携带研究时，按这些稳定 trip ID 查找 `../Pharos/carta/shots/<tripId>/field-guide.json`，结合 `research-request.md` 的发布状态和 `pothos_ref` 定位已确认调研。读取已发布 field guide 正文即可作为研究来源；计划、研究委托和未确认讨论不能冒充报告原文。多个纳入 trip 分别检查并记录。没有对应报告时记录检查范围及缺席原因，使用已有有效词表继续；用户明确指定的报告缺失或文件损坏则按缺失输入规则处理。跨设备只有来源快照时，明确注明快照与无法核验上游新版，不宣称已同步最新报告。
 3. 修改词表前保存当前 `loadEffectiveTranscriptGlossary(workspaceRoot, projectRoot)` 快照。Agent 从事实章节提取地名、人名、菜名、工艺及专业名词，逐项写明适用语境；不确定拼写不加入，不把观点、传说或计划当实际事实。写项目 `config/transcript-glossary.json`（v3，每项仅 `canonical + context`），保留已有条目和用户语境，不写 alias、近音自动替换或 ASR 提示。已开始审查时只允许增补；旧语境冲突需留给单独复核，不能为通过 hash 校验覆盖旧证据。
 4. 来源审计写项目 `config/transcript-glossary.sources.json`，记录每个来源的 trip ID、revision、原路径、SHA-256、不可变快照路径，以及每个词的章节/出处引用。快照保存于 `analysis/transcript-glossary-sources/`。保留已有来源，不把新文件写进 canonical `pharos/` 镜像。检查结论（可用来源、缺席来源、词表是否变化）写 `.tmp/chronology/speech-review-glossary-preflight.json`。
 5. 若 effective glossary hash 未变，直接审查。若首次候选仍为 `pending-agent` 且尚无统一审查，调用 `refreshProjectTranscriptReviewGlossary({workspaceRoot, projectRoot, inputsHash, expectedArtifactHash, previousGlossary})`；`expectedArtifactHash` 是当前候选 artifact 原始 UTF-8 字节的 SHA-256。若已有统一审查，调用 `continueProjectSpeechTranscriptReview`，使用统一 artifact 的 SHA-256 与修改前词表；禁止重新 stage 或构建 spans。这两个入口均只更新审查上下文并保存审计。

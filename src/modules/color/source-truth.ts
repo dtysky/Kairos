@@ -4,6 +4,8 @@ import type { EColorSourceProfile } from '../../protocol/schema.js';
 
 export interface IColorSourceTruth {
   logProfile?: EColorSourceProfile;
+  colorPrimaries?: string;
+  transferFunction?: string;
   /** Enable request from explicit per-file evidence; not proof of successful OFX loading. */
   gyro?: boolean;
   /** Motion-data declaration, independent from the enable request. Missing evidence is unknown. */
@@ -14,6 +16,8 @@ export interface IColorSourceTruth {
 
 interface ISonySourceTruth {
   logProfile?: EColorSourceProfile;
+  colorPrimaries?: string;
+  transferFunction?: string;
   hasGyroscope?: boolean;
 }
 
@@ -24,7 +28,7 @@ export async function extractColorSourceTruth(
   const sourceKinds = new Set<string>();
 
   const sonySidecarTruth = await extractSonySidecarTruth(filePath);
-  if (sonySidecarTruth.logProfile) sourceKinds.add('sony-sidecar-xml');
+  if (sonySidecarTruth.logProfile || sonySidecarTruth.colorPrimaries || sonySidecarTruth.transferFunction) sourceKinds.add('sony-sidecar-xml');
   if (sonySidecarTruth.hasGyroscope) sourceKinds.add('sony-sidecar-xml');
 
   const hasGyroflowProject = await hasGyroflowProjectForFile(filePath);
@@ -37,6 +41,8 @@ export async function extractColorSourceTruth(
   const gyro = (hasGyroflowProject || gyroDataAvailable === true) || undefined;
   return {
     logProfile,
+    colorPrimaries: sonySidecarTruth.colorPrimaries,
+    transferFunction: sonySidecarTruth.transferFunction,
     gyro,
     gyroDataAvailable,
     deviceFamilyKeys: [],
@@ -57,6 +63,8 @@ async function extractSonySidecarTruth(filePath: string): Promise<ISonySourceTru
   }
 
   return {
+    colorPrimaries: acquisitionItems.get('CaptureColorPrimaries'),
+    transferFunction: acquisitionItems.get('CaptureGammaEquation'),
     logProfile: normalizeColorSourceProfile(
       acquisitionItems.get('CaptureGammaEquation')
       ?? acquisitionItems.get('CodingEquations'),

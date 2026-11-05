@@ -1,3 +1,5 @@
+import { IColorAnalysisEvidence } from '../../protocol/schema.js';
+import { prepareAnalysisInputs } from './analysis-input.js';
 import { join } from 'node:path';
 import { access, mkdir, rm, stat } from 'node:fs/promises';
 import { freemem } from 'node:os';
@@ -236,15 +238,17 @@ export async function analyzeWorkspaceProjectMedia(
     })
     : undefined;
   const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
-  const [{ roots }, runtimeConfig, assets, existingReports, project, derivedTrack, projectBrief] = await Promise.all([
+  const [{ roots }, runtimeConfig, assets, project, derivedTrack, projectBrief] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
-    loadAssetReports(projectRoot),
     loadProject(projectRoot),
     loadProjectDerivedTrack(projectRoot),
     loadProjectBriefConfig(projectRoot),
   ]);
+  await prepareAnalysisInputs(input.workspaceRoot, projectRoot,
+    assets.filter(asset => asset.kind !== 'audio' && (!input.assetIds?.length || input.assetIds.includes(asset.id))), roots);
+  const existingReports = await loadAssetReports(projectRoot);
   const reverseGeocodeService = input.reverseGeocodeService
     ?? await createProjectReverseGeocodeService({
       projectRoot,
@@ -1581,7 +1585,7 @@ async function prepareAssetVisualCoarse(
     buildAssetTempDir(input.projectRoot, input.asset.id),
     sampleTimestamps,
     input.runtimeConfig,
-    { concurrencyOverride: 1 },
+    { concurrencyOverride: 1, lutPath: input.asset.analysisInput?.lutPath },
   );
   input.performance?.recordKeyframeExtract({
     asset: input.asset,
@@ -1625,6 +1629,7 @@ async function loadOrPrepareAssetVisualCoarse(
   await writePreparedAssetCheckpoint(input.projectRoot, {
     schemaVersion: 3,
     assetId: prepared.asset.id,
+    inputFingerprint: prepared.asset.analysisInput?.fingerprint,
     sourceFingerprint: {
       sizeBytes: sourceStat.size,
       mtimeMs: Math.round(sourceStat.mtimeMs),
@@ -1644,6 +1649,7 @@ async function loadPreparedAssetVisualCoarse(
 ): Promise<IPreparedAssetAnalysis | null> {
   const checkpoint = await loadPreparedAssetCheckpoint(input.projectRoot, input.asset.id, {
     sourcePath: input.localPath,
+    inputFingerprint: input.asset.analysisInput?.fingerprint,
     requireSampleFrames: true,
   });
   if (!checkpoint) return null;
@@ -1910,6 +1916,7 @@ async function finalizePreparedAsset(
     gpsSummary: primarySpatial.gpsSummary,
     inferredGps,
     summary: planning.visualSummary?.description,
+    colorEvidence: planning.visualSummary?.colorEvidence,
     asrRawText: audioContext.selectedTranscript?.rawText,
     alignedTokens: audioContext.selectedTranscript?.alignedTokens,
     transcriptSegmentation: audioContext.selectedTranscript?.segmentation,
@@ -2279,7 +2286,7 @@ async function inferUnifiedAnalysisDecision(input: {
         roundTripMs,
         timing: result.timing,
       });
-      const parsed = parseUnifiedFinalizeAnalysis(result.description);
+      const parsed = parseUnifiedFinalizeAnalysis(result.description, Boolean(input.prepared.asset.mediaVersions));
       latestCapturePath = await writeFinalizeAttemptCapture({
         captureRoot,
         asset: input.prepared.asset,
@@ -3119,7 +3126,18 @@ Return only a raw JSON object with:
     "mood": string,
     "place_hints": string[],
     "narrative_role": string,
-    "description": string
+    "description": string,
+    "colorEvidence": {
+      "timeOfDay": "day" | "night" | "twilight" | "unknown",
+      "visiblePresenter": boolean | null,
+      "windshieldCast": boolean | null,
+      "highContrast": boolean | null,
+      "veryDarkNoisy": boolean | null,
+      "overexposed": boolean | null,
+      "lightChange": boolean | null,
+      "flicker": "suspected" | "unknown",
+      "observation": string
+    }
   },
   "decision": {
     "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
@@ -3132,11 +3150,12 @@ Return only a raw JSON object with:
 
 Rules:
 - Use both the images and the textual signals below.
+- colorEvidence describes only visible facts in these normalized display frames. Use null/unknown when insufficient; do not guess from camera name, LOG profile or itinerary. visiblePresenter means a visible person addressing the camera, not any passerby or offscreen speech. windshieldCast requires visible windshield tint, not merely a road. veryDarkNoisy requires BOTH severe darkness AND visible noise. overexposed requires substantial visibly blown subject detail, not a small sun/lamp. highContrast covers backlit subjects and bright sky versus dark foreground. lightChange compares the sampled frames. Sparse images cannot confirm or exclude temporal flicker; use suspected only for visible banding, otherwise unknown. observation states the actual visual evidence concisely.
 - Final clip_type must be semantic, not just based on duration heuristics.
 - Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
 - If shot_count_known is false, treat shot_count as unavailable rather than evidence of zero cuts.
 - Manual itinerary and spatial hints are weak evidence: useful for place/route inference, but weaker than clear visual or speech contradictions.
-- If the frames clearly show sustained driving or road footage, prefer "drive" even when the heuristic clip type is "unknown".
+- Use "drive" only for a visibly ground-level vehicle-mounted viewpoint during travel. A road, moving cars or traffic as subjects alone do not imply drive. Elevated overhead/oblique terrain coverage from an airborne camera is "aerial", including flights following cars or roads. Resolve aerial versus drive from camera viewpoint before subjects; do not use camera filename alone.
 - Do not classify a clip as "timelapse" unless the frames themselves show strong timelapse evidence. Transcript mentions, tripod/static scenery, or source context alone are insufficient.
 - Use "drop" only for truly unusable dark / blank / corrupted visual material.
 - Photos and clearly atomic visual materials can use "direct" materialization.
@@ -3149,7 +3168,7 @@ Signals:
 ${signalPayload}`;
 }
 
-function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | null {
+function parseUnifiedFinalizeAnalysis(raw: string, requireColorEvidence = false): IUnifiedFinalizeAnalysis | null {
   const parsed = tryParseJsonObject(raw);
   if (!parsed || typeof parsed !== 'object') return null;
 
@@ -3175,6 +3194,8 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
     ? ((decisionNode as Record<string, unknown>)['decision_reasons'] as unknown[])
       .filter((value): value is string => typeof value === 'string')
     : [];
+  const colorEvidenceResult = IColorAnalysisEvidence.safeParse((visualNode as Record<string, unknown>)['colorEvidence']);
+  if (requireColorEvidence && !colorEvidenceResult.success) return null;
   const visualDescription = normalizePromptString((visualNode as Record<string, unknown>)['description']);
   if (!visualDescription) return null;
 
@@ -3186,6 +3207,7 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
       placeHints: normalizePromptStringArray((visualNode as Record<string, unknown>)['place_hints']),
       narrativeRole: normalizePromptString((visualNode as Record<string, unknown>)['narrative_role']) ?? 'unknown',
       description: visualDescription,
+      colorEvidence: colorEvidenceResult.success ? colorEvidenceResult.data : undefined,
       evidence: [],
     },
     decision: {
@@ -4370,7 +4392,7 @@ async function prefetchFineScanTask(input: {
       buildFineScanOutputDir(input.projectRoot, task.analysis.prepared.asset.id),
       checkpoint.timestampsMs,
       input.runtimeConfig,
-      { concurrencyOverride: 1 },
+      { concurrencyOverride: 1, lutPath: task.analysis.prepared.asset.analysisInput?.lutPath },
     ) ?? [];
     input.performance?.recordKeyframeExtract({
       asset: task.analysis.prepared.asset,
@@ -5492,7 +5514,7 @@ function dedupeByJson<T>(
 }
 
 function resolveAssetRootAvailable(root: IMediaRoot): boolean {
-  return Boolean(resolveMediaRoot(root).localPath);
+  return Boolean(resolveMediaRoot(root).localPath || resolveMediaRoot(root).rawLocalPath);
 }
 
 function dedupeStrings(values: Array<string | undefined>): string[] {

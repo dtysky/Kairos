@@ -52,7 +52,7 @@ Use [the edit tools contract](../../designs/resolve-edit-tools.md) and `scripts/
 
 ## Color Group Policy (2026-10-08)
 
-Automatic groups use only Log/profile and source orientation (`<logProfile> + horizontal / portrait / unknown-orientation`). Prepare does not classify scene color, white balance, lowlight, exposure, or windshield haze or extract frames for those decisions. Technical Group Pre-Clip LUTs and clip repair remain active. `sync_groups` mirrors actual Resolve groups; changing the policy does not migrate already graded projects or invalidate completed prepare chunks. Reassigning existing clips can change their Group Pre/Post-Clip grades and requires a separate scoped migration.
+New versioned prepare requires current Analyze colorEvidence. Deterministic scene-v1 categories produce real Resolve Groups; portrait is exclusive. Original LOG truth stays independent. The user replaced the initial Clip User1 LUT plan with RCM: explicit per-item input color space -> DWG/Intermediate -> Group Pre -> Gyro/Dehaze/User1/User2/NR -> Group Post -> Rec.709 Gamma 2.4. Read back project/timeline settings and MediaPoolItem Input Color Space. Do not auto-inject technical LUTs into RCM clip/group graphs. Preserve existing clip grades/node states. See `designs/resolve-rcm-scene-pipeline.md`. Old LOG/orientation groups require a separate scoped migration and must block ordinary scene prepare. Legacy sync remains read-only.
 
 ## Runtime And Import Bootstrap
 
@@ -210,6 +210,7 @@ Graph methods currently relevant to Kairos:
 Important graph constraints:
 
 - `SetLUT()` and `SetCDL()` node indexes are 1-based in Resolve v16.2.0+.
+- Live Resolve 21.1.2 verification on 2026-11-04 found that a `GetNodeGraph()` handle retained across `AddVersion()` / `LoadVersionByName()` can still write to the previously active local version. Acquire a fresh graph after every version change, then verify `GetCurrentVersion()` and read back the LUT from another freshly acquired graph. A successful setter call alone does not establish which version was changed; validate representative native motion renders as well.
 - `ApplyGradeFromDRX(path, gradeMode)` grade modes are: `0` no keyframes, `1` source-timecode aligned, `2` start-frames aligned.
 - `SetLUT()` succeeds only for LUT paths Resolve already knows; use `project.RefreshLUTList()` after copying LUTs.
 - The official docs expose `SetNodeEnabled()` but do not expose `GetNodeEnabled()`.
@@ -236,11 +237,18 @@ Kairos checked the local Gyroflow OpenFX bundle and upstream plugin source while
 - If a portrait DRT hash is missing or stale on an already prepared root, rerun the affected chunk and reset the stale portrait clip with `ResetAllGrades()` before reapplying the orientation DRT. Live testing showed a fresh single-clip timeline plus the same DRT path is clean, so stale old-clip OFX state must be cleared before DRT reapply.
 - Resolve scripting exposes timeline item transform keys such as `RotationAngle`, `ZoomX`, `ZoomY`, `ZoomGang`, `Pan`, and `Tilt`, but the documented API still does not expose generic Gyroflow OFX parameter setters. Do not replace orientation-specific DRTs with guessed OFX parameter writes.
 
+### RCM input management (live verified 2026-11-05, Resolve Studio 21.1.2.10)
+
+- Project settings: `colorScienceMode=davinciYRGBColorManagedv2`, `isAutoColorManage=0`, `rcmPresetMode=Custom`, `separateColorSpaceAndGamma=0`, `colorSpaceTimeline=DaVinci WG/Intermediate`, `colorSpaceOutput=Rec.709 Gamma 2.4`, `inputDRT=None`, `outputDRT=DaVinci`, `timelineWorkingLuminanceMode=HDR 1000`, `useColorSpaceAwareGradingTools=1`. Read back the final full state and effective timeline state; a successful setter alone is insufficient.
+- Verified combined `MediaPoolItem.SetClipProperty("Input Color Space", value)` strings are `S-Gamut3.Cine/S-Log3`, `DJI D-Gamut/D-Log`, and `Rec.709 (Scene)`. The Sony string has **no** `Sony ` prefix. In combined mode, `Input Gamma` may retain an unrelated value; verify the combined property instead.
+- Complete Sony CaptureColorPrimaries/CaptureGammaEquation wins over root fallback. Missing S-Log3 gamut, generic HLG, and D-Log M require an explicit supported input; never substitute DJI D-Log for D-Log M.
+- `Graph.SetNodeLabel()` is documented in the installed `.pyi`; `GetNodeEnabled()` is not. Do not invent a node-enable readback API or claim enabled-state validation from `SetNodeEnabled` alone.
+
 ### Color Groups
 
 - `colorGroup.GetName()` and `SetName(name)` manage group naming.
 - `colorGroup.GetClipsInTimeline(timeline)` returns clips in the group for a timeline.
-- `colorGroup.GetPreClipNodeGraph()` is Kairos' current technical transform bed.
+- `colorGroup.GetPreClipNodeGraph()` is the scene base-grade layer after RCM input normalization. RCM scene mode does not inject technical LUTs into group or clip graphs; legacy projects require an explicit migration.
 - `colorGroup.GetPostClipNodeGraph()` is Kairos' formal creative truth layer.
 
 ### Gallery And DRX

@@ -170,8 +170,81 @@ def append_script_api_paths():
             os.environ["PATH"] = text + os.pathsep + path_value
 
 
+SCENE_GROUP_NAMES = {
+    "portrait": "竖屏", "presenter": "出镜口播", "overexposed": "明显过曝", "dark-noisy": "大暗光高噪点",
+    "high-contrast": "大光比", "night": "夜景", "twilight": "清晨黄昏", "day-drive-cast": "白天行车偏色",
+    "day": "普通白天", "review": "待确认",
+}
+
+RCM_POLICY = "rcm-dwg-v1"
+RCM_SETTINGS = {
+    "colorScienceMode": "davinciYRGBColorManagedv2",
+    "isAutoColorManage": "0", "rcmPresetMode": "Custom", "separateColorSpaceAndGamma": "0",
+    "colorSpaceTimeline": "DaVinci WG/Intermediate", "colorSpaceOutput": "Rec.709 Gamma 2.4",
+    "inputDRT": "None", "outputDRT": "DaVinci", "timelineWorkingLuminanceMode": "HDR 1000",
+    "useColorSpaceAwareGradingTools": "1",
+}
+
+
+def ensure_project_rcm(project, initialize=False):
+    mismatches = {key: safe_call(project, "GetSetting", key) for key, value in RCM_SETTINGS.items()
+                  if safe_call(project, "GetSetting", key) != value}
+    if not mismatches:
+        return
+    media_pool = safe_call(project, "GetMediaPool")
+    root = safe_call(media_pool, "GetRootFolder")
+    has_media = bool(collect_namespace_state(root)["clipBySourcePath"]) if root else False
+    if not initialize or has_media or (parse_int(safe_call(project, "GetTimelineCount")) or 0):
+        raise HostError("resolve_rcm_migration_required", "RCM settings differ. Use a new color project or explicitly migrate existing grades; no automatic project-wide conversion.", mismatches)
+    for key, value in RCM_SETTINGS.items():
+        if safe_call(project, "SetSetting", key, value) is not True:
+            raise HostError("resolve_rcm_setting_failed", f"RCM setting rejected: {key}={value}")
+    # Some setters affect other settings. Validate the complete final state.
+    ensure_project_rcm(project)
+
+
+def verify_timeline_rcm(timeline):
+    for key in RCM_SETTINGS:
+        actual = safe_call(timeline, "GetSetting", key)
+        if actual != RCM_SETTINGS[key]:
+            raise HostError("resolve_rcm_timeline_mismatch", f"Timeline overrides RCM {key}: {actual}")
+
+
+def apply_rcm_input(media_item, request, write=False):
+    expected = request.get("inputColorSpace")
+    if not expected:
+        raise HostError("resolve_rcm_input_missing", f"Missing exact RCM input: {request['rawRelativePath']}")
+    input_lut = stringify_signal_value(safe_call(media_item, "GetClipProperty", "Input LUT"))
+    if input_lut and input_lut.lower() not in ("none", "no lut"):
+        raise HostError("resolve_rcm_input_lut_conflict", f"Media Pool Input LUT would duplicate RCM: {request['rawRelativePath']}")
+    actual = safe_call(media_item, "GetClipProperty", "Input Color Space")
+    if actual != expected and write:
+        if safe_call(media_item, "SetClipProperty", "Input Color Space", expected) is not True:
+            raise HostError("resolve_rcm_input_rejected", f"Resolve rejected input color space: {expected}")
+        actual = safe_call(media_item, "GetClipProperty", "Input Color Space")
+    if actual != expected:
+        raise HostError("resolve_rcm_input_mismatch", f"RCM input differs for {request['rawRelativePath']}: expected {expected}, actual {actual}")
+
+
+def verify_rcm_timeline_inputs(project, timeline, requests, raw_root):
+    rcm_requests = [request for request in requests if request.get("colorManagementPolicy") == RCM_POLICY]
+    if not rcm_requests:
+        return
+    ensure_project_rcm(project)
+    verify_timeline_rcm(timeline)
+    items = build_timeline_item_map(timeline, raw_root)
+    for request in rcm_requests:
+        item = items.get(request["rawRelativePath"])
+        if item is None:
+            raise HostError("resolve_rcm_clip_missing", f"RCM clip missing: {request['rawRelativePath']}")
+        apply_rcm_input(safe_call(item, "GetMediaPoolItem"), request)
+
+
 def prepare_root(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
+    clip_requests = normalize_clip_requests(payload.get("clips"))
+    if any(request.get("colorManagementPolicy") == RCM_POLICY for request in clip_requests):
+        ensure_project_rcm(project, initialize=True)
     apply_timeline_spec(project, payload.get("timelineSpec"))
     media_pool = require_method(project, "GetMediaPool")()
     media_storage = require_method(resolve, "GetMediaStorage")()
@@ -179,9 +252,18 @@ def prepare_root(resolve, payload):
     timeline = ensure_timeline(project, media_pool, payload["gradingTimelineName"])
     reset_timeline = payload.get("resetTimeline") is not False
     apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    if any(request.get("colorManagementPolicy") == RCM_POLICY for request in clip_requests):
+        verify_timeline_rcm(timeline)
     save_project(project, resolve)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
+    # Moving an old technical Group changes its grade. New scene mode never silently migrates it.
+    for request in clip_requests:
+        if not request.get("sceneCategory"):
+            continue
+        previous_group = previous_group_names_by_clip.get(request["rawRelativePath"])
+        if previous_group and previous_group not in SCENE_GROUP_NAMES.values():
+            raise HostError("resolve_scene_group_migration_required", f"Existing group requires a scoped migration; use a new color project: {previous_group}")
     repair_templates = get_repair_template_assets(payload)
     donor_timeline = None
     repair_template_timelines = {}
@@ -209,6 +291,9 @@ def prepare_root(resolve, payload):
             namespace_state,
             clip_requests,
         )
+        for entry in prepared_entries:
+            if entry.get("colorManagementPolicy") == RCM_POLICY:
+                apply_rcm_input(entry["mediaPoolItem"], entry, write=True)
         save_project(project, resolve)
         ordered_entries = sort_clip_entries(prepared_entries)
 
@@ -231,7 +316,8 @@ def prepare_root(resolve, payload):
         append_clips_to_timeline(project, media_pool, timeline, append_entries)
         save_project(project, resolve)
         timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
-        transform_summary = apply_clip_timeline_transforms(timeline_item_by_clip_key, clip_requests)
+        transform_requests = [request for request in clip_requests if not request.get("sceneCategory") or request["rawRelativePath"] not in existing_timeline_items_by_clip]
+        transform_summary = apply_clip_timeline_transforms(timeline_item_by_clip_key, transform_requests)
         save_project(project, resolve)
         group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
         group_transform_summaries = apply_group_preclip_transforms(project, group_states)
@@ -358,6 +444,7 @@ def preflight(resolve, payload):
 def sync_groups(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
     timeline = ensure_named_timeline(project, payload["gradingTimelineName"])
+    verify_rcm_timeline_inputs(project, timeline, normalize_clip_requests(payload.get("clips")), payload["rawLocalPath"])
     return build_groups_snapshot(
         payload["rootId"],
         timeline,
@@ -371,6 +458,7 @@ def sync_groups(resolve, payload):
 def execute_root(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
     timeline = ensure_named_timeline(project, payload["gradingTimelineName"])
+    verify_rcm_timeline_inputs(project, timeline, normalize_clip_requests(payload.get("clips")), payload["rawLocalPath"])
     require_method(project, "SetCurrentTimeline")(timeline)
 
     output_root = Path(payload["outputRoot"]).expanduser().resolve()
@@ -2756,6 +2844,13 @@ def sync_namespace_clips(
                 moved += 1
             else:
                 reused += 1
+        old_hash = clip_request.get("previousSourceContentHash")
+        new_hash = clip_request.get("sourceContentHash")
+        if old_hash and new_hash and old_hash != new_hash:
+            replaced = safe_call(media_pool_item, "ReplaceClip", source_path)
+            actual_path = normalize_filesystem_path(safe_call(media_pool_item, "GetClipProperty", "File Path"))
+            if replaced is not True or actual_path != source_path:
+                raise HostError("resolve_changed_source_refresh_failed", f"Could not refresh updated raw source: {source_path}")
         clip_by_source_path[source_path] = media_pool_item
         clip_folder_by_source_path[source_path] = target_folder
         clip_relative_dir_by_source_path[source_path] = normalize_portable_path(relative_dir)
@@ -3207,6 +3302,8 @@ def seed_clip_repairs(
             repair_template,
             repair_template_source_item,
         )
+        if donor_item is not None and clip_request.get("sceneCategory") and force_template_reseed:
+            raise HostError("resolve_scene_template_drift", "Existing scene grade needs an explicit portrait template migration; refusing to reset manual grades.")
         if (
             donor_item is not None
             and donor_item is not target_item
@@ -3221,7 +3318,7 @@ def seed_clip_repairs(
                     f"Unable to preserve existing clip repair grade for: {clip_key}",
             )
             copied_existing_grade = True
-            node_default_state = apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
+            node_default_state = {"enabled": [], "disabled": []} if clip_request.get("sceneCategory") else apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
         elif repair_template_source_item is not None:
@@ -3280,7 +3377,12 @@ def seed_clip_repairs(
                     }),
                 })
 
+        clip_transform_status = None
+        if clip_request.get("sceneCategory"):
+            clip_transform_status = apply_scene_clip_transform(target_item, clip_request, copied_existing_grade)
+
         repair_seed_state = {
+            "clipTransformStatus": clip_transform_status,
             "copiedExistingGrade": copied_existing_grade,
             "resetExistingGradeBeforeTemplate": reset_existing_grade_before_template,
             "rebuiltLegacyGrade": rebuilt_legacy_grade,
@@ -3318,6 +3420,39 @@ def seed_clip_repairs(
             },
         )
     return repair_seed_by_clip
+
+
+def apply_scene_clip_transform(item, request, preserve_existing):
+    if not clip_like_has_canonical_repair_layout(item):
+        raise HostError("resolve_scene_template_missing", "Scene grading requires the canonical five-node DRT template.")
+    graph = safe_call(item, "GetNodeGraph")
+    if request.get("colorManagementPolicy") == RCM_POLICY:
+        if request.get("resolvedLutRelativePath") or request.get("resolvedLutAbsolutePath"):
+            raise HostError("resolve_rcm_technical_lut_conflict", "RCM preparation must not inject a technical LUT into Clip nodes.")
+        apply_rcm_input(safe_call(item, "GetMediaPoolItem"), request)
+        return "rcm-input-managed"
+    relative_lut = request.get("resolvedLutRelativePath")
+    absolute_lut = request.get("resolvedLutAbsolutePath")
+    current_lut = stringify_signal_value(safe_call(graph, "GetLUT", 3))
+    if not relative_lut:
+        if request.get("effectiveProfile") != "rec709":
+            raise HostError("resolve_scene_transform_unknown", f"Raw input has no verified technical LUT: {request['rawRelativePath']}")
+        if current_lut:
+            raise HostError("resolve_scene_rec709_lut_present", "Rec.709 clip has an existing User1 LUT; review it explicitly.")
+        return "rec709-bypass"
+    if lut_matches(current_lut, relative_lut, absolute_lut):
+        return "already-applied"
+    if preserve_existing:
+        raise HostError("resolve_scene_transform_changed", "Preserved User1 LUT differs from current technical input; review without overwriting the grade.")
+    for candidate in (relative_lut, absolute_lut):
+        if not candidate:
+            continue
+        safe_call(graph, "SetLUT", 3, candidate)
+        # Reacquire the graph after mutation, then prove the actual LUT is installed.
+        graph = safe_call(item, "GetNodeGraph")
+        if lut_matches(stringify_signal_value(safe_call(graph, "GetLUT", 3)), relative_lut, absolute_lut):
+            return "applied-user1"
+    raise HostError("resolve_scene_lut_not_visible", f"User1 LUT could not be verified: {relative_lut}")
 
 
 def apply_repair_drx(item, repair_drx_path, clip_key):
@@ -3461,6 +3596,13 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         )
     snapshot = {
         "clipKey": clip_request["rawRelativePath"],
+        "sceneCategory": clip_request.get("sceneCategory"),
+        "colorManagementPolicy": clip_request.get("colorManagementPolicy"),
+        "inputColorSpace": clip_request.get("inputColorSpace"),
+        "inputColorSource": clip_request.get("inputColorSource"),
+        "sourceContentHash": clip_request.get("sourceContentHash"),
+        "analysisInputFingerprint": clip_request.get("analysisInputFingerprint"),
+        "classificationFingerprint": clip_request.get("classificationFingerprint"),
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
         "logProfile": normalize_log_profile(clip_request.get("logProfile")) or "unknown",
         "encodedWidth": parse_int(clip_request.get("encodedWidth") or clip_request.get("width")),
@@ -3506,6 +3648,8 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         },
     }
     for optional_key in (
+        "sceneCategory", "sourceContentHash", "analysisInputFingerprint", "classificationFingerprint",
+        "colorManagementPolicy", "inputColorSpace", "inputColorSource",
         "gyroDataAvailable",
         "encodedWidth",
         "encodedHeight",
@@ -3855,7 +3999,8 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
             if current_group:
                 safe_call(timeline_item, "RemoveFromColorGroup")
             result = safe_call(timeline_item, "AssignToColorGroup", color_group)
-            if result is False:
+            assigned_group = safe_call(timeline_item, "GetColorGroup")
+            if result is False or (entry.get("sceneCategory") and safe_call(assigned_group, "GetName") != desired_group_name):
                 raise HostError(
                     "resolve_color_group_assign_failed",
                     f"Unable to assign clip to Resolve group: {entry['rawRelativePath']}",
@@ -3943,7 +4088,8 @@ def build_groups_snapshot(
         log_profile = summarize_group_log_profile(entry["clipRequests"])
         orientation_status = summarize_group_orientation(entry["clipSnapshots"])
         post_clip_creative_status = inspect_group_post_clip_creative_status(entry.get("colorGroup"))
-        summary = build_group_creative_summary(log_profile, orientation_status)
+        categories = dedupe_strings([request.get("sceneCategory") for request in entry["clipRequests"]])
+        summary = {"creativeTags": categories} if categories else build_group_creative_summary(log_profile, orientation_status)
         transform_summary = {
             **build_group_transform_summary(entry["clipRequests"]),
             **((group_transform_summaries or {}).get(display_name) or {}),
@@ -3984,7 +4130,10 @@ def build_groups_snapshot(
 
 
 def build_clip_creative_summary(clip_request):
-    # Visual diagnoses from historical requests must never affect automatic groups.
+    category = clip_request.get("sceneCategory")
+    if category in SCENE_GROUP_NAMES:
+        return {"creativeTags": [category], "displayName": SCENE_GROUP_NAMES[category]}
+    # Legacy sync remains readable; only versioned Analyze evidence enables the new policy.
     summary = build_group_creative_summary(
         normalize_log_profile(clip_request.get("logProfile")),
         stringify_signal_value(clip_request.get("orientationStatus")),
@@ -4061,6 +4210,15 @@ def apply_group_preclip_transforms(project, group_states):
                 "transformStatus": "blocked-group-missing",
                 "detail": f"Resolve ColorGroup 不存在：{group_name}",
             }
+            continue
+        if all(entry.get("colorManagementPolicy") == RCM_POLICY for entry in state.get("entries", [])):
+            summaries[group_name] = {**summary, "transformStatus": "rcm-input-managed", "detail": "RCM 在 Group Pre 之前统一输入；组前/组后及 User1/User2 保留调色。"}
+            continue
+        if all(entry.get("sceneCategory") in SCENE_GROUP_NAMES for entry in state.get("entries", [])):
+            preclip = safe_call(color_group, "GetPreClipNodeGraph")
+            if collect_graph_luts(preclip):
+                raise HostError("resolve_scene_group_has_lut", f"Scene Group already contains a technical LUT: {group_name}")
+            summaries[group_name] = {**summary, "transformStatus": "per-clip-user1", "detail": "技术 LUT 逐片位于 User1；Group 按视觉主类组织。"}
             continue
         relative_lut_path = summary.get("resolvedLutRelativePath")
         absolute_lut_path = summary.get("resolvedLutAbsolutePath")
@@ -4212,8 +4370,10 @@ def normalize_log_profile(value):
     lowered = normalized.strip().lower()
     if "s-log3" in lowered or "slog3" in lowered:
         return "slog3"
-    if "d-log" in lowered or "dlog" in lowered:
+    if "d-log-m" in lowered or "dlog-m" in lowered or "d-log m" in lowered:
         return "dlog-m"
+    if "d-log" in lowered or "dlog" in lowered:
+        return "dlog"
     if lowered == "hlg" or " hlg" in lowered or lowered.startswith("hlg"):
         return "hlg"
     if "rec709" in lowered or "rec 709" in lowered or "rec-709" in lowered:
@@ -4802,6 +4962,15 @@ def normalize_clip_requests(clips):
             "rawRelativePath": raw_relative_path,
             "sourceAbsolutePath": source_absolute_path,
             "sourceStem": stringify_signal_value(clip.get("sourceStem")) or Path(raw_relative_path).stem,
+            "sceneCategory": clip.get("sceneCategory") if clip.get("sceneCategory") in SCENE_GROUP_NAMES else None,
+            "analysisInputFingerprint": stringify_signal_value(clip.get("analysisInputFingerprint")),
+            "sourceContentHash": stringify_signal_value(clip.get("sourceContentHash")),
+            "previousSourceContentHash": stringify_signal_value(clip.get("previousSourceContentHash")),
+            "classificationFingerprint": stringify_signal_value(clip.get("classificationFingerprint")),
+            "colorManagementPolicy": clip.get("colorManagementPolicy") if clip.get("colorManagementPolicy") == RCM_POLICY else None,
+            "inputColorSpace": stringify_signal_value(clip.get("inputColorSpace")),
+            "inputColorSource": stringify_signal_value(clip.get("inputColorSource")),
+
             "capturedAt": stringify_signal_value(clip.get("capturedAt")),
             "width": parse_int(clip.get("width")),
             "height": parse_int(clip.get("height")),

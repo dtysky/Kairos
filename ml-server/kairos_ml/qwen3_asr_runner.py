@@ -122,13 +122,15 @@ def _align_segments(aligner: Any, wav_path: Path, segments: list[dict], language
                 getattr(item, "start_time", 0.0),
                 getattr(item, "end_time", 0.0),
             )
-            if item_text and item_end > item_start:
+            # Keep authoritative zero-duration characters, matching the CUDA path.
+            # Dropping weak characters breaks full ASR coverage on long speech.
+            if item_text and item_end >= item_start:
                 words.append({
                     "start": start + item_start,
                     "end": start + item_end,
                     "text": item_text,
                 })
-    if any(_normalize_text(segment.get("text") or "") for segment in segments) and not words:
+    if any(_normalize_text(segment.get("text") or "") for segment in segments) and not any(word["end"] > word["start"] for word in words):
         raise RuntimeError("Qwen3 ForcedAligner returned no word timestamps")
     return words
 

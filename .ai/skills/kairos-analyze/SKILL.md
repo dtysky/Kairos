@@ -10,6 +10,8 @@ description: >-
 
 # Kairos: Phase 2 — Analyze
 
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+
 这条 skill 负责 **剪辑素材分析**，不是风格分析。
 
 它的目标是：

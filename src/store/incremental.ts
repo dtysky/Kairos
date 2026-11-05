@@ -1,3 +1,4 @@
+import { materialVersionKey } from '../protocol/media-version-key.js';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
@@ -183,9 +184,9 @@ function normalizeLegacyMaterialPatterns(value: unknown): string[] {
 }
 
 export function buildAssetMergeKey(
-  asset: Pick<IKtepAsset, 'ingestRootId' | 'sourcePath'>,
+  asset: Pick<IKtepAsset, 'ingestRootId' | 'sourcePath'> & Partial<Pick<IKtepAsset, 'kind'>>,
 ): string {
-  return `${asset.ingestRootId ?? ''}:${asset.sourcePath}`;
+  return `${asset.ingestRootId ?? ''}:${asset.kind ? materialVersionKey(asset.kind, asset.sourcePath) : asset.sourcePath}`;
 }
 
 /**

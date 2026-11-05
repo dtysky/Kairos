@@ -1,8 +1,10 @@
 # Kairos
 
+The production media pipeline is now **Ingest raw/target versions → Analyze → RCM input transforms / scene Groups → target refresh**. See [the versioned pipeline contract](designs/media-version-analysis-color-pipeline.md). New Analyze inputs prefer target per material, with raw + appropriate LUT as fallback; byte fingerprints drive incremental reuse.
+
 字幕配音插件 0.3.3 默认启用 **Align to subtitles**：整组合成一次，再按字词时间戳分句放回各条原字幕起点；完整插入，超出字幕结束只提示，异常逐句显示，重复执行复用缓存并跳过已插入片段。使用方式与校验边界见 [字幕配音分句对齐](designs/resolve-voiceover-alignment.md)。
 
-Resolve 21.1.2 适配：已接入原生粗剪恒速变速、版本能力检查、时间线选区、指定帧预览及明确目标的视频淡入淡出／转场／属性复制。入口与字幕 API 实测边界见 [Resolve edit tools](designs/resolve-edit-tools.md)。音频和调色流程保留现状。
+Resolve 21.1.2 适配：已接入原生粗剪恒速变速、版本能力检查、时间线选区、指定帧预览及明确目标的视频淡入淡出／转场／属性复制。入口与字幕 API 实测边界见 [Resolve edit tools](designs/resolve-edit-tools.md)。该次适配限于剪辑 API；当前调色管线见上文。
 
 
 `/edit` 的工程备份区分别显示最近一次备份尝试和最后成功快照。手动、自动保存及外部登记失败都会保留工程级记录，刷新或状态轮询不会清掉失败；可按原保留策略重试。备份只打开已有 Resolve 工程，保存/导出失败或 DRP 完整性校验失败时保留原 latest。
@@ -30,15 +32,15 @@ Kairos currently runs as a `Node.js core + Agent skills` workflow around a forma
 Current stable pipeline:
 
 - `Pharos -> ingest -> analyze -> chronology -> edit-flow -> export`
-- `Pharos` 的正式输入位置已收口到项目内固定目录 `projects/<projectId>/pharos/<trip_id>/`
+- `Pharos` 可通过 `project-brief.json.pharos.sourcePath` 直接关联已有工程（单 Trip 或 Trip 集合目录）；留空沿用项目内 `projects/<projectId>/pharos/<trip_id>/`
   - 每个 trip 子目录当前消费 `plan.json`，可选消费 `record.json` 与 `gpx/*.gpx`
   - `record-import.json` 是 Pharos → Pyxis 的一次性导入信封，不属于 Kairos 输入；只有合并后的 canonical `record.json` 才能被镜像和解析
   - `trip_kind: "freeform"` 是弹性行程：`days[]` 可稀疏或为空，未排期 route/shot options 只是备选；Kairos 只消费已排期 shots 与 canonical record 的执行事实
   - 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也会补齐缺失目录
-  - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
-  - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
+  - `project-brief.md` 的 `## Pharos` 镜像 `工程目录：...` 与 `包含 Trip：...`；源目录只读，GPS、记录和已发布研究可复用
+  - `/ingest-gps` 可编辑关联目录并显示实际解析路径；直接关联无需复制，旧项目仍可使用本地镜像
   - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`
-  - `Pharos` context 的刷新归属于 Ingest / GPS 刷新；`analysis/pharos-context.json` 会按项目内 `pharos/` 输入 fingerprint 自动失效并重建，Analyze 只消费已刷新的 context
+  - `Pharos` context 的刷新归属于 Ingest / GPS 刷新；`analysis/pharos-context.json` 会按实际关联目录及 canonical 文件输入 fingerprint 自动失效并重建，Analyze 只消费已刷新的 context
   - planned shot 的素材归属只按 `record.json` 的 `actual_time` 匹配；没有可用 actual time 时不回退到 `plan` 的 planned time segment
   - Pharos/Pyxis 对普通事件完成时间增加写入前过长二次确认；这是上游 UI 防误保护，不改变 `record.json` schema，也不改变 Kairos 的素材归属逻辑
   - Pyxis 非旅行期省电门控只影响移动端 GPS、GPX、语音和 BLE 自动启动；不新增 WebDAV/JSON 协议字段，也不改变 Kairos 对 `plan.json / record.json / gpx/` 的只读消费
@@ -134,8 +136,8 @@ Current stable pipeline:
     - `prepare_all_roots`
     - `export_all_roots`
   - current `/color` media relink is a separate same-machine maintenance action for the existing `${projectBrief.name} [Color]` Resolve project: it maps each color root's configured raw path candidates to the current readable `rawLocalPath`, calls Resolve `RelinkClips` inside that root namespace, verifies the root grading timeline, saves the Resolve project, and reports relinked / missing-target / unmapped / unreadable / skipped non-file counts. It does not import clips, rebuild timelines, change clip repair graphs, change Group grades, export DRPs, or require the current output `localPath` to be mounted.
-  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins through stable chunks, appends every chunk into the single root grading timeline with the root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, creates or reuses Resolve Groups from Log/profile and source orientation, and normalizes clip repair graphs to the canonical fixed layout
-  - automatic `/color` grouping uses only `logProfile × orientationStatus`, with names such as `slog3 + horizontal` and `slog3 + portrait`; missing orientation uses `unknown-orientation`. Prepare no longer runs color-cast/white-balance, lowlight, exposure, or windshield-haze detection or their frame extraction.
+  - current `prepare_root` validates current Analyze evidence and mirrors the selected `rawLocalPath` clips into root bins through stable chunks. Scene preparation appends missing clips to one root grading timeline, preserves existing items and grades, uses the canonical five-node template, and verifies each RCM input assignment and the effective DWG/Intermediate timeline. RCM scene preparation does not install technical LUTs; legacy LUT preparation retains copy-missing/conflict guards.
+  - automatic `/color` grouping uses deterministic `scene-v1` visual categories with portrait exclusive. LOG/profile stays per clip and does not multiply the scene Groups. Prepare does not run independent frame classifiers; missing/current-input-mismatched Analyze evidence blocks preparation. Export verifies the prepared source, analysis and technical-transform fingerprints before rendering.
   - current large-root prepare is chunked by default: Kairos processes raw videos in stable 50-clip chunks, limits local probe/source-truth concurrency, records chunk progress in `color/current.json`, and can resume after interruption without redoing completed chunks; Resolve must still have one grading timeline per root, with Groups carrying the creative subdivision
   - current automatic DRP export happens once after a root `prepare_root` finishes all chunks; intermediate chunk imports only call `SaveProject()`, and the automatic export defaults to `latest-only` so it overwrites the current latest DRP without adding a timestamped archive. Manual DRP saving exposes two explicit modes: `覆盖最新` (`latest-only`) and `归档快照` (`archive`); archive mode also refreshes latest. External `.drp` registration remains an archive-style registration that refreshes latest.
   - current project-level `/color` orchestration is deterministic and agent-free:
@@ -151,22 +153,22 @@ Current stable pipeline:
     - Resolve Project: `${projectBrief.name} [Color]`
     - root namespace / grading timeline: derived from root `label`
   - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
-  - current automatic Groups use Log/profile and source orientation only:
+  - current automatic Groups use current versioned Analyze evidence:
     - `log`: explicit sidecar truth first, then root `color.colorSpaceProfile`.
     - `orientationStatus`: probe display dimensions and rotation metadata, mapped to `horizontal / portrait / unknown-orientation`.
-    - historical visual-classification fields remain readable but do not drive new grouping or appear as current Console diagnoses.
+    - new colorEvidence fields drive deterministic scene-v1 grouping; legacy ad-hoc classifiers remain disabled.
     - updating code does not regroup existing Resolve projects or invalidate completed prepare chunks; `sync_groups` reads actual Resolve groups. Migrating previously graded groups requires a separate explicit operation.
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
   - current `prepare_root` must also ensure the canonical clip repair layout:
     - repair preservation still uses official Resolve `CopyGrades` first when the same clip already has a canonical repair graph
     - every executable video clip must end up as `Gyro -> Dehaze -> User1 -> User2 -> NR`
-    - `Gyro` is always reserved at node 1; every `prepare_root` reasserts node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load`, while `gyroEligible=false` requests disabled / `seeded-disabled`
+    - `Gyro` is always reserved at node 1; new clips initialize node 1; scene-v1 reruns preserve existing node states, while legacy mode reasserts node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load`, while `gyroEligible=false` requests disabled / `seeded-disabled`
     - `ready-to-load` means the Gyroflow OFX shell is present and Kairos requested the correct node enabled state; it is not proof that Gyroflow's source-specific `Load for current file` button has run
     - `Dehaze` is always reserved at node 2 and defaults disabled
-    - `User1 / User2` are the minimum user zone and default enabled; users may extend the user zone only between `Dehaze` and the `NR` tail
+    - `User1` and `User2` remain enabled manual zones; RCM normalizes inputs before Group Pre; users may extend the user zone only between `Dehaze` and the `NR` tail
     - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled in Resolve
-    - Dehaze and NR remain manually controlled in Resolve; legacy visual labels do not drive repair or grouping.
+    - Dehaze and NR remain manually controlled; structured current Analyze evidence drives grouping, never guessed OFX parameters.
     - `gyroEligible` is computed from explicit declarations only: same-name `.gyroflow` projects or a Sony XML sidecar declaring Gyroscope enable Gyro, without a camera-model allowlist. `gyroDataAvailable` records an explicit motion-data declaration independently from eligibility; missing evidence stays unknown, and a project file alone does not prove motion samples are available. Kairos does not deep-scan embedded private telemetry during prepare, and DJI `dvtm_*` telemetry must not be scanned, used to enable Gyro, or used to guess log profile
     - ZV-E1 / Sony portrait clips may still use Gyro. Source orientation selects the existing portrait DRT filename (`rotation=90` uses `gyroflow-portrait--90.drt`; `rotation=-90/270` uses `gyroflow-portrait-90.drt`), but both templates now store Gyroflow `InputRotation=0 / Rotation=0`; the filename angles are compatibility labels only. Missing portrait templates still disable automatic Gyro seeding and mark `pending-orientation-template`
     - portrait timeline transforms use `RotationAngle=0`: Kairos no longer adds either of the two ±90° rotations that caused abnormal stabilization in the user's 2026-10-08 test. Existing fill zoom and framing calculations remain unchanged, including `1.7778` for 3840x2160 sources displayed as portrait; updating code/templates does not rerun or overwrite an existing Resolve project
@@ -174,7 +176,7 @@ Current stable pipeline:
     - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drt` when present; if the default DRT is missing, bulk prepare blocks default / horizontal / unknown-direction clips before Resolve mutation instead of falling back to DRX or writing a ready one-node graph
     - `config/default.drt` is the only formal automatic repair seed source for bulk prepare because the older clean DRT donor path has been live-verified to trigger Gyroflow source loading; the repo no longer carries `config/default.drx`, and DRX is only an explicit external/manual diagnostic path that must not be used as a large-batch fallback
   - current `sync_groups` mirrors both group creative state and clip repair state:
-    - group-level truth includes `logProfile`, `orientationStatus`, and `postClipCreativeStatus`
+    - groups carry visual names and `postClipCreativeStatus`; each clip carries `sceneCategory` and prepared source/analysis/classification fingerprints. Group `logProfile` and `orientationStatus` remain compatibility summaries, not scene classification inputs
     - clip-level truth includes review signals plus `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, `layoutStatus`, orientation metadata, repair template key, and applied timeline transform
   - current automatic technical transform resolution follows:
     - clip truth priority is `explicit sidecar > root.color.colorSpaceProfile fallback`

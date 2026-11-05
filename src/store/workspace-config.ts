@@ -94,6 +94,7 @@ const ILegacyProjectBriefMappingConfig = z.object({
       bitrateKbps: z.number().positive().optional(),
     }).optional(),
     colorSpaceProfile: z.string().optional(),
+    inputColorSpace: z.string().optional(),
     transformPresetKey: z.string().optional(),
   }).optional(),
 });
@@ -126,6 +127,7 @@ const ILegacyProjectBriefConfig = z.object({
     description: z.string().optional(),
   }).optional(),
   pharos: z.object({
+    sourcePath: z.string().optional(),
     includedTripIds: z.array(z.string()).optional(),
   }).optional(),
   materialPatternPhrases: z.array(z.string()).optional(),

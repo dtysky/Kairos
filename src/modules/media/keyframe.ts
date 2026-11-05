@@ -17,6 +17,7 @@ export interface IKeyframeResult {
 
 export interface IExtractKeyframesOptions {
   concurrencyOverride?: number;
+  lutPath?: string;
   onProgress?: (progress: IKeyframeExtractProgress) => Promise<void> | void;
 }
 
@@ -107,7 +108,7 @@ export async function extractKeyframes(
   await mkdir(outputDir, { recursive: true });
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
-  const vf = buildAnalysisProxyFilter(tools);
+  const vf = buildAnalysisProxyFilter(tools, options?.lutPath);
   const sourceMtimeMs = await resolveSourceMtimeMs(filePath);
   const concurrency = resolveKeyframeExtractConcurrency(
     timestampsMs.length,
@@ -251,13 +252,15 @@ function resolveKeyframeExtractConcurrency(
   return Math.min(taskCount, Math.max(1, Math.min(CMAX_KEYFRAME_EXTRACT_CONCURRENCY, preferred)));
 }
 
-function buildAnalysisProxyFilter(tools?: IMediaToolConfig): string {
+export function buildAnalysisProxyFilter(tools?: IMediaToolConfig, lutPath?: string): string {
   const analysisWidth = tools?.analysisProxyWidth && tools.analysisProxyWidth > 0
     ? Math.round(tools.analysisProxyWidth)
     : 1024;
   const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || 'yuv420p';
 
+  const escapedLutPath = lutPath?.replace(/\\/g, '/').replace(/[:'\\]/g, character => `\\${character}`);
   return [
+    ...(escapedLutPath ? [`lut3d=file='${escapedLutPath}'`] : []),
     `scale=w='min(iw,${analysisWidth})':h=-2:flags=fast_bilinear`,
     `format=pix_fmts=${pixelFormat}`,
   ].join(',');

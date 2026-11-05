@@ -1,3 +1,4 @@
+import { bindColorAnalysis, type IAnalyzedColorSource } from './analysis-classification.js';
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { copyFile, mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises';
@@ -66,6 +67,7 @@ import {
   resolveClipTransformSeeds,
   resolveEffectiveColorProfile,
   syncReferencedResolveLuts,
+  detectResolveDefaultLutRoot,
   type IResolveLutSyncSummary,
 } from './transform-presets.js';
 import {
@@ -1176,7 +1178,16 @@ export async function prepareProjectColorRoot(
       rootId: input.rootId,
     },
   });
-  const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
+  const scannedInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
+  const requestedKeys = new Set((input.clipKeys ?? []).map(normalizePortablePath));
+  const unknownKeys = [...requestedKeys].filter(key => !scannedInventory.some(item => item.rawRelativePath === key));
+  if (unknownKeys.length) throw new ColorPrepBlockedError(unknownKeys.map(key => `prepare_root clip 不存在：${key}`));
+  const rawInventory = await bindColorAnalysis(context.projectRoot, context.rootId,
+    requestedKeys.size ? scannedInventory.filter(item => requestedKeys.has(item.rawRelativePath)) : scannedInventory);
+  const scopePrefix = requestedKeys.size ? `scope-${hashString([...requestedKeys].sort().join('\n')).slice(0, 12)}-` : '';
+  const mergeScopedChunks = (previous: IColorPrepareChunk[], incoming: IColorPrepareChunk[]): IColorPrepareChunk[] => scopePrefix
+    ? [...previous.filter(chunk => !incoming.some(next => next.chunkId === chunk.chunkId)), ...incoming]
+    : incoming;
   const existingRootCurrent = context.colorCurrent.roots.find(root => root.rootId === context.rootId);
   const previousClipSnapshots = buildColorClipRepairSnapshotIndex(context.groupsSnapshot);
   const repairTemplateHashes = await buildColorRepairTemplateHashes(context.workspaceRoot);
@@ -1184,7 +1195,7 @@ export async function prepareProjectColorRoot(
     rawInventory,
     context.rootSummary.gradingTimelineName,
     existingRootCurrent?.prepareChunks ?? [],
-  ).map(chunk => refreshPrepareChunkForRepairTemplateDrift(chunk, previousClipSnapshots, repairTemplateHashes));
+  ).map(chunk => refreshPrepareChunkForRepairTemplateDrift({ ...chunk, chunkId: scopePrefix + chunk.chunkId }, previousClipSnapshots, repairTemplateHashes));
   if (chunks.length === 0) {
     const emptyBlockers = ['当前 root 没有可准备的 raw 视频。'];
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
@@ -1211,12 +1222,12 @@ export async function prepareProjectColorRoot(
       activeStage: undefined,
       currentJobId: undefined,
       detail,
-      prepareChunks: chunks.map(chunk => ({
+      prepareChunks: mergeScopedChunks(current.prepareChunks ?? [], chunks.map(chunk => ({
         ...materializePrepareChunkForCurrent(chunk, current.prepareChunks ?? []),
         status: 'failed' as const,
         completedAt: undefined,
         detail,
-      })),
+      }))),
       blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...missingDefaultTemplateBlockers]),
     }));
     await writeProgress(progressPath, action, {
@@ -1240,7 +1251,7 @@ export async function prepareProjectColorRoot(
     activeStage: 'sync_root_bins',
     currentJobId: input.jobId,
     detail: `正在按 ${chunks.length} 个 chunks 准备 Resolve root。`,
-    prepareChunks: chunks.map(chunk => materializePrepareChunkForCurrent(chunk, current.prepareChunks ?? [])),
+    prepareChunks: mergeScopedChunks(current.prepareChunks ?? [], chunks.map(chunk => materializePrepareChunkForCurrent(chunk, current.prepareChunks ?? []))),
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeProgress(progressPath, action, {
@@ -1314,7 +1325,7 @@ export async function prepareProjectColorRoot(
         context.rootSummary.colorSpaceProfile,
       );
       const executorClipsWithPreviousRepair = applyPreviousColorRepairSnapshots(
-        executorClips,
+        executorClips.map(clip => ({ ...clip, previousSourceContentHash: previousClipSnapshots.get(clip.rawRelativePath)?.sourceContentHash })),
         previousClipSnapshots,
       );
       const timelineSpec = selectDominantTimelineSpec(executorClipsWithPreviousRepair);
@@ -1327,7 +1338,7 @@ export async function prepareProjectColorRoot(
         preparedClipTransforms.clips,
         repairTemplateHashes,
       ));
-      const resetTimeline = shouldResetColorPrepareTimeline(chunks, chunk);
+      const resetTimeline = chunk.items.some(item => item.analysisInputFingerprint) ? false : shouldResetColorPrepareTimeline(chunks, chunk);
       const prepared = await runColorHostWithRetry(
         () => executor.prepareRoot({
           projectId: input.projectId,
@@ -1729,6 +1740,31 @@ export async function executeProjectColorRoot(
     throw new ProjectColorBlockedError(emptyBlockers);
   }
 
+  // Legacy technical-group projects keep their existing export path. Scene-group
+  // projects must prove that the prepared raw/analysis/technical inputs still match.
+  const preparedSnapshot = await loadColorGroupsSnapshot(context.projectRoot, context.rootId);
+  const preparedByKey = new Map((preparedSnapshot?.groups ?? []).flatMap(group => group.clips ?? [])
+    .map(clip => [clip.clipKey, clip]));
+  if ([...preparedByKey.values()].some(clip => clip.sceneCategory)) {
+    try {
+      const currentClips = await bindColorAnalysis(context.projectRoot, context.rootId,
+        effectiveClipKeys.map(key => inventoryByKey.get(key)!));
+      const staleClips = currentClips.filter(clip => {
+        const prepared = preparedByKey.get(clip.rawRelativePath);
+        return !prepared?.classificationFingerprint || !clip.classificationFingerprint
+          || prepared.classificationFingerprint !== clip.classificationFingerprint
+          || prepared.sourceContentHash !== clip.sourceContentHash
+          || prepared.analysisInputFingerprint !== clip.analysisInputFingerprint;
+      });
+      if (staleClips.length) throw new Error(`调色准备已过期，请先重新 prepare_root：${staleClips.map(clip => clip.rawRelativePath).join('、')}`);
+    } catch (error) {
+      const inputBlockers = [error instanceof Error ? error.message : String(error)];
+      await failColorAction(context.projectRoot, context.rootId, progressPath, action, inputBlockers,
+        { projectId: input.projectId, rootId }, { suppressProgress: input.suppressProgress });
+      throw new ProjectColorBlockedError(inputBlockers);
+    }
+  }
+
   const batchId = randomUUID();
   const outputRoot = overwritePreview.outputRoot ?? resolve(context.rootSummary.localPath ?? '');
   await mkdir(outputRoot, { recursive: true });
@@ -1828,6 +1864,8 @@ export async function executeProjectColorRoot(
         outputRoot,
         selectionMode: plan.selectionMode,
         clips: planEntries.map(entry => ({
+          colorManagementPolicy: preparedByKey.get(entry.rawRelativePath)?.colorManagementPolicy,
+          inputColorSpace: preparedByKey.get(entry.rawRelativePath)?.inputColorSpace,
           rawRelativePath: entry.rawRelativePath,
           sourceAbsolutePath: entry.sourceAbsolutePath,
           sourceStem: entry.sourceStem ?? deriveSourceStem(entry.rawRelativePath),
@@ -3146,10 +3184,7 @@ function filterPersistentColorBlockers(blockers: string[]): string[] {
   ));
 }
 
-interface IColorRawInventoryItem {
-  rawRelativePath: string;
-  sourceAbsolutePath: string;
-}
+interface IColorRawInventoryItem extends IAnalyzedColorSource {}
 
 interface IColorPrepareChunkPlan extends IColorPrepareChunk {
   items: IColorRawInventoryItem[];
@@ -3426,6 +3461,7 @@ async function buildColorExecutorClipsForInventory(
       );
       const orientation = resolveColorClipOrientation(probed);
       return {
+        ...item,
         rawRelativePath: item.rawRelativePath,
         sourceAbsolutePath: item.sourceAbsolutePath,
         sourceStem: deriveSourceStem(item.rawRelativePath),
@@ -3463,9 +3499,19 @@ function buildColorSyncExecutorClipsForInventory(
     const previous = previousClipSnapshots.get(item.rawRelativePath);
     const repairTemplateKey = resolveColorRepairTemplateKeyFromSnapshot(previous);
     return {
+      ...item,
       rawRelativePath: item.rawRelativePath,
       sourceAbsolutePath: item.sourceAbsolutePath,
       sourceStem: deriveSourceStem(item.rawRelativePath),
+      sceneCategory: item.sceneCategory ?? previous?.sceneCategory,
+      colorManagementPolicy: item.colorManagementPolicy ?? previous?.colorManagementPolicy,
+      inputColorSpace: item.inputColorSpace ?? previous?.inputColorSpace,
+      inputColorSource: item.inputColorSource ?? previous?.inputColorSource,
+      analysisInputFingerprint: item.analysisInputFingerprint ?? previous?.analysisInputFingerprint,
+      classificationFingerprint: item.classificationFingerprint ?? previous?.classificationFingerprint,
+      sourceContentHash: item.sourceContentHash ?? previous?.sourceContentHash,
+      previousSourceContentHash: previous?.sourceContentHash,
+      effectiveProfile: previous?.logProfile,
       encodedWidth: previous?.encodedWidth,
       encodedHeight: previous?.encodedHeight,
       displayWidth: previous?.displayWidth,
@@ -3739,7 +3785,7 @@ function buildColorPrepareChunks(
   );
   return chunks.map((items, index) => {
     const rawRelativePaths = items.map(item => item.rawRelativePath);
-    const fingerprint = hashString(rawRelativePaths.join('\n'));
+    const fingerprint = hashString(items.map(item => `${item.rawRelativePath}:${item.classificationFingerprint ?? ''}`).join('\n'));
     const chunkId = `chunk-${String(index + 1).padStart(3, '0')}`;
     const previous = existingByFingerprint.get(fingerprint);
     return {
@@ -3860,6 +3906,9 @@ async function resolveExecutorClipTransforms(
   warnings: string[];
   lutSyncSummary: IResolveLutSyncSummary;
 }> {
+  if (clips.length && clips.every(clip => clip.colorManagementPolicy === 'rcm-dwg-v1')) {
+    return { clips, warnings: [], lutSyncSummary: { status: 'not-needed', targetRoot: detectResolveDefaultLutRoot(), copiedCount: 0, reusedCount: 0, copiedLuts: [], reusedLuts: [] } };
+  }
   const resolved = resolveClipTransformSeeds(
     clips.map(clip => ({
       rawRelativePath: clip.rawRelativePath,
@@ -3905,9 +3954,9 @@ async function resolveExecutorClipTransforms(
       effectiveProfile: resolvedClip.effectiveProfile,
       profileSource: resolvedClip.profileSource,
       logProfile: resolvedClip.logProfile,
-      resolvedTransformPresetKey: resolvedClip.resolvedTransformPresetKey,
-      resolvedLutRelativePath: resolvedClip.resolvedLutRelativePath,
-      resolvedLutAbsolutePath: resolvedClip.resolvedLutAbsolutePath,
+      resolvedTransformPresetKey: resolvedClip.effectiveProfile === 'rec709' && clipByKey.get(resolvedClip.rawRelativePath)?.analysisInputFingerprint ? undefined : resolvedClip.resolvedTransformPresetKey,
+      resolvedLutRelativePath: resolvedClip.effectiveProfile === 'rec709' && clipByKey.get(resolvedClip.rawRelativePath)?.analysisInputFingerprint ? undefined : resolvedClip.resolvedLutRelativePath,
+      resolvedLutAbsolutePath: resolvedClip.effectiveProfile === 'rec709' && clipByKey.get(resolvedClip.rawRelativePath)?.analysisInputFingerprint ? undefined : resolvedClip.resolvedLutAbsolutePath,
     }) as IColorExecutorClipInput),
     warnings: resolved.blockers.length > 0
       ? [...resolved.warnings, ...resolved.blockers]

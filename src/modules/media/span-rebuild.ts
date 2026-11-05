@@ -56,6 +56,8 @@ import {
   CSPAN_MATERIALIZATION_REVIEW_PROMPT_VERSION,
 } from '../agents/span-materialization-review-spec.js';
 import { assignUniqueMaterialSpanIds, buildMaterialSpanId } from './material-ids.js';
+import { resolveProjectPharosSource } from '../../store/pharos.js';
+import { loadProjectBriefConfig } from '../../store/workspace-config.js';
 import { sanitizeMaterialPatterns } from './semantic-slice.js';
 import { prepareProjectTranscriptReview } from './transcript-review.js';
 
@@ -2650,6 +2652,17 @@ async function writeSpeechWindowAgentHandoff(input: {
   transcriptReviewItems: ITranscriptReviewItem[];
 }): Promise<void> {
   const assetById = new Map(input.assets.map(asset => [asset.id, asset] as const));
+  const pharosSource = await resolveProjectPharosSource(input.projectRoot);
+  const brief = await loadProjectBriefConfig(input.projectRoot);
+  const includedTripIds = brief.pharos?.includedTripIds ?? [];
+  const researchPaths = [...pharosSource.tripRoots.entries()]
+    .filter(([tripId]) => includedTripIds.length === 0 || includedTripIds.includes(tripId))
+    .flatMap(([tripId, tripRoot]) => [
+      join(tripRoot, 'field-guide.json'),
+      ...(!brief.pharos?.sourcePath?.trim()
+        ? [join(input.workspaceRoot, '..', 'Pharos', 'carta', 'shots', tripId, 'field-guide.json')]
+        : []),
+    ]);
   await mkdir(dirname(input.path), { recursive: true });
   const rows = input.speechCandidates.map(span => [
     `- ${span.id}`,
@@ -2687,7 +2700,8 @@ async function writeSpeechWindowAgentHandoff(input: {
     `- Workspace personal glossary: ${join(input.workspaceRoot, 'config', 'transcript-glossary.json')}`,
     `- Project glossary (prepare/check before sentence review): ${join(input.projectRoot, 'config', 'transcript-glossary.json')}`,
     `- Project glossary source audit: ${join(input.projectRoot, 'config', 'transcript-glossary.sources.json')}`,
-    `- Pharos published research: ${join(input.workspaceRoot, '..', 'Pharos', 'carta', 'shots', '<includedTripId>', 'field-guide.json')}`,
+    ...researchPaths.map(path => `- Pharos published research (check availability): ${path}`),
+    ...pharosSource.errors.map(error => `- Pharos source requires attention: ${error}`),
     `- Research/glossary preflight record: ${join(input.projectRoot, '.tmp', 'chronology', 'speech-review-glossary-preflight.json')}`,
     `- Deterministic text normalization: ${join(input.workspaceRoot, 'config', 'transcript-normalization.json')}`,
     '- Final output contract: Agent returns structured transcript, window, optional adjacent take-group, and cross-asset duplicate-group decisions, then stages one user-facing report through `stageProjectSpeechTranscriptReview`.',

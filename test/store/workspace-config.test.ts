@@ -340,6 +340,7 @@ describe('workspace config sync', () => {
             bitrateKbps: 120_000,
           },
           colorSpaceProfile: 'S-Log3',
+          inputColorSpace: 'S-Gamut3.Cine/S-Log3',
           transformPresetKey: 'Sony / SLog3_to_709',
         },
       }],
@@ -364,9 +365,19 @@ describe('workspace config sync', () => {
 
     expect(loadedRoots.roots[0]?.color?.renderPreset?.bitrateKbps).toBe(120_000);
     expect(loadedRoots.roots[0]?.color?.colorSpaceProfile).toBe('slog3');
+    expect(loadedRoots.roots[0]?.color?.inputColorSpace).toBe('S-Gamut3.Cine/S-Log3');
+    expect((await loadProjectBriefConfig(projectRoot)).mappings[0]?.color?.inputColorSpace).toBe('S-Gamut3.Cine/S-Log3');
     expect(loadedRoots.roots[0]?.color?.transformPresetKey).toBe('Sony/SLog3_to_709.cube');
     expect(loadedCurrent.selectedRootId).toBe('root-camera');
     expect(loadedCurrent.roots[0]?.groups[0]?.status).toBe('ready');
+
+    const brief = await loadProjectBriefConfig(projectRoot);
+    brief.mappings[0]!.color!.inputColorSpace = '';
+    await saveProjectBriefConfig(projectRoot, brief);
+    const cleared = (await loadIngestRoots(projectRoot)).roots[0]!.color!;
+    expect(cleared.inputColorSpace).toBeUndefined();
+    expect(cleared.colorSpaceProfile).toBe('slog3');
+    expect(cleared.transformPresetKey).toBe('Sony/SLog3_to_709.cube');
   });
 
   it('roundtrips workspace color transform presets and normalizes keys/paths', async () => {

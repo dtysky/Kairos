@@ -1,11 +1,11 @@
 {
   "sourceRoot": "../Pharos/designs",
-  "generatedAt": "2026-10-17T10:05:16.518Z",
-  "combinedSha256": "ae98d7c84766d05800d5ea47fc292072bb9e7b23ca52b5be6d82fb99a84d2f84",
+  "generatedAt": "2026-11-05T04:55:37.491Z",
+  "combinedSha256": "2f1b4a996f068df4cdd71670ee07d46d04480ecfd8d1cd8742d7d8946981b2ba",
   "files": [
     {
       "path": "argo.md",
-      "sha256": "ceb172103ed965499a674191e67dc7ddbe1f6af5f7e073da3b3882efe82b2354"
+      "sha256": "3b1dfc2eeec586c36557236e5496ff654fd168d0cc5606a084488d3ed512a13f"
     },
     {
       "path": "atlas.md",
@@ -13,7 +13,7 @@
     },
     {
       "path": "overview.md",
-      "sha256": "74352ec24945f7b84b8e5184de9c66bc989da333d0edab3b3e7642acf4d4e8eb"
+      "sha256": "d38d2a99e08c84e22ea296275992f40b8bdceae180b7276efbf6462f2eb88165"
     },
     {
       "path": "protocol.md",
@@ -29,7 +29,11 @@
     },
     {
       "path": "requirements.md",
-      "sha256": "86fb381026ed44619164addcc4622d5a4a95f853e5a459cdd0e8d88b0bb7cf3b"
+      "sha256": "a27fb1f879a0fd35da714e132040d2ae804c70aaaa3d9759e7b7d72162490130"
+    },
+    {
+      "path": "travel-creation-research.md",
+      "sha256": "24c160a0a837feac80267eefb990c9373a7c7932402b5cd339eb3b4c9dbe17c3"
     }
   ]
 }

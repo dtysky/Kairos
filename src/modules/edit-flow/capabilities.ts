@@ -28,7 +28,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'pharos.parse',
     title: 'Parse Pharos Context',
-    summary: 'Refreshes analysis/pharos-context.json from project-local pharos/ plan, record, and gpx mirrors.',
+    summary: 'Refreshes analysis/pharos-context.json from the linked Pharos directory or project-local plan, record, and gpx mirrors.',
     stableInputs: ['project:pharos', 'config/project-brief.json'],
     stableOutputs: ['analysis/pharos-context.json'],
     outputKind: 'json',

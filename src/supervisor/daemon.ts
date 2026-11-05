@@ -1139,6 +1139,7 @@ function buildIngestRootSummaries(
   rootId: string;
   localPath?: string;
   rawLocalPath?: string;
+  versionSummary: { paired: number; targetOnly: number; rawOnly: number; unavailable: number; analysisBlocked: number };
   pathResolution: IMediaRootPathResolution;
   rawPathResolution: IMediaRootPathResolution;
   blockingReasons: string[];
@@ -1188,10 +1189,17 @@ function buildIngestRootSummaries(
       rawLocalPath: resolvedRoot.rawLocalPath,
       pathResolution: resolvedRoot.localPathResolution,
       rawPathResolution: resolvedRoot.rawPathResolution,
+      versionSummary: {
+        paired: entries.filter(asset => asset.mediaVersions?.raw?.available && asset.mediaVersions?.target?.available).length,
+        targetOnly: entries.filter(asset => asset.mediaVersions?.target?.available && !asset.mediaVersions?.raw?.available).length,
+        rawOnly: entries.filter(asset => asset.mediaVersions?.raw?.available && !asset.mediaVersions?.target?.available).length,
+        unavailable: entries.filter(asset => asset.mediaVersions && !asset.analysisInput).length,
+        analysisBlocked: entries.filter(asset => asset.analysisInput?.blocker).length,
+      },
       blockingReasons: [
-        !resolvedRoot.localPath ? resolvedRoot.localPathResolution.blocker : '',
+        !resolvedRoot.localPath && !resolvedRoot.rawLocalPath ? resolvedRoot.localPathResolution.blocker : '',
         root.rawPath || root.alternatePaths?.some(alternate => alternate.rawPath)
-          ? (!resolvedRoot.rawLocalPath ? resolvedRoot.rawPathResolution.blocker : '')
+          ? (!resolvedRoot.rawLocalPath && !resolvedRoot.localPath ? resolvedRoot.rawPathResolution.blocker : '')
           : '',
       ].filter((value): value is string => Boolean(value)),
       assetCount: entries.length,

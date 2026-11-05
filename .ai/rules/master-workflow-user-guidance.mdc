@@ -102,7 +102,7 @@ Kairos 的标准顺序是：
 如果用户是追加素材，不要回到全新项目口径；应按：
 
 - `Ingest` 追加/同步资产；并行 probe、复用未变化文件的原始元数据，时间修正与 sidecar/GPS 绑定仍刷新。结果的 `metadata` 统计含保护音轨，不得把 `merge.duplicateCount` 当作跳过 probe 数。
-- `Analyze` 默认处理缺少 report 的素材。当前 Ingest 仍标记 spans/chronology stale，变化素材的旧 report 失效、审查续接与调色稳定分块尚未形成完整增量链；不得承诺已有人工成果可自动无损合并。分期见 `designs/incremental-media-ingest.md`。
+- `Analyze` 默认处理缺少当前输入签名 report 的素材。Ingest 以 raw/target 内容指纹识别更新；仅实际分析/空间依赖变化标记 spans/chronology stale，未变目标不因 raw 或 mtime-only 更新重算。先 Analyze 后 Color，分类来自结构化报告；详见 `designs/media-version-analysis-color-pipeline.md`。人工 spans 审查仍需显式重建/提交，不承诺自动无损合并。
 - 由 Codex Agent 重做或续跑受影响的 Flow Plan steps
 - 重新 `Export`
 
@@ -114,7 +114,7 @@ Kairos 的标准顺序是：
 - 如果 ingest 因素材时间冲突被阻塞，必须先把用户引导到 `/ingest-gps` 的“素材时间校正”卡片；默认先填 `正确时间 / 时区`，只有自动补日期失败时才要求再补 `正确日期`
 - “素材时间校正”是 capture-time 修正的唯一编辑入口；不要要求用户再去 `导入 / GPS Review` 填同一批字段
 - 如果 root 声明了 `captureTimePolicy.mode=manual-required`，对应素材的时间阻塞必须要求用户显式填写 `正确日期 / 正确时间 / 时区`；不能用当前文件时间或建议日期自动代填后继续 Analyze
-- 如果用户刚更新了项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
+- 如果用户刚切换 `pharos.sourcePath` 或更新关联目录 / 项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
 - 如果用户只是需要让旧 `asset-reports` 采用新的 GPS / Pharos 空间结果，应引导到 `/chronology` 的空间刷新入口；它不会补扫新素材或新 sidecar，完成后还需要重新生成 spans / chronology
 - 在 `Edit Flow` 前，如果 chronology 不是已确认 Chronology V2，必须先把用户引导到 `/chronology`；fresh spans 在项目素材池准备时必需，各集 Flow Plan step 则仅按 `inputRefs` 精确阻塞，`trip.event_table` 这类事件组织能力不得因为 spans stale 而停下
 - Edit Flow 的 `sharded-agent` step 必须按 confirmed `step.execution.shardPacking` 做连续天打包，并在 handoff 中写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`；不要按 route 做默认一级分片，也不要让正式 packet 携带完整 `spans.json` / `chronology.json`

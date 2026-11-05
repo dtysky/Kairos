@@ -121,7 +121,7 @@ describe('color transform presets', () => {
     const sourceExistingPath = join(workspaceRoot, 'config', 'luts', 'sony', 'Existing.cube');
     await mkdir(join(workspaceRoot, 'config', 'luts', 'sony'), { recursive: true });
     await writeFile(sourceLutPath, 'lut-data', 'utf-8');
-    await writeFile(sourceExistingPath, 'workspace-existing-lut', 'utf-8');
+    await writeFile(sourceExistingPath, 'existing-lut', 'utf-8');
 
     const existingTargetPath = join(resolveLutRoot, 'sony', 'Existing.cube');
     await mkdir(join(resolveLutRoot, 'sony'), { recursive: true });
@@ -138,6 +138,10 @@ describe('color transform presets', () => {
     expect(result.reusedLuts).toEqual(['sony/Existing.cube']);
     await expect(access(join(resolveLutRoot, 'sony', 'SLog3_to_709.cube'))).resolves.toBeUndefined();
     expect(await readFile(join(resolveLutRoot, 'sony', 'SLog3_to_709.cube'), 'utf-8')).toBe('lut-data');
+    await writeFile(sourceExistingPath, 'updated-workspace-lut');
+    await expect(syncReferencedResolveLuts({ workspaceRoot, relativeLutPaths: ['sony/Existing.cube'], resolveLutRoot }))
+      .rejects.toThrow('内容不同');
+    expect(await readFile(existingTargetPath, 'utf-8')).toBe('existing-lut');
   });
 
   it('keeps a stable default resolve LUT root shape', () => {

@@ -6,6 +6,24 @@ import { ProjectBriefEditor } from '../workspace-forms.jsx';
 afterEach(cleanup);
 
 describe('ingest material root density', () => {
+  it('preserves the linked Pharos directory when editing its trip filter', () => {
+    let saved: any;
+    function Editor() {
+      const [config, setConfig] = React.useState({
+        name: '测试项目', description: '', createdAt: '2026-09-01', mappings: [],
+        pharos: { sourcePath: '/pharos/original', includedTripIds: ['trip-1'] },
+        materialPatternPhrases: [],
+      });
+      saved = config;
+      return <ProjectBriefEditor config={config} setConfig={setConfig} onSave={() => {}} busy={false} />;
+    }
+    const view = render(<Editor />);
+    fireEvent.change(view.getByLabelText('Pharos 工程目录（可留空）'), { target: { value: '/pharos/linked' } });
+    expect(saved.pharos).toEqual({ sourcePath: '/pharos/linked', includedTripIds: ['trip-1'] });
+    fireEvent.change(view.getByLabelText('包含 Trip（每行一个，可留空表示全部纳入）'), { target: { value: 'trip-2\ntrip-3' } });
+    expect(saved.pharos).toEqual({ sourcePath: '/pharos/linked', includedTripIds: ['trip-2', 'trip-3'] });
+  });
+
   it('renders alternate paths as compact rows inside one root editor', () => {
     const { container } = render(
       <ProjectBriefEditor
@@ -30,7 +48,7 @@ describe('ingest material root density', () => {
           materialPatternPhrases: [],
         }}
         pharosStatus={{ status: 'empty', rootPath: '/project/pharos' }}
-        summaries={[]}
+        summaries={[{ rootId: 'root-1', versionSummary: { paired: 54, targetOnly: 46, rawOnly: 3, unavailable: 0, analysisBlocked: 1 } }]}
         setConfig={() => {}}
         onSave={() => {}}
         busy={false}
@@ -44,5 +62,6 @@ describe('ingest material root density', () => {
     expect(root!.querySelectorAll('.alternate-path-row')).toHaveLength(2);
     expect(root!.querySelector('.alternate-path-card')).toBeNull();
     expect(root!.querySelector('.structured-root-description textarea')).toHaveAttribute('rows', '2');
+    expect(root!.textContent).toContain('原片＋目标 54 · 仅目标 46 · 仅原片 3 · 不可用 0 · 分析待处理 1');
   });
 });

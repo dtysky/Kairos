@@ -1,5 +1,5 @@
 import { constants as fsConstants } from 'node:fs';
-import { access, copyFile, mkdir } from 'node:fs/promises';
+import { access, copyFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type {
   EColorSourceProfile,
@@ -274,6 +274,8 @@ export async function syncReferencedResolveLuts(input: {
       .then(() => true)
       .catch(() => false);
     if (exists) {
+      const [sourceBytes, targetBytes] = await Promise.all([readFile(sourceAbsolutePath), readFile(targetAbsolutePath)]);
+      if (!sourceBytes.equals(targetBytes)) throw new Error(`工作区 LUT 与 Resolve 已安装 LUT 内容不同：${relativeLutPath}；请显式同步 LUT 后重试，不能把旧 LUT 当作当前技术转换。`);
       reusedLuts.push(relativeLutPath);
       continue;
     }

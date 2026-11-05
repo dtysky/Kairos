@@ -303,6 +303,7 @@ export {
 } from './gps.js';
 export {
   getProjectPharosRoot,
+  resolveProjectPharosSource,
   ensureProjectPharosRoot,
   getProjectPharosContextPath,
   loadProjectPharosContext,

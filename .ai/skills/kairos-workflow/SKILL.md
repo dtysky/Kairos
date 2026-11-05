@@ -8,6 +8,8 @@ description: >-
 
 # Kairos: Master Workflow
 
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+
 ## Overview
 
 Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、素材事实阶段、编年史审查、剪辑规则驱动的 Edit Flow，以及导出。本 skill 负责总控。
@@ -59,17 +61,17 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 只按 `logProfile × orientationStatus`，例如 `slog3 + horizontal`、`slog3 + portrait`；无法确认方向时使用 `unknown-orientation`。Log 读显式 sidecar 后回退 root profile，方向读 probe 元数据。
-- `/color` prepare 停用色偏/白平衡、低照度、曝光、前挡雾化分类及相关抽帧和连续性提升；历史字段只兼容读取，不影响新分组，也不展示为当前检测结果。技术 LUT 与 Gyroflow repair 继续使用。
+  - 自动 Group 消费当前 Analyze 的 colorEvidence，按 scene-v1 分为唯一视觉主类；Log 读 sidecar 后回退 root，连同原始色域独立用于 RCM 输入；不从 S-Log3 单独猜测 S-Gamut3 或 S-Gamut3.Cine。
+- `/color` prepare 不再运行旧的独立色偏、低照度、曝光、前挡雾化抽帧分类器；视觉分组来自当前 Analyze 的结构化证据和 scene-v1 规则。历史分类器字段只兼容读取，不影响新分组。Analyze 原片显示代理 LUT 与 Gyroflow repair 保留；Resolve scene prepare 使用 RCM。
 - 更新代码不自动重跑既有 Resolve 工程或使已完成 chunks 失效；`sync_groups` 仍只镜像实际组。迁移已有组前必须明确处理已有 Group 调色，不能用普通 prepare 悄悄合并。
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 固定为第 1 节点；每次 `prepare_root` 都按最终 `gyroEligible` 布尔判定重申 node1 开关，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
+  - `Gyro` 固定为第 1 节点；新 clip 按 `gyroEligible` 初始化 node1，scene-v1 重跑保留已有开关；旧策略按该判定重申 node1，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
   - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停，不表示 Gyroflow 已执行 source-specific `Load for current file`
   - `gyroEligible` 必须来自显式声明：同名 `.gyroflow` 可开启 Gyro；关联 Sony XML sidecar 明确声明 Gyroscope 即可请求开启 Gyro，不按机型名称做白名单判断。`gyroDataAvailable` 独立记录运动数据声明；缺少证据时保持未知，不能由启用判定、模板可用性或 `.gyroflow` 文件存在反推。启用请求不等于 Gyroflow 已成功载入有效样本。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 私有 telemetry 不扫描、不能单独开启 Gyro，也不能据此猜测 log profile
   - `Dehaze` 固定为第 2 节点且默认禁用
-  - `User1 / User2` 是最小用户区，默认开启；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
+  - `User1`、`User2` 默认开启供手调，RCM 在组前统一输入；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
   - `NR` 对所有视频 clip 固定预留在尾部且默认禁用，正式开关入口只有 Resolve
 - ZV-E1 / Sony 竖屏素材继续进入 Gyro 路径，ffprobe `rotate/display matrix` 只识别方向和选择兼容模板：源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，文件名角度不再表示实际旋转；缺少模板时仍只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`
 - `/color` 的竖屏 timeline `RotationAngle=0`；2026-10-08 用户实测取消 Gyroflow 输出与 timeline 两处额外 ±90° 后防抖正常。保留既有 `ZoomX / ZoomY / ZoomGang / Pan / Tilt` 计算及其他 DRT 参数，包括横向编码 3840x2160、display-matrix 竖屏素材的 `1.7778` fill zoom。修正代码/模板不自动重跑既有工程，不覆盖用户当前的人工修正；OFX 参数继续由 DRT 提供，不猜测 Resolve scripting 参数 API
@@ -167,7 +169,7 @@ await initWorkspaceProject(
 F:\你的素材目录
 
 原始路径：
-F:\你的原始素材目录（可选，仅 `/color` 使用）
+F:\你的原始素材目录（可选；raw-only 分析和 `/color` 共用）
 
 说明：
 主机位，风景、步行、口播都有
@@ -178,7 +180,7 @@ F:\你的原始素材目录（可选，仅 `/color` 使用）
 - 兼容 ingest root 读模型
 
 如果某个 root 配了 `原始路径` 或 `原始路径N`，运行时会解析为当前可读 `rawLocalPath`。
-当解析后的 `rawLocalPath` 位于当前素材目录内部时，Ingest 必须显式排除该 raw 子树，避免把 raw 与当前输出一起纳入主链扫描。
+当解析后的 `rawLocalPath` 位于当前素材目录内部时，target 扫描必须排除该 raw 子树，再独立扫描 raw 并按逻辑素材配对，避免重复登记。
 
 如果下一步就是跑 Ingest，优先直接调用 `ingestWorkspaceProjectMedia()`；当前实现会在检测到
 `project-brief` 已配置路径映射时，先自动同步一次再继续扫描。
@@ -275,7 +277,7 @@ project/
 - dense sidecar `.SRT` / DJI FlightRecord 轨迹会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
 - 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 的正式优先级；Pharos GPX 不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
-- Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
+- Ingest / GPS 刷新负责解析 `pharos.sourcePath` 关联工程（留空使用项目内 `pharos/`） 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
 - 项目内 Pharos 镜像只包含 canonical `plan.json / record.json? / gpx/*.gpx`；`record-import.json` 是 Pyxis 命令信封，不进入 Kairos。弹性 freeform 可有稀疏/空 `days[]`，未排期 route/shot options 不进入素材匹配、缺口或 chronology
 - Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - Pharos/Pyxis 的普通事件过长二次确认只防止上游误写超长 `actual_time`，不改变 Kairos workflow 的归属、刷新或重建步骤

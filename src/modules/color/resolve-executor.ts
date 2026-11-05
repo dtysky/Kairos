@@ -1,3 +1,4 @@
+import type { IAnalyzedColorSource } from './analysis-classification.js';
 import { execFile, type ExecFileOptionsWithStringEncoding } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -92,7 +93,7 @@ export interface IColorExecutorRelinkMediaResult {
   hostSummary?: Record<string, unknown>;
 }
 
-export interface IColorExecutorClipInput {
+export interface IColorExecutorClipInput extends IAnalyzedColorSource {
   rawRelativePath: string;
   sourceAbsolutePath: string;
   sourceStem: string;
@@ -107,6 +108,7 @@ export interface IColorExecutorClipInput {
   orientationStatus?: 'unknown' | 'horizontal' | 'portrait';
   repairTemplateKey?: string;
   previousRepairTemplateHash?: string;
+  previousSourceContentHash?: string;
   timelineTransform?: {
     rotationAngle?: number;
     zoomX?: number;
@@ -150,6 +152,8 @@ export interface IColorExecutorExecuteRootInput {
   outputRoot: string;
   selectionMode?: 'all' | 'subset';
   clips: Array<{
+    colorManagementPolicy?: 'rcm-dwg-v1';
+    inputColorSpace?: string;
     rawRelativePath: string;
     sourceAbsolutePath: string;
     sourceStem: string;

@@ -10,15 +10,15 @@ import type {
   IProjectPharosTripSummary,
 } from '../../protocol/schema.js';
 import {
-  ensureProjectPharosRoot,
   getProjectPharosRoot,
+  resolveProjectPharosSource,
   loadProjectPharosContext,
   writeProjectPharosContext,
 } from '../../store/pharos.js';
 
 const CPLAN_SCHEMA_PREFIX = 'pharos/plan/';
 const CRECORD_SCHEMA_PREFIX = 'pharos/record/';
-export const CPROJECT_PHAROS_CONTEXT_PARSER_VERSION = 2;
+export const CPROJECT_PHAROS_CONTEXT_PARSER_VERSION = 3;
 
 export interface ILoadOrBuildProjectPharosContextInput {
   projectRoot: string;
@@ -63,20 +63,17 @@ export async function loadOrBuildProjectPharosContext(
 export async function buildProjectPharosContext(
   input: ILoadOrBuildProjectPharosContextInput,
 ): Promise<IProjectPharosContext> {
-  const rootPath = await ensureProjectPharosRoot(input.projectRoot);
+  const source = await resolveProjectPharosSource(input.projectRoot);
+  const { rootPath, tripRoots } = source;
   const sourceFingerprint = await computeProjectPharosSourceFingerprint(input);
   const includedTripIds = normalizeTripIds(input.includedTripIds ?? []);
   const warnings: string[] = [];
-  const errors: string[] = [];
+  const errors: string[] = [...source.errors];
   const shots: IProjectPharosShot[] = [];
   const trips: IProjectPharosTripSummary[] = [];
   const gpxFiles: IProjectPharosGpxSummary[] = [];
 
-  const dirEntries = await readdir(rootPath, { withFileTypes: true });
-  const discoveredTripIds = dirEntries
-    .filter(entry => entry.isDirectory())
-    .map(entry => entry.name)
-    .sort((left, right) => left.localeCompare(right));
+  const discoveredTripIds = [...tripRoots.keys()];
   const effectiveTripIds = includedTripIds.length > 0 ? includedTripIds : discoveredTripIds;
 
   if (discoveredTripIds.length === 0 || effectiveTripIds.length === 0) {
@@ -84,12 +81,12 @@ export async function buildProjectPharosContext(
       schemaVersion: '1.0',
       parserVersion: CPROJECT_PHAROS_CONTEXT_PARSER_VERSION,
       generatedAt: new Date().toISOString(),
-      status: includedTripIds.length > 0 ? 'failure' : 'empty',
+      status: includedTripIds.length > 0 || errors.length > 0 ? 'failure' : 'empty',
       rootPath,
       discoveredTripIds,
       includedTripIds,
       warnings,
-      errors: includedTripIds.length > 0 ? [`未找到项目要求的 Pharos Trip：${includedTripIds.join('、')}`] : [],
+      errors: [...errors, ...(includedTripIds.length > 0 ? [`未找到项目要求的 Pharos Trip：${includedTripIds.join('、')}`] : [])],
       sourceFingerprint,
       trips: [],
       shots: [],
@@ -105,7 +102,7 @@ export async function buildProjectPharosContext(
   for (const tripId of effectiveTripIds) {
     if (!discoveredTripIds.includes(tripId)) continue;
 
-    const tripRoot = join(rootPath, tripId);
+    const tripRoot = tripRoots.get(tripId)!;
     const parsed = await parseTripDirectory(tripRoot, tripId);
     if (parsed.errors.length > 0) {
       errors.push(...parsed.errors);
@@ -145,22 +142,20 @@ export async function buildProjectPharosContext(
 export async function computeProjectPharosSourceFingerprint(
   input: Pick<ILoadOrBuildProjectPharosContextInput, 'projectRoot' | 'includedTripIds'>,
 ): Promise<string> {
-  const rootPath = await ensureProjectPharosRoot(input.projectRoot);
+  const { rootPath, tripRoots, errors } = await resolveProjectPharosSource(input.projectRoot);
   const includedTripIds = normalizeTripIds(input.includedTripIds ?? []);
-  const dirEntries = await readdir(rootPath, { withFileTypes: true }).catch(() => []);
-  const discoveredTripIds = dirEntries
-    .filter(entry => entry.isDirectory())
-    .map(entry => entry.name)
-    .sort((left, right) => left.localeCompare(right));
+  const discoveredTripIds = [...tripRoots.keys()];
   const effectiveTripIds = includedTripIds.length > 0 ? includedTripIds : discoveredTripIds;
   const entries: Array<Record<string, unknown>> = [
+    { kind: 'source', rootPath, errors },
     { kind: 'includedTripIds', value: includedTripIds },
     { kind: 'discoveredTripIds', value: discoveredTripIds },
   ];
 
   for (const tripId of effectiveTripIds) {
-    const tripRoot = join(rootPath, tripId);
+    const tripRoot = tripRoots.get(tripId);
     entries.push({ kind: 'trip', tripId, exists: discoveredTripIds.includes(tripId) });
+    if (!tripRoot) continue;
     for (const filename of ['plan.json', 'record.json']) {
       await appendFingerprintFile(entries, rootPath, join(tripRoot, filename));
     }
@@ -198,7 +193,7 @@ export function buildProjectPharosAssetStatus(
   context: IProjectPharosContext | null,
   projectRoot: string,
 ): IProjectPharosAssetStatus {
-  const rootPath = getProjectPharosRoot(projectRoot);
+  const rootPath = context?.rootPath ?? getProjectPharosRoot(projectRoot);
   if (!context) {
     return {
       status: 'empty',
@@ -411,6 +406,7 @@ async function parseTripDirectory(
   const gpxFiles = await summarizeTripGpxFiles(join(tripRoot, 'gpx'), tripId, warnings);
   const summary: IProjectPharosTripSummary = {
     tripId,
+    sourcePath: tripRoot,
     title: typeof plan.title === 'string' ? plan.title : tripId,
     tripKind: normalizeTripKind(plan.trip_kind),
     revision: typeof plan.revision === 'number' ? plan.revision : undefined,

@@ -103,6 +103,7 @@ export type EColorSourceProfile = z.infer<typeof EColorSourceProfile>;
 export const IMediaRootColorConfig = z.object({
   renderPreset: z.lazy(() => IColorRenderPreset).optional(),
   colorSpaceProfile: z.string().optional(),
+  inputColorSpace: z.string().optional(),
   transformPresetKey: z.string().optional(),
 });
 export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
@@ -296,6 +297,11 @@ export type EProtectionAudioAlignment = z.infer<typeof EProtectionAudioAlignment
 
 export const IProtectionAudioBinding = z.object({
   sourcePath: z.string(),
+  sourceRole: z.enum(['raw', 'target']).optional(),
+  contentHash: z.string().optional(),
+  sizeBytes: z.number().optional(),
+  mtimeMs: z.number().optional(),
+  ctimeMs: z.number().optional(),
   displayName: z.string().optional(),
   durationMs: z.number().optional(),
   durationDiffMs: z.number().nonnegative().optional(),
@@ -370,12 +376,41 @@ export type ISpanGrounding = z.infer<typeof ISpanGrounding>;
 export const ISliceGrounding = ISpanGrounding;
 export type ISliceGrounding = ISpanGrounding;
 
+export const IMediaVersion = z.object({
+  relativePath: z.string(),
+  available: z.boolean(),
+  sizeBytes: z.number().nonnegative(),
+  mtimeMs: z.number().nonnegative(),
+  ctimeMs: z.number().nonnegative(),
+  contentHash: z.string(),
+  sourceProfile: z.string().optional(),
+  colorPrimaries: z.string().optional(),
+  transferFunction: z.string().optional(),
+  profileSource: z.enum(['detected', 'root-fallback', 'unknown']).optional(),
+}).strict();
+export type IMediaVersion = z.infer<typeof IMediaVersion>;
+
+export const IAnalysisInput = z.object({
+  policyVersion: z.literal('target-first-v1'),
+  role: z.enum(['raw', 'target']),
+  relativePath: z.string(),
+  contentHash: z.string(),
+  fingerprint: z.string(),
+  sourceProfile: z.string().optional(),
+  lutPath: z.string().optional(),
+  lutHash: z.string().optional(),
+  blocker: z.string().optional(),
+});
+export type IAnalysisInput = z.infer<typeof IAnalysisInput>;
+
 export const IKtepAsset = z.object({
   id: z.string(),
   kind: EAssetKind,
   sourcePath: z.string(),
   displayName: z.string(),
   ingestRootId: z.string().optional(),
+  mediaVersions: z.object({ raw: IMediaVersion.optional(), target: IMediaVersion.optional() }).strict().optional(),
+  analysisInput: IAnalysisInput.optional(),
   durationMs: z.number().optional(),
   fps: z.number().optional(),
   width: z.number().optional(),
@@ -846,8 +881,31 @@ export const IFineScanWindow = z.object({
 });
 export type IFineScanWindow = z.infer<typeof IFineScanWindow>;
 
+export const IColorAnalysisEvidence = z.object({
+  timeOfDay: z.enum(['day', 'night', 'twilight', 'unknown']),
+  visiblePresenter: z.boolean().nullable(),
+  windshieldCast: z.boolean().nullable(),
+  highContrast: z.boolean().nullable(),
+  veryDarkNoisy: z.boolean().nullable(),
+  overexposed: z.boolean().nullable(),
+  lightChange: z.boolean().nullable(),
+  flicker: z.enum(['suspected', 'unknown']),
+  observation: z.string().min(1),
+});
+export type IColorAnalysisEvidence = z.infer<typeof IColorAnalysisEvidence>;
+export const IColorClassification = z.object({
+  ruleVersion: z.literal('scene-v1'),
+  category: z.enum(['portrait', 'presenter', 'overexposed', 'dark-noisy', 'high-contrast', 'night', 'twilight', 'day-drive-cast', 'day', 'review']),
+  reasons: z.array(z.string()),
+  reviewFlags: z.array(z.string()),
+});
+export type IColorClassification = z.infer<typeof IColorClassification>;
+
 export const IAssetCoarseReport = z.object({
   assetId: z.string(),
+  analysisInput: IAnalysisInput.optional(),
+  colorEvidence: IColorAnalysisEvidence.optional(),
+  colorClassification: IColorClassification.optional(),
   ingestRootId: z.string().optional(),
   durationMs: z.number().optional(),
   clipTypeGuess: EClipType,
@@ -1408,6 +1466,7 @@ export const IProjectBriefMappingConfig = z.object({
   color: z.object({
     renderPreset: z.lazy(() => IColorRenderPreset).optional(),
     colorSpaceProfile: z.string().optional(),
+    inputColorSpace: z.string().optional(),
     transformPresetKey: z.string().optional(),
   }).optional(),
 });
@@ -1541,6 +1600,13 @@ export type IColorClipReservedNodeIndices = z.infer<typeof IColorClipReservedNod
 
 export const IColorClipRepairSnapshot = z.object({
   clipKey: z.string(),
+  sceneCategory: IColorClassification.shape.category.optional(),
+  analysisInputFingerprint: z.string().optional(),
+  sourceContentHash: z.string().optional(),
+  classificationFingerprint: z.string().optional(),
+  colorManagementPolicy: z.literal('rcm-dwg-v1').optional(),
+  inputColorSpace: z.string().optional(),
+  inputColorSource: z.string().optional(),
   displayName: z.string().optional(),
   logProfile: z.string().optional(),
   lowlight: z.boolean().optional(),
@@ -1984,6 +2050,7 @@ export const IColorRootArchiveView = z.object({
 export type IColorRootArchiveView = z.infer<typeof IColorRootArchiveView>;
 
 export const IProjectBriefPharosConfig = z.object({
+  sourcePath: z.string().optional(),
   includedTripIds: z.array(z.string()).default([]),
 });
 export type IProjectBriefPharosConfig = z.infer<typeof IProjectBriefPharosConfig>;
@@ -2012,6 +2079,7 @@ export type IProjectPharosGpxSummary = z.infer<typeof IProjectPharosGpxSummary>;
 
 export const IProjectPharosTripSummary = z.object({
   tripId: z.string(),
+  sourcePath: z.string().optional(),
   title: z.string(),
   tripKind: z.enum(['planned', 'freeform']).optional(),
   revision: z.number().int().nonnegative().optional(),

@@ -46,15 +46,11 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
   );
   const pharosRootPath = pharosStatus?.rootPath || 'projects/<projectId>/pharos';
   const pharosNoticeTitle = pharosStatus?.status === 'success'
-    ? 'Pharos 固定目录已接入'
+    ? 'Pharos 目录已接入'
     : pharosStatus?.status === 'failure'
-      ? 'Pharos 固定目录已准备好，但当前 Trip 还没对上'
-      : 'Pharos 固定目录已准备好';
-  const pharosNoticeBody = pharosStatus?.status === 'success'
-    ? '继续把 trip 镜像放到这个固定目录即可；如需限制范围，只在下面填写“包含 Trip”。'
-    : pharosStatus?.status === 'failure'
-      ? '固定目录已经准备好。请核对 trip 目录名，并把对应的 plan / record / gpx 镜像放到这里。'
-      : '不需要再填写外部 Pharos 路径。把每个 trip 的镜像目录直接放到这个固定位置即可。';
+      ? '请核对 Pharos 目录与 Trip 筛选'
+      : '选择 Pharos 工程目录';
+  const pharosNoticeBody = '可关联含 plan.json 的行程目录，或包含多个行程的集合目录。GPS、执行记录和已发布调研从关联目录直接读取。留空使用项目内 pharos 目录。';
   return (
     <Card className="panel">
       <SectionHeader title="项目概况" onSave={onSave} busy={busy} />
@@ -99,12 +95,21 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
           </div>
         </summary>
         <div className="compact-disclosure-body">
+          <Field
+            label="Pharos 工程目录（可留空）"
+            value={config.pharos?.sourcePath || ''}
+            onChange={value => setConfig(current => ({
+              ...current,
+              pharos: { ...current.pharos, sourcePath: value, includedTripIds: current.pharos?.includedTripIds || [] },
+            }))}
+          />
           <TextAreaField
             label="包含 Trip（每行一个，可留空表示全部纳入）"
             value={(config.pharos?.includedTripIds || []).join('\n')}
             onChange={value => setConfig(current => ({
               ...current,
               pharos: {
+                ...current.pharos,
                 includedTripIds: splitLines(value),
               },
             }))}
@@ -118,11 +123,12 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
               <pre className="pharos-callout-tree">{`trip-<uuid>/
   plan.json
   record.json
+  field-guide.json
   gpx/
     *.gpx`}</pre>
             </details>
           </div>
-          <p className="muted">{pharosStatus?.latestMessage || 'Console 会先准备固定目录；把 trip 镜像投放进去即可。'}</p>
+          <p className="muted">{pharosStatus?.latestMessage || '保存后刷新目录状态；运行导入或 GPS 刷新可更新轨迹缓存。'}</p>
         </div>
       </details>
       <Divider />
@@ -134,7 +140,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
         }))}
       />
       <div className="capture-time-hint">
-        这里维护的是正式素材 Root 单真值，不是手写 Markdown。保存后会写入 `project-brief.json`，回写 `project-brief.md` 镜像，并在运行前自动选择可读路径。
+        这里维护的是正式素材 Root 单真值，不是手写 Markdown。保存后会写入 `project-brief.json`，回写 `project-brief.md` 镜像。逐素材优先目标，缺失时使用原片；Ingest 同时登记两个版本，之后先分析再调色。
       </div>
       {config.mappings.length === 0 ? (
         <p className="muted">当前还没有素材 Root。点击“添加”后在这里结构化填写 `路径 / 原始路径 / 说明 / FlightRecord`。</p>
@@ -179,6 +185,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 <span>当前使用原始路径</span>
                 <code>{rawLocalPath || '未命中'}</code>
               </div>
+              {summary?.versionSummary ? <p>{`原片＋目标 ${summary.versionSummary.paired} · 仅目标 ${summary.versionSummary.targetOnly} · 仅原片 ${summary.versionSummary.rawOnly} · 不可用 ${summary.versionSummary.unavailable}${summary.versionSummary.analysisBlocked ? ` · 分析待处理 ${summary.versionSummary.analysisBlocked}` : ''}`}</p> : null}
               {blockers.length > 0 ? (
                 <p>{blockers.join(' · ')}</p>
               ) : null}
@@ -1895,8 +1902,15 @@ export function ColorCurrentSummary({
                             placeholder={COLOR_SOURCE_PROFILE_HINT}
                             disabled={busy?.['project-brief']}
                           />
+                          <Field
+                            label="RCM 输入空间（元数据缺失时）"
+                            value={root.inputColorSpace || ''}
+                            onChange={value => updateProjectRootInputColorSpace(setProjectBrief, root.rootId, value)}
+                            placeholder="例如 S-Gamut3.Cine/S-Log3"
+                            disabled={busy?.['project-brief']}
+                          />
                           <SelectField
-                            label="transformPresetKey"
+                            label="分析代理 LUT（transformPresetKey）"
                             value={root.transformPresetKey || ''}
                             onChange={value => updateProjectRootTransformPresetKey(setProjectBrief, root.rootId, value)}
                             options={root.transformPresetOptions || [{ value: '', label: '自动 / 按 profile' }]}
@@ -1914,7 +1928,7 @@ export function ColorCurrentSummary({
                 <details className="compact-disclosure color-config-help">
                   <summary>查看 Prepare / Group 技术说明</summary>
                   <p className="field-help">
-                    {'`Prepare Root` 会同步 Media Pool / grading timeline，并按 logProfile 与 review addon 生成或复用 Resolve Groups；横竖屏 DRT、Gyro 与 timeline transform 规则保持不变。`Group Post-Clip` 是 creative 真相，`Clip` 只承担 repair / local exception。'}
+                    {'`Prepare Root` 读取当前 Analyze 证据，按视觉类别创建 Group。RCM 先将逐片输入统一到 DWG / Intermediate，Group Pre 做类别基础调整，Clip 五节点保留逐片调整，Group Post 做风格；User1 不再自动放技术 LUT。已有普通 YRGB 工程需明确迁移，不能直接覆盖色彩设置。'}
                   </p>
                 </details>
               </Card>
@@ -2494,6 +2508,7 @@ function buildMinimalColorRootCards(config) {
       const projectRoot = projectRootById.get(String(root.rootId || getColorRootId(root, index)));
       const renderPreset = materializeProjectRootRenderPreset(projectRoot?.color?.renderPreset || root.renderPreset);
       const colorSpaceProfile = materializeProjectRootColorSpaceProfile(projectRoot?.color?.colorSpaceProfile || root.colorSpaceProfile);
+      const inputColorSpace = normalizeColorOptionalString(projectRoot?.color?.inputColorSpace || root.inputColorSpace);
       const transformPresetKey = materializeProjectRootTransformPresetKey(projectRoot?.color?.transformPresetKey || root.transformPresetKey);
       const current = materializeColorRootCurrent(isPlainObject(root.colorCurrent) ? root.colorCurrent : null);
       const hostPreflight = materializeColorHostPreflight(root.hostPreflight || current?.hostPreflight);
@@ -2521,6 +2536,7 @@ function buildMinimalColorRootCards(config) {
             : null,
         renderPreset,
         colorSpaceProfile,
+        inputColorSpace,
         transformPresetKey,
         transformPresetOptions,
         bitrateKbps: renderPreset.bitrateKbps,
@@ -2545,6 +2561,7 @@ function buildMinimalColorRootCards(config) {
     .map((root, index) => {
       const renderPreset = materializeProjectRootRenderPreset(root.color?.renderPreset);
       const colorSpaceProfile = materializeProjectRootColorSpaceProfile(root.color?.colorSpaceProfile);
+      const inputColorSpace = normalizeColorOptionalString(root.color?.inputColorSpace);
       const transformPresetKey = materializeProjectRootTransformPresetKey(root.color?.transformPresetKey);
       const currentPath = getColorStringField(root, ['path']);
       const displayRawPath = getColorStringField(root, ['rawPath']);
@@ -2565,6 +2582,7 @@ function buildMinimalColorRootCards(config) {
         latestDrpSnapshot: null,
         renderPreset,
         colorSpaceProfile,
+        inputColorSpace,
         transformPresetKey,
         transformPresetOptions,
         bitrateKbps: renderPreset.bitrateKbps,
@@ -2768,6 +2786,14 @@ function updateProjectRootColorSpaceProfile(setProjectBrief, rootId, value) {
       mappings: nextRoots,
     };
   });
+}
+
+function updateProjectRootInputColorSpace(setProjectBrief, rootId, value) {
+  if (typeof setProjectBrief !== 'function' || !rootId) return;
+  setProjectBrief(current => ({ ...current, mappings: (current.mappings || []).map(root =>
+    String(root.rootId || root.id) === String(rootId)
+      ? { ...root, color: { ...root.color, inputColorSpace: normalizeColorOptionalString(value) || '' } }
+      : root) }));
 }
 
 function updateProjectRootTransformPresetKey(setProjectBrief, rootId, value) {

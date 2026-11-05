@@ -1,5 +1,7 @@
 # Resolve Color Host
 
+Versioned scene preparation consumes current Analyze evidence. It creates real scene Groups with portrait exclusive, seeds the same five-node DRT, and configures RCM v2 with explicit per-clip Input Color Space, DWG/Intermediate working space, and Rec.709 Gamma 2.4 output. Group Pre-Clip receives no technical LUT. Existing old technical groups block migration; scene reruns preserve all existing node states. Explicit clipKeys scopes append-only preparation. See [pipeline contract](../../designs/media-version-analysis-color-pipeline.md).
+
 Kairos uses this vendored backend as the fixed same-machine Resolve host.
 
 Before changing this backend, read the local DaVinci Resolve scripting documentation:
@@ -44,7 +46,7 @@ the wrong repair layout. The repo no longer carries `config/default.drx`; any DR
 be an explicit external/manual diagnostic path and is not used as a large-batch fallback.
 
 On canonical reruns, the host preserves the existing clip grade, user zone, and
-user-toggled Dehaze/NR state, but it still reasserts node 1 from `gyroEligible` because
+user-toggled Dehaze/NR state, while scene mode preserves node 1 as well. Legacy mode reasserts node 1 from `gyroEligible` because
 Gyro is a technical repair decision. This is only a node enabled-state request. A clean
 DRT donor may trigger Gyroflow's own current-file loading during render. Portrait clips are
 also rotated and scaled with timeline item `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`

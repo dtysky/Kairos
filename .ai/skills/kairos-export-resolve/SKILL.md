@@ -61,12 +61,12 @@ description: >-
 
 1. 读取并校验临时 `.tmp/edit-flow/<editId>/timeline/current.json`，或核对已有 Resolve timeline / locked rough-cut
 2. 检查 vendored Resolve backend 是否已就绪并可调用
-3. 若本轮会依赖默认技术 LUT，先确认 workspace LUT 资产与当前设备 Resolve 默认 LUT 目录同步状态
+3. 若本轮处理旧非 RCM 路径并依赖默认技术 LUT，先确认 workspace LUT 资产与当前设备 Resolve 默认 LUT 目录同步状态
 4. 创建或选择 Resolve 项目与时间线
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - `/color` 自动 Group 只按 `logProfile × orientationStatus`，组名如 `slog3 + horizontal / portrait`，未知方向为 `unknown-orientation`；停止色偏、低照度、曝光和前挡雾化检测及相关抽帧，保留技术 LUT 与 Gyroflow repair。代码更新不重分既有工程，`sync_groups` 继续镜像 Resolve 实际组。
+  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 结构化 colorEvidence，再按 scene-v1 创建真实视觉 Group，竖屏排他；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
   - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。

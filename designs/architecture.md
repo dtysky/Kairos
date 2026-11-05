@@ -1,5 +1,9 @@
 # Kairos — 架构设计 v2
 
+2026-11-05：正式素材管线采用 [素材版本、先分析后调色与渐进导入](media-version-analysis-color-pipeline.md)。Ingest 每素材最多登记 raw/target 两版本，目标优先、缺失才回退原片；内容 SHA-256 区分版本替换与仅时间戳变化。Analyze 记录实际输入/LOG/LUT，按输入签名复用或归档失效缓存；原片更新不重跑未变目标分析。Color 消费当前报告的结构化证据，Group 按视觉主类，竖屏排他；逐片 RCM 输入统一到 DWG / Intermediate，输出 Rec.709 Gamma 2.4，保留五节点标准模板。旧 LOG 分组不自动迁移。
+
+
+2026-11-05：Pharos 可直接关联已有工程目录，详见 [Pharos 工程目录直接关联](pharos-directory-link.md)。协议复核组合哈希 `2f1b4a996f068df4cdd71670ee07d46d04480ecfd8d1cd8742d7d8946981b2ba`；此次上游差异没有新增 canonical parser 合同。
 ## 2026-11-02 Ingest 并行元数据与缓存
 
 手动补漏新增独立 `extraMedia` 配置和 `resolve-extra-media-sync` job。Console 与主素材 Root 共用结构化备选路径行组件，仅省略额外素材不需要的 rawPath 字段；已有 alternatePaths 数组无需迁移。Node 仅扫描选中的可读目录并产生源路径请求，不写 asset/span/chronology 事实；Python 复用 `sync_rough_cut_media` 批量 helper 的 extra-media 模式，使用“额外素材”namespace、禁止搬动既有 item、禁止目录清理，并保持时间线和原 bin 选择。extra-only 配置保存通过分析输入比较跳过 stale 标记；普通 Ingest 排除已配置额外子目录。重链合并 extraMedia 主/备选映射并独立报告统计；进度和取消沿用 Supervisor job 合同。
@@ -193,7 +197,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 
 当前 Ingest / GPS 刷新正式承担 Pharos context 和素材时间 gate：
 
-- 项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/` 是 Pharos 的固定输入目录；`analysis/pharos-context.json` 必须带有输入 fingerprint
+- `pharos.sourcePath` 可关联已有单 Trip 或集合目录；留空读取项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`；`analysis/pharos-context.json` 必须带有输入 fingerprint
 - fingerprint 覆盖 trip 筛选、`plan.json`、`record.json`、`gpx/*.gpx` 的相对路径、大小与修改时间；fingerprint 缺失或变化时，Ingest / GPS 刷新必须自动重建 context，避免复用 stale empty cache
 - `gps-refresh` 不扫描素材，但应刷新项目 GPX merged cache、`gps/derived.json` 与 Pharos context；`ingest` 在扫描素材后也必须刷新同一套空间/Pharos 缓存
 - Analyze 不隐式补跑 Pharos 解析，只消费最近一次 Ingest / GPS 刷新的 `analysis/pharos-context.json`
@@ -210,7 +214,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 
 ## 0.14 2026-10-08 DaVinci color 简化分组
 
-自动 Group 只使用 `logProfile × orientationStatus`：例如 `slog3 + horizontal`、`slog3 + portrait`、`dlog-m + horizontal`。`logProfile` 优先读取显式 sidecar，缺失时使用 root `color.colorSpaceProfile`；方向来自 probe 的显示尺寸和旋转元数据，无法确认时使用 `unknown-orientation`，不猜测横屏。
+本节为 2026-10-08 历史策略，已被 2026-11-05 的先分析后调色管线替代。旧工程原组保留，不自动迁移。历史自动 Group 使用 `logProfile × orientationStatus`。`logProfile` 优先读取显式 sidecar，缺失时使用 root `color.colorSpaceProfile`；方向来自 probe 的显示尺寸和旋转元数据，无法确认时使用 `unknown-orientation`，不猜测横屏。
 
 `prepare_root` 停用白平衡/色偏、低照度、曝光、前挡雾化分类、相关抽帧和连续性提升。历史字段仅保留读取兼容，不参与新分组，也不在当前 Console 作为检测结果展示。技术 LUT 仍应用于 Group Pre-Clip，Gyroflow 和固定 clip repair 节点规则继续有效，人工逐条调色仍在 Resolve 完成。
 
@@ -328,10 +332,10 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - 只要存在失败 root，整个 job 最终记为 failed
 - clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；每次 `prepare_root` 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
+  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
   - `ready-to-load` 只证明 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不证明 Gyroflow 已执行 source-specific `Load for current file`
   - `Dehaze` 是第 2 个保留节点，默认禁用
-  - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
+  - `User1`、`User2` 默认开启供逐片手调，RCM 在 Group Pre 前统一输入；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
   - `gyroEligible` 是一个最终布尔值：关联 Sony XML 的 Gyroscope 声明或同名 `.gyroflow` 工程，不使用硬编码机型白名单；`gyroDataAvailable` 独立记录声明，缺证据为未知，不能从是否启用反推；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
 - `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排，但重申最终 Gyro 开关”：
@@ -364,18 +368,19 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 本轮冻结后的正式口径如下：
 
 - Resolve 内的正式调色真相分成三层：
-  - `Group Pre-Clip`：Kairos 自动技术底板（LUT / transform）
+  - `Group Pre-Clip`：接收 RCM 统一后的 DWG/Intermediate 输入，用于视觉类别基础调整；不注入技术 LUT
   - `Clip`：repair/local-exception 层，不承担主 creative
   - `Group Post-Clip`：唯一正式 creative 真相
 - `/color` 不新增 creative 参数表单；Kairos 只负责准备结构、镜像状态、执行导出
 - root 级长期配置仍然只保留：
   - `root.color.renderPreset`
   - `root.color.colorSpaceProfile`
-  - `root.color.transformPresetKey?`
+  - `root.color.inputColorSpace?`（缺少完整源元数据时显式指定 RCM 输入）
+  - `root.color.transformPresetKey?`（Analyze 原片显示代理 / 旧 Resolve LUT 路径）
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
   - group 级至少包含 `logProfile`、`orientationStatus`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
-- 自动 Group 的正式分桶轴为 `logProfile × orientationStatus`；组名固定使用 `<logProfile> + horizontal / portrait / unknown-orientation`。
+- 自动 Group 消费当前 Analyze `colorEvidence`，由 `scene-v1` 确定唯一视觉主类；LOG 独立保留用于逐片技术转换，竖屏不交叉。
 - `gyro` 只参与 clip repair；历史 `lowlight / windshieldHaze / colorCastClass / exposureSceneClass` 仅兼容读取，正式 prepare 不调用这些分类器或抽帧。
 - clip repair 的正式合同当前已收口为固定节点图：
   - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
@@ -396,8 +401,8 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 开启
-  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 关闭
+  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 请求 Gyro 开启
+  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 请求 Gyro 关闭
   - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
@@ -405,14 +410,15 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 
 ## 0.9 2026-04-21 DaVinci color 技术 profile / transform preset / workspace LUT 同步补记
 
-当前 `/color` 已继续从“root render preset + creative tags”收口到“技术输入真值 + workspace profile/device -> Resolve LUT 映射 + Group Pre-Clip LUT 底板”。
+当前 `/color` 收口为“Analyze 视觉分类 + 原片色域/Gamma 真值 + 逐片 RCM 输入 + DWG/Intermediate + 视觉 Group”。以下 LUT 配置继续服务 Analyze 原片显示代理及旧 Resolve 兼容路径；新 scene prepare 不向 Clip 或 Group 注入技术 LUT。详见 [RCM 设计](resolve-rcm-scene-pipeline.md)。
 
 本轮冻结后的正式口径如下：
 
 - root 级长期配置仍然放在 `config/project-brief.json` mappings 上，但正式字段扩成：
   - `root.color.renderPreset`
   - `root.color.colorSpaceProfile`
-  - `root.color.transformPresetKey?`
+  - `root.color.inputColorSpace?`（缺少完整源元数据时显式指定 RCM 输入）
+  - `root.color.transformPresetKey?`（Analyze 原片显示代理 / 旧 Resolve LUT 路径）
 - `root.color.renderPreset` 当前正式口径是：
   - `container`
   - `videoCodec`
@@ -442,21 +448,17 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   1. `root.color.transformPresetKey`
   2. `effective colorSpaceProfile + normalized device family -> workspace profiles[...]`
   3. 无命中则不自动应用默认技术底板
-- `prepare_root` 在任何 Resolve-side mutation 前，必须先做 LUT preflight：
+- 旧非 RCM `prepare_root` 在任何 Resolve-side mutation 前，必须先做 LUT preflight：
   - 只同步当前 root 实际引用到且 workspace 中存在同路径文件的 LUT
   - 同步源固定为 `config/luts/<relative-path>`
   - 同步目标固定为当前设备 Resolve 默认 LUT 目录
   - 同步策略固定为“只补缺，不覆盖、不删除、不全量重装”
   - 若 workspace 中没有同路径 LUT，Kairos 不得立刻 blocked；应继续把该路径作为 Resolve LUT 路径交给宿主验证可见性
-- 默认技术底板当前正式应用在 Resolve `ColorGroup Pre-Clip`
-  - 当前 round 只支持 LUT preset，不纳入 PowerGrade / CST preset 抽象
-  - 应用动作必须通过 `ColorGroup.GetPreClipNodeGraph()` + `Graph.SetLUT()`
-  - 若 Group 为 Kairos 新建，可在空白 Pre-Clip graph 上建立最小节点并套 LUT
-  - 若 Group 已有非空用户 grade，则必须跳过，记录 `skipped-existing-grade`
-  - `sync_groups` 继续只做镜像，不回写任何技术预设
-- 若 LUT 已复制到默认目录，但当前 Resolve 会话仍不可见：
-  - `prepare_root` 需要返回 blocked
-  - blocker 文案必须明确提示用户在 Resolve 里 `Refresh LUT List / Update Lists`，必要时重启 Resolve
+- 当前 RCM scene prepare 逐片设置 MediaPoolItem 的 `Input Color Space`，项目采用 Custom RCM v2、DWG/Intermediate 工作空间和 Rec.709 Gamma 2.4 输出；项目、timeline 有效设置以及素材输入空间回读不符即阻塞。
+  - 只有空项目允许初始化 RCM；已有未受管项目、旧技术 LUT 工程不能静默迁移。
+  - 五节点 User1/User2 不自动写入或清除技术 LUT；保持用户逐片调整，准备签名使用 `rcm-dwg-v1`。
+  - `sync_groups` 只读验证与镜像；`execute_root` 在渲染前重新验证色彩管理和输入，设置漂移不得写 ready 或继续导出。
+  - 旧 LUT 准备仍遵守 workspace copy-missing / 已安装内容冲突阻塞规则；Resolve 缺少所需 LUT 时提示 Refresh LUT List。该依赖不适用于新 RCM scene prepare。
 - `/color` read model 与 UI 当前需要明确区分：
   - `detected profile`
   - `effective profile`
@@ -520,7 +522,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
     - `.xml/.gyroflow` 只服务 prepare/source truth，不作为成片 sidecar 导出
     - 更新 `entries[].sidecars` 和 `managedSidecarSet`
   - 后处理动作可在 `manifest.json` 缺失但 `plan.json` 中所有最终输出都已存在时恢复 manifest；这是中断/旧失败 batch 的恢复路径，不允许对缺输出的 batch 伪造成功
-- 自动 Group 只按 `logProfile × orientationStatus` 分桶，不做白平衡、色偏、低照度、曝光或前挡雾化判断，也不为这些判断抽帧。
+- 自动 Group 使用 Analyze 结构化证据；prepare 不再独立抽帧或运行历史色偏/曝光分类器。
 - `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
   1. 显式 sidecar 真值
@@ -915,17 +917,17 @@ flowchart TD
 当前应按下面的关系理解系统：
 
 - `Pharos` 是正式主链的主输入之一
-- `Pharos` 当前通过项目内固定镜像目录接入：`projects/<projectId>/pharos/<trip_id>/`
+- `Pharos` 通过可选 `project-brief.json.pharos.sourcePath` 关联单 Trip 或集合目录；留空使用 `projects/<projectId>/pharos/<trip_id>/`，外部目录只读
 - 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也应补齐缺失目录，而不是继续要求用户手动建根目录
-- `/ingest-gps` 当前应明确展示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json` 与 `gpx/` 镜像投放到这里
-- `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
+- `/ingest-gps` 可编辑关联目录并展示实际路径与错误；直接关联无需复制 canonical 文件或 `field-guide.json`
+- `project-brief.md` 镜像 `工程目录：...` 和可选 Trip 筛选；JSON 是正式配置真值
 - `/ingest-gps` 除了单素材“素材时间校正”卡片外，当前还应并列提供 root 级设备时钟偏移 editor，用 `±HH:MM:SS` 输入并保存 `clockOffsetMs`；下一次 Ingest 会把该偏移写入 corrected `asset.capturedAt`
 - 单素材拍摄时间修正只能通过“素材时间校正”卡片 / `config/manual-itinerary.json.captureTimeOverrides` 维护；`导入 / GPS Review` 不再显示或反写 `capture-time-correction`，避免同一素材被两份表单覆盖
 - `/ingest-gps` 保存配置后必须让用户显式运行 `运行 Ingest` 或 `刷新 GPS 缓存`；Analyze 前如果用户刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先完成对应刷新
 - planned `Pharos shot` 当前正式拆成两层：
   - `chronology-build` 的 Pharos 直接归属只按 `record.json.actual_time`：`expected / unexpected` 且有完整 actual time 的非 `continuous` 记录，才可直接绑定存在有意义时间重叠的 span；多个单点事件时间窗重叠时，只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整归属优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本推断航拍等语义；`continuous` 只提供 route 上下文，`pending / abandoned` 和 planned time segment 不参与直接归属；shot GPS 字段不参与时间归属
   - 空间位置只按 trip `gpx/*.gpx` 对素材/span 的时间做反算；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读参考，不再是 Kairos 的正式空间真值
-- `analysis/pharos-context.json` 除项目内 `pharos/` 输入 fingerprint 外，还必须携带 parser version；当 parser 语义升级但源文件未变时，下一次读取必须自动重建 context。若变更只影响 Pharos shot 执行语义，用户可直接重跑 `chronology-build`，不需要 `span-rebuild`
+- `analysis/pharos-context.json` 除实际目录与 canonical 文件输入 fingerprint 外，还必须携带 parser version；当 parser 语义升级但源文件未变时，下一次读取必须自动重建 context。若变更只影响 Pharos shot 执行语义，用户可直接重跑 `chronology-build`，不需要 `span-rebuild`
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
 - 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断
@@ -1019,7 +1021,7 @@ src/modules/ingest/
 ├── proxy-generator.ts  # FFmpeg 代理文件生成（720p H.264）
 ├── gps-writer.ts       # 历史命名；当前语义是绑定素材空间线索，不回写原始照片 EXIF
 ├── scene-detector.ts   # CLIP 特征提取 + 聚类 + LLM 场景描述
-├── pharos-reader.ts    # Pharos 项目内镜像读取与规范化
+├── pharos-reader.ts    # Pharos 关联目录或本地镜像读取与规范化
 └── index.ts            # Ingest 模块入口，编排扫描→元数据→代理→GPS→场景
 ```
 
@@ -1032,7 +1034,7 @@ src/modules/ingest/
   → 提取素材自身同源 GPS（DJI 视频 metadata / 照片 EXIF / sidecar SRT / root 级 FlightRecord 切片）
   → 照片若自身 EXIF 带 GPS，直接写资产 `embeddedGps(metadata)`；否则才继续做时间匹配
   → 把 dense same-source 轨迹规范化到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
-  → 扫描 `project/pharos/<trip_id>/plan.json + canonical record.json? + gpx/` 并生成共享 `pharos-context`；忽略一次性 `record-import.json` 与 freeform 未排期备选
+  → 扫描实际关联 trip 的 `plan.json + canonical record.json? + gpx/`（未配置时使用本地镜像） 并生成共享 `pharos-context`；忽略一次性 `record-import.json` 与 freeform 未排期备选
   → 资产只写 lightweight `embeddedGps` 引用（`trackId / pointCount / representative / time-window`），不再内联 dense `points[]`
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
   → 若弱时间源与项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 边界明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”配置，并阻塞后续 Analyze
@@ -1049,7 +1051,7 @@ src/modules/ingest/
 - Ingest 读取的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
 - 如果输入来自独立调色/转换链路，该链路需要先保证关键元信息被保留下来
 - `Pharos` 相关的正式消费顺序为：
-  - 项目内 `pharos/<trip_id>/` 镜像作为输入仓
+  - 关联的外部工程或项目内 `pharos/<trip_id>/` 镜像作为只读输入仓
   - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
   - `record-import.json` 只由 Pyxis 消费并合并到 canonical `record.json`，不得进入 Kairos 输入或 fingerprint
@@ -1058,7 +1060,7 @@ src/modules/ingest/
   - planned shot 的素材归属只按 `record.json.actual_time` 精确匹配；没有完整 actual time、`pending` 或 `abandoned` 的 shot 均不可匹配素材，其中 `abandoned` 是主动放弃，不作为缺失素材
   - Analyze 的正式空间优先级为 `embedded > Pharos GPX > 普通 project GPX > project-derived-track`
   - 同名 `.SRT` / DJI FlightRecord 绑定后的 same-source 轨迹属于 `embedded`，必须压过 Pharos GPX；Pharos GPX 不能覆盖素材同源 GPS 真值
-  - `project/pharos/<trip_id>/gpx/*.gpx` 命中后产出的是 `Pharos` 的 GPX-timed 空间候选，而不是 shot 自带 GPS；若对应时刻无有效点，应保留 `pharos ref` 但不产出 `Pharos` 坐标
+  - 实际关联 trip 目录中的 `gpx/*.gpx` 命中后产出的是 `Pharos` 的 GPX-timed 空间候选，而不是 shot 自带 GPS；若对应时刻无有效点，应保留 `pharos ref` 但不产出 `Pharos` 坐标
 
 #### 2.2 Color — 调色辅助
 

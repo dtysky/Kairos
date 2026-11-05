@@ -19,6 +19,7 @@ export interface IScannedFile {
 }
 
 export interface IScanDirectoryOptions {
+  strict?: boolean;
   excludeSubtrees?: string[];
   onFile?: (file: IScannedFile) => void | Promise<void>;
   onDirectory?: (directory: string) => void | Promise<void>;
@@ -53,7 +54,8 @@ async function walk(
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
-  } catch {
+  } catch (error) {
+    if (options.strict) throw error;
     return;
   }
 

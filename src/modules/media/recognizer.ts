@@ -1,4 +1,4 @@
-import type { IKtepEvidence } from '../../protocol/schema.js';
+import type { IKtepEvidence, IColorAnalysisEvidence } from '../../protocol/schema.js';
 import type { MlClient, IMlVlmTiming } from './ml-client.js';
 import type { IShotKeyframeGroup } from './keyframe.js';
 
@@ -14,6 +14,7 @@ Rules:
 - Do not include markdown or extra explanation.`;
 
 export interface IRecognition {
+  colorEvidence?: IColorAnalysisEvidence;
   sceneType: string;
   subjects: string[];
   mood: string;

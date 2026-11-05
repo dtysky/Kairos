@@ -10,6 +10,8 @@ description: >-
 
 # Kairos: Phase 1 — Ingest
 
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+
 把素材导入 **Kairos 工程内的项目目录**，生成可同步的资产主表和空间缓存；编年史由后续 `/chronology` 显式重建。
 
 这条 skill 只负责：
@@ -17,7 +19,7 @@ description: >-
 - 设备本地路径映射
 - 扫描和元信息提取
 - `store/assets.json`
-- 刷新空间缓存并标记既有 spans / chronology 过期
+- 刷新空间缓存，仅在实际分析/空间依赖变化时标记 spans / chronology 过期
 
 它**不负责风格分析**，也不负责镜头级分析。
 
@@ -117,11 +119,11 @@ importProjectGpxTracks(input: {
 - 新 ingest 不再把 dense GPS `points[]` 内联进 `store/assets.json`；资产只保留 `embeddedGps.trackId / pointCount / representative / startTime / endTime`
 - 如果 FlightRecord 是 DJI v13/v14 加密日志，可在 `config/runtime.json` 中提供 `djiOpenAPIKey`，避免依赖环境变量
 - ingest 会刷新 `gps/derived.json`，把 embedded-derived sparse points 与可解析的 `manual-itinerary` 条目统一编译进 `project-derived-track`
-- ingest 与 `gps-refresh` 都必须刷新 `analysis/pharos-context.json`；Pharos context 要按项目内 `pharos/` 的输入 fingerprint 自动失效并重建
+- ingest 与 `gps-refresh` 都必须刷新 `analysis/pharos-context.json`；Pharos context 要按 `pharos.sourcePath` 实际目录（留空用本地 `pharos/`）及 canonical 文件的输入 fingerprint 自动失效并重建
 - Pharos 输入 fingerprint 只覆盖 canonical `plan.json / record.json / gpx/*.gpx`；一次性 `record-import.json` 只供 Pyxis 合并 canonical record，Kairos 必须忽略。freeform 未排期 route/shot options 也不进入素材匹配或缺口判断
 - Pharos planned shot 的素材归属只使用 `record.json.actual_time` 精确匹配；continuous 行车记录在 `plan` 中没有 planned time 属于正常情况，只要 `record.json` 有完整 actual time 就不应产生 planned-time warning；planned time 不作为素材归属 fallback
 - Pyxis 普通事件完成时长过长二次确认是上游 UI 写入前保护；Kairos ingest / gps-refresh 不因此改写 `record.json`，也不增加 planned-time 或 GPS fallback
-- Carta 实际路线图 / 交互报告过滤航段或异常高速 GPX 段是 Pharos/Carta 本地派生视图规则，不改写原始 GPX、WebDAV 目录或 JSON schema；Kairos ingest / gps-refresh 继续只刷新项目内 `pharos/` 镜像和 GPX/context cache，不消费 Carta 派生报告
+- Carta 实际路线图 / 交互报告过滤航段或异常高速 GPX 段是 Pharos/Carta 本地派生视图规则，不改写原始 GPX、WebDAV 目录或 JSON schema；Kairos ingest / gps-refresh 继续只读关联目录或本地 `pharos/` 镜像，刷新 Kairos 项目内 GPX/context cache，不消费 Carta 派生报告
 - 如果 Pharos 协议 hash 与 `.ai/pharos-protocol-baseline.json` 不匹配，先完成协议同步并刷新 baseline，再改 ingest / GPS 的 Pharos 接入代码
 - Analyze 的正式空间优先级是 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track > none`
 - Pharos GPX 只来自 planned shot 归属后的 trip `gpx/*.gpx` 按时取点；普通项目 GPX 来自 `gps/merged.json` / `gps/tracks/*.gpx`

@@ -27,6 +27,7 @@ spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
+replacement_calls = []
 
 class FakeClip:
     def __init__(self, source_path):
@@ -35,6 +36,10 @@ class FakeClip:
 
     def GetName(self):
         return Path(self.source_path).name
+
+    def ReplaceClip(self, source_path):
+        replacement_calls.append(source_path)
+        return not payload.get("rejectReplacement")
 
     def GetClipProperty(self, key=None):
         props = {
@@ -257,6 +262,7 @@ if payload.get("repeatThroughProjectEntry") or payload.get("retryAfterFailure"):
 print(json.dumps({
     "summary": summary,
     "preparedCount": len(prepared_entries),
+    "replacementCalls": replacement_calls,
     "preparedPaths": [entry["sourceAbsolutePath"] for entry in prepared_entries],
     "error": error,
     "batches": media_pool.batch_calls,
@@ -288,6 +294,7 @@ print(json.dumps({
       emptyFoldersDeleted: number;
     };
     preparedCount: number;
+    replacementCalls: string[];
     preparedPaths: string[];
     error: { code: string; details?: { missingSourcePaths: string[]; importedSourcePaths: string[]; syncSummary: { imported: number } } } | null;
     batches: Array<{ paths: string[]; folder: string }>;
@@ -991,6 +998,19 @@ print(json.dumps({
 }
 
 describe('Resolve edit media sync host', () => {
+  it.each([false, true])('refreshes changed raw bytes in the existing pool item and blocks rejected refresh (reject: %s)', async rejectReplacement => {
+    const sourcePath = fixturePath('C001.MP4');
+    const result = await inspectMediaSync({
+      namespaceClips: [{ sourcePath }], rejectReplacement,
+      clipRequests: [{ rawRelativePath: 'C001.MP4', sourceAbsolutePath: sourcePath,
+        previousSourceContentHash: 'old', sourceContentHash: 'new', sceneCategory: 'day' }],
+    });
+    expect(result.replacementCalls).toEqual([sourcePath]);
+    expect(result.imports).toEqual([]);
+    if (rejectReplacement) expect(result.error?.code).toBe('resolve_changed_source_refresh_failed');
+    else { expect(result.error).toBeNull(); expect(result.preparedCount).toBe(1); }
+  });
+
   const requests = (names: string[], folder = '001-Arrival') => names.map((name, index) => ({
     assetId: `asset-${index}`, rawRelativePath: `${folder}/${name}`,
     assetKind: name.endsWith('.jpg') ? 'photo' : 'video',

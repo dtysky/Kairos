@@ -65,6 +65,7 @@ describe('extractColorSourceTruth', () => {
       '    <Group name="CameraUnitMetadataSet">',
       '      <Item name="CaptureGammaEquation" value="s-log3-cine"/>',
       '      <Item name="CodingEquations" value="rec709"/>',
+      '      <Item name="CaptureColorPrimaries" value="s-gamut3-cine"/>',
       '    </Group>',
       '    <ChangeTable name="Gyroscope">',
       '      <Event frameCount="0" status="start"/>',
@@ -79,6 +80,8 @@ describe('extractColorSourceTruth', () => {
     expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: 'slog3',
+      transferFunction: 's-log3-cine',
+      colorPrimaries: 's-gamut3-cine',
       gyro: true,
       gyroDataAvailable: true,
       deviceFamilyKeys: [],
@@ -153,6 +156,7 @@ describe('extractColorSourceTruth', () => {
     expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: 'slog3',
+      transferFunction: 's-log3-cine',
       gyro: undefined,
       gyroDataAvailable: undefined,
       deviceFamilyKeys: [],

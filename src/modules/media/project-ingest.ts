@@ -1,8 +1,10 @@
-import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import type { ICaptureTime, IKtepAsset, IMediaRoot, IProtectionAudioBinding } from '../../protocol/schema.js';
 import {
   appendAssets,
   loadIngestRoots,
+  loadAssets,
+  loadColorTransformPresetsConfig,
   loadRuntimeConfig,
   loadProjectBriefConfig,
   markChronologyStale,
@@ -10,6 +12,7 @@ import {
   resolveWorkspaceProjectRoot,
   syncProjectBriefMappings,
   touchProjectUpdatedAt,
+  writeJson,
   type IMergeResult,
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
@@ -26,7 +29,8 @@ import { probe, type IMediaToolConfig, type IProbeResult } from './probe.js';
 import { resolveProtectionAudioBinding } from './protection-audio.js';
 import type { IReverseGeocodeService } from './reverse-geocode.js';
 import { resolveMediaRoot, resolveMediaRoots, toPortableRelativePath } from './root-resolver.js';
-import { scanDirectory } from './scanner.js';
+import { assetAnalysisDependency, buildAnalysisInput, materialVersionKey, registerMediaVersion, type MediaRole } from './media-versions.js';
+import { scanDirectory, type IScannedFile } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
@@ -55,6 +59,7 @@ export interface IIngestWorkspaceProjectResult {
   missingRoots: IMediaRoot[];
   merge: IMergeResult;
   metadata: IIngestMetadataStats;
+  versionChanges: Array<{ assetId: string; role: MediaRole; change: 'added' | 'removed' | 'content' | 'stat' | 'availability' | 'profile' }>;
   spansMarkedStale: boolean;
   chronologyMarkedStale: boolean;
   warnings: string[];
@@ -103,7 +108,13 @@ async function runProjectIngest(
   assertUniqueRootCodes(roots);
   const manualCaptureOverrides = await loadManualCaptureTimeOverrides(projectRoot);
 
-  const resolution = resolveMediaRoots(roots);
+  const existingAssets = await loadAssets(projectRoot);
+  const transforms = await loadColorTransformPresetsConfig(input.workspaceRoot);
+  const rootResolutions = roots.filter(root => root.enabled).map(resolveMediaRoot);
+  const resolution = {
+    resolved: rootResolutions.filter(root => root.localPath || root.rawLocalPath),
+    missing: rootResolutions.filter(root => !root.localPath && !root.rawLocalPath).map(item => item.root),
+  };
   const scannedRoots: IIngestedRootSummary[] = [];
   const incoming: IKtepAsset[] = [];
   const warnings = new Set<string>();
@@ -113,7 +124,7 @@ async function runProjectIngest(
   for (const [rootIndex, resolvedRoot] of resolution.resolved.entries()) {
     rootContext = {
       rootId: resolvedRoot.root.id,
-      rootLabel: resolvedRoot.root.label || resolvedRoot.root.rootCode || basename(resolvedRoot.localPath),
+      rootLabel: resolvedRoot.root.label || resolvedRoot.root.rootCode || basename(resolvedRoot.localPath ?? resolvedRoot.rawLocalPath!),
       rootIndex: rootIndex + 1, rootTotal: resolution.resolved.length,
     };
     await progress.report({ phaseKey: 'root-gps', phaseLabel: '准备同源 GPS', extra: counts() }, true);
@@ -132,24 +143,65 @@ async function runProjectIngest(
       fileName, extra: counts(),
     });
     await progress.report({ phaseKey: 'scan', phaseLabel: '扫描素材', current: 0, unit: '个素材', extra: counts() }, true);
-    const files = (await scanDirectory(resolvedRoot.localPath, {
-      excludeSubtrees: [
-        ...resolveNestedRawExclusions(resolvedRoot.localPath, resolvedRoot.rawLocalPath),
-        ...(projectBrief.extraMedia ? [resolveMediaRoot({ ...projectBrief.extraMedia, id: projectBrief.extraMedia.rootId || 'extra', enabled: true }).localPath].filter((path): path is string => Boolean(path)) : []),
-      ],
-      onDirectory: directory => scanProgress(toPortableRelativePath(resolvedRoot.localPath, directory) || '当前素材目录'),
-      onFile: file => {
-        if (file.kind === 'audio') return;
-        rootScanned++;
-        scannedFileCount++;
-        return scanProgress(toPortableRelativePath(resolvedRoot.localPath, file.path));
-      },
-    }))
-      .filter(file => file.kind !== 'audio');
+    const previousByKey = new Map(existingAssets.filter(asset => asset.ingestRootId === resolvedRoot.root.id)
+      .map(asset => [materialVersionKey(asset.kind, asset.sourcePath), asset]));
+    const pairs = new Map<string, { kind: IKtepAsset['kind']; versions: NonNullable<IKtepAsset['mediaVersions']>; files: Partial<Record<MediaRole, IScannedFile>>; previous?: IKtepAsset }>();
+    // Preserve records belonging to an offline role, without pretending those bytes are available.
+    for (const [key, previous] of previousByKey) {
+      const versions: NonNullable<IKtepAsset['mediaVersions']> = {};
+      for (const role of ['target', 'raw'] as const) {
+        if (role === 'target' ? resolvedRoot.localPath : resolvedRoot.rawLocalPath) continue;
+        const version = previous.mediaVersions?.[role];
+        if (version) versions[role] = { ...version, available: false };
+      }
+      if (Object.keys(versions).length) pairs.set(key, { kind: previous.kind, versions, files: {}, previous });
+    }
+    for (const role of ['target', 'raw'] as const) {
+      const basePath = role === 'target' ? resolvedRoot.localPath : resolvedRoot.rawLocalPath;
+      if (!basePath) continue;
+      const scanned = (await scanDirectory(basePath, {
+        strict: true,
+        excludeSubtrees: [
+          ...resolveNestedRawExclusions(basePath, role === 'target' ? resolvedRoot.rawLocalPath : resolvedRoot.localPath),
+          ...(projectBrief.extraMedia ? [resolveMediaRoot({ ...projectBrief.extraMedia, id: projectBrief.extraMedia.rootId || 'extra', enabled: true }).localPath].filter((path): path is string => Boolean(path)) : []),
+        ],
+        onDirectory: directory => scanProgress(`${role}/${toPortableRelativePath(basePath, directory)}`),
+        onFile: file => {
+          if (file.kind === 'audio') return;
+          rootScanned++; scannedFileCount++;
+          return scanProgress(`${role}/${toPortableRelativePath(basePath, file.path)}`);
+        },
+      })).filter(file => file.kind !== 'audio');
+      for (const file of scanned) {
+        const relativePath = toPortableRelativePath(basePath, file.path);
+        const key = materialVersionKey(file.kind, relativePath);
+        const previous = previousByKey.get(key);
+        const pair = pairs.get(key) ?? { kind: file.kind, versions: {}, files: {}, previous };
+        if (pair.files[role]) throw new Error(`同一素材的 ${role} 存在重名冲突：${relativePath}`);
+        pair.files[role] = file;
+        pairs.set(key, pair);
+      }
+    }
+    const files: Array<IScannedFile & { basePath: string; pair: (typeof pairs extends Map<string, infer P> ? P : never) }> = [];
+    // A legacy target-only index has no version hash to migrate while its target
+    // directory is offline. Preserve it until those bytes are available to register.
+    if (!resolvedRoot.localPath) {
+      for (const [key, previous] of previousByKey) {
+        if (!previous.mediaVersions && !pairs.has(key)) incoming.push(previous);
+      }
+    }
+    for (const pair of pairs.values()) {
+      const selectedRole = pair.files.target ? 'target' : pair.files.raw ? 'raw' : undefined;
+      if (!selectedRole) {
+        if (pair.previous) incoming.push({ ...pair.previous, mediaVersions: pair.versions, analysisInput: undefined });
+        continue;
+      }
+      files.push({ ...pair.files[selectedRole]!, basePath: (selectedRole === 'target' ? resolvedRoot.localPath : resolvedRoot.rawLocalPath)!, pair });
+    }
     scannedRoots.push({
       rootId: resolvedRoot.root.id,
       label: resolvedRoot.root.label,
-      localPath: resolvedRoot.localPath,
+      localPath: resolvedRoot.localPath ?? resolvedRoot.rawLocalPath!,
       scannedFileCount: files.length,
     });
 
@@ -164,15 +216,23 @@ async function runProjectIngest(
     await progress.report({ phaseKey: 'metadata', phaseLabel: '读取素材元数据', current: 0, total: files.length,
       unit: '个素材', extra: counts() }, true);
     const metadata = await mapWithConcurrency(files, 4, async file => {
-      const fileName = toPortableRelativePath(resolvedRoot.localPath, file.path);
+      const fileName = toPortableRelativePath(file.basePath, file.path);
       activeFiles.add(fileName);
       await metadataProgress();
+      for (const role of ['target', 'raw'] as const) {
+        const versionFile = file.pair.files[role];
+        if (!versionFile) continue;
+        const basePath = (role === 'target' ? resolvedRoot.localPath : resolvedRoot.rawLocalPath)!;
+        file.pair.versions[role] = await registerMediaVersion(versionFile.path, toPortableRelativePath(basePath, versionFile.path), role, resolvedRoot.root, file.pair.previous?.mediaVersions?.[role]);
+      }
       const probeResult = await safeProbe(file.path, runtimeConfig, metadataCache.probe);
       const rawCapture = await resolveCaptureTime(file.path, probeResult);
       const protectionAudio = file.kind === 'video'
         ? await resolveProtectionAudioBinding({
           localPath: file.path,
-          localRootPath: resolvedRoot.localPath,
+          localRootPath: file.basePath,
+          sourceRole: file.pair.files.target ? 'target' : 'raw',
+          previousBinding: file.pair.previous?.protectionAudio,
           assetDurationMs: probeResult.durationMs ?? undefined,
           tools: runtimeConfig,
           probeMedia: metadataCache.probe,
@@ -187,21 +247,26 @@ async function runProjectIngest(
     await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: 0, total: files.length,
       unit: '个素材', extra: counts() }, true);
     for (const [index, file] of files.entries()) {
-      const fileName = toPortableRelativePath(resolvedRoot.localPath, file.path);
+      const fileName = toPortableRelativePath(file.basePath, file.path);
       await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: index,
         total: files.length, unit: '个素材', fileName, extra: counts() });
-      incoming.push(await buildAssetFromScan(
+      const asset = await buildAssetFromScan(
         projectRoot,
         file.path,
         file.kind,
         file.sizeBytes,
         resolvedRoot.root,
-        resolvedRoot.localPath,
+        file.basePath,
         metadata[index]!,
         manualCaptureOverrides,
         preparedRootGps,
         warning => warnings.add(warning),
-      ));
+        [file.pair.previous?.sourcePath, ...Object.values(file.pair.versions).map(version => version.relativePath)].filter((value): value is string => Boolean(value)),
+      );
+      asset.mediaVersions = file.pair.versions;
+      asset.analysisInput = await buildAnalysisInput(asset, resolvedRoot.root, input.workspaceRoot, transforms);
+      if (file.pair.previous) asset.id = file.pair.previous.id;
+      incoming.push(asset);
       boundFileCount++;
       await progress.report({ phaseKey: 'bind', phaseLabel: '更新拍摄时间与 GPS 绑定', current: index + 1,
         total: files.length, unit: '个素材', fileName, extra: counts() });
@@ -218,6 +283,23 @@ async function runProjectIngest(
   const merge = await appendAssets(projectRoot, uniqueIncoming, {
     replaceRootIds: scannedRoots.map(root => root.rootId),
   });
+  const previousById = new Map(existingAssets.map(asset => [asset.id, asset]));
+  const nextById = new Map(merge.assets.map(asset => [asset.id, asset]));
+  const versionChanges: IIngestWorkspaceProjectResult['versionChanges'] = [];
+  for (const assetId of new Set([...previousById.keys(), ...nextById.keys()])) {
+    for (const role of ['target', 'raw'] as const) {
+      const before = previousById.get(assetId)?.mediaVersions?.[role];
+      const after = nextById.get(assetId)?.mediaVersions?.[role];
+      const change = !before && after ? 'added' : before && !after ? 'removed'
+        : before && after ? before.contentHash !== after.contentHash ? 'content'
+          : before.sourceProfile !== after.sourceProfile || before.colorPrimaries !== after.colorPrimaries || before.transferFunction !== after.transferFunction ? 'profile'
+          : before.available !== after.available ? 'availability'
+          : before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs ? 'stat' : undefined
+        : undefined;
+      if (change) versionChanges.push({ assetId, role, change });
+    }
+  }
+  await writeJson(join(projectRoot, '.tmp', 'ingest', 'versions.json'), { jobId: input.jobId, updatedAt: new Date().toISOString(), changes: versionChanges });
   await progress.report({ phaseKey: 'gps', phaseLabel: '刷新空间缓存', extra: counts() }, true);
   await refreshProjectDerivedTrackCache({
     projectRoot,
@@ -225,10 +307,12 @@ async function runProjectIngest(
     geocodeLocation: input.geocodeLocation,
     reverseGeocodeService: input.reverseGeocodeService,
   });
-  const [staleSpans, staleChronology] = await Promise.all([
-    markSpansStale(projectRoot, 'ingest updated assets or spatial inputs; rerun /chronology span-rebuild'),
+  const previousDependencies = new Map(existingAssets.map(asset => [asset.id, assetAnalysisDependency(asset)]));
+  const dependenciesChanged = merge.pruned.length > 0 || merge.assets.some(asset => previousDependencies.get(asset.id) !== assetAnalysisDependency(asset));
+  const [staleSpans, staleChronology] = dependenciesChanged ? await Promise.all([
+    markSpansStale(projectRoot, 'ingest changed analysis or spatial inputs; rerun Analyze and /chronology span-rebuild'),
     markChronologyStale(projectRoot),
-  ]);
+  ]) : [null, null];
   await touchProjectUpdatedAt(projectRoot);
   await progress.report({ phaseKey: 'validate', phaseLabel: '校验素材时间', extra: counts() }, true);
   await enforceProjectTimelineConsistency({
@@ -240,6 +324,8 @@ async function runProjectIngest(
   await progress.report({ status: 'succeeded', phaseKey: 'complete', phaseLabel: '导入完成',
     current: incoming.length, total: incoming.length, unit: '个素材',
     extra: { ...counts(), addedCount: merge.added.length, prunedCount: merge.pruned.length,
+      versionContentChangedCount: versionChanges.filter(change => change.change === 'content').length,
+      versionStatOnlyChangedCount: versionChanges.filter(change => change.change === 'stat').length,
       assetCount: merge.assets.length, missingRootCount: resolution.missing.length, warningCount: warnings.size },
   }, true);
   return {
@@ -248,6 +334,7 @@ async function runProjectIngest(
     missingRoots: resolution.missing,
     merge,
     metadata: { ...metadataCache.stats },
+    versionChanges,
     spansMarkedStale: staleSpans != null,
     chronologyMarkedStale: staleChronology != null,
     warnings: [...warnings],
@@ -279,13 +366,13 @@ async function buildAssetFromScan(
   manualCaptureOverrides: Awaited<ReturnType<typeof loadManualCaptureTimeOverrides>>,
   preparedRootGps: Awaited<ReturnType<typeof prepareRootSameSourceGpsContext>>,
   onWarning: (warning: string) => void,
+  sourceAliases: string[] = [],
 ): Promise<IKtepAsset> {
   const sourcePath = toPortableRelativePath(localRootPath, localFilePath);
   const { probeResult, rawCapture, protectionAudio } = metadata;
-  const manualOverride = findManualCaptureTimeOverride(manualCaptureOverrides, {
-    rootRef: root.id,
-    sourcePath,
-  });
+  const manualOverrides = [...new Set([sourcePath, ...sourceAliases])].map(path => findManualCaptureTimeOverride(manualCaptureOverrides, { rootRef: root.id, sourcePath: path })).filter(Boolean);
+  if (new Set(manualOverrides.map(row => row!.capturedAt)).size > 1) throw new Error(`同一素材 raw/target 的人工拍摄时间冲突：${sourcePath}`);
+  const manualOverride = manualOverrides[0];
   const rootClockOffsetMs = normalizeClockOffsetMs(root.clockOffsetMs);
   const capture = manualOverride
     ? {
@@ -355,6 +442,9 @@ async function buildAssetFromScan(
       audioChannels: probeResult.audioChannels,
       audioBitRate: probeResult.audioBitRate,
       rawTags: probeResult.rawTags,
+      displayWidth: probeResult.displayWidth,
+      displayHeight: probeResult.displayHeight,
+      rotationDegrees: probeResult.rotationDegrees,
     },
   };
 }

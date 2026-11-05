@@ -50,6 +50,7 @@ export interface IColorRootWorkspaceSummary {
   gradingTimelineName: string;
   renderPreset: IColorRenderPreset;
   colorSpaceProfile?: string;
+  inputColorSpace?: string;
   transformPresetKey?: string;
   blockingReasons: string[];
   hostPreflight?: IColorHostPreflight;
@@ -116,6 +117,7 @@ export function buildColorWorkspaceState(
       const groupsSnapshot = input.groupSnapshotsByRootId?.[root.id];
       const renderPreset = materializeRenderPreset(root.color?.renderPreset);
       const colorSpaceProfile = trimmed(root.color?.colorSpaceProfile);
+      const inputColorSpace = trimmed(root.color?.inputColorSpace);
       const transformPresetKey = trimmed(root.color?.transformPresetKey);
       const resolveProjectName = deriveColorResolveProjectName(input.projectName, input.projectId);
       const latestDrpSnapshot = storedCurrent?.latestDrpSnapshot
@@ -189,6 +191,7 @@ export function buildColorWorkspaceState(
         gradingTimelineName: deriveColorGradingTimelineName(currentView.label, root.id),
         renderPreset,
         colorSpaceProfile,
+        inputColorSpace,
         transformPresetKey,
         blockingReasons: currentView.blockingReasons,
         hostPreflight,

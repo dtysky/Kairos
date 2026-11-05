@@ -21,6 +21,7 @@ export interface IProjectBriefPathMapping {
 }
 
 export interface IProjectBriefPharosConfig {
+  sourcePath?: string;
   includedTripIds: string[];
 }
 
@@ -86,7 +87,7 @@ export function buildProjectBriefWithMappings(input: {
     captureTimePolicy?: IProjectBriefPathMapping['captureTimePolicy'];
   }>;
   extraMedia?: { rootId?: string; path: string; alternatePaths?: Array<{path?: string}>; description?: string };
-  pharos?: { includedTripIds?: string[] };
+  pharos?: { sourcePath?: string; includedTripIds?: string[] };
   materialPatternPhrases?: string[];
 }): string {
   const templateLines = buildProjectBriefTemplate(input)
@@ -147,6 +148,7 @@ export function buildProjectBriefWithMappings(input: {
     ] : []),
     '## Pharos',
     '',
+    ...(input.pharos?.sourcePath ? [`工程目录：${input.pharos.sourcePath}`, ''] : []),
     ...pharosLines,
     '## 材料模式短语',
     '',
@@ -164,6 +166,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
 
   const mappings: IProjectBriefPathMapping[] = [];
   const includedTripIds: string[] = [];
+  let pharosSourcePath: string | undefined;
   const materialPatternPhrases: string[] = [];
 
   let inMappings = false;
@@ -307,6 +310,11 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     }
 
     if (inPharos) {
+      if (line.startsWith('工程目录：')) {
+        pharosSourcePath = line.slice('工程目录：'.length).trim() || undefined;
+        expectIncludedTripValue = false;
+        continue;
+      }
       if (line.startsWith('包含 Trip：')) {
         const value = line.slice('包含 Trip：'.length).trim();
         if (value) {
@@ -515,8 +523,8 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     description,
     createdAt,
     mappings,
-    pharos: includedTripIds.length > 0
-      ? { includedTripIds }
+    pharos: pharosSourcePath || includedTripIds.length > 0
+      ? { sourcePath: pharosSourcePath, includedTripIds }
       : undefined,
     vocabulary: {
       materialPatternPhrases: dedupeTrimmedStrings(materialPatternPhrases),

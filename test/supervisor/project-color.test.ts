@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as analysisClassification from '../../src/modules/color/analysis-classification.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -11,6 +12,7 @@ import * as lowlightClassifier from '../../src/modules/color/lowlight-classifier
 import * as windshieldHazeClassifier from '../../src/modules/color/windshield-haze-classifier.js';
 import * as resolveExecutor from '../../src/modules/color/resolve-executor.js';
 import * as sourceTruth from '../../src/modules/color/source-truth.js';
+import * as transformPresets from '../../src/modules/color/transform-presets.js';
 import type { IColorGroupsSnapshotFile } from '../../src/protocol/schema.js';
 import {
   ColorPrepBlockedError,
@@ -55,6 +57,15 @@ import {
 } from '../../src/store/index.js';
 
 const workspaces: string[] = [];
+const syncLuts = transformPresets.syncReferencedResolveLuts;
+
+// These tests isolate Resolve orchestration; the real report/input gate is covered by color/analysis-classification.test.ts.
+beforeEach(() => {
+  vi.spyOn(analysisClassification, 'bindColorAnalysis').mockImplementation(async (_project, _root, inventory) => inventory);
+  // Test LUT fixtures must never touch the user's installed Resolve LUT directory.
+  vi.spyOn(transformPresets, 'syncReferencedResolveLuts').mockImplementation(input =>
+    syncLuts({ ...input, resolveLutRoot: join(input.workspaceRoot, 'test-resolve-luts') }));
+});
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -107,6 +118,13 @@ function buildClipRepairSnapshot(
   return {
     clipKey: String(clip.rawRelativePath ?? ''),
     displayName: String(clip.sourceStem ?? ''),
+    sceneCategory: clip.sceneCategory,
+    classificationFingerprint: clip.classificationFingerprint,
+    analysisInputFingerprint: clip.analysisInputFingerprint,
+    sourceContentHash: clip.sourceContentHash,
+    colorManagementPolicy: clip.colorManagementPolicy,
+    inputColorSpace: clip.inputColorSpace,
+    inputColorSource: clip.inputColorSource,
     logProfile: typeof clip.logProfile === 'string' ? clip.logProfile : undefined,
     encodedWidth: clip.encodedWidth,
     encodedHeight: clip.encodedHeight,
@@ -824,6 +842,33 @@ describe('project color actions', () => {
 
     expect(await readFile(join(currentLocalPath, 'day1', 'A001.mp4'), 'utf-8')).toBe('rendered:day1/A001.mov');
     expect(await readFile(join(currentLocalPath, 'day2', 'A001.mp4'), 'utf-8')).toBe('rendered:day2/A001.mov');
+  });
+
+  it('blocks stale scene-group exports before rendering, then accepts freshly prepared inputs', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-scene-export-inputs';
+    const { projectRoot, rootId } = await seedSingleRootProject({ workspaceRoot, projectId,
+      projectName: 'Scene Export Inputs', rawFiles: ['A001.mov'] });
+    mockColorMetadata();
+    let signature = 'original';
+    vi.mocked(analysisClassification.bindColorAnalysis).mockImplementation(async (_project, _root, inventory) =>
+      inventory.map(clip => ({ ...clip, sceneCategory: 'day', sourceContentHash: 'raw-hash',
+        colorManagementPolicy: 'rcm-dwg-v1', inputColorSpace: 'S-Gamut3.Cine/S-Log3', inputColorSource: 'sony-sidecar-xml',
+        analysisInputFingerprint: 'target-hash', classificationFingerprint: signature })));
+    const render = vi.fn(async input => createFakeExecutor().executeRoot(input));
+    const executor = createFakeExecutor({ onExecuteRoot: render });
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    // A sync must retain the prepared input proof instead of stripping scene metadata.
+    await syncProjectColorGroups({ workspaceRoot, projectId, rootId, action: 'sync_groups', executor });
+    expect((await loadColorGroupsSnapshot(projectRoot, rootId))?.groups[0]?.clips[0]?.classificationFingerprint).toBe('original');
+    signature = 'changed-raw-lut';
+    await expect(executeProjectColorRoot({ workspaceRoot, projectId, rootId, action: 'execute_root', executor }))
+      .rejects.toThrow('重新 prepare_root');
+    expect(render).not.toHaveBeenCalled();
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    await executeProjectColorRoot({ workspaceRoot, projectId, rootId, action: 'execute_root', executor });
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(render.mock.calls[0]![0].clips[0]).toMatchObject({ colorManagementPolicy: 'rcm-dwg-v1', inputColorSpace: 'S-Gamut3.Cine/S-Log3' });
   });
 
   it('defaults execute_root to synced Resolve group clips instead of raw inventory', async () => {

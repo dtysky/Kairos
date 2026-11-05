@@ -10,6 +10,8 @@ description: >-
 
 # Kairos: Project Init
 
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+
 在正式跑 Ingest / Analyze / Script / Timeline 之前，先把项目内容层初始化好，并且保证这一步对迁移友好。
 
 这条 skill 负责：
@@ -63,6 +65,8 @@ description: >-
 - `store/assets.json[*].sourcePath` 必须保持 root-relative；迁移时不要改写成当前机器绝对路径
 
 ## 当前项目骨架
+
+2026-11-05 起可在 `project-brief.json.pharos.sourcePath` 关联现有 Pharos trip 目录或 trip 集合目录。源目录只读，GPS 和执行资料直接读取，已发布研究由审查读取。新项目优先复用用户已关联目录。省略 sourcePath 时，下述项目内镜像流程继续适用。上游旅行创作调研 skill 无新增数据协议，详见 `designs/pharos-directory-link.md`。
 
 ### `initWorkspaceProject()` 自动创建的目录
 
@@ -146,7 +150,7 @@ const projectRoot = await initWorkspaceProject(
 2. 新项目启动
 - 调 `initWorkspaceProject(workspaceRoot, projectId, name, description?)`
 - 这一步只创建骨架和基础种子文件，不会自动扫描素材
-- 新项目启动后应明确提醒用户：`projects/<projectId>/pharos/` 已经建好，后续只需要把 `trip_id/plan.json + record.json? + gpx/` 镜像放进去
+- 新项目有现存 Pharos 工程时直接配置 `pharos.sourcePath`；没有关联目录时再使用已创建的 `projects/<projectId>/pharos/` 镜像入口
 - 从 Pharos/Carta 本地 trip 目录建立镜像时，只复制 canonical `plan.json`、可选 canonical `record.json` 与 `gpx/*.gpx`；`record-import.json`、路线报告、旅行记、review 和重建说明都不是 Kairos 输入
 - 对 `trip_kind: "freeform"`，允许 `days[]` 稀疏或为空；初始化不把未排期 route/shot options 转写成 Day、执行记录或素材缺口
 - `field-guide.json`、研究委托、Atlas / Argo 资料不随 canonical trip 镜像复制。字幕审查阶段应检查已发布 field guide 并独立提取 post-ASR 项目词表，保存来源审计，但不进入 Ingest fingerprint 或素材匹配。`active_route / route_progress / route_stop_day` 不替代实际日期或执行记录；没有已排期 shots 时，仍可从 canonical `record.extra_shots[]` 读取实际事件。
@@ -164,7 +168,7 @@ const projectRoot = await initWorkspaceProject(
 4. 维护 `project-brief`
 - 路径映射的正式结构化真值统一写到 `config/project-brief.json`
 - 正常 Console 路径应优先使用 `/ingest-gps` 的结构化 `素材 Root` 编辑器；它保存时会写 `config/project-brief.json`，并自动回写 `config/project-brief.md`
-- `Pharos` 不再通过外部路径字段接入；项目内固定投放位置是 `projects/<projectId>/pharos/`
+- `Pharos` 通过可选 `pharos.sourcePath` 关联单 Trip 或集合目录，留空沿用 `projects/<projectId>/pharos/`；显式失效路径必须报告，不得创建或回退
 - 只有在没有 Console 可用或需要离线修复时，才回到直接维护 Markdown：
 
 ```text
@@ -213,7 +217,7 @@ const projectRoot = await initWorkspaceProject(
 | 检查项 | 结论 |
 |---|---|
 | `store/project.json` + `store/manifest.json` | 项目骨架已经存在 |
-| `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + canonical record.json? + gpx/`，不放 `record-import.json` |
+| `pharos/` | 未关联外部 Pharos 时使用的本地镜像根目录已经就位，可直接放入 `trip_id/plan.json + canonical record.json? + gpx/`，不放 `record-import.json` |
 | `config/project-brief.json` + `config/project-brief.md` | 可以继续维护素材路径与说明；Markdown 只是镜像 |
 | `config/project-brief.json` 中的主/备选路径 | 当前机器能解析到可读 Root 时，可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |

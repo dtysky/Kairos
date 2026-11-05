@@ -22,6 +22,7 @@ const IPreparedSourceContext = z.object({
 
 const IPreparedAssetCheckpointBase = {
   assetId: z.string(),
+  inputFingerprint: z.string().optional(),
   shotBoundaries: z.array(IShotBoundary),
   shotBoundariesResolved: z.boolean(),
   sampleFrames: z.array(ICoarseFrame),
@@ -57,6 +58,7 @@ export type IPreparedAssetCheckpointV3 = z.infer<typeof IPreparedAssetCheckpoint
 
 export interface ILoadPreparedAssetCheckpointOptions {
   sourcePath?: string;
+  inputFingerprint?: string;
   requireSampleFrames?: boolean;
 }
 
@@ -79,6 +81,7 @@ export async function loadPreparedAssetCheckpoint(
   );
   if (!checkpoint) return null;
   if (options?.requireSampleFrames && checkpoint.sampleFrames.length === 0) return null;
+  if (options?.inputFingerprint) return checkpoint.inputFingerprint === options.inputFingerprint ? checkpoint : null;
   if (!options?.sourcePath) return checkpoint;
 
   let sourceStat;

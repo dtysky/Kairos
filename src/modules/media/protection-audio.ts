@@ -1,3 +1,5 @@
+import { statSync } from 'node:fs';
+import { fingerprintMediaFile } from './media-versions.js';
 import { readdir } from 'node:fs/promises';
 import { basename, join, parse } from 'node:path';
 import type {
@@ -6,7 +8,7 @@ import type {
   IProtectionAudioBinding,
 } from '../../protocol/schema.js';
 import { probe, type IMediaToolConfig } from './probe.js';
-import { resolveAssetLocalPath, toPortableRelativePath } from './root-resolver.js';
+import { buildRootPathCandidates, resolveAssetLocalPath, toPortableRelativePath } from './root-resolver.js';
 
 const CPROTECTION_AUDIO_EXT_PRIORITY = ['.wav', '.flac', '.m4a', '.aac', '.mp3'] as const;
 const CEXACT_ALIGNMENT_TOLERANCE_MS = 50;
@@ -15,6 +17,8 @@ const CNEAR_ALIGNMENT_TOLERANCE_MS = 300;
 export async function resolveProtectionAudioBinding(input: {
   localPath: string;
   localRootPath: string;
+  sourceRole?: 'raw' | 'target';
+  previousBinding?: IProtectionAudioBinding;
   assetDurationMs?: number;
   tools?: IMediaToolConfig;
   probeMedia?: typeof probe;
@@ -37,7 +41,13 @@ export async function resolveProtectionAudioBinding(input: {
     ? Math.abs(input.assetDurationMs - protectionDurationMs)
     : undefined;
 
+  const previous = input.previousBinding;
+  const fingerprint = input.sourceRole ? await fingerprintMediaFile(protectionPath,
+    previous?.contentHash && previous.sizeBytes != null && previous.mtimeMs != null && previous.ctimeMs != null
+      ? { ...previous, relativePath: previous.sourcePath, available: true, contentHash: previous.contentHash, sizeBytes: previous.sizeBytes, mtimeMs: previous.mtimeMs, ctimeMs: previous.ctimeMs } : undefined) : undefined;
   return {
+    ...(fingerprint ?? {}),
+    ...(input.sourceRole ? { sourceRole: input.sourceRole } : {}),
     sourcePath: toPortableRelativePath(input.localRootPath, protectionPath),
     displayName: basename(protectionPath),
     durationMs: protectionDurationMs,
@@ -57,6 +67,15 @@ export function resolveProtectionAudioLocalPath(
   const sourcePath = asset.protectionAudio?.sourcePath;
   if (!sourcePath) return null;
 
+  if (asset.protectionAudio?.sourceRole) {
+    const root = roots.find(root => root.id === asset.ingestRootId && root.enabled);
+    if (!root) return null;
+    for (const candidate of buildRootPathCandidates(root, asset.protectionAudio.sourceRole === 'raw' ? 'rawPath' : 'path')) {
+      const path = join(candidate.path, sourcePath);
+      try { if (statSync(path).isFile()) return path; } catch { /* try alternate */ }
+    }
+    return null;
+  }
   return resolveAssetLocalPath({
     ingestRootId: asset.ingestRootId,
     sourcePath,

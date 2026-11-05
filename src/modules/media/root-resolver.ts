@@ -114,7 +114,7 @@ export function toPortableRelativePath(
 }
 
 export function resolveAssetLocalPath(
-  asset: Pick<IKtepAsset, 'ingestRootId' | 'sourcePath'>,
+  asset: Pick<IKtepAsset, 'ingestRootId' | 'sourcePath' | 'mediaVersions'>,
   roots: IMediaRoot[],
 ): string | null {
   if (isAbsolute(asset.sourcePath)) {
@@ -125,6 +125,20 @@ export function resolveAssetLocalPath(
 
   const root = roots.find(item => item.id === asset.ingestRootId && item.enabled);
   if (!root) return null;
+
+  if (asset.mediaVersions) {
+    for (const role of ['target', 'raw'] as const) {
+      const version = asset.mediaVersions[role];
+      if (!version) continue;
+      const segments = version.relativePath.split(/[\\/]+/).filter(Boolean);
+      if (segments.includes('..') || isAbsolute(version.relativePath)) throw new Error('素材版本路径必须位于 root 内');
+      for (const candidate of buildRootPathCandidates(root, role === 'target' ? 'path' : 'rawPath')) {
+        const assetPath = join(candidate.path, ...segments);
+        if (isReadableFile(assetPath)) return assetPath;
+      }
+    }
+    return null;
+  }
 
   const segments = asset.sourcePath.split(/[\\/]+/).filter(Boolean);
   for (const candidate of buildRootPathCandidates(root, 'path')) {

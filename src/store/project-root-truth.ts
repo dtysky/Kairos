@@ -35,6 +35,7 @@ export type TProjectBriefMappingInput = {
   color?: {
     renderPreset?: Partial<IColorRenderPreset>;
     colorSpaceProfile?: string;
+    inputColorSpace?: string;
     transformPresetKey?: string;
   };
 };
@@ -65,6 +66,7 @@ type TProjectBriefConfigInput = {
     description?: string;
   };
   pharos?: {
+    sourcePath?: string;
     includedTripIds?: string[];
   };
   materialPatternPhrases?: string[];
@@ -280,6 +282,7 @@ function buildMappingFromInput(
   const rootCode = normalizeConfigKey(mapping.rootCode ?? legacyRoot?.rootCode);
   const renderPreset = normalizeRenderPreset(mapping.color?.renderPreset ?? legacyRoot?.color?.renderPreset);
   const colorSpaceProfile = normalizeColorSpaceProfile(mapping.color?.colorSpaceProfile ?? legacyRoot?.color?.colorSpaceProfile);
+  const inputColorSpace = trimString(mapping.color?.inputColorSpace ?? legacyRoot?.color?.inputColorSpace);
   const transformPresetKey = normalizeTransformPresetKey(mapping.color?.transformPresetKey ?? legacyRoot?.color?.transformPresetKey);
   const captureTimePolicy = normalizeCaptureTimePolicy(mapping.captureTimePolicy ?? legacyRoot?.captureTimePolicy);
   const notes = trimStringList(mapping.notes) ?? trimStringList(legacyRoot?.notes) ?? (description ? [description] : undefined);
@@ -305,10 +308,11 @@ function buildMappingFromInput(
     notes,
     tags,
     captureTimePolicy,
-    color: renderPreset || colorSpaceProfile || transformPresetKey
+    color: renderPreset || colorSpaceProfile || inputColorSpace || transformPresetKey
       ? {
         ...(renderPreset ? { renderPreset } : {}),
         ...(colorSpaceProfile ? { colorSpaceProfile } : {}),
+        ...(inputColorSpace ? { inputColorSpace } : {}),
         ...(transformPresetKey ? { transformPresetKey } : {}),
       }
       : undefined,
@@ -333,12 +337,15 @@ export function materializeProjectBriefConfig(
     .filter((mapping): mapping is IProjectBriefMappingConfig => Boolean(mapping));
 
   const includedTripIds = trimStringList(input.pharos?.includedTripIds);
+  const pharosSourcePath = trimString(input.pharos?.sourcePath);
   return {
     name: trimString(input.name) ?? defaultName,
     description: trimString(input.description),
     createdAt: trimString(input.createdAt),
     mappings,
-    pharos: includedTripIds?.length ? { includedTripIds } : undefined,
+    pharos: pharosSourcePath || includedTripIds?.length
+      ? { sourcePath: pharosSourcePath, includedTripIds: includedTripIds ?? [] }
+      : undefined,
     voiceoverMedia: normalizeVoiceoverMedia(input.voiceoverMedia),
     audioMedia: normalizeAudioMedia(input.audioMedia),
     extraMedia: normalizeAudioMedia(input.extraMedia ? { ...input.extraMedia, rootId: input.extraMedia.rootId || 'extra' } : undefined),
@@ -366,11 +373,13 @@ export function projectBriefToMediaRoots(config: Pick<IProjectBriefConfig, 'mapp
     color: (() => {
       const renderPreset = normalizeRenderPreset(mapping.color?.renderPreset);
       const colorSpaceProfile = normalizeColorSpaceProfile(mapping.color?.colorSpaceProfile);
+      const inputColorSpace = trimString(mapping.color?.inputColorSpace);
       const transformPresetKey = normalizeTransformPresetKey(mapping.color?.transformPresetKey);
-      if (!renderPreset && !colorSpaceProfile && !transformPresetKey) return undefined;
+      if (!renderPreset && !colorSpaceProfile && !inputColorSpace && !transformPresetKey) return undefined;
       return {
         ...(renderPreset ? { renderPreset } : {}),
         ...(colorSpaceProfile ? { colorSpaceProfile } : {}),
+        ...(inputColorSpace ? { inputColorSpace } : {}),
         ...(transformPresetKey ? { transformPresetKey } : {}),
       };
     })(),
@@ -395,6 +404,7 @@ export function mediaRootsToProjectBriefMappings(
     const derivedRootId = buildProjectBriefRootId(path, pathOccurrences);
     const renderPreset = normalizeRenderPreset(root.color?.renderPreset ?? existing?.color?.renderPreset);
     const colorSpaceProfile = normalizeColorSpaceProfile(root.color?.colorSpaceProfile ?? existing?.color?.colorSpaceProfile);
+    const inputColorSpace = trimString(root.color?.inputColorSpace ?? existing?.color?.inputColorSpace);
     const transformPresetKey = normalizeTransformPresetKey(root.color?.transformPresetKey ?? existing?.color?.transformPresetKey);
     const captureTimePolicy = normalizeCaptureTimePolicy(root.captureTimePolicy ?? existing?.captureTimePolicy);
     const alternatePaths = normalizeAlternatePaths(root.alternatePaths) ?? normalizeAlternatePaths(existing?.alternatePaths);
@@ -414,10 +424,11 @@ export function mediaRootsToProjectBriefMappings(
       notes: trimStringList(root.notes) ?? trimStringList(existing?.notes) ?? (trimString(root.description) ? [trimString(root.description)!] : undefined),
       tags: trimStringList(root.tags) ?? trimStringList(existing?.tags),
       captureTimePolicy,
-      color: renderPreset || colorSpaceProfile || transformPresetKey
+      color: renderPreset || colorSpaceProfile || inputColorSpace || transformPresetKey
         ? {
           ...(renderPreset ? { renderPreset } : {}),
           ...(colorSpaceProfile ? { colorSpaceProfile } : {}),
+          ...(inputColorSpace ? { inputColorSpace } : {}),
           ...(transformPresetKey ? { transformPresetKey } : {}),
         }
         : undefined,

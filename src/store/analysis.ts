@@ -5,6 +5,7 @@ import {
   IAssetCoarseReport,
   IKtepAsset,
 } from '../protocol/schema.js';
+import { loadAssets } from './incremental.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export function getAssetReportsRoot(projectRoot: string): string {
@@ -19,10 +20,10 @@ export async function loadAssetReport(
   projectRoot: string,
   assetId: string,
 ): Promise<IAssetCoarseReport | null> {
-  return readJsonOrNull(
-    getAssetReportPath(projectRoot, assetId),
-    IAssetCoarseReport,
-  ) as Promise<IAssetCoarseReport | null>;
+  const report = await readJsonOrNull(getAssetReportPath(projectRoot, assetId), IAssetCoarseReport) as IAssetCoarseReport | null;
+  if (!report) return null;
+  const asset = (await loadAssets(projectRoot)).find(asset => asset.id === assetId);
+  return asset && isAssetReportCurrent(asset, report) ? report : null;
 }
 
 export async function writeAssetReport(
@@ -48,15 +49,19 @@ export async function loadAssetReports(
     if (report) reports.push(report);
   }
 
-  return reports.sort((a, b) => a.assetId.localeCompare(b.assetId));
+  const assets = new Map((await loadAssets(projectRoot)).map(asset => [asset.id, asset]));
+  return reports.filter(report => {
+    const asset = assets.get(report.assetId);
+    return asset && isAssetReportCurrent(asset, report);
+  }).sort((a, b) => a.assetId.localeCompare(b.assetId));
 }
 
 export function findUnreportedAssets(
   assets: IKtepAsset[],
   reports: IAssetCoarseReport[],
 ): IKtepAsset[] {
-  const reportedIds = new Set(reports.map(report => report.assetId));
-  return assets.filter(asset => !reportedIds.has(asset.id));
+  const byId = new Map(reports.map(report => [report.assetId, report]));
+  return assets.filter(asset => !byId.has(asset.id) || !isAssetReportCurrent(asset, byId.get(asset.id)!));
 }
 
 export async function appendAssetReports(
@@ -66,4 +71,10 @@ export async function appendAssetReports(
   for (const report of incoming) {
     await writeAssetReport(projectRoot, report);
   }
+}
+
+export function isAssetReportCurrent(asset: IKtepAsset, report: IAssetCoarseReport): boolean {
+  if (!asset.mediaVersions) return true; // Legacy projects remain readable until their first versioned Ingest.
+  return Boolean(asset.analysisInput && !asset.analysisInput.blocker
+    && report.analysisInput?.fingerprint === asset.analysisInput.fingerprint);
 }

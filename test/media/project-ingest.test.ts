@@ -312,7 +312,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(assets[0]?.sourcePath).toBe('clip.mp4');
   });
 
-  it('excludes nested rawLocalPath from ingest scan', async () => {
+  it('scans nested raw separately without registering it twice', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-nested-raw';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Nested Raw Project');
@@ -338,11 +338,11 @@ describe('ingestWorkspaceProjectMedia', () => {
 
     expect(result.scannedRoots[0]).toMatchObject({
       localPath: mediaRoot,
-      scannedFileCount: 1,
+      scannedFileCount: 2,
     });
 
     const assets = await loadAssets(projectRoot);
-    expect(assets).toHaveLength(1);
+    expect(assets).toHaveLength(2);
     expect(assets[0]?.sourcePath).toBe('graded.mp4');
   });
 
@@ -374,11 +374,11 @@ describe('ingestWorkspaceProjectMedia', () => {
 
     expect(result.scannedRoots[0]).toMatchObject({
       localPath: mediaRoot,
-      scannedFileCount: 2,
+      scannedFileCount: 3,
     });
 
     const assets = await loadAssets(projectRoot);
-    expect(assets).toHaveLength(2);
+    expect(assets).toHaveLength(3);
   });
 
   it('prunes stale assets only for roots scanned in the current ingest', async () => {

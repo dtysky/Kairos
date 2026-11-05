@@ -126,7 +126,7 @@ function validateAlignedWordCoverage(
   const actual = stripPunctuationAndWhitespace(words.map(word => word.text).join(''));
   if (actual !== expected) {
     throw new Error(
-      `ForcedAligner 字符覆盖不完整：ASR=${JSON.stringify(expected)} aligned=${JSON.stringify(actual)}`,
+      `ForcedAligner 字符覆盖不完整：ASR=${Array.from(expected).length} 字符，aligned=${Array.from(actual).length} 字符（请检查 ASR 与对齐输出）`,
     );
   }
 }
