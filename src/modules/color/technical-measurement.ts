@@ -3,11 +3,12 @@ import { promisify } from 'node:util';
 import { z } from 'zod';
 import { probe, type IMediaToolConfig } from '../media/probe.js';
 import { toExecutableInputPath } from '../media/tool-path.js';
+import { HIGH_CONTRAST_THRESHOLDS, IContrastFrame, measureHighContrastFrame, summarizeHighContrast } from './high-contrast-measurement.js';
 
-export const COLOR_MEASUREMENT_VERSION = 'color-measurement-v2' as const;
+export const COLOR_MEASUREMENT_VERSION = 'color-measurement-v3' as const;
 // Conservative engineering thresholds, not camera calibration or physical sensor limits.
 export const COLOR_THRESHOLDS = {
-  version: 'real-samples-v2', overviewFps: 1, white: 0.985, whiteArea: 0.72,
+  version: 'real-samples-v3', highContrast: HIGH_CONTRAST_THRESHOLDS, overviewFps: 1, white: 0.985, whiteArea: 0.72,
   lowerWhiteArea: 0.65, whiteTiles: 12,
   bottomWhiteArea: 0.65,
   darkLevel: 0.12, darkArea: 0.75, darkMedian: 0.08,
@@ -44,7 +45,9 @@ export const IColorTechnicalReport = z.object({
   noiseSamples: z.array(z.object({ startMs: z.number(), endMs: z.number(), validPatches: z.number(), regions: z.number(),
     rejections: z.record(z.number()).optional(),
     displaySigma: z.number().nullable(), sourceSigma: z.number().nullable(), state: z.enum(['noisy', 'not-observed', 'unknown']) })),
-  exposure: diagnosis, sourceClipping: diagnosis, noise: diagnosis,
+  contrastSampling: z.object({ width: z.number(), height: z.number(), fps: z.literal(1), round: z.literal('up') }).optional(),
+  contrastOverview: z.array(z.object({ startMs: z.number(), endMs: z.number(), metrics: IContrastFrame })),
+  exposure: diagnosis, sourceClipping: diagnosis, noise: diagnosis, highContrast: diagnosis,
   deferred: z.array(z.string()), warnings: z.array(z.string()),
 });
 export type ColorTechnicalReport = z.infer<typeof IColorTechnicalReport>;
@@ -206,16 +209,18 @@ export function summarizeTechnical(report: ColorTechnicalReport): ColorTechnical
   if (!noise.length || noise.length !== coverage.expectedNoiseBursts || valid.length < Math.max(3, Math.ceil(noise.length * 0.8))) report.noise = { ...report.noise, state: 'unknown', reasons: ['静态低纹理连续帧样本不足，不能排除运动、纹理或压缩影响'] };
   else if (valid.filter(n => n.state === 'noisy').length / noise.length >= COLOR_THRESHOLDS.noisePersistence) report.noise = { ...report.noise, state: 'detected', reasons: ['多个原分辨率位置及分布式连续帧存在显著时间残差噪声'] };
   else report.noise = { ...report.noise, state: 'not-observed', reasons: ['有效连续帧局部未见跨片持续的高随机噪声；不排除固定图样/局部噪声'] };
-  report.status = complete && report.noise.state !== 'unknown' ? 'complete' : 'partial';
+  report.highContrast = summarizeHighContrast(report.contrastOverview, totalDuration);
+  report.status = complete && report.noise.state !== 'unknown' && report.highContrast.state !== 'unknown' ? 'complete' : 'partial';
   return report;
 }
 
 export function emptyTechnical(source: ColorTechnicalReport['source'], durationMs = 0, reason = '未检测'): ColorTechnicalReport {
   return { version: COLOR_MEASUREMENT_VERSION, thresholdVersion: COLOR_THRESHOLDS.version, status: 'unavailable', source,
     coverage: { mode: '1fps-full-duration', durationMs, sampledBins: 0, expectedBins: Math.ceil(durationMs / 1000), ratio: 0, expectedNoiseBursts: 0 },
-    overview: [], noiseSamples: [], exposure: { state: 'unknown', reasons: [reason], intervals: [] },
+    overview: [], contrastOverview: [], noiseSamples: [], exposure: { state: 'unknown', reasons: [reason], intervals: [] },
     sourceClipping: { state: 'unknown', reasons: [reason], intervals: [] },
-    noise: { state: 'unknown', reasons: [reason], intervals: [] }, deferred: ['high-contrast', 'white-balance', 'flicker'], warnings: [] };
+    noise: { state: 'unknown', reasons: [reason], intervals: [] }, highContrast: { state: 'unknown', reasons: [reason], intervals: [] },
+    deferred: ['white-balance', 'flicker'], warnings: [] };
 }
 
 // Stream fixed-size raw frames; no shell, unbounded stdout buffer or temporary decoded movie.
@@ -288,7 +293,7 @@ export async function measureColorTechnical(path: string, source: ColorTechnical
     report.signal.clipProofMode = clipMask.mode;
     report.coverage.durationMs = p.durationMs; report.coverage.expectedBins = Math.ceil(p.durationMs / 1000);
     // Downsampling is only for broad spatial coverage. Native noise frames are decoded separately below.
-    const overviewGraph = `[0:v:0]setpts=PTS-STARTPTS,fps=1:start_time=0:round=near,split=2[c][r];`
+    const overviewGraph = `[0:v:0]setpts=PTS-STARTPTS,fps=1:start_time=0:round=up,split=2[c][r];`
       + `[c]${clipMask.filter},scale=${W}:${H}:flags=area:in_range=full:out_range=full[mask];`
       + `[r]scale=${W}:${H}:flags=area,format=gbrp16le,split=2[s][d];[d]${display}[v];[s][v][mask]vstack=inputs=3,format=rgb48le[out]`;
     onProgress?.('全片曝光概览');
@@ -304,6 +309,17 @@ export async function measureColorTechnical(path: string, source: ColorTechnical
     report.coverage.sampledBins = report.overview.length;
     report.coverage.ratio = Math.min(1, report.overview.reduce((total, s) => total + s.endMs - s.startMs, 0) / p.durationMs);
     const displayW = p.displayWidth ?? p.width, displayH = p.displayHeight ?? p.height;
+    const scale = Math.min(1, HIGH_CONTRAST_THRESHOLDS.longEdge / Math.max(displayW, displayH));
+    const contrastW = Math.max(2, Math.round(displayW * scale / 2) * 2), contrastH = Math.max(2, Math.round(displayH * scale / 2) * 2);
+    report.contrastSampling = { width: contrastW, height: contrastH, fps: 1, round: 'up' };
+    const contrastGraph = `[0:v:0]setpts=PTS-STARTPTS,fps=1:start_time=0:round=up,scale=${contrastW}:${contrastH}:flags=area,format=gbrp16le,${display},format=rgb48le[out]`;
+    onProgress?.('全片逆光／大光比区域测量');
+    await decodeFrames(ffmpeg, [...decodeInput, '-filter_complex', contrastGraph, '-map', '[out]', '-an', '-fps_mode', 'passthrough', '-f', 'rawvideo', 'pipe:1'], contrastW * contrastH * 6, frame => {
+      const startMs = report.contrastOverview.length * 1000;
+      if (startMs >= p.durationMs!) return;
+      report.contrastOverview.push({ startMs, endMs: Math.min(startMs + 1000, p.durationMs!), metrics: measureHighContrastFrame(frame, contrastW, contrastH) });
+      if (report.contrastOverview.length % 60 === 0) onProgress?.(`反差区域 ${Math.min(startMs + 1000, p.durationMs!)} / ${p.durationMs} ms`);
+    }, Math.max(120000, p.durationMs * 4));
     if (displayW < CROP * 3 || displayH < CROP * 3 || p.durationMs < BURST / p.fps * 1000) {
       report.warnings.push('原片尺寸/长度不足以取得分离的原分辨率连续帧局部');
       return summarizeTechnical(report);

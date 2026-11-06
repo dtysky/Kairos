@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { measureHighContrastFrame } from '../../src/modules/color/high-contrast-measurement.js';
 import type { IColorInput } from '../../src/store/color-inputs.js';
 import { classifyAnalyzedColor as classify } from '../../src/modules/color/classification.js';
 import { buildSolarContext, solarDay, solarElevation } from '../../src/modules/color/solar-context.js';
@@ -30,16 +31,46 @@ function report(kind: 'wide' | 'sky' | 'lamp' | 'clean-dark' | 'normal-day' | 'b
   r.signal = { range: 'pc' };
   r.coverage = { mode: '1fps-full-duration', durationMs: 10000, sampledBins: 10, expectedBins: 10, ratio: 1, expectedNoiseBursts: 3 };
   r.overview = Array.from({ length: 10 }, (_, i) => ({ startMs: i * 1000, endMs: (i + 1) * 1000, source: m, display: m, sourceWhitePlateauFraction: kind === 'wide' ? 0.8 : 0 }));
+  r.contrastOverview = r.overview.map(s => ({ startMs: s.startMs, endMs: s.endMs, metrics: measureHighContrastFrame(frame, 192, 108) }));
   r.noiseSamples = [1, 5, 9].map(i => ({ startMs: i * 1000, endMs: i * 1000 + 200, validPatches: 81, regions: 9, sourceSigma: 0, displaySigma: 0, state: 'not-observed' as const }));
   return summarizeTechnical(r);
 }
 
 describe('material scene rules', () => {
+  it('routes measured high contrast through actual lighting context and preserves category priorities', () => {
+    const measured = report('normal-day');
+    measured.highContrast = { state: 'detected', reasons: ['whole-clip regions'], intervals: [{ startMs: 0, endMs: 10000 }] };
+    const daylight = input('白天户外山坡，远处明亮天空。');
+    expect(classifyAnalyzedColor(daylight, measured).category).toBe('high-contrast');
+    const twilight = input('日出时户外山坡。'); twilight.facts!.gps = undefined;
+    expect(classifyAnalyzedColor(twilight, measured).category).toBe('high-contrast');
+    const night = input('夜间道路与路灯。', 'drive'); night.media.capturedAt = '2026-10-01T14:00:00Z';
+    const decision = classifyAnalyzedColor(night, measured);
+    expect(decision.category).toBe('night'); expect(decision.highContrast.state).toBe('excluded');
+    expect(decision.highContrast.measurement.state).toBe('detected');
+    const conflict = structuredClone(daylight); conflict.media.capturedAt = night.media.capturedAt;
+    expect(classifyAnalyzedColor(conflict, measured).category).toBeNull();
+    const interior = input('正常照明室内。'); interior.media.capturedAt = night.media.capturedAt;
+    expect(classifyAnalyzedColor(interior, measured).highContrast.context).toBe('non-night');
+    const partial = structuredClone(measured); partial.highContrast.state = 'needs-review';
+    partial.highContrast.intervals = [{ startMs: 2000, endMs: 5000 }];
+    expect(classifyAnalyzedColor(daylight, partial).category).toBeNull();
+    expect(classifyAnalyzedColor(night, partial).category).toBe('night');
+    expect(classifyAnalyzedColor(input('男子对着镜头讲述。', 'drive', true), measured).category).toBe('presenter');
+    const portrait = structuredClone(daylight); portrait.media.displayWidth = 2160; portrait.media.displayHeight = 3840; portrait.media.rotationDegrees = 90;
+    expect(classifyAnalyzedColor(portrait, measured).category).toBe('portrait');
+    measured.noise.state = 'detected';
+    expect(classifyAnalyzedColor(daylight, measured).category).toBe('noisy');
+    expect(classifyAnalyzedColor(night, measured).category).toBe('noisy');
+    measured.exposure.state = 'detected';
+    expect(classifyAnalyzedColor(daylight, measured).category).toBe('overexposed');
+  });
   it('recognizes externally filmed presenters and resolves drive/person conflict with description and speech', () => {
     expect(classifyAnalyzedColor(input('别人拍摄，男子正在讲解沿途的风景。', 'broll', true)).category).toBe('presenter');
     expect(classifyAnalyzedColor(input('A man is explaining the valley to his companion.', 'broll', true)).category).toBe('presenter');
     expect(classifyAnalyzedColor(input('车内男子对着镜头讲述旅行经历。', 'drive', true)).category).toBe('presenter');
     expect(classifyAnalyzedColor(input('A man in the driver’s seat is speaking directly to the camera.', 'drive', true)).category).toBe('presenter');
+    expect(classifyAnalyzedColor(input('A presenter stands beside camera equipment on a mountain summit, speaking as the sun rises.', 'talking-head', true)).category).toBe('presenter');
   });
   it('does not confuse voiceover, silent people, negation or speculative eating footage with presenter', () => {
     expect(classifyAnalyzedColor(input('白天前方道路，伴随画外旁白。', 'drive', true)).category).toBe('day-drive-cast');
@@ -48,6 +79,9 @@ describe('material scene rules', () => {
     expect(classifyAnalyzedColor(input('A man appears to be explaining dishes to the camera.', 'broll', true)).category).toBeNull();
     expect(classifyAnalyzedColor(input('A man is not speaking to the camera.', 'talking-head', true)).category).toBeNull();
     expect(classifyAnalyzedColor(input('男子对着镜头说话。', 'broll', false)).category).toBeNull();
+    expect(classifyAnalyzedColor(input('A presenter stands beside equipment, not speaking.', 'talking-head', true)).category).toBeNull();
+    expect(classifyAnalyzedColor(input('A presenter stands beside equipment. Speaking is heard in voiceover.', 'talking-head', true)).category).toBeNull();
+    expect(classifyAnalyzedColor(input('A presenter stands beside equipment, speaking.', 'broll', false)).category).toBeNull();
     expect(classifyAnalyzedColor(input('白天前方道路，只有旁白。', 'talking-head', true)).category).toBeNull();
     const partial = input('白天室外风景。');
     partial.facts!.visualWindows = [{ windowId: 'short', sourceInMs: 1000, sourceOutMs: 2000,
@@ -68,7 +102,7 @@ describe('material scene rules', () => {
     a.facts!.summary = '室外街道。'; expect(classifyAnalyzedColor(a).category).toBe('night');
     a.facts!.summary = '白天室外街道。'; expect(classifyAnalyzedColor(a).category).toBeNull();
   });
-  it('does not turn technical words into measurements or resurrect high-contrast detection', () => {
+  it('does not turn technical words into measurements into high-contrast measurements', () => {
     const a = input('明显过曝、高噪点、强逆光、严重偏色。');
     const result = classifyAnalyzedColor(a);
     expect(result.category).toBeNull(); expect(result.status).toBe('needs-review');

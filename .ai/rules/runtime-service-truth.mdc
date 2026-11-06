@@ -94,4 +94,4 @@ alwaysApply: true
 
 - Color 的素材级输入使用 `store/color-inputs.json`，详见 `designs/color-inputs-store.md`。这是 assets/root/asset-reports 的可重建投影；报告写入后逐项同步，Ingest 后核对全部条目，Color 必须经 refreshColorInputs 验证或重建后读取。缺失/过期/无版本签名不可用，缓存自称 current 不作证据。不得从旧 colorEvidence、分类或文本关键词恢复技术判断；不依赖 spans，不重跑模型。
 
-- 调色检测合同：Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 长任务必须报告曝光概览/噪声连续帧的实际进度；原始资产报告与 Analyze 流程不变，禁止将测量交给 LLM。
+- 调色检测合同：Color 使用 scene-v5：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中、全部真实命中时长合计达到 80% 才自动归类，部分命中待复核；夜景硬排除，小光源不单独触发；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 长任务必须报告曝光概览/反差区域/噪声连续帧的实际进度；原始资产报告与 Analyze 流程不变，禁止将测量交给 LLM。

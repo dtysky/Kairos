@@ -33,6 +33,8 @@ alwaysApply: true
 
 ## 当前协议同步结论
 
+- 2026-11-06 复核上游组合哈希 `0be53ce819945b1dfb6e1dd34399cec31019e4205e085d991076b1314db0b7e5`：当前差异仅为 Argo 车辆规划与尺寸研究及 overview/requirements 对应说明；protocol.md、GPS、canonical record/plan 合同未变。已复核当前协议与差异文档，本轮无需 Kairos parser/schema 代码修改，原片及 Pharos 源目录保持只读。
+
 - 2026-11-05 复核设计组合哈希 `2f1b4a996f068df4cdd71670ee07d46d04480ecfd8d1cd8742d7d8946981b2ba`。协议 schema 未变，Argo 尺寸研究与旅行创作调研 skill 差异不影响 Kairos canonical parser。用户另行授权外部工程目录关联，合同见 `designs/pharos-directory-link.md`。关联源的 GPS 与已发布研究按各自事实/审查职责读取。
 
 - Pharos 素材归属以 `record.json.actual_time` 为执行真相；该时间是带时区 ISO 8601 的精确执行区间，Kairos 不得为 shot 归属额外添加前后容差。

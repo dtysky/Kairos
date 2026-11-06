@@ -8,7 +8,7 @@ description: >-
 
 # Kairos: Master Workflow
 
-2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 使用 scene-v5：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中、全部真实命中时长合计达到 80% 才自动归类，部分命中待复核；夜景硬排除，小光源不单独触发；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
 
 ## Overview
 
@@ -63,8 +63,8 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 已撤回 VLM 技术 colorEvidence，使用 scene-v4 联合素材级描述/语音/GPS 与独立曝光/噪声测量，复核为状态而非第十组；Log 读 sidecar 后回退 root，连同原始色域独立用于 RCM 输入；不从 S-Log3 单独猜测 S-Gamut3 或 S-Gamut3.Cine。
-- `/color` prepare 不再运行旧的独立色偏、低照度、曝光、前挡雾化抽帧分类器；视觉分组采用 scene-v4 与独立曝光/噪声测量（designs/color-assessment-v1.md），不复活旧启发式技术字段；旧 colorEvidence、colorClassification 和历史分类器字段都只读审计，不影响新分组。Analyze 原片显示代理 LUT 与 Gyroflow repair 保留；Resolve scene prepare 使用 RCM。
+  - 自动 Group 已撤回 VLM 技术 colorEvidence，使用 scene-v5 联合素材级描述/语音/GPS 与独立曝光/噪声/大光比测量，复核为状态而非第十组；Log 读 sidecar 后回退 root，连同原始色域独立用于 RCM 输入；不从 S-Log3 单独猜测 S-Gamut3 或 S-Gamut3.Cine。
+- `/color` prepare 不再运行旧的独立色偏、低照度、曝光、前挡雾化抽帧分类器；视觉分组采用 scene-v5 与独立曝光/噪声/大光比测量（designs/color-assessment-v1.md），不复活旧启发式技术字段；旧 colorEvidence、colorClassification 和历史分类器字段都只读审计，不影响新分组。Analyze 原片显示代理 LUT 与 Gyroflow repair 保留；Resolve scene prepare 使用 RCM。
 - 更新代码不自动重跑既有 Resolve 工程或使已完成 chunks 失效；`sync_groups` 仍只镜像实际组。迁移已有组前必须明确处理已有 Group 调色，不能用普通 prepare 悄悄合并。
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
@@ -475,3 +475,7 @@ Edit Flow 支持迭代：
 
 ML server 可以运行在另一台 GPU 机器上，通过 `KAIROS_ML_URL` 环境变量连接。
 详见 [deploy-kairos](../deploy-kairos/SKILL.md)。
+
+### 2026-11-06 Pharos 协议复核
+
+2026-11-06 复核上游组合哈希 `0be53ce819945b1dfb6e1dd34399cec31019e4205e085d991076b1314db0b7e5`：当前差异仅为 Argo 车辆规划与尺寸研究及 overview/requirements 对应说明；protocol.md、GPS、canonical record/plan 合同未变。已复核当前协议与差异文档，本轮无需 Kairos parser/schema 代码修改，原片及 Pharos 源目录保持只读。

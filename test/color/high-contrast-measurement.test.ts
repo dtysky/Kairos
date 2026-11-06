@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyHighContrastScenePolicy, measureHighContrastFrame, summarizeHighContrastTrial } from '../../src/modules/color/high-contrast-measurement.js';
+import { applyHighContrastScenePolicy, measureHighContrastFrame, summarizeHighContrastTrial, summarizeHighContrast } from '../../src/modules/color/high-contrast-measurement.js';
 
 const width = 160, height = 90;
 function frame(pixel: (x: number, y: number) => number) {
@@ -59,6 +59,19 @@ describe('experimental high-contrast evidence', () => {
     expect(() => measureHighContrastFrame(Buffer.alloc(5), 1, 1)).toThrow();
     expect(() => summarizeHighContrastTrial([], 0)).toThrow();
     expect(() => summarizeHighContrastTrial([{ startMs: 0, endMs: 1100, metrics: normal() }], 1000)).toThrow();
+  });
+
+  it('requires sustained whole-clip coverage for production and preserves partial intervals for review', () => {
+    const a = broad(), b = normal();
+    const rows = Array.from({ length: 10 }, (_, i) => ({ startMs: i * 1000, endMs: (i + 1) * 1000, metrics: i < 8 ? a : b }));
+    expect(summarizeHighContrast(rows, 10000)).toMatchObject({ state: 'detected', intervals: [{ startMs: 0, endMs: 8000 }] });
+    rows[7]!.metrics = b;
+    expect(summarizeHighContrast(rows, 10000).state).toBe('needs-review');
+    rows[8]!.metrics = a; rows[9]!.metrics = a;
+    expect(summarizeHighContrast(rows, 10000)).toMatchObject({ state: 'detected', intervals: [{ startMs: 0, endMs: 7000 }, { startMs: 8000, endMs: 10000 }] });
+    expect(summarizeHighContrast(rows.slice(0, 8), 10000).state).toBe('unknown');
+    const sourceOnly = frame((x, y) => Math.hypot(x - 80, y - 20) < 3 ? 0.98 : y < 50 ? 0.4 : 0.1);
+    expect(summarizeHighContrast(rows.map(r => ({ ...r, metrics: sourceOnly })), 10000).state).toBe('not-observed');
   });
 
   it('excludes confirmed night scenes even with sustained broad contrast or a light with a halo', () => {

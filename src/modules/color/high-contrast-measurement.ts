@@ -1,10 +1,12 @@
-/** Experimental image evidence for calibration, not a physical sun/subject detector. */
+import { z } from 'zod';
+/** Image evidence, not a physical sun/subject detector. Small-source metrics remain diagnostic. */
 export const HIGH_CONTRAST_TRIAL_VERSION = 'high-contrast-trial-v1';
 export const HIGH_CONTRAST_THRESHOLDS = {
   longEdge: 768, fps: 1, dark: 0.18, bright: 0.68, core: 0.88,
   darkArea: 0.2, brightArea: 0.06, darkRegionArea: 0.12, brightRegionArea: 0.025,
   regionGap: 0.5, coreMinPixels: 3, coreMaxArea: 0.02,
-  haloMedian: 0.3, ambientMidArea: 0.15, minIntervalMs: 3000,
+  haloMedian: 0.3, ambientMidArea: 0.15, minIntervalMs: 3000, wholeClipFraction: 0.8,
+  coverageBasis: 'positive-time-union-with-sustained-run-v1',
 } as const;
 export interface ContrastRegion {
   area: number; x: number; y: number; width: number; height: number; mean: number;
@@ -17,6 +19,14 @@ export interface ContrastFrame {
   broadRegions: boolean; compactSource: boolean; compactSourceWithoutAmbient: boolean;
   paths: Array<'broad-regions' | 'compact-source'>;
 }
+const region = z.object({ area: z.number(), x: z.number(), y: z.number(), width: z.number(), height: z.number(), mean: z.number() });
+export const IContrastFrame = z.object({
+  darkArea: z.number(), brightArea: z.number(), midArea: z.number(), darkMedian: z.number(), brightMedian: z.number(),
+  p10: z.number(), p50: z.number(), p90: z.number(), darkRegions: z.array(region), brightRegions: z.array(region),
+  sources: z.array(region.extend({ haloMedian: z.number(), coreToHalo: z.number(), supported: z.boolean() })),
+  broadRegions: z.boolean(), compactSource: z.boolean(), compactSourceWithoutAmbient: z.boolean(),
+  paths: z.array(z.enum(['broad-regions', 'compact-source'])),
+});
 function quantile(values: Float32Array | number[], q: number) {
   if (!values.length) return 0;
   const histogram = new Uint32Array(1024);
@@ -111,12 +121,32 @@ export function summarizeHighContrastTrial(rows: Array<{ startMs: number; endMs:
     candidateFraction: rows.filter(r => r.metrics.paths.length).length / Math.max(1, rows.length), intervals: sustained };
 }
 
+/** Production measurement diagnosis: only broad regions qualify; partial changes require review. */
+export function summarizeHighContrast(rows: Array<{ startMs: number; endMs: number; metrics: ContrastFrame }>, durationMs: number) {
+  if (!(durationMs > 0)) return { state: 'unknown' as const, reasons: ['反差采样时长未知'], intervals: [] };
+  const summary = summarizeHighContrastTrial(rows.map(r => ({ ...r, metrics: { ...r.metrics,
+    paths: r.metrics.broadRegions ? ['broad-regions' as const] : [] } })), durationMs);
+  const positiveRanges: Array<{ startMs: number; endMs: number }> = [];
+  for (const row of rows.filter(r => r.metrics.broadRegions).sort((a, b) => a.startMs - b.startMs)) {
+    const last = positiveRanges.at(-1);
+    if (last && row.startMs <= last.endMs + 1) last.endMs = Math.max(last.endMs, row.endMs);
+    else positiveRanges.push({ startMs: row.startMs, endMs: row.endMs });
+  }
+  const fraction = positiveRanges.reduce((n, r) => n + r.endMs - r.startMs, 0) / durationMs;
+  const state = summary.state === 'unknown' ? 'unknown' : !summary.intervals.length ? 'not-observed'
+    : fraction >= HIGH_CONTRAST_THRESHOLDS.wholeClipFraction ? 'detected' : 'needs-review';
+  return { state: state as 'unknown' | 'not-observed' | 'detected' | 'needs-review', intervals: summary.intervals.length ? positiveRanges : [],
+    reasons: [state === 'unknown' ? '全片反差采样覆盖不足' : state === 'not-observed' ? '未检出持续广域亮暗反差；小光源不单独触发'
+      : state === 'detected' ? '持续广域亮暗反差覆盖至少 80% 时长；分类仍须排除夜景并检查上下文'
+        : `广域反差只覆盖部分区间（${(fraction * 100).toFixed(1)}%），不能给整条素材统一归类`] };
+}
+
 /** Category eligibility, separate from pixels. Context must be resolved from existing scene facts;
  * night capture time alone is insufficient (e.g. a normally lit interior). Unknown includes conflicts/transitions.
  * Night is excluded regardless of which measurement path fired. Never overwrite the raw measurements.
  */
-export function applyHighContrastScenePolicy(
-  measurement: ReturnType<typeof summarizeHighContrastTrial>,
+export function applyHighContrastScenePolicy<T extends { state: string }>(
+  measurement: T,
   context: 'night' | 'non-night' | 'unknown',
 ) {
   return {

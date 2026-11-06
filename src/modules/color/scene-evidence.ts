@@ -12,13 +12,13 @@ export interface SceneEvidence {
 }
 // Scene semantics only. Exposure/noise/cast labels never enter these predicates.
 const patterns = {
-  presenter: /(?:对着?|面向|面对)(?:镜头|相机|摄像机).{0,18}(?:讲|说|介绍|口播)|(?:人物|男子|男人|女子|女人|男士|女士|讲述者|主持人).{0,30}(?:正在讲解|正在讲述|口播|向观众介绍)|(?:speaking|talking|explaining|addressing).{0,35}(?:to (?:the )?(?:camera|audience)|directly (?:at|to) (?:the )?camera)|(?:on.camera (?:speaker|presenter)|(?:man|woman|person|speaker|presenter) (?:is |can be seen )?(?:speaking|talking|explaining|presenting|describing|speaks|explains|talks|describes))/iu,
+  presenter: /(?:对着?|面向|面对)(?:镜头|相机|摄像机).{0,18}(?:讲|说|介绍|口播)|(?:人物|男子|男人|女子|女人|男士|女士|讲述者|主持人).{0,30}(?:正在讲解|正在讲述|口播|向观众介绍)|(?:speaking|talking|explaining|addressing).{0,35}(?:to (?:the )?(?:camera|audience)|directly (?:at|to) (?:the )?camera)|(?:on.camera (?:speaker|presenter)|(?:man|woman|person|speaker|presenter) (?:is |can be seen )?(?:speaking|talking|explaining|presenting|describing|speaks|explains|talks|describes))|\b(?:presenter|host)\b[^.!?。！？]{0,100}\b(?:speaking|talking|explaining|presenting|addressing)\b/iu,
   forwardDrive: /(?:前挡|前风挡|挡风玻璃|前风窗|车头视角|前方道路|道路前方|引擎盖|车头.{0,12}前景)|(?:windshield|windscreen|dashboard view|road ahead|hood in the foreground|forward.facing)/iu,
   indoor: /(?:室内|餐厅|饭店|餐馆|房间|车库|停车库|地下停车|隧道)|(?:indoors?|restaurant|dining (?:room|area)|parking garage|underground (?:parking|garage)|tunnel)/iu,
   cabin: /(?:车内|驾驶座)|(?:driver.s seat|inside (?:a |the )?car)/iu,
-  outdoor: /(?:室外|户外|街道|道路|公路|山峦|山脉|山坡|天空|海面|湖泊|河流|风景)|(?:outdoors?|street|road|highway|mountains?|hills|sky|landscape|lake|river|ocean)/iu,
+  outdoor: /(?:室外|户外|街道|道路|公路|山峦|山脉|山坡|天空|海面|湖泊|河流|风景|庭院|院落|森林|海岸|沙滩)|(?:outdoors?|street|road|highway|mountains?|hills|sky|landscape|lake|river|ocean|courtyard|garden|forest|coast|beach)/iu,
   day: /(?:白天|日间|日光|阳光|正常照明|灯光明亮|明亮的室内)|(?:daylight|daytime|well.lit|sunlit|brightly lit)/iu,
-  night: /(?:夜间|夜晚|夜景|深夜)|(?:at night|nighttime|night.time|night scene|after dark)/iu,
+  night: /(?:夜间|夜晚|夜景|深夜)|(?:\bnight\b|nighttime|night.time|after dark)/iu,
   twilight: /(?:日出|日落|黎明|晨曦|朝霞|晚霞|黄昏|暮色)|(?:sunrise|sunset|dawn|dusk|twilight)/iu,
   sceneChange: /(?:进入|驶入|驶出|离开|穿过|进出).{0,15}(?:隧道|车库|地下停车)|(?:从|由).{0,30}(?:白天|明亮|室外).{0,30}(?:转为|变成|进入).{0,15}(?:夜|暗|室内)|(?:enter(?:s|ing)?|exit(?:s|ing)?|into|out of).{0,25}(?:tunnel|parking garage|underground)|(?:day.{0,10}to.night|night.{0,10}to.day)/iu,
   whiteSceneAmbiguous: /(?:白墙|白色背景|雪地|雪原|浓雾|云海|满屏天空|只见天空)|(?:white wall|white background|snowfield|snow.covered|dense fog|thick fog|sea of clouds|only (?:the )?sky)/iu,

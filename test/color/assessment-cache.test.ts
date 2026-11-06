@@ -10,6 +10,7 @@ import type { IKtepAsset, IMediaRoot } from '../../src/protocol/schema.js';
 vi.mock('../../src/modules/color/technical-measurement.js', async () => {
   const actual = await vi.importActual<any>('../../src/modules/color/technical-measurement.js');
   return { ...actual, measureColorTechnical: vi.fn(async (_path, source) => ({ ...actual.emptyTechnical(source, 10000), status: 'partial',
+    highContrast: { state: 'not-observed', reasons: ['tested scan'], intervals: [] },
     exposure: { state: 'not-observed', reasons: ['tested scan'], intervals: [] } })) };
 });
 const dirs: string[] = [];
@@ -39,11 +40,12 @@ it('reuses measurements for semantic/GPS edits, verifies export without decode a
   await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
   await assessColor(request); expect(measureColorTechnical).toHaveBeenCalledTimes(3);
   const legacy = JSON.parse(await readFile(path, 'utf8'));
-  legacy.technical.version = 'color-measurement-v1'; legacy.technical.thresholdVersion = 'conservative-v1';
+  legacy.technical.version = 'color-measurement-v2'; legacy.technical.thresholdVersion = 'real-samples-v2';
+  delete legacy.technical.contrastOverview; delete legacy.technical.highContrast;
   const { fingerprint: _fingerprint, updatedAt: _updatedAt, ...payload } = legacy;
   legacy.fingerprint = colorFingerprint(payload); await writeFile(path, JSON.stringify(legacy));
   await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
   expect(measureColorTechnical).toHaveBeenCalledTimes(3);
-  expect((await assessColor(request)).technical.version).toBe('color-measurement-v2');
+  expect((await assessColor(request)).technical.version).toBe('color-measurement-v3');
   expect(measureColorTechnical).toHaveBeenCalledTimes(4);
 });

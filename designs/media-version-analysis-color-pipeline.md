@@ -20,7 +20,7 @@ Ingest → Analyze → 调色分类/基础节点 → 目标输出到位后再次
 
 2026-11-06 增补：Color 按素材消费 `store/color-inputs.json` 的当前投影，见 [持久化合同](color-inputs-store.md)。类型来自素材报告 clipTypeGuess，summary 和 recognized window 描述原样摘取；媒体方向、raw/target 色彩信息分别保留来源。报告写入后增量更新，Ingest 刷新版本/删除，Color 读前核对或补建；不依赖正式 spans，也不增加模型或技术判断。
 
-2026-11-06 纠正：撤回此前让 VLM 输出技术 `colorEvidence` 并驱动 scene-v1 的实现。新 Analyze 只产出原语义报告，不写调色技术结论或预计算分类。Color 忽略历史 colorEvidence / colorClassification，后续采用 scene-v4 与独立曝光/噪声测量（[首阶段合同](color-assessment-v1.md)），复核为状态而非调色组。不把旧模型结论、描述关键词或缺失检测当技术事实。逆光/大光比、偏色幅度及频闪仍待后续设计，详见 [职责边界与后续讨论](color-technical-analysis-boundary.md)。下方旧分类验收仅为历史记录。
+2026-11-06 纠正：撤回此前让 VLM 输出技术 `colorEvidence` 并驱动 scene-v1 的实现。新 Analyze 只产出原语义报告，不写调色技术结论或预计算分类。Color 忽略历史 colorEvidence / colorClassification，后续采用 scene-v5 与独立曝光/噪声/大光比测量（[首阶段合同](color-assessment-v1.md)），复核为状态而非调色组。不把旧模型结论、描述关键词或缺失检测当技术事实。逆光/大光比正式合同见 color-high-contrast-v1.md；偏色幅度及频闪不在本轮范围，详见 [职责边界与后续讨论](color-technical-analysis-boundary.md)。下方旧分类验收仅为历史记录。
 
 原始 LOG/色域是技术输入维度，不因视觉分类消失。Resolve 需使用真实 Group，并保持既有 `Gyro → Dehaze → User1 → User2 → NR` 标准节点模板；不能用单节点 CDL 替代。技术 LUT 和视觉类别不能互相覆盖；同组不同 LOG 的技术转换必须逐片正确。重跑只补新增或明确失效输入，不重置用户已经完成的节点。
 
