@@ -1,5 +1,9 @@
 export { readJson, readJsonOrNull, writeJson } from './writer.js';
 export {
+  getColorInputsPath, loadColorInputs, refreshColorInputs, isColorInputAssetCurrent,
+  IColorInput, IColorInputsStore, COLOR_INPUTS_PROJECTION_VERSION,
+} from './color-inputs.js';
+export {
   buildProjectBriefTemplate,
   buildProjectBriefWithMappings,
   parseProjectBrief,
@@ -344,6 +348,11 @@ export {
   saveWorkspaceAsrConfig,
   normalizeWorkspaceAsrConfig,
 } from './asr-config.js';
+export {
+  loadWorkspaceLlmConfigView,
+  saveWorkspaceLlmConfig,
+  type IWorkspaceLlmConfigView,
+} from './llm-config.js';
 export {
   getProjectBriefConfigPath,
   getManualItineraryConfigPath,

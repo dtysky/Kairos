@@ -171,9 +171,9 @@ def append_script_api_paths():
 
 
 SCENE_GROUP_NAMES = {
-    "portrait": "竖屏", "presenter": "出镜口播", "overexposed": "明显过曝", "dark-noisy": "大暗光高噪点",
-    "high-contrast": "大光比", "night": "夜景", "twilight": "清晨黄昏", "day-drive-cast": "白天行车偏色",
-    "day": "普通白天", "review": "待确认",
+    "portrait": "竖屏", "presenter": "出镜口播", "overexposed": "大面积过曝", "noisy": "明显噪点",
+    "high-contrast": "逆光／大光比", "night": "普通夜景", "twilight": "清晨／黄昏", "day-drive-cast": "白天前挡行车",
+    "day": "常规日景",
 }
 
 RCM_POLICY = "rcm-dwg-v1"
@@ -259,9 +259,11 @@ def prepare_root(resolve, payload):
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
     # Moving an old technical Group changes its grade. New scene mode never silently migrates it.
     for request in clip_requests:
-        if not request.get("sceneCategory"):
+        if not is_scene_request(request):
             continue
         previous_group = previous_group_names_by_clip.get(request["rawRelativePath"])
+        if previous_group and request.get("colorManagementPolicy") == RCM_POLICY and not request.get("sceneCategory"):
+            raise HostError("resolve_scene_review_preserve_group", f"Classification now needs review; preserve existing group grade: {previous_group}")
         if previous_group and previous_group not in SCENE_GROUP_NAMES.values():
             raise HostError("resolve_scene_group_migration_required", f"Existing group requires a scoped migration; use a new color project: {previous_group}")
     repair_templates = get_repair_template_assets(payload)
@@ -316,7 +318,7 @@ def prepare_root(resolve, payload):
         append_clips_to_timeline(project, media_pool, timeline, append_entries)
         save_project(project, resolve)
         timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
-        transform_requests = [request for request in clip_requests if not request.get("sceneCategory") or request["rawRelativePath"] not in existing_timeline_items_by_clip]
+        transform_requests = [request for request in clip_requests if not is_scene_request(request) or request["rawRelativePath"] not in existing_timeline_items_by_clip]
         transform_summary = apply_clip_timeline_transforms(timeline_item_by_clip_key, transform_requests)
         save_project(project, resolve)
         group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
@@ -3302,7 +3304,7 @@ def seed_clip_repairs(
             repair_template,
             repair_template_source_item,
         )
-        if donor_item is not None and clip_request.get("sceneCategory") and force_template_reseed:
+        if donor_item is not None and is_scene_request(clip_request) and force_template_reseed:
             raise HostError("resolve_scene_template_drift", "Existing scene grade needs an explicit portrait template migration; refusing to reset manual grades.")
         if (
             donor_item is not None
@@ -3318,7 +3320,7 @@ def seed_clip_repairs(
                     f"Unable to preserve existing clip repair grade for: {clip_key}",
             )
             copied_existing_grade = True
-            node_default_state = {"enabled": [], "disabled": []} if clip_request.get("sceneCategory") else apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
+            node_default_state = {"enabled": [], "disabled": []} if is_scene_request(clip_request) else apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
         elif repair_template_source_item is not None:
@@ -3378,7 +3380,7 @@ def seed_clip_repairs(
                 })
 
         clip_transform_status = None
-        if clip_request.get("sceneCategory"):
+        if is_scene_request(clip_request):
             clip_transform_status = apply_scene_clip_transform(target_item, clip_request, copied_existing_grade)
 
         repair_seed_state = {
@@ -3597,6 +3599,9 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     snapshot = {
         "clipKey": clip_request["rawRelativePath"],
         "sceneCategory": clip_request.get("sceneCategory"),
+        "classificationStatus": clip_request.get("classificationStatus"),
+        "classificationReasons": clip_request.get("classificationReasons"),
+        "reviewFlags": clip_request.get("reviewFlags"),
         "colorManagementPolicy": clip_request.get("colorManagementPolicy"),
         "inputColorSpace": clip_request.get("inputColorSpace"),
         "inputColorSource": clip_request.get("inputColorSource"),
@@ -3648,7 +3653,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         },
     }
     for optional_key in (
-        "sceneCategory", "sourceContentHash", "analysisInputFingerprint", "classificationFingerprint",
+        "sceneCategory", "classificationStatus", "classificationReasons", "reviewFlags", "sourceContentHash", "analysisInputFingerprint", "classificationFingerprint",
         "colorManagementPolicy", "inputColorSpace", "inputColorSource",
         "gyroDataAvailable",
         "encodedWidth",
@@ -3955,6 +3960,11 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
 
     entries_by_group_name = {}
     for entry in clip_entries:
+        if entry.get("colorManagementPolicy") == RCM_POLICY and not entry.get("sceneCategory"):
+            item = timeline_item_by_clip_key.get(entry["rawRelativePath"])
+            if item is None or safe_call(item, "GetColorGroup"):
+                raise HostError("resolve_scene_review_preserve_group", "Unclassified RCM clips must remain ungrouped; existing group grades are preserved.")
+            continue
         entries_by_group_name.setdefault(entry["groupNameSeed"], []).append(entry)
 
     claimed_group_names = set()
@@ -4089,12 +4099,13 @@ def build_groups_snapshot(
         orientation_status = summarize_group_orientation(entry["clipSnapshots"])
         post_clip_creative_status = inspect_group_post_clip_creative_status(entry.get("colorGroup"))
         categories = dedupe_strings([request.get("sceneCategory") for request in entry["clipRequests"]])
-        summary = {"creativeTags": categories} if categories else build_group_creative_summary(log_profile, orientation_status)
+        summary = {"creativeTags": categories} if categories or any(is_scene_request(r) for r in entry["clipRequests"]) else build_group_creative_summary(log_profile, orientation_status)
         transform_summary = {
             **build_group_transform_summary(entry["clipRequests"]),
             **((group_transform_summaries or {}).get(display_name) or {}),
         }
         groups.append({
+            "nativeGroup": entry.get("colorGroup") is not None,
             "groupKey": normalize_group_key(display_name),
             "displayName": display_name,
             "clipKeys": entry["clipKeys"],
@@ -4129,7 +4140,13 @@ def build_groups_snapshot(
     }
 
 
+def is_scene_request(request):
+    return request.get("colorManagementPolicy") == RCM_POLICY or bool(request.get("sceneCategory"))
+
+
 def build_clip_creative_summary(clip_request):
+    if clip_request.get("colorManagementPolicy") == RCM_POLICY and not clip_request.get("sceneCategory"):
+        return {"creativeTags": [], "displayName": "Ungrouped"}
     category = clip_request.get("sceneCategory")
     if category in SCENE_GROUP_NAMES:
         return {"creativeTags": [category], "displayName": SCENE_GROUP_NAMES[category]}
@@ -4963,6 +4980,9 @@ def normalize_clip_requests(clips):
             "sourceAbsolutePath": source_absolute_path,
             "sourceStem": stringify_signal_value(clip.get("sourceStem")) or Path(raw_relative_path).stem,
             "sceneCategory": clip.get("sceneCategory") if clip.get("sceneCategory") in SCENE_GROUP_NAMES else None,
+            "classificationStatus": clip.get("classificationStatus"),
+            "classificationReasons": clip.get("classificationReasons"),
+            "reviewFlags": clip.get("reviewFlags"),
             "analysisInputFingerprint": stringify_signal_value(clip.get("analysisInputFingerprint")),
             "sourceContentHash": stringify_signal_value(clip.get("sourceContentHash")),
             "previousSourceContentHash": stringify_signal_value(clip.get("previousSourceContentHash")),

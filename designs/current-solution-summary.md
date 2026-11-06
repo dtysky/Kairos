@@ -1,6 +1,14 @@
 # Kairos — 当前方案总结
 
-2026-11-05：正式素材管线采用 [素材版本、先分析后调色与渐进导入](media-version-analysis-color-pipeline.md)。Ingest 每素材最多登记 raw/target 两版本，目标优先、缺失才回退原片；内容 SHA-256 区分版本替换与仅时间戳变化。Analyze 记录实际输入/LOG/LUT，按输入签名复用或归档失效缓存；原片更新不重跑未变目标分析。Color 消费当前报告的结构化证据，Group 按视觉主类，竖屏排他；逐片 RCM 输入统一到 DWG / Intermediate，输出 Rec.709 Gamma 2.4，保留五节点标准模板。旧 LOG 分组不自动迁移。
+Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+
+2026-11-06：[素材级调色输入持久化](color-inputs-store.md) 将已有报告中的类型、描述、语音时间证据与媒体/输入色彩元数据摘入 `store/color-inputs.json`。报告逐条更新投影，Ingest 刷新新增/删除/版本变化，Color 校验源签名后消费；缺失或损坏可只读源事实补建。此层不依赖 spans、不生成技术判断，分类与独立检测现按 [首阶段合同](color-assessment-v1.md) 落地，测量产物与输入投影分离。
+
+2026-11-06：[技术判断边界纠正](color-technical-analysis-boundary.md) 已撤回 VLM 技术诊断合同；新报告不产出 colorEvidence/colorClassification，Color 忽略历史模型技术字段和旧分类。Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。已有 Resolve 工程不自动改动。以下后端接入“不改 prompt/分类”只描述接入本身的范围。
+
+2026-11-05：Analyze 视觉调用增加 [全局 LLM 后端配置](analyze-llm-backend.md)，`/project` 可选 local / OpenAI，后者默认 `gpt-6-luna / high`。Key 为本机私有配置，GET/PUT 只返回配置状态；每个作业读取一次工作区配置，项目 runtime 不覆盖 LLM。仅替换 `vlmAnalyze` 传输实现，不改分析阶段、并发、抽帧、prompt、分类规则或 ASR/Style/text LM。保存不使历史 report/checkpoint 失效；API 逐次请求用量写入项目 `.tmp/media-analyze/llm-requests.jsonl`，配置状态不冒充云端可用性。
+
+2026-11-05：正式素材管线采用 [素材版本、先分析后调色与渐进导入](media-version-analysis-color-pipeline.md)。Ingest 每素材最多登记 raw/target 两版本，目标优先、缺失才回退原片；内容 SHA-256 区分版本替换与仅时间戳变化。Analyze 记录实际输入/LOG/LUT，按输入签名复用或归档失效缓存；原片更新不重跑未变目标分析。Color 消费当前语义报告；2026-11-06 撤回 VLM 技术判定，随后实施素材级场景联合规则及独立曝光/噪声检测（见 color-assessment-v1.md），复核为状态而非组；逐片 RCM 输入统一到 DWG / Intermediate，输出 Rec.709 Gamma 2.4，保留五节点标准模板。旧 LOG 分组不自动迁移。
 
 
 2026-11-05：Pharos 可直接关联已有工程目录，详见 [Pharos 工程目录直接关联](pharos-directory-link.md)。协议复核组合哈希 `2f1b4a996f068df4cdd71670ee07d46d04480ecfd8d1cd8742d7d8946981b2ba`；此次上游差异没有新增 canonical parser 合同。
@@ -142,7 +150,7 @@ Kairos 当前需要区分两层：
   - 当前 `prepare_root` 还必须把每条可执行视频 clip 规范化到固定 repair 节点图：
     - 当前正式路径只在同 clip 旧 repair 已经是 canonical 时用 Resolve `CopyGrades` 沿用；legacy / brand-new clip 统一从 canonical donor 重建
     - 所有可执行视频 clip 固定布局为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
-    - `Gyro` 固定是第 1 节点：旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 都必须按最终 `gyroEligible` 布尔判定重申 node1 开关；`gyroEligible=true` 请求开启并进入 `ready-to-load`，`gyroEligible=false` 仍预留但请求关闭并进入 `seeded-disabled`
+    - `Gyro` 固定是第 1 节点：旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 都必须按最终 `gyroEligible` 布尔判定重申 node1 开关；`gyroEligible=true` 请求开启并进入 `ready-to-load`，`gyroEligible=false` 仍预留但请求关闭并进入 `seeded-disabled`
     - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不是 Gyroflow 已执行 source-specific `Load for current file` 的证据
     - `Dehaze` 固定是第 2 节点且默认禁用
     - `User1`、`User2` 默认开启供逐片手调，输入转换由 RCM 在 Group Pre 前完成；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前

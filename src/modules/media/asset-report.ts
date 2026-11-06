@@ -1,4 +1,3 @@
-import { classifyAnalyzedColor } from '../color/classification.js';
 import type {
   IAssetCoarseReport,
   IInferredGps,
@@ -21,7 +20,6 @@ import { assignUniqueMaterialSpanIds } from './material-ids.js';
 
 export interface IBuildAssetCoarseReportInput {
   asset: IKtepAsset;
-  colorEvidence?: IAssetCoarseReport['colorEvidence'];
   plan: IMediaAnalysisPlan;
   clipTypeGuess?: EClipType;
   gpsSummary?: string;
@@ -67,8 +65,6 @@ export function buildAssetCoarseReport(
   return {
     assetId: input.asset.id,
     analysisInput: input.asset.analysisInput,
-    colorEvidence: input.colorEvidence,
-    colorClassification: classifyAnalyzedColor(input.asset, input.clipTypeGuess ?? input.plan.clipType, input.colorEvidence),
     ingestRootId: input.asset.ingestRootId,
     durationMs: input.asset.durationMs,
     clipTypeGuess: input.clipTypeGuess ?? input.plan.clipType,
@@ -118,8 +114,6 @@ function buildReportInterestingWindows(
     id: window.windowId,
     assetId: input.asset.id,
     analysisInput: input.asset.analysisInput,
-    colorEvidence: input.colorEvidence,
-    colorClassification: classifyAnalyzedColor(input.asset, input.clipTypeGuess ?? input.plan.clipType, input.colorEvidence),
     type: mapClipTypeToSliceType(input.plan.clipType),
     semanticKind: window.semanticKind,
     sourceInMs: window.startMs,

@@ -2287,7 +2287,7 @@ describe('project color actions', () => {
       {
         rootId: 'root-a',
         status: 'succeeded',
-        actionSummary: 'Resolve host root prep 已完成：1/1 chunks ready。 Kairos 已写入 1 个 Resolve Groups 快照。 如需复核 Resolve 内调整，可继续运行 Sync Groups。',
+        actionSummary: 'Resolve host root prep 已完成：1/1 chunks ready。 Kairos 已写入 1 个 Resolve Groups 快照；未分组素材另列。 如需复核 Resolve 内调整，可继续运行 Sync Groups。',
       },
     ]);
     expect(result.detail).toBe('Prepare All Roots 完成：1 个成功，1 个失败。');

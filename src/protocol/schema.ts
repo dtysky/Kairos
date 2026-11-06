@@ -881,6 +881,7 @@ export const IFineScanWindow = z.object({
 });
 export type IFineScanWindow = z.infer<typeof IFineScanWindow>;
 
+/** Historical VLM output only. Never use these fields as technical measurement truth. */
 export const IColorAnalysisEvidence = z.object({
   timeOfDay: z.enum(['day', 'night', 'twilight', 'unknown']),
   visiblePresenter: z.boolean().nullable(),
@@ -894,8 +895,9 @@ export const IColorAnalysisEvidence = z.object({
 });
 export type IColorAnalysisEvidence = z.infer<typeof IColorAnalysisEvidence>;
 export const IColorClassification = z.object({
-  ruleVersion: z.literal('scene-v1'),
-  category: z.enum(['portrait', 'presenter', 'overexposed', 'dark-noisy', 'high-contrast', 'night', 'twilight', 'day-drive-cast', 'day', 'review']),
+  ruleVersion: z.enum(['scene-v1', 'scene-v2-technical-pending']),
+  // dark-noisy/review are historical audit values; new scene-v4 decisions never emit them.
+  category: z.enum(['portrait', 'presenter', 'overexposed', 'noisy', 'dark-noisy', 'high-contrast', 'night', 'twilight', 'day-drive-cast', 'day', 'review']),
   reasons: z.array(z.string()),
   reviewFlags: z.array(z.string()),
 });
@@ -904,6 +906,7 @@ export type IColorClassification = z.infer<typeof IColorClassification>;
 export const IAssetCoarseReport = z.object({
   assetId: z.string(),
   analysisInput: IAnalysisInput.optional(),
+  // Read-only legacy audit fields; new Analyze reports do not produce them.
   colorEvidence: IColorAnalysisEvidence.optional(),
   colorClassification: IColorClassification.optional(),
   ingestRootId: z.string().optional(),
@@ -1601,6 +1604,9 @@ export type IColorClipReservedNodeIndices = z.infer<typeof IColorClipReservedNod
 export const IColorClipRepairSnapshot = z.object({
   clipKey: z.string(),
   sceneCategory: IColorClassification.shape.category.optional(),
+  classificationStatus: z.enum(['classified', 'needs-review']).optional(),
+  classificationReasons: z.array(z.string()).optional(),
+  reviewFlags: z.array(z.string()).optional(),
   analysisInputFingerprint: z.string().optional(),
   sourceContentHash: z.string().optional(),
   classificationFingerprint: z.string().optional(),
@@ -1750,6 +1756,7 @@ export const IColorResolveProjectMap = z.object({
 export type IColorResolveProjectMap = z.infer<typeof IColorResolveProjectMap>;
 
 export const IColorGroupCurrent = z.object({
+  nativeGroup: z.boolean().optional(),
   groupKey: z.string(),
   status: EColorGroupStatus,
   displayName: z.string().optional(),
@@ -1801,6 +1808,7 @@ export const IColorCurrent = z.object({
 export type IColorCurrent = z.infer<typeof IColorCurrent>;
 
 export const IColorGroupSnapshot = z.object({
+  nativeGroup: z.boolean().optional(),
   groupKey: z.string(),
   displayName: z.string().optional(),
   clipKeys: z.array(z.string()).default([]),

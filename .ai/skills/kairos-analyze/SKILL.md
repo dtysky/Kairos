@@ -10,7 +10,7 @@ description: >-
 
 # Kairos: Phase 2 — Analyze
 
-2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
 
 这条 skill 负责 **剪辑素材分析**，不是风格分析。
 
@@ -31,6 +31,8 @@ description: >-
 - `Span` 当前只承载素材片段事实索引，不承载 Pharos/GPS/route/speed 决策
 - `slice` 仅作为兼容命名继续存在于少量代码和导出字段中
 - 素材主键协议是 `materialIdPolicyVersion=human-source-v1`：`assetId` 必须是短 source locator，例如 `C0506_zve1_day1`，fine-scan `windowId` 和最终 `span.id` 必须追加 type / 可选 semanticKind / 整数秒 source range，例如 `C0506_zve1_day1_drive_speech_s0-7`，不得新写随机 UUID 或 `asset__` / `span__` 前缀式 ID
+
+2026-11-06 调色输入持久化：`store/color-inputs.json` 按 assetId 摘取已有素材报告和媒体元数据，合同见 `designs/color-inputs-store.md`。writeAssetReport 自动逐项同步，Ingest 更新资产后刷新；Color 读取前通过 refreshColorInputs 校验/补建，不依赖 spans，不调用模型或写技术结论。原报告先落盘，派生失败可修复，不必重跑已完成 Analyze；旧 colorEvidence/分类不进入新文件。
 
 ## 变更工作流规则
 
@@ -85,15 +87,18 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
 
 ## ML 前置条件
 
+- 视觉 LLM 后端由 `/project` 的全局配置 `config/runtime.json.llm` 选择，详见 `designs/analyze-llm-backend.md`。默认 local，OpenAI 默认 `gpt-6-luna / high`；后端接入只替换现有视觉请求传输层，不夹带业务调整，也不把 Style 或文本 LM 隐式迁到云端。2026-11-06 用户另行授权撤回 VLM 技术 colorEvidence 与 scene-v1 消费，见 `designs/color-technical-analysis-boundary.md`；抽帧、阶段/并发与窗口不变。
+- OpenAI Key 从工作区私有配置或服务端 `OPENAI_API_KEY` 读取，不在聊天中索取或输出值；配置保存不使旧报告/缓存失效、不自动重跑。新的请求审计在 `.tmp/media-analyze/llm-requests.jsonl`，查用量时输出 tokens 已含推理。鉴权失败、拒绝、空输出或 incomplete 均明确失败，不切换模型。云端视觉仍遵守以下本地 ML/ASR 前置与收尾规则。
+
 - ML server 是 Analyze 的硬前置条件，不可用时必须直接停掉
 - 不允许在 ML server 不可用时继续产出“看起来完成了”的 fallback analyze 结果
 - 在真正开始粗扫前，应先检查 ML server health；如果不可用，立刻提示用户启动/修复服务后再继续
 - ASR backend 是 `config/runtime.json.asr.backend` 的工作区级显式选择，用户只选择 `qwen3 | whisper`。`backend=qwen3` 在 Apple Silicon/MLX 与 Windows + NVIDIA/Transformers-CUDA 按仓库约定目录使用各自本地 Qwen3-ASR 与 ForcedAligner；模型路径、请求语言和内部音频分片长度不是用户配置。只按当前平台读取对应 checkpoint，任一不可用都直接阻塞，不得跨平台 checkpoint 或静默改用 Whisper。`backend=whisper` 继续使用现有 Whisper 路径，也不得自动切换到 Qwen
-- `/project` 只负责编辑 ASR backend；`/analyze` 必须显示 configured/actual backend、自动发现的 runtime variant、device、model、aligner、availability 与 blocker，并在状态不一致或不可用时禁用启动
+- `/project` 的 ASR 配置只编辑 ASR backend；`/analyze` 必须显示 configured/actual backend、自动发现的 runtime variant、device、model、aligner、availability 与 blocker，并在状态不一致或不可用时禁用启动
 - ASR 推理阶段不得注入内置领域词表、工作区个性词表、文字归一或行程热词：不要向 Qwen 传 `context`，也不要向 Whisper 传 `hotwords / initial_prompt`。两层词表只在 post-ASR Agent 审查合并使用，文字归一只在候选字幕准备阶段执行
 - 只有用户明确接受“这轮先不做 analyze”时，才可以停在这里；不能擅自降级成无 ML 的 analyze
 - 如果 unified `finalize` 返回 invalid JSON，不要先猜是模型坏了还是 prompt 坏了；当前正式做法是先查看 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`
-- Analyze 当前会自动对 invalid-JSON `finalize` 做增量 token 重试，默认预算序列为 `512 -> 768 -> 1152`
+- Analyze 当前会自动对 invalid-JSON `finalize` 做增量 token 重试，本地预算序列为 `512 -> 768 -> 1152`；OpenAI 适配器使用独立 `maxOutputTokens` 总预算（默认 32768，含推理），保持原业务重试次数与 prompt 不变
 - 若最终仍失败，应优先依据 attempt 文件判断是 token 截断、格式漂移，还是服务端异常，再决定是否改 prompt 或模型参数
 
 ## 强规则：Analyze 前必须先做 GPS 提示

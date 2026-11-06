@@ -34,6 +34,8 @@ describe('buildAssetCoarseReport', () => {
     expect(report.materializationPath).toBe('direct');
     expect(report.fineScanMode).toBeUndefined();
     expect('materialPatterns' in report).toBe(false);
+    expect(report).not.toHaveProperty('colorEvidence');
+    expect(report).not.toHaveProperty('colorClassification');
   });
 
   it('writes explicit fine-scan decisions for retained video assets', () => {

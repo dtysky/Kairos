@@ -131,6 +131,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
+        expect(prompt).not.toMatch(/colorEvidence|windshieldCast|highContrast|veryDarkNoisy|overexposed|flicker/u);
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -140,6 +141,9 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
               place_hints: ['Auckland'],
               narrative_role: 'detail',
               description: `Recognized ${imagePaths.length} direct-usable frames.`,
+              // A provider may still emit obsolete fields. They must not become report truth.
+              colorEvidence: { timeOfDay: 'day', visiblePresenter: false, windshieldCast: true, highContrast: true,
+                veryDarkNoisy: true, overexposed: true, lightChange: true, flicker: 'suspected', observation: 'obsolete technical claim' },
             },
             decision: {
               clip_type: 'broll',
@@ -197,6 +201,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(report.keepDecision).toBe('keep');
     expect(report.materializationPath).toBe('direct');
     expect(report.fineScanMode).toBeUndefined();
+    expect(report).not.toHaveProperty('colorEvidence');
+    expect(report).not.toHaveProperty('colorClassification');
     expect(result.fineScannedAssetIds).toEqual([]);
     expect(result.sliceCount).toBe(0);
     expect(vi.mocked(MlClient.prototype.unloadAsr)).toHaveBeenCalledTimes(1);

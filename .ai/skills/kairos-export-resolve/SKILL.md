@@ -10,6 +10,8 @@ description: >-
 
 将临时 KTEP/manifest 审计或已确认的编辑交换稿导出到 DaVinci Resolve。
 
+2026-11-06 调色输入持久化：`store/color-inputs.json` 按 assetId 摘取已有素材报告和媒体元数据，合同见 `designs/color-inputs-store.md`。writeAssetReport 自动逐项同步，Ingest 更新资产后刷新；Color 读取前通过 refreshColorInputs 校验/补建，不依赖 spans，不调用模型或写技术结论。原报告先落盘，派生失败可修复，不必重跑已完成 Analyze；旧 colorEvidence/分类不进入新文件。
+
 ## 变更工作流规则
 
 只要本轮任务涉及需求、行为、接口、工作流、正式入口或用户路径变更，必须遵守下面顺序：
@@ -66,7 +68,7 @@ description: >-
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 结构化 colorEvidence，再按 scene-v1 创建真实视觉 Group，竖屏排他；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
+  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行 scene-v4 素材级分类与独立曝光/噪声检测（designs/color-assessment-v1.md）；只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
   - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。

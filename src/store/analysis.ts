@@ -7,6 +7,7 @@ import {
 } from '../protocol/schema.js';
 import { loadAssets } from './incremental.js';
 import { readJsonOrNull, writeJson } from './writer.js';
+import { refreshColorInputs } from './color-inputs.js';
 
 export function getAssetReportsRoot(projectRoot: string): string {
   return join(projectRoot, 'analysis/asset-reports');
@@ -31,6 +32,7 @@ export async function writeAssetReport(
   report: IAssetCoarseReport,
 ): Promise<void> {
   await writeJson(getAssetReportPath(projectRoot, report.assetId), report);
+  await refreshColorInputs(projectRoot, { assetIds: [report.assetId] });
 }
 
 export async function loadAssetReports(

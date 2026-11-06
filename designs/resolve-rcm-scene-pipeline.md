@@ -8,9 +8,11 @@
 
 `逐片输入色域/Gamma → DWG / Intermediate → Group Pre 基础调整 → Clip Gyro / Dehaze / User1 / User2 / NR → Group Post 风格 → Rec.709 Gamma 2.4 输出`。
 
-视觉类别及竖屏排他规则不变。User1 / User2 回归逐片手调，不再自动写 Log→709 LUT；Group Pre 与 Post 不注入技术 LUT。RCM 输入映射在每条 MediaPoolItem 上明确设置并回读，不能只设置项目默认值。项目和 timeline 的实际有效色彩管理设置均须校验，避免 timeline override 绕过项目设置。
+2026-11-06 已撤回 VLM 技术诊断驱动的 scene-v1 分组。后续 scene-v4 分类与独立曝光/噪声测量见 [首阶段合同](color-assessment-v1.md)；待复核不创建 Color Group，RCM 和五节点初始化按 colorManagementPolicy 判断，与是否有分类解耦。RCM 输入转换和本节以下工程约束不变。User1 / User2 回归逐片手调，不再自动写 Log→709 LUT；Group Pre 与 Post 不注入技术 LUT。RCM 输入映射在每条 MediaPoolItem 上明确设置并回读，不能只设置项目默认值。项目和 timeline 的实际有效色彩管理设置均须校验，避免 timeline override 绕过项目设置。
 
 ## 输入真值与兼容
+
+素材级语义与元数据通过 `store/color-inputs.json` 持久化投影进入 Color，读取前验证源报告/资产签名，见 [调色输入合同](color-inputs-store.md)。RCM 仍以当前原片实际内容、sidecar 与显式 root 输入为准；投影不替代实片校验。
 
 - Sony XML 的 CaptureColorPrimaries 与 CaptureGammaEquation 优先，区分 S-Gamut3 和 S-Gamut3.Cine；明确 Rec.709 不继承 root 的 S-Log3。只有 gamma 的 S-Log3 / HLG 不足以猜色域，须补齐显式 root 输入设置。
 - DJI D-Log 与 D-Log M 不得混淆；仅对实际验证的输入空间建立映射，不把 D-Log M 冒充 D-Log。无可靠映射即阻塞。

@@ -83,8 +83,15 @@ alwaysApply: true
 
 ## ML Lifecycle Truth
 
+- Analyze 视觉 LLM 读取工作区 `config/runtime.json.llm`，`/project` 可选 local / OpenAI，默认本地；OpenAI 默认 `gpt-6-luna / high`。配置在作业开始时快照，项目 runtime 不覆盖它；只改变原 `vlmAnalyze` 传输边界，ASR、Style、text LM、抽帧/调度保持不变。后端接入不得夹带业务调整；2026-11-06 用户另行授权撤回 VLM 技术 colorEvidence 与 scene-v1 消费，当前边界见 `designs/color-technical-analysis-boundary.md`。保存不隐式重跑或作废历史缓存。
+- `/api/workspace/config/llm` 不回传 API Key，留空保留、显式 null 清除，服务端环境变量只暴露配置状态。API 逐次用量审计写 `.tmp/media-analyze/llm-requests.jsonl`，不得记录 key 或第三方原始错误正文；推理 tokens 属于输出总用量，不能重复计费。配置完整不代表 API 已连通；失败不得静默改用本地模型。
+
 - Kairos 官方管理且会使用 / 管理 ML 的顶层流程结束态必须是 `ML stopped`
 - 这里的 ML-backed 顶层流程至少包括：`analyze`、`style-analysis`，以及未来明确接入 ML lifecycle 的正式流程
 - `spatial-refresh / chronology-build` 是 no-ML deterministic job；`span-rebuild` 是本地 qwen text-LM job，会按 Supervisor ML lifecycle 启动并在结束后停止 Kairos 管理的 ML 服务
 - 结束路径包括：正常完成、失败退出、用户 stop、restart 前置 stop、以及中断收尾
 - 低层调试命令可以单独启动 ML，但正式流程收尾时仍必须把 Kairos 官方 ML service 对账回 `stopped`
+
+- Color 的素材级输入使用 `store/color-inputs.json`，详见 `designs/color-inputs-store.md`。这是 assets/root/asset-reports 的可重建投影；报告写入后逐项同步，Ingest 后核对全部条目，Color 必须经 refreshColorInputs 验证或重建后读取。缺失/过期/无版本签名不可用，缓存自称 current 不作证据。不得从旧 colorEvidence、分类或文本关键词恢复技术判断；不依赖 spans，不重跑模型。
+
+- 调色检测合同：Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 长任务必须报告曝光概览/噪声连续帧的实际进度；原始资产报告与 Analyze 流程不变，禁止将测量交给 LLM。

@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildAnalyzeMonitorModel, buildStyleMonitorModel } from '../../src/supervisor/monitor-model.js';
+import { saveWorkspaceLlmConfig } from '../../src/store/llm-config.js';
 import { writeJobRecord } from '../../src/supervisor/state.js';
 import {
   getWorkspaceStyleAnalysisProgressPath,
@@ -44,6 +45,16 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('buildAnalyzeMonitorModel', () => {
+  it('labels cloud settings as configuration without claiming API availability or exposing the key', async () => {
+    const workspaceRoot = await createWorkspace();
+    await initWorkspaceProject(workspaceRoot, 'cloud-test', 'Cloud');
+    await saveWorkspaceLlmConfig(workspaceRoot, { backend: 'openai', openai: { apiKey: 'private-test-key' } });
+    const model = await buildAnalyzeMonitorModel(workspaceRoot, 'cloud-test');
+    expect(model.chips.some(chip => chip.label.includes('gpt-6-luna / high'))).toBe(true);
+    expect(JSON.stringify(model.sections)).toContain('尚未验证云端连通性');
+    expect(JSON.stringify(model)).not.toContain('private-test-key');
+    expect(model.asr?.lifecycle).toBe('not-running');
+  });
   it('returns structured coarse/audio/segmentation/fine-scan pipeline summaries', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-monitor-model';

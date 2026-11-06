@@ -8,7 +8,7 @@ description: >-
 
 # Kairos: Master Workflow
 
-2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。Color 只消费当前 Analyze 结构化证据；Group 为视觉主类且竖屏排他，RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
 
 ## Overview
 
@@ -17,6 +17,8 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 ```
 [Edit Rules + optional Style Reference] → Ingest → Analyze → Chronology(Spans + Review) → Edit Flow(capability steps) → Export
 ```
+
+2026-11-06 调色输入持久化：`store/color-inputs.json` 按 assetId 摘取已有素材报告和媒体元数据，合同见 `designs/color-inputs-store.md`。writeAssetReport 自动逐项同步，Ingest 更新资产后刷新；Color 读取前通过 refreshColorInputs 校验/补建，不依赖 spans，不调用模型或写技术结论。原报告先落盘，派生失败可修复，不必重跑已完成 Analyze；旧 colorEvidence/分类不进入新文件。
 
 ## 变更工作流规则
 
@@ -61,13 +63,13 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 消费当前 Analyze 的 colorEvidence，按 scene-v1 分为唯一视觉主类；Log 读 sidecar 后回退 root，连同原始色域独立用于 RCM 输入；不从 S-Log3 单独猜测 S-Gamut3 或 S-Gamut3.Cine。
-- `/color` prepare 不再运行旧的独立色偏、低照度、曝光、前挡雾化抽帧分类器；视觉分组来自当前 Analyze 的结构化证据和 scene-v1 规则。历史分类器字段只兼容读取，不影响新分组。Analyze 原片显示代理 LUT 与 Gyroflow repair 保留；Resolve scene prepare 使用 RCM。
+  - 自动 Group 已撤回 VLM 技术 colorEvidence，使用 scene-v4 联合素材级描述/语音/GPS 与独立曝光/噪声测量，复核为状态而非第十组；Log 读 sidecar 后回退 root，连同原始色域独立用于 RCM 输入；不从 S-Log3 单独猜测 S-Gamut3 或 S-Gamut3.Cine。
+- `/color` prepare 不再运行旧的独立色偏、低照度、曝光、前挡雾化抽帧分类器；视觉分组采用 scene-v4 与独立曝光/噪声测量（designs/color-assessment-v1.md），不复活旧启发式技术字段；旧 colorEvidence、colorClassification 和历史分类器字段都只读审计，不影响新分组。Analyze 原片显示代理 LUT 与 Gyroflow repair 保留；Resolve scene prepare 使用 RCM。
 - 更新代码不自动重跑既有 Resolve 工程或使已完成 chunks 失效；`sync_groups` 仍只镜像实际组。迁移已有组前必须明确处理已有 Group 调色，不能用普通 prepare 悄悄合并。
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 固定为第 1 节点；新 clip 按 `gyroEligible` 初始化 node1，scene-v1 重跑保留已有开关；旧策略按该判定重申 node1，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
+  - `Gyro` 固定为第 1 节点；新 clip 按 `gyroEligible` 初始化 node1，scene prepare 重跑保留已有开关；旧策略按该判定重申 node1，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
   - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停，不表示 Gyroflow 已执行 source-specific `Load for current file`
   - `gyroEligible` 必须来自显式声明：同名 `.gyroflow` 可开启 Gyro；关联 Sony XML sidecar 明确声明 Gyroscope 即可请求开启 Gyro，不按机型名称做白名单判断。`gyroDataAvailable` 独立记录运动数据声明；缺少证据时保持未知，不能由启用判定、模板可用性或 `.gyroflow` 文件存在反推。启用请求不等于 Gyroflow 已成功载入有效样本。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 私有 telemetry 不扫描、不能单独开启 Gyro，也不能据此猜测 log profile
   - `Dehaze` 固定为第 2 节点且默认禁用

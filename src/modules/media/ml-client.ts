@@ -57,6 +57,17 @@ export interface IMlVlmTiming {
   h2dMs?: number;
   generateMs?: number;
   decodeMs?: number;
+  requestId?: string;
+  usage?: ILlmUsage;
+}
+
+export interface ILlmUsage {
+  inputTokens: number;
+  cachedInputTokens: number;
+  cacheWriteTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  totalTokens: number;
 }
 
 export interface IAsrResult {
@@ -117,8 +128,12 @@ export interface IMlRequestOptions {
   temperature?: number;
 }
 
+export interface IVisionClient {
+  vlmAnalyze(imagePaths: string[], prompt: string, options?: IMlRequestOptions): Promise<IVlmResult>;
+}
+
 export class MlClient {
-  constructor(private baseUrl = CDEFAULT_URL) {}
+  constructor(private baseUrl = CDEFAULT_URL, private visionClient?: IVisionClient) {}
 
   async health(): Promise<IMlHealth> {
     const res = await fetchCompat(`${this.baseUrl}/health`);
@@ -168,6 +183,7 @@ export class MlClient {
     prompt: string,
     options?: IMlRequestOptions,
   ): Promise<IVlmResult> {
+    if (this.visionClient) return this.visionClient.vlmAnalyze(imagePaths, prompt, options);
     return this.post<IVlmResult>('/vlm/analyze', {
       image_paths: imagePaths.map(path => this.normalizePath(path)),
       prompt,

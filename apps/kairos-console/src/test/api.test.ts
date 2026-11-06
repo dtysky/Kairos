@@ -4,17 +4,28 @@ import {
   fetchTranscriptGlossary,
   commitSpeechTranscriptReview,
   fetchWorkspaceAsrConfig,
+  fetchWorkspaceLlmConfig,
   resolveProjectReview,
   saveProjectSection,
   saveSpeechTranscriptReviewDraft,
   saveTranscriptGlossary,
   saveWorkspaceAsrConfig,
+  saveWorkspaceLlmConfig,
   startJob,
 } from '../api';
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Supervisor API compatibility', () => {
+  it('saves LLM settings at workspace scope with explicit key clearing', async () => {
+    const config = { backend: 'openai', openai: { apiKey: null } };
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ backend: 'openai' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await fetchWorkspaceLlmConfig();
+    await saveWorkspaceLlmConfig(config);
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/workspace/config/llm');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/workspace/config/llm', expect.objectContaining({ method: 'PUT', body: JSON.stringify(config) }));
+  });
   it('builds a path-only speech review audio URL', () => {
     expect(buildSpeechReviewAudioUrl('trip one', 'C3289/zve1', 1020.8, 8740.2)).toBe(
       '/api/projects/trip%20one/speech-transcript-review/audio/C3289%2Fzve1?startMs=20&endMs=9741',

@@ -1,5 +1,13 @@
 # Kairos
 
+Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+
+素材视觉分析后端在 `/project` 的 **LLM 全局配置** 中选择，保存到工作区 `config/runtime.json.llm`。支持本地 VLM 与 OpenAI；OpenAI 默认 `gpt-6-luna / high`，可配置 API Key、Base URL、推理与输出总预算及超时。Key 保存后不回显，未保存时可使用服务端 `OPENAI_API_KEY`。后端接入保持原分析流程，保存配置不重跑既有结果；ASR、Style 和片段标签文本 LM 保持各自路由。[接入架构与配置合同](designs/analyze-llm-backend.md)
+
+2026-11-06 已纠正技术判断边界：Analyze 不再要求或采纳 VLM 技术 `colorEvidence`，Color 忽略历史模型技术字段与预计算分类。现采用素材级联合场景规则和独立曝光/噪声检测，复核不再建组，旧 Resolve 工程不自动改动。见 [首阶段实现](designs/color-assessment-v1.md)。[纠正范围与待讨论方案](designs/color-technical-analysis-boundary.md)
+
+Color 的素材级输入现在持久化到项目 `store/color-inputs.json`：摘取已有 Analyze 事实、方向及 raw/target 输入色彩元数据，保留来源签名。报告更新后增量同步，Ingest 刷新素材变化；Color 使用前校验并可从源报告补建。它不依赖 spans、不生成技术判断，完整报告仍是源事实。[持久化合同](designs/color-inputs-store.md)
+
 The production media pipeline is now **Ingest raw/target versions → Analyze → RCM input transforms / scene Groups → target refresh**. See [the versioned pipeline contract](designs/media-version-analysis-color-pipeline.md). New Analyze inputs prefer target per material, with raw + appropriate LUT as fallback; byte fingerprints drive incremental reuse.
 
 字幕配音插件 0.3.3 默认启用 **Align to subtitles**：整组合成一次，再按字词时间戳分句放回各条原字幕起点；完整插入，超出字幕结束只提示，异常逐句显示，重复执行复用缓存并跳过已插入片段。使用方式与校验边界见 [字幕配音分句对齐](designs/resolve-voiceover-alignment.md)。
@@ -137,7 +145,7 @@ Current stable pipeline:
     - `export_all_roots`
   - current `/color` media relink is a separate same-machine maintenance action for the existing `${projectBrief.name} [Color]` Resolve project: it maps each color root's configured raw path candidates to the current readable `rawLocalPath`, calls Resolve `RelinkClips` inside that root namespace, verifies the root grading timeline, saves the Resolve project, and reports relinked / missing-target / unmapped / unreadable / skipped non-file counts. It does not import clips, rebuild timelines, change clip repair graphs, change Group grades, export DRPs, or require the current output `localPath` to be mounted.
   - current `prepare_root` validates current Analyze evidence and mirrors the selected `rawLocalPath` clips into root bins through stable chunks. Scene preparation appends missing clips to one root grading timeline, preserves existing items and grades, uses the canonical five-node template, and verifies each RCM input assignment and the effective DWG/Intermediate timeline. RCM scene preparation does not install technical LUTs; legacy LUT preparation retains copy-missing/conflict guards.
-  - automatic `/color` grouping uses deterministic `scene-v1` visual categories with portrait exclusive. LOG/profile stays per clip and does not multiply the scene Groups. Prepare does not run independent frame classifiers; missing/current-input-mismatched Analyze evidence blocks preparation. Export verifies the prepared source, analysis and technical-transform fingerprints before rendering.
+  - Color uses scene-v4: material type + explicit descriptions + speech for presenter/forward-driving semantics, GPS + corrected capture time for solar context, and independent raw-media measurements for sustained broad over-bright intervals and native-resolution temporal noise. The noisy category has no darkness prerequisite; source-code clipping is audited separately. Backlight/high contrast, WB amounts and flicker remain unmeasured. Review is a status, not a tenth group; new review clips remain ungrouped under RCM. Persist signed results in store/color-assessments/<assetId>.json. See designs/color-assessment-v1.md. Historical VLM colorEvidence/colorClassification is audit-only. LOG/profile stays per clip; missing/current-input-mismatched semantic Analyze reports still block preparation. Export verifies the prepared source, analysis and technical-transform fingerprints before rendering.
   - current large-root prepare is chunked by default: Kairos processes raw videos in stable 50-clip chunks, limits local probe/source-truth concurrency, records chunk progress in `color/current.json`, and can resume after interruption without redoing completed chunks; Resolve must still have one grading timeline per root, with Groups carrying the creative subdivision
   - current automatic DRP export happens once after a root `prepare_root` finishes all chunks; intermediate chunk imports only call `SaveProject()`, and the automatic export defaults to `latest-only` so it overwrites the current latest DRP without adding a timestamped archive. Manual DRP saving exposes two explicit modes: `覆盖最新` (`latest-only`) and `归档快照` (`archive`); archive mode also refreshes latest. External `.drp` registration remains an archive-style registration that refreshes latest.
   - current project-level `/color` orchestration is deterministic and agent-free:
@@ -156,14 +164,14 @@ Current stable pipeline:
   - current automatic Groups use current versioned Analyze evidence:
     - `log`: explicit sidecar truth first, then root `color.colorSpaceProfile`.
     - `orientationStatus`: probe display dimensions and rotation metadata, mapped to `horizontal / portrait / unknown-orientation`.
-    - new colorEvidence fields drive deterministic scene-v1 grouping; legacy ad-hoc classifiers remain disabled.
+    - VLM colorEvidence no longer drives grouping; independent technical detection is unimplemented, and legacy ad-hoc classifiers remain disabled.
     - updating code does not regroup existing Resolve projects or invalidate completed prepare chunks; `sync_groups` reads actual Resolve groups. Migrating previously graded groups requires a separate explicit operation.
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
   - current `prepare_root` must also ensure the canonical clip repair layout:
     - repair preservation still uses official Resolve `CopyGrades` first when the same clip already has a canonical repair graph
     - every executable video clip must end up as `Gyro -> Dehaze -> User1 -> User2 -> NR`
-    - `Gyro` is always reserved at node 1; new clips initialize node 1; scene-v1 reruns preserve existing node states, while legacy mode reasserts node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load`, while `gyroEligible=false` requests disabled / `seeded-disabled`
+    - `Gyro` is always reserved at node 1; new clips initialize node 1; scene prepare reruns preserve existing node states, while legacy mode reasserts node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load`, while `gyroEligible=false` requests disabled / `seeded-disabled`
     - `ready-to-load` means the Gyroflow OFX shell is present and Kairos requested the correct node enabled state; it is not proof that Gyroflow's source-specific `Load for current file` button has run
     - `Dehaze` is always reserved at node 2 and defaults disabled
     - `User1` and `User2` remain enabled manual zones; RCM normalizes inputs before Group Pre; users may extend the user zone only between `Dehaze` and the `NR` tail

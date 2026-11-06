@@ -5,6 +5,7 @@ import { Button, Card, Modal, Option, Select, Tag } from './ui-compat.tsx';
 import './app.scss';
 import './redesign.scss';
 import { ConsoleSidebar } from './components/console-sidebar.tsx';
+import { LlmConfigEditor } from './components/llm-config-editor.jsx';
 import { isProjectSwitchBlocked, useConsoleState } from './app-state.tsx';
 import { buildChronologyEventPayload, filterChronologyEvents } from './chronology-view.ts';
 import {
@@ -24,6 +25,7 @@ import {
   fetchWorkspaceStatus,
   fetchTranscriptGlossary,
   fetchWorkspaceAsrConfig,
+  fetchWorkspaceLlmConfig,
   installProjectEditResolveAssets,
   registerProjectColorDrpSnapshot,
   registerProjectEditResolveSnapshot,
@@ -38,6 +40,7 @@ import {
   saveWorkspaceStyleConfig,
   saveTranscriptGlossary,
   saveWorkspaceAsrConfig,
+  saveWorkspaceLlmConfig,
   startJob,
   startWorkspaceJob,
   splitProjectChronologyEvent,
@@ -89,6 +92,8 @@ export function AppShell() {
   const [savedTranscriptGlossary, setSavedTranscriptGlossary] = useState(null);
   const [asrConfig, setAsrConfig] = useState(null);
   const [savedAsrConfig, setSavedAsrConfig] = useState(null);
+  const [llmConfig, setLlmConfig] = useState(null);
+  const [savedLlmConfig, setSavedLlmConfig] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [projectProgress, setProjectProgress] = useState(null);
   const [busy, setBusy] = useState({});
@@ -109,6 +114,7 @@ export function AppShell() {
     refreshEditRules();
     refreshTranscriptGlossary();
     refreshAsrConfig();
+    refreshLlmConfig();
     fetchCapabilities().then(setCapabilities).catch(handleError);
     const timer = window.setInterval(refreshStatus, 4000);
     return () => window.clearInterval(timer);
@@ -178,6 +184,11 @@ export function AppShell() {
     () => Boolean(asrConfig && savedAsrConfig && JSON.stringify(asrConfig) !== JSON.stringify(savedAsrConfig)),
     [asrConfig, savedAsrConfig],
   );
+  const hasUnsavedLlmConfig = Boolean(llmConfig && savedLlmConfig && JSON.stringify(llmConfig) !== JSON.stringify(savedLlmConfig));
+
+  useEffect(() => {
+    dispatch({ type: 'set-dirty', section: 'llm-config', dirty: hasUnsavedLlmConfig });
+  }, [dispatch, hasUnsavedLlmConfig]);
 
   useEffect(() => {
     dispatch({ type: 'set-dirty', section: 'project-config', dirty: hasUnsavedProjectConfig });
@@ -464,6 +475,28 @@ export function AppShell() {
     } catch (caught) {
       handleError(caught);
     }
+  }
+
+  async function refreshLlmConfig() {
+    try {
+      const next = await fetchWorkspaceLlmConfig();
+      setLlmConfig(next);
+      setSavedLlmConfig(next);
+    } catch (caught) { handleError(caught); }
+  }
+
+  async function saveLlmConfig() {
+    if (!llmConfig) return;
+    const busyKey = 'workspace:llm-config';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      const saved = await saveWorkspaceLlmConfig(llmConfig);
+      setLlmConfig(saved);
+      setSavedLlmConfig(saved);
+      setMessage('已保存 LLM 全局配置，将用于后续素材视觉分析作业');
+      setError('');
+    } catch (caught) { handleError(caught); }
+    finally { setBusy(current => ({ ...current, [busyKey]: false })); }
   }
 
   async function saveTranscriptGlossaryConfig() {
@@ -892,7 +925,7 @@ export function AppShell() {
             <Route path="/script" element={<Navigate to="/edit" replace />} />
             <Route path="/edit" element={<EditFlowPage projectId={projectId} config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onPrepareMedia={() => runProjectWorkflow('resolve-media-sync')} onSaveEditUnit={saveEditUnitPayload} onSelectEditUnit={requestEditChange} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} editSnapshotError={editSnapshotError?.projectId === projectId ? editSnapshotError : null} />} />
             <Route path="/timeline-export" element={<TimelineExportPage capabilities={capabilities} />} />
-            <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} asrConfig={asrConfig} setAsrConfig={setAsrConfig} onSaveAsrConfig={saveAsrConfig} transcriptGlossary={transcriptGlossary} setTranscriptGlossary={setTranscriptGlossary} onSaveTranscriptGlossary={saveTranscriptGlossaryConfig} />} />
+            <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} asrConfig={asrConfig} setAsrConfig={setAsrConfig} onSaveAsrConfig={saveAsrConfig} llmConfig={llmConfig} setLlmConfig={setLlmConfig} onSaveLlmConfig={saveLlmConfig} transcriptGlossary={transcriptGlossary} setTranscriptGlossary={setTranscriptGlossary} onSaveTranscriptGlossary={saveTranscriptGlossaryConfig} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
@@ -3195,6 +3228,9 @@ function ProjectPage({
   asrConfig,
   setAsrConfig,
   onSaveAsrConfig,
+  llmConfig,
+  setLlmConfig,
+  onSaveLlmConfig,
   transcriptGlossary,
   setTranscriptGlossary,
   onSaveTranscriptGlossary,
@@ -3256,6 +3292,7 @@ function ProjectPage({
         busy={busy['workspace:asr-config']}
         runtime={services.find(service => service.name === 'ml')?.health?.asr || null}
       />
+      <LlmConfigEditor config={llmConfig} setConfig={setLlmConfig} onSave={onSaveLlmConfig} busy={busy['workspace:llm-config']} />
       <TranscriptGlossaryEditor
         config={transcriptGlossary}
         setConfig={setTranscriptGlossary}

@@ -1182,8 +1182,18 @@ export async function prepareProjectColorRoot(
   const requestedKeys = new Set((input.clipKeys ?? []).map(normalizePortablePath));
   const unknownKeys = [...requestedKeys].filter(key => !scannedInventory.some(item => item.rawRelativePath === key));
   if (unknownKeys.length) throw new ColorPrepBlockedError(unknownKeys.map(key => `prepare_root clip 不存在：${key}`));
+  let measurementProgress = Promise.resolve();
   const rawInventory = await bindColorAnalysis(context.projectRoot, context.rootId,
-    requestedKeys.size ? scannedInventory.filter(item => requestedKeys.has(item.rawRelativePath)) : scannedInventory);
+    requestedKeys.size ? scannedInventory.filter(item => requestedKeys.has(item.rawRelativePath)) : scannedInventory, {
+      onProgress: detail => {
+        measurementProgress = measurementProgress.then(() => writeProgress(progressPath, action, {
+          status: 'running', stepIndex: 1, current: 0, detail,
+          extra: { projectId: input.projectId, rootId: input.rootId },
+        }));
+        void measurementProgress.catch(() => undefined);
+      },
+    });
+  await measurementProgress;
   const scopePrefix = requestedKeys.size ? `scope-${hashString([...requestedKeys].sort().join('\n')).slice(0, 12)}-` : '';
   const mergeScopedChunks = (previous: IColorPrepareChunk[], incoming: IColorPrepareChunk[]): IColorPrepareChunk[] => scopePrefix
     ? [...previous.filter(chunk => !incoming.some(next => next.chunkId === chunk.chunkId)), ...incoming]
@@ -1477,7 +1487,7 @@ export async function prepareProjectColorRoot(
   const finalRepairSeedNotice = describeRepairSeedNotice(lastPreparedHostSummary);
   detail = [
     `Resolve host root prep 已完成：${completedChunkCount}/${chunks.length} chunks ready。`,
-    `Kairos 已写入 ${mergedSnapshot.groups.length} 个 Resolve Groups 快照。`,
+    `Kairos 已写入 ${mergedSnapshot.groups.filter(group => group.nativeGroup !== false).length} 个 Resolve Groups 快照；未分组素材另列。`,
     finalRepairSeedNotice,
     '如需复核 Resolve 内调整，可继续运行 Sync Groups。',
   ].filter(Boolean).join(' ');
@@ -1506,7 +1516,7 @@ export async function prepareProjectColorRoot(
       hostPreflight,
       hostSummary: mergeColorHostSummary(lastPreparedHostSummary, savedDrp.hostSummary, chunks),
       transformWarnings,
-      groupCount: mergedSnapshot.groups.length,
+      groupCount: mergedSnapshot.groups.filter(group => group.nativeGroup !== false).length,
       chunkCount: chunks.length,
       drpSnapshotPath: drpSnapshots[drpSnapshots.length - 1]?.snapshotPath,
     },
@@ -1624,12 +1634,12 @@ export async function syncProjectColorGroups(
     groupSyncAt: snapshot.syncedAt ?? new Date().toISOString(),
     activeStage: undefined,
     currentJobId: undefined,
-    detail: `已同步 ${snapshot.groups.length} 个 Resolve Groups。`,
+    detail: `已同步 ${snapshot.groups.filter(group => group.nativeGroup !== false).length} 个 Resolve Groups；未分组素材另列。`,
     blockingReasons: [],
     groups: materializeCurrentGroupsFromSnapshot(snapshot, current.groups ?? [], context.groupsSnapshot),
   }));
   const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
-    ?? `已同步 ${snapshot.groups.length} 个 Resolve Groups。`;
+    ?? `已同步 ${snapshot.groups.filter(group => group.nativeGroup !== false).length} 个 Resolve Groups；未分组素材另列。`;
   await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 1,
@@ -1639,7 +1649,7 @@ export async function syncProjectColorGroups(
       projectId: input.projectId,
       rootId,
       groupsPath: getColorGroupsSnapshotPath(context.projectRoot, rootId),
-      groupCount: snapshot.groups.length,
+      groupCount: snapshot.groups.filter(group => group.nativeGroup !== false).length,
     },
   });
 
@@ -1745,10 +1755,10 @@ export async function executeProjectColorRoot(
   const preparedSnapshot = await loadColorGroupsSnapshot(context.projectRoot, context.rootId);
   const preparedByKey = new Map((preparedSnapshot?.groups ?? []).flatMap(group => group.clips ?? [])
     .map(clip => [clip.clipKey, clip]));
-  if ([...preparedByKey.values()].some(clip => clip.sceneCategory)) {
+  if ([...preparedByKey.values()].some(clip => clip.sceneCategory || clip.colorManagementPolicy === 'rcm-dwg-v1')) {
     try {
       const currentClips = await bindColorAnalysis(context.projectRoot, context.rootId,
-        effectiveClipKeys.map(key => inventoryByKey.get(key)!));
+        effectiveClipKeys.map(key => inventoryByKey.get(key)!), { mode: 'verify' });
       const staleClips = currentClips.filter(clip => {
         const prepared = preparedByKey.get(clip.rawRelativePath);
         return !prepared?.classificationFingerprint || !clip.classificationFingerprint
@@ -2904,6 +2914,7 @@ function materializeCurrentGroupsFromSnapshot(
     const nextStatus = group.clipKeys.length > 0 ? 'ready' : 'blocked';
     return {
       groupKey: group.groupKey,
+      nativeGroup: group.nativeGroup,
       status: nextStatus,
       displayName: existing?.displayName ?? group.displayName,
       clipCount: group.clipKeys.length,
@@ -3503,7 +3514,10 @@ function buildColorSyncExecutorClipsForInventory(
       rawRelativePath: item.rawRelativePath,
       sourceAbsolutePath: item.sourceAbsolutePath,
       sourceStem: deriveSourceStem(item.rawRelativePath),
-      sceneCategory: item.sceneCategory ?? previous?.sceneCategory,
+      sceneCategory: item.classificationFingerprint ? item.sceneCategory : previous?.sceneCategory,
+      classificationStatus: item.classificationStatus ?? previous?.classificationStatus,
+      classificationReasons: item.classificationReasons ?? previous?.classificationReasons,
+      reviewFlags: item.reviewFlags ?? previous?.reviewFlags,
       colorManagementPolicy: item.colorManagementPolicy ?? previous?.colorManagementPolicy,
       inputColorSpace: item.inputColorSpace ?? previous?.inputColorSpace,
       inputColorSource: item.inputColorSource ?? previous?.inputColorSource,

@@ -37,3 +37,24 @@ print(json.dumps({'old':old,'drift':drift,'timeline':timeline,'rejected':rejecte
   const { stdout } = await exec('python3', ['-c', script, join(process.cwd(), 'vendor/resolve-color-host/resolve-color-host.py')]);
   expect(JSON.parse(stdout)).toEqual({ old: 'resolve_rcm_migration_required', drift: 'resolve_rcm_migration_required', timeline: 'resolve_rcm_timeline_mismatch', rejected: 'resolve_rcm_input_rejected', status: 'rcm-input-managed', inputDrift: 'resolve_rcm_input_mismatch', dlog: 'dlog', dlogm: 'dlog-m' });
 });
+
+it('prepares review-state clips without creating a tenth Color Group or falling back to a LOG group', async () => {
+  const script = `
+import importlib.util, json, sys
+s=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(s);s.loader.exec_module(h)
+class Project:
+ def GetColorGroupsList(self):return []
+ def AddColorGroup(self,name):raise Exception('must not create a review group')
+class Item:
+ def __init__(self,group=None):self.group=group
+ def GetColorGroup(self):return self.group
+entry={'rawRelativePath':'C1.MP4','colorManagementPolicy':h.RCM_POLICY,'classificationStatus':'needs-review','groupNameSeed':'Ungrouped'}
+summary=h.build_clip_creative_summary(entry)
+state=h.assign_generated_groups(Project(),[entry],{'C1.MP4':Item()}, {})
+try:h.assign_generated_groups(Project(),[entry],{'C1.MP4':Item(object())},{});blocked=False
+except h.HostError:blocked=True
+print(json.dumps({'summary':summary,'state':state,'scene':h.is_scene_request(entry),'blocked':blocked,'groupCount':len(h.SCENE_GROUP_NAMES),'noiseGroup':h.SCENE_GROUP_NAMES.get('noisy'),'legacyNoiseGroup':h.SCENE_GROUP_NAMES.get('dark-noisy')}))
+`;
+  const { stdout } = await exec('python3', ['-c', script, join(process.cwd(), 'vendor/resolve-color-host/resolve-color-host.py')]);
+  expect(JSON.parse(stdout)).toEqual({ summary: { creativeTags: [], displayName: 'Ungrouped' }, state: {}, scene: true, blocked: true, groupCount: 9, noiseGroup: '明显噪点', legacyNoiseGroup: null });
+});

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { loadWorkspaceLlmConfigView, saveWorkspaceLlmConfig } from '../store/llm-config.js';
 import { projectBriefAffectsAnalysis } from '../store/project-root-truth.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createReadStream, createWriteStream } from 'node:fs';
@@ -625,6 +626,11 @@ async function routeRequest(
     return;
   }
 
+  if (pathname === '/api/workspace/config/llm' && method === 'GET') {
+    sendJson(response, 200, await loadWorkspaceLlmConfigView(options.workspaceRoot));
+    return;
+  }
+
   const projectBriefMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/project-brief$/u);
   if (projectBriefMatch && method === 'PUT') {
     const projectId = decodeURIComponent(projectBriefMatch[1]!);
@@ -715,6 +721,12 @@ async function routeRequest(
   if (pathname === '/api/workspace/config/asr' && method === 'PUT') {
     const payload = await readJsonBody(request);
     sendJson(response, 200, await saveWorkspaceAsrConfig(options.workspaceRoot, payload));
+    return;
+  }
+
+  if (pathname === '/api/workspace/config/llm' && method === 'PUT') {
+    const payload = await readJsonBody(request);
+    sendJson(response, 200, await saveWorkspaceLlmConfig(options.workspaceRoot, payload));
     return;
   }
 

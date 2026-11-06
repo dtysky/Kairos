@@ -1,6 +1,16 @@
 # Kairos — 架构设计 v2
 
-2026-11-05：正式素材管线采用 [素材版本、先分析后调色与渐进导入](media-version-analysis-color-pipeline.md)。Ingest 每素材最多登记 raw/target 两版本，目标优先、缺失才回退原片；内容 SHA-256 区分版本替换与仅时间戳变化。Analyze 记录实际输入/LOG/LUT，按输入签名复用或归档失效缓存；原片更新不重跑未变目标分析。Color 消费当前报告的结构化证据，Group 按视觉主类，竖屏排他；逐片 RCM 输入统一到 DWG / Intermediate，输出 Rec.709 Gamma 2.4，保留五节点标准模板。旧 LOG 分组不自动迁移。
+Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+
+Color 素材级派生输入采用 [store/color-inputs.json 合同](color-inputs-store.md)。`writeAssetReport` 在报告成功落盘后按素材刷新，Ingest 写入资产后全量核对，Color prepare/export 通过 `refreshColorInputs` 验证所需条目的源签名。投影逐项保留未变时间戳，原子替换、同项目写入串行；原始事实保持在 assets/root config/asset-reports，文件缺损可重建。该层不读 spans、不调用模型，不引入新技术或主类推断。
+
+## 2026-11-05 Analyze LLM 后端边界
+
+全局配置 `config/runtime.json.llm` 由 `src/store/llm-config.ts` 独立读取，忽略项目本地 LLM 覆盖。`/project` 经 `/api/workspace/config/llm` 编辑 local/OpenAI、模型、推理级别和私有 Key，GET/PUT 返回脱敏视图。Analyze 开始时快照配置，在 `MlClient.vlmAnalyze` 注入 `IVisionClient`；本地分支维持旧实现，OpenAI 分支使用 Responses API，默认 `gpt-6-luna / high`。ASR/OCR/CLIP/text 和 Style 路由不变；LLM 接入本身保留业务流程；2026-11-06 按用户要求另行撤回 prompt/parser 的模型技术 colorEvidence 与 scene-v1 依赖，见 [技术判断边界纠正](color-technical-analysis-boundary.md)。抽帧、阶段/并发和细扫窗口不变。
+
+API 总输出预算独立包含 reasoning；传输层有界重试且禁止静默 fallback。每次尝试记录实际 usage 和不含 key 的配置/输入指纹于项目 `.tmp/media-analyze/llm-requests.jsonl`。保存配置不触发重分析、缓存失效、spans/chronology 重建或旧报告迁移。本地 ML/ASR 健康检查与 Supervisor 收尾不变，监控只宣告配置状态，不能把它当作 API 连通证明。[完整设计](analyze-llm-backend.md)
+
+2026-11-05：正式素材管线采用 [素材版本、先分析后调色与渐进导入](media-version-analysis-color-pipeline.md)。Ingest 每素材最多登记 raw/target 两版本，目标优先、缺失才回退原片；内容 SHA-256 区分版本替换与仅时间戳变化。Analyze 记录实际输入/LOG/LUT，按输入签名复用或归档失效缓存；原片更新不重跑未变目标分析。Color 消费当前语义报告；2026-11-06 撤回 VLM 技术判定，随后实施素材级场景联合规则及独立曝光/噪声检测（见 color-assessment-v1.md），复核为状态而非组；逐片 RCM 输入统一到 DWG / Intermediate，输出 Rec.709 Gamma 2.4，保留五节点标准模板。旧 LOG 分组不自动迁移。
 
 
 2026-11-05：Pharos 可直接关联已有工程目录，详见 [Pharos 工程目录直接关联](pharos-directory-link.md)。协议复核组合哈希 `2f1b4a996f068df4cdd71670ee07d46d04480ecfd8d1cd8742d7d8946981b2ba`；此次上游差异没有新增 canonical parser 合同。
@@ -332,7 +342,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - 只要存在失败 root，整个 job 最终记为 failed
 - clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
+  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
   - `ready-to-load` 只证明 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不证明 Gyroflow 已执行 source-specific `Load for current file`
   - `Dehaze` 是第 2 个保留节点，默认禁用
   - `User1`、`User2` 默认开启供逐片手调，RCM 在 Group Pre 前统一输入；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
@@ -380,7 +390,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
   - group 级至少包含 `logProfile`、`orientationStatus`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
-- 自动 Group 消费当前 Analyze `colorEvidence`，由 `scene-v1` 确定唯一视觉主类；LOG 独立保留用于逐片技术转换，竖屏不交叉。
+- Color 使用 scene-v4：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。本轮主类技术判断仅剩逆光/大光比；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。旧 colorEvidence/colorClassification 只读审计；LOG 独立保留用于逐片技术转换。
 - `gyro` 只参与 clip repair；历史 `lowlight / windshieldHaze / colorCastClass / exposureSceneClass` 仅兼容读取，正式 prepare 不调用这些分类器或抽帧。
 - clip repair 的正式合同当前已收口为固定节点图：
   - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
@@ -401,8 +411,8 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 请求 Gyro 开启
-  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene-v1 重跑保留已有开关） 请求 Gyro 关闭
+  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 开启
+  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 关闭
   - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置

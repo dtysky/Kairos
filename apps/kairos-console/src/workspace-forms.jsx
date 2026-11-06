@@ -1611,7 +1611,7 @@ export function ColorCurrentSummary({
                   <div className="color-root-switcher-meta">
                     <span>{`host ${root.hostPreflight?.status || 'unknown'}`}</span>
                     <span>{`${root.blockers.length} blockers`}</span>
-                    <span>{`${root.groups.length} groups`}</span>
+                    <span>{describeColorGroupCount(root.groups)}</span>
                   </div>
                   <div className="color-root-switcher-sub">
                     {resolveColorRootSwitcherSummary(root)}
@@ -1794,7 +1794,7 @@ export function ColorCurrentSummary({
               </div>
               <div className="headline-metric">
                 <div className="label">Groups</div>
-                <div className="value">{String(activeRoot.groups.length)}</div>
+                <div className="value">{String(countNativeColorGroups(activeRoot.groups))}</div>
                 <div className="sub">{activeRoot.groups.length > 0 ? '可进入执行/校验' : '等待首次 Sync Groups'}</div>
               </div>
               <div className="headline-metric">
@@ -1937,7 +1937,7 @@ export function ColorCurrentSummary({
                 <summary>
                   <span className="compact-disclosure-copy">
                     <strong>Groups</strong>
-                    <span>{`${activeRoot.groups.length} 个已同步 · Clip Repair 默认收起`}</span>
+                    <span>{`${describeColorGroupCount(activeRoot.groups)} · Clip Repair 默认收起`}</span>
                   </span>
                   <Tag>按需展开</Tag>
                 </summary>
@@ -2157,7 +2157,7 @@ function resolveColorRootHeroDetail(root) {
     return `当前有 ${root.blockers.length} 个 blocker。优先处理宿主、路径或 render preset 阻塞后再继续。`;
   }
   if (root.groups.length > 0) {
-    return `当前已同步 ${root.groups.length} 个 Groups，可继续执行 root batch 或校验。`;
+    return `当前已同步 ${describeColorGroupCount(root.groups)}，可继续执行 root batch 或校验。`;
   }
   if (root.hostPreflight?.status === 'degraded') {
     return '当前 Resolve host 可用但存在兼容降级，建议先复查宿主诊断。';
@@ -3975,6 +3975,7 @@ function materializeColorRootCurrent(current) {
 function materializeColorWorkspaceGroup(group) {
   const current = isPlainObject(group?.current) ? group.current : {};
   return {
+    nativeGroup: group?.nativeGroup ?? current?.nativeGroup,
     groupKey: getColorStringField(group, ['groupKey']) || getColorStringField(current, ['groupKey']) || 'group',
     displayName: getColorStringField(group, ['displayName']) || getColorStringField(current, ['displayName']) || 'Unnamed Group',
     clipCount: Number(group?.clipCount || current?.clipCount || 0) || 0,
@@ -4028,6 +4029,9 @@ function materializeColorWorkspaceClipRepair(clip) {
     dehazeStatus: getColorStringField(clip, ['dehazeStatus']) || '',
     nrStatus: getColorStringField(clip, ['nrStatus']) || '',
     clipRepairStatus: getColorStringField(clip, ['clipRepairStatus']) || '',
+    classificationStatus: clip?.classificationStatus,
+    classificationReasons: Array.isArray(clip?.classificationReasons) ? clip.classificationReasons : [],
+    reviewFlags: Array.isArray(clip?.reviewFlags) ? clip.reviewFlags : [],
     layoutStatus: getColorStringField(clip, ['layoutStatus']) || getColorStringField(clip?.hostSummary, ['layoutStatus']) || '',
     reservedNodeIndices: isPlainObject(clip?.reservedNodeIndices)
       ? clip.reservedNodeIndices
@@ -4036,6 +4040,15 @@ function materializeColorWorkspaceClipRepair(clip) {
         : {},
     hostSummary: isPlainObject(clip?.hostSummary) ? clip.hostSummary : {},
   };
+}
+
+function countNativeColorGroups(groups) {
+  return (groups || []).filter(group => group?.nativeGroup !== false).length;
+}
+
+function describeColorGroupCount(groups) {
+  const ungrouped = (groups || []).filter(group => group?.nativeGroup === false).reduce((sum, group) => sum + Number(group.clipCount || group.clipKeys?.length || 0), 0);
+  return `${countNativeColorGroups(groups)} 个调色组${ungrouped ? ` · ${ungrouped} 条未分组` : ''}`;
 }
 
 function buildColorGroupStageSummary(groups) {
@@ -4087,7 +4100,7 @@ function buildColorGroupStageSummary(groups) {
     total: counts.total,
     ready: counts.ready,
     current: counts.running + counts.staged,
-    summary: fragments.join(' · ') || `${counts.total} groups`,
+    summary: `${describeColorGroupCount(groups)} · ${fragments.join(' · ')}`,
   };
 }
 
@@ -4602,6 +4615,9 @@ function describeColorClipRepairSummary(clips) {
 
 function describeColorClipRepairState(clip) {
   const details = [];
+  if (clip?.classificationStatus === 'needs-review') details.push('分类待复核（未建立调色组）');
+  if (clip?.classificationReasons?.length) details.push(clip.classificationReasons.join('；'));
+  if (clip?.reviewFlags?.length) details.push(clip.reviewFlags.join('；'));
   if (clip?.logProfile) details.push(`log: ${clip.logProfile}`);
   if (clip?.orientationStatus) details.push(`orientation: ${clip.orientationStatus}`);
   if (Number.isFinite(Number(clip?.rotationDegrees))) details.push(`rotation: ${clip.rotationDegrees}`);

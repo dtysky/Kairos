@@ -1,5 +1,5 @@
-import { IColorAnalysisEvidence } from '../../protocol/schema.js';
 import { prepareAnalysisInputs } from './analysis-input.js';
+import { createAnalyzeVisionClient } from './openai-vision-client.js';
 import { join } from 'node:path';
 import { access, mkdir, rm, stat } from 'node:fs/promises';
 import { freemem } from 'node:os';
@@ -246,6 +246,7 @@ export async function analyzeWorkspaceProjectMedia(
     loadProjectDerivedTrack(projectRoot),
     loadProjectBriefConfig(projectRoot),
   ]);
+  const visionClient = await createAnalyzeVisionClient(input.workspaceRoot, projectRoot);
   await prepareAnalysisInputs(input.workspaceRoot, projectRoot,
     assets.filter(asset => asset.kind !== 'audio' && (!input.assetIds?.length || input.assetIds.includes(asset.id))), roots);
   const existingReports = await loadAssetReports(projectRoot);
@@ -294,7 +295,7 @@ export async function analyzeWorkspaceProjectMedia(
   const getMlHandle = async () => {
     if (!mlHandle) {
       const healthStartedAt = Date.now();
-      mlHandle = await createMlAvailability(runtimeConfig.mlServerUrl);
+      mlHandle = await createMlAvailability(runtimeConfig.mlServerUrl, visionClient);
       performance?.recordMlHealthCheck(Date.now() - healthStartedAt);
     }
     if (!mlHandle.available) {
@@ -1916,7 +1917,6 @@ async function finalizePreparedAsset(
     gpsSummary: primarySpatial.gpsSummary,
     inferredGps,
     summary: planning.visualSummary?.description,
-    colorEvidence: planning.visualSummary?.colorEvidence,
     asrRawText: audioContext.selectedTranscript?.rawText,
     alignedTokens: audioContext.selectedTranscript?.alignedTokens,
     transcriptSegmentation: audioContext.selectedTranscript?.segmentation,
@@ -2286,7 +2286,7 @@ async function inferUnifiedAnalysisDecision(input: {
         roundTripMs,
         timing: result.timing,
       });
-      const parsed = parseUnifiedFinalizeAnalysis(result.description, Boolean(input.prepared.asset.mediaVersions));
+      const parsed = parseUnifiedFinalizeAnalysis(result.description);
       latestCapturePath = await writeFinalizeAttemptCapture({
         captureRoot,
         asset: input.prepared.asset,
@@ -3126,18 +3126,7 @@ Return only a raw JSON object with:
     "mood": string,
     "place_hints": string[],
     "narrative_role": string,
-    "description": string,
-    "colorEvidence": {
-      "timeOfDay": "day" | "night" | "twilight" | "unknown",
-      "visiblePresenter": boolean | null,
-      "windshieldCast": boolean | null,
-      "highContrast": boolean | null,
-      "veryDarkNoisy": boolean | null,
-      "overexposed": boolean | null,
-      "lightChange": boolean | null,
-      "flicker": "suspected" | "unknown",
-      "observation": string
-    }
+    "description": string
   },
   "decision": {
     "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
@@ -3150,7 +3139,6 @@ Return only a raw JSON object with:
 
 Rules:
 - Use both the images and the textual signals below.
-- colorEvidence describes only visible facts in these normalized display frames. Use null/unknown when insufficient; do not guess from camera name, LOG profile or itinerary. visiblePresenter means a visible person addressing the camera, not any passerby or offscreen speech. windshieldCast requires visible windshield tint, not merely a road. veryDarkNoisy requires BOTH severe darkness AND visible noise. overexposed requires substantial visibly blown subject detail, not a small sun/lamp. highContrast covers backlit subjects and bright sky versus dark foreground. lightChange compares the sampled frames. Sparse images cannot confirm or exclude temporal flicker; use suspected only for visible banding, otherwise unknown. observation states the actual visual evidence concisely.
 - Final clip_type must be semantic, not just based on duration heuristics.
 - Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
 - If shot_count_known is false, treat shot_count as unavailable rather than evidence of zero cuts.
@@ -3168,7 +3156,7 @@ Signals:
 ${signalPayload}`;
 }
 
-function parseUnifiedFinalizeAnalysis(raw: string, requireColorEvidence = false): IUnifiedFinalizeAnalysis | null {
+function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | null {
   const parsed = tryParseJsonObject(raw);
   if (!parsed || typeof parsed !== 'object') return null;
 
@@ -3194,8 +3182,6 @@ function parseUnifiedFinalizeAnalysis(raw: string, requireColorEvidence = false)
     ? ((decisionNode as Record<string, unknown>)['decision_reasons'] as unknown[])
       .filter((value): value is string => typeof value === 'string')
     : [];
-  const colorEvidenceResult = IColorAnalysisEvidence.safeParse((visualNode as Record<string, unknown>)['colorEvidence']);
-  if (requireColorEvidence && !colorEvidenceResult.success) return null;
   const visualDescription = normalizePromptString((visualNode as Record<string, unknown>)['description']);
   if (!visualDescription) return null;
 
@@ -3207,7 +3193,6 @@ function parseUnifiedFinalizeAnalysis(raw: string, requireColorEvidence = false)
       placeHints: normalizePromptStringArray((visualNode as Record<string, unknown>)['place_hints']),
       narrativeRole: normalizePromptString((visualNode as Record<string, unknown>)['narrative_role']) ?? 'unknown',
       description: visualDescription,
-      colorEvidence: colorEvidenceResult.success ? colorEvidenceResult.data : undefined,
       evidence: [],
     },
     decision: {
@@ -5021,8 +5006,8 @@ function isLikelyInvalidVisualSegment(description?: string): boolean {
   ].some(pattern => normalized.includes(pattern));
 }
 
-async function createMlAvailability(baseUrl?: string): Promise<MlAvailability> {
-  const client = new MlClient(baseUrl);
+async function createMlAvailability(baseUrl?: string, visionClient?: import('./ml-client.js').IVisionClient): Promise<MlAvailability> {
+  const client = new MlClient(baseUrl, visionClient);
   try {
     const health = await client.health();
     if (!health.asr) {

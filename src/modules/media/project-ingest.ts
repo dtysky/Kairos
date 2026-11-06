@@ -34,6 +34,7 @@ import { scanDirectory, type IScannedFile } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
+import { refreshColorInputs } from '../../store/color-inputs.js';
 import { assertUniqueRootCodes, assignUniqueMaterialAssetIds, buildMaterialAssetIdForRoot } from './material-ids.js';
 
 export interface IIngestWorkspaceProjectInput {
@@ -283,6 +284,7 @@ async function runProjectIngest(
   const merge = await appendAssets(projectRoot, uniqueIncoming, {
     replaceRootIds: scannedRoots.map(root => root.rootId),
   });
+  await refreshColorInputs(projectRoot);
   const previousById = new Map(existingAssets.map(asset => [asset.id, asset]));
   const nextById = new Map(merge.assets.map(asset => [asset.id, asset]));
   const versionChanges: IIngestWorkspaceProjectResult['versionChanges'] = [];

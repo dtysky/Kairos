@@ -1,5 +1,6 @@
 import { access, readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import { loadWorkspaceLlmConfigView } from '../store/llm-config.js';
 import {
   getAudioAnalysisCheckpointRoot,
   getFineScanCheckpointRoot,
@@ -275,10 +276,11 @@ export async function buildAnalyzeMonitorModel(
   const progress = await readJsonFile<IAnalyzeProgressPayload>(progressPath);
   const projectEntry = (await listWorkspaceProjects(workspaceRoot))
     .find(item => item.projectId === projectId);
-  const [asrConfig, mlService, jobs] = await Promise.all([
+  const [asrConfig, mlService, jobs, llm] = await Promise.all([
     loadWorkspaceAsrConfig(workspaceRoot),
     getMlServiceStatus(workspaceRoot),
     listJobRecords(workspaceRoot),
+    loadWorkspaceLlmConfigView(workspaceRoot),
   ]);
   const latestJob = jobs.find(job => job.projectId === projectId && isAnalyzeMonitorJob(job)) ?? null;
   const liveJob = jobs.find(job =>
@@ -392,6 +394,7 @@ export async function buildAnalyzeMonitorModel(
     title: '素材分析',
     subtitle: `${projectName} · 粗扫优先的项目级素材理解、轻量空间刷新与细扫恢复监控`,
     chips: [
+      { label: `视觉配置 ${llm.backend === 'openai' ? `${llm.openai.model} / ${llm.openai.reasoningEffort}` : '本地 VLM'}`, tone: llm.backend === 'openai' && !llm.openai.apiKeyConfigured ? 'error' : 'default' },
       { label: `项目 ${projectName}` },
       { label: `流程 ${flowLabel}` },
       { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
@@ -440,6 +443,11 @@ export async function buildAnalyzeMonitorModel(
     },
     pipelines: pipelines.length > 0 ? pipelines : undefined,
     asr,
+    sections: [{ title: '视觉 LLM 全局配置（后续作业生效）', items: [
+      { label: '后端', value: llm.backend === 'openai' ? 'OpenAI Responses' : '本地 ML VLM' },
+      { label: '模型', value: llm.backend === 'openai' ? llm.openai.model : '由本地 ML 服务提供' },
+      { label: '配置状态', value: llm.backend === 'local' ? '沿用本地 ML 健康检查' : llm.openai.apiKeyConfigured ? 'Key 已配置，尚未验证云端连通性' : '缺少 OpenAI API Key' },
+    ] }],
     stepDefinitions,
     outputs: await Promise.all([
       outputItem('资产报告目录', join(projectRoot, 'analysis', 'asset-reports'), '每条素材的正式分析结果。', reportCount > 0),

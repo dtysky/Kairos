@@ -90,6 +90,10 @@ export function fetchWorkspaceAsrConfig() {
   return apiGet('/api/workspace/config/asr');
 }
 
+export function fetchWorkspaceLlmConfig() {
+  return apiGet('/api/workspace/config/llm');
+}
+
 export function confirmProjectChronology(projectId) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/chronology/confirm`, {});
 }
@@ -144,6 +148,10 @@ export function saveTranscriptGlossary(payload) {
 
 export function saveWorkspaceAsrConfig(payload) {
   return apiPut('/api/workspace/config/asr', payload);
+}
+
+export function saveWorkspaceLlmConfig(payload) {
+  return apiPut('/api/workspace/config/llm', payload);
 }
 
 export function resolveProjectReview(projectId, reviewId, payload) {

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   initWorkspaceProject,
   loadAssets,
+  loadColorInputs,
   loadIngestRoots,
   loadProjectDerivedTrack,
   loadProjectSameSourceGpsIndex,
@@ -62,6 +63,9 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(peak).toBe(4);
     expect(first.metadata).toEqual({ probedFileCount: 6, reusedFileCount: 0, failedFileCount: 0 });
     const originalIds = first.merge.assets.map(asset => asset.id);
+    const colorInputs = (await loadColorInputs(projectRoot))!;
+    expect(Object.keys(colorInputs.assets).sort()).toEqual([...originalIds].sort());
+    expect(Object.values(colorInputs.assets).every(entry => entry.analysisStatus === 'missing')).toBe(true);
     expect((await loadProjectSameSourceGpsIndex(projectRoot))?.trackCount).toBe(6);
     const snapshots = progressWrites.mock.calls.map(call => call[1]);
     expect(snapshots.map(row => row.phaseKey)).toEqual(expect.arrayContaining([

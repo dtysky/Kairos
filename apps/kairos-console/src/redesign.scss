@@ -921,3 +921,12 @@ body {
   .timeline-readiness-state,
   .project-summary-hero > div:not(:first-child) { padding: 12px 0 0; border-top: 1px solid var(--border); border-left: 0; }
 }
+.llm-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.llm-config-grid > label { display: flex; flex-direction: column; gap: 8px; }
+.llm-config-grid .ant-input-number { width: 100%; }
+.llm-config-panel details { margin-top: 16px; }
