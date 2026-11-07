@@ -1,10 +1,12 @@
 # Kairos — 当前方案总结
 
-Color 使用 scene-v5：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中、全部真实命中时长合计达到 80% 才自动归类，部分命中待复核；夜景硬排除，小光源不单独触发；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
+Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
 
 2026-11-06：[素材级调色输入持久化](color-inputs-store.md) 将已有报告中的类型、描述、语音时间证据与媒体/输入色彩元数据摘入 `store/color-inputs.json`。报告逐条更新投影，Ingest 刷新新增/删除/版本变化，Color 校验源签名后消费；缺失或损坏可只读源事实补建。此层不依赖 spans、不生成技术判断，分类与独立检测现按 [首阶段合同](color-assessment-v1.md) 落地，测量产物与输入投影分离。
 
-2026-11-06：[技术判断边界纠正](color-technical-analysis-boundary.md) 已撤回 VLM 技术诊断合同；新报告不产出 colorEvidence/colorClassification，Color 忽略历史模型技术字段和旧分类。Color 使用 scene-v5：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中、全部真实命中时长合计达到 80% 才自动归类，部分命中待复核；夜景硬排除，小光源不单独触发；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。已有 Resolve 工程不自动改动。以下后端接入“不改 prompt/分类”只描述接入本身的范围。
+2026-11-06：[技术判断边界纠正](color-technical-analysis-boundary.md) 已撤回 VLM 技术诊断合同；新报告不产出 colorEvidence/colorClassification，Color 忽略历史模型技术字段和旧分类。Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。已有 Resolve 工程不自动改动。以下后端接入“不改 prompt/分类”只描述接入本身的范围。
 
 2026-11-05：Analyze 视觉调用增加 [全局 LLM 后端配置](analyze-llm-backend.md)，`/project` 可选 local / OpenAI，后者默认 `gpt-6-luna / high`。Key 为本机私有配置，GET/PUT 只返回配置状态；每个作业读取一次工作区配置，项目 runtime 不覆盖 LLM。仅替换 `vlmAnalyze` 传输实现，不改分析阶段、并发、抽帧、prompt、分类规则或 ASR/Style/text LM。保存不使历史 report/checkpoint 失效；API 逐次请求用量写入项目 `.tmp/media-analyze/llm-requests.jsonl`，配置状态不冒充云端可用性。
 

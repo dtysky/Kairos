@@ -8,7 +8,7 @@
 
 `逐片输入色域/Gamma → DWG / Intermediate → Group Pre 基础调整 → Clip Gyro / Dehaze / User1 / User2 / NR → Group Post 风格 → Rec.709 Gamma 2.4 输出`。
 
-2026-11-06 已撤回 VLM 技术诊断驱动的 scene-v1 分组。scene-v5 分类与独立曝光/噪声/大光比测量见 [首阶段合同](color-assessment-v1.md)；待复核不创建 Color Group，RCM 和五节点初始化按 colorManagementPolicy 判断，与是否有分类解耦。RCM 输入转换和本节以下工程约束不变。User1 / User2 回归逐片手调，不再自动写 Log→709 LUT；Group Pre 与 Post 不注入技术 LUT。RCM 输入映射在每条 MediaPoolItem 上明确设置并回读，不能只设置项目默认值。项目和 timeline 的实际有效色彩管理设置均须校验，避免 timeline override 绕过项目设置。
+2026-11-06 已撤回 VLM 技术诊断驱动的 scene-v1 分组。scene-v7 分类与独立曝光/噪声/大光比测量见 [首阶段合同](color-assessment-v1.md)；局部反差按多数时长决定主类，少数区间留作附加信息。待复核不创建 Color Group，RCM 和五节点初始化按 colorManagementPolicy 判断，与是否有分类解耦。RCM 输入转换和本节以下工程约束不变。User1 / User2 回归逐片手调，不再自动写 Log→709 LUT；Group Pre 与 Post 不注入技术 LUT。RCM 输入映射在每条 MediaPoolItem 上明确设置并回读，不能只设置项目默认值。项目和 timeline 的实际有效色彩管理设置均须校验，避免 timeline override 绕过项目设置。
 
 ## 输入真值与兼容
 
@@ -36,3 +36,5 @@
 ## scene-v5 追加验收（2026-11-06）
 
 独立 `调色分类 scene-v5 20261106 [Color]` 已完成 11 条实片、两条 root 时间线、7 个真实视觉 Group 与2条待复核无组。S-Log3 和 DJI D-Log 的大光比素材进入同组；逐片输入、有效 RCM 与无技术 LUT 的五节点结构回读通过。范围追加与重复 prepare 保留全部片段 ID、时间、Inspector 和可读节点状态；DRT 通过无修改连续导出对照排除内部标识/易变字段后，其余调色字段一致。临时手动探针已恢复，保存 latest-only DRP 并导出11张原生帧。没有验证动态修正效果或新增 D-Log M 支持。详细记录见 [分类验收](color-high-contrast-v1.md)。
+
+2026-11-06 扩展实测：旧 portrait DRT 的 Zstandard frame 未声明解压大小（streaming frame）；本机 Resolve 21.1.2.10 导入后丢弃其 Clip grade，变成单空节点。以带 content size 的 frame 重新封装后，两份模板均原生导入为标准五节点。只改压缩封装，解压后的 protobuf SHA-256 不变，Gyroflow InputRotation/Rotation、timeline rotation 和构图参数均不改。维护 DRT 必须保留已知 frame content size，并以原生导入验证；文件中存在 OFX 字符串不能代替导入成功。

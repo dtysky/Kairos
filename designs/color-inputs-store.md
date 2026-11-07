@@ -11,7 +11,7 @@
 文件由 `schemaVersion`、`projectionVersion`、`updatedAt` 和按 `assetId` 索引的 `assets` 构成。每条记录保存：
 
 - `media`：素材种类、时长、已校正拍摄时间、编码/显示尺寸和旋转元数据；raw/target 路径、可用性、内容签名、原始 LOG/色域/Gamma及来源；root 显式输入色彩配置。尺寸仍注明来自 asset 元数据，不冒充 raw 独立 probe。缺失旋转不补成 0，缺失显示尺寸不猜测。
-- `analysisInput`：当前语义分析选用的 raw/target 输入及 LUT/内容签名，和待调原片身份分开。
+- `analysisInput`：当前语义分析选用的 raw/target 输入及 LUT/内容签名，和待调原片身份分开。`media` 中来自 asset 的尺寸仅保留来源事实；Color 的竖屏分类、90° 技术处理和模板选择使用待调 raw 的独立 probe，不与 target 方向作一致性约束，不反写 Analyze。
 - `facts`：原 `clipTypeGuess`、`summary`、现有语音文本存在标记/语音时间段/coverage，以及 recognized fine-scan 窗口的原始视觉描述、区间、semanticKind 和窗口自身语音证据。保留文本原文，不调用模型归纳，不复制整份字幕或 aligned tokens，不从局部描述推出整片结论。语音时间段只复制已有 transcriptSegments 边界；无时间不能编造。
 - `sources`：资产相关字段签名、报告相关事实签名、报告路径；条目整体 `fingerprint` 用于检测派生内容变化。
 - `analysisStatus` 与 `reasons`：current / missing / stale / blocked / unversioned。没有当前版本签名的旧项目可以留审计事实，但不能绕过 Color 的版本检查。不可用或过期报告不暴露为可消费 facts。

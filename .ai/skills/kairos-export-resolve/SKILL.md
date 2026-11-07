@@ -8,6 +8,8 @@ description: >-
 
 # Kairos: Export To Resolve
 
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
 将临时 KTEP/manifest 审计或已确认的编辑交换稿导出到 DaVinci Resolve。
 
 2026-11-06 调色输入持久化：`store/color-inputs.json` 按 assetId 摘取已有素材报告和媒体元数据，合同见 `designs/color-inputs-store.md`。writeAssetReport 自动逐项同步，Ingest 更新资产后刷新；Color 读取前通过 refreshColorInputs 校验/补建，不依赖 spans，不调用模型或写技术结论。原报告先落盘，派生失败可修复，不必重跑已完成 Analyze；旧 colorEvidence/分类不进入新文件。
@@ -68,7 +70,7 @@ description: >-
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行 scene-v5 素材级分类与独立曝光/噪声/大光比检测（designs/color-assessment-v1.md）；只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
+  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行 scene-v7 素材级分类与独立曝光/噪声/大光比检测（designs/color-assessment-v1.md）；大光比要求持续性与超过 50% 的真实命中时长，少数或各半保留基础场景，局部区间作附加信息，夜景硬排除。只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
   - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。
@@ -116,3 +118,5 @@ description: >-
 ## Resolve 21.1.2 bounded maintenance
 
 Use `scripts/resolve-edit-tools.py` and [its contract](../../../designs/resolve-edit-tools.md) for capability queries, native timeline selection, explicit frame export and video-only fades/transitions/Inspector copying. Inspect exact project/timeline/item ids first; apply only explicitly authorized targets, preserve the reported recovery timeline and report partial changes on failure. This does not change voiceover, audio processing, grading or subtitle text. An available `--apply` flag does not require another approval when the user has already authorized the concrete action.
+
+2026-11-06 扩展实测：旧 portrait DRT 的 Zstandard frame 未声明解压大小（streaming frame）；本机 Resolve 21.1.2.10 导入后丢弃其 Clip grade，变成单空节点。以带 content size 的 frame 重新封装后，两份模板均原生导入为标准五节点。只改压缩封装，解压后的 protobuf SHA-256 不变，Gyroflow InputRotation/Rotation、timeline rotation 和构图参数均不改。维护 DRT 必须保留已知 frame content size，并以原生导入验证；文件中存在 OFX 字符串不能代替导入成功。

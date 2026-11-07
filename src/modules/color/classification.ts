@@ -11,7 +11,7 @@ export const COLOR_CATEGORY_LABELS = {
 } as const;
 export type ColorCategory = keyof typeof COLOR_CATEGORY_LABELS;
 export interface ColorDecision {
-  ruleVersion: 'scene-v5'; category: ColorCategory | null; status: 'classified' | 'needs-review';
+  ruleVersion: 'scene-v7'; category: ColorCategory | null; status: 'classified' | 'needs-review';
   reasons: string[]; reviewFlags: string[]; scene: SceneEvidence; solar: SolarContext;
   lighting: ColorLighting;
   highContrast: ReturnType<typeof applyHighContrastScenePolicy<ColorTechnicalReport['highContrast']>>;
@@ -25,7 +25,8 @@ export function classifyAnalyzedColor(input: IColorInput, technical?: ColorTechn
     lighting.phase === 'unknown' ? 'unknown' : lighting.phase === 'night' ? 'night' : 'non-night');
   const flags: string[] = ['偏色幅度与频闪未检测'];
   if (highContrast.state === 'excluded') flags.push(highContrast.reason);
-  else if (highContrast.state === 'detected') flags.push('已检出持续广域亮暗反差；高优先级主类保留，是否修正另行决定');
+  else if (highContrast.state === 'detected') flags.push('已检出持续亮暗反差；高优先级主类保留，是否修正另行决定');
+  else if (highContrast.state === 'not-dominant') flags.push(...highContrast.measurement.reasons);
   else if (highContrast.state === 'unknown' || highContrast.state === 'needs-review') flags.push(highContrast.reason, ...highContrast.measurement.reasons);
   if (!technical || technical.exposure.state === 'unknown') flags.push('曝光测量未知');
   if (!technical || technical.noise.state === 'unknown') flags.push('噪声测量未知');
@@ -33,17 +34,19 @@ export function classifyAnalyzedColor(input: IColorInput, technical?: ColorTechn
   if (technical?.exposure.state === 'detected' || technical?.exposure.state === 'needs-review') flags.push(...technical.exposure.reasons);
   if (technical?.noise.state === 'detected') flags.push('连续帧已检出显著噪声，是否降噪及幅度另行决定');
   if (scene.sceneChange) flags.push('存在片内场景/光线变化，保留原窗口区间；未定位到精确转换时刻');
-  const result = (category: ColorCategory | null, reason: string): ColorDecision => ({ ruleVersion: 'scene-v5', category,
+  const result = (category: ColorCategory | null, reason: string): ColorDecision => ({ ruleVersion: 'scene-v7', category,
     status: category ? 'classified' : 'needs-review', reasons: [reason], reviewFlags: flags, scene, solar, lighting, highContrast });
-  const { media, facts } = input;
-  const width = media.displayWidth ?? media.width, height = media.displayHeight ?? media.height;
-  if (!width || !height) return result(null, '显示方向未知');
-  if (technical?.probe && (technical.probe.displayHeight > technical.probe.displayWidth) !== (height > width)) return result(null, '待调原片与资产显示方向不一致');
-  const rotation = media.rotationDegrees;
-  if (rotation !== undefined && rotation !== null && media.width && media.height) {
+  const { facts } = input;
+  // Color operates on raw. Analyze may use an already transformed target, whose
+  // dimensions/rotation neither establish nor contradict the raw orientation.
+  const source = technical?.probe;
+  const width = source?.displayWidth, height = source?.displayHeight;
+  if (!source || !width || !height || width <= 0 || height <= 0) return result(null, '待调原片显示方向未知');
+  const rotation = source.rotationDegrees;
+  if (rotation !== undefined && rotation !== null && source.width && source.height) {
     const quarter = Math.abs(rotation % 180) === 90;
-    const expectedPortrait = quarter ? media.width > media.height : media.height > media.width;
-    if (Math.abs(rotation % 90) > 0.001 || expectedPortrait !== (height > width)) return result(null, '旋转与显示尺寸冲突，需复核方向');
+    const expectedPortrait = quarter ? source.width > source.height : source.height > source.width;
+    if (Math.abs(rotation % 90) > 0.001 || expectedPortrait !== (height > width)) return result(null, '待调原片旋转与显示尺寸冲突，需复核方向');
   }
   if (height > width) return result('portrait', '有效显示方向为竖屏，排他归类');
   if (input.analysisStatus !== 'current' || !facts) return result(null, '缺少当前素材级 Analyze 事实');
@@ -61,7 +64,7 @@ export function classifyAnalyzedColor(input: IColorInput, technical?: ColorTechn
   if (lighting.phase === 'night') return result('night', `${lighting.reason}；夜景排除逆光／大光比`);
   if (highContrast.state === 'detected') {
     if (scene.whiteSceneAmbiguous) return result(null, '亮区存在白色物体/雪雾/满屏天空歧义，保留反差区间复核');
-    return result('high-contrast', '非夜景且持续广域亮暗反差覆盖至少 80% 时长；不推断物理光比或修正参数');
+    return result('high-contrast', '非夜景且持续亮暗反差覆盖超过一半时长；不推断物理光比或修正参数');
   }
   if (highContrast.state === 'needs-review' || highContrast.state === 'unknown') return result(null, highContrast.measurement.reasons.join('；'));
   if (lighting.phase === 'twilight') return result('twilight', lighting.reason);

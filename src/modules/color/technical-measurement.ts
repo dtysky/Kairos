@@ -5,10 +5,10 @@ import { probe, type IMediaToolConfig } from '../media/probe.js';
 import { toExecutableInputPath } from '../media/tool-path.js';
 import { HIGH_CONTRAST_THRESHOLDS, IContrastFrame, measureHighContrastFrame, summarizeHighContrast } from './high-contrast-measurement.js';
 
-export const COLOR_MEASUREMENT_VERSION = 'color-measurement-v3' as const;
+export const COLOR_MEASUREMENT_VERSION = 'color-measurement-v4' as const;
 // Conservative engineering thresholds, not camera calibration or physical sensor limits.
 export const COLOR_THRESHOLDS = {
-  version: 'real-samples-v3', highContrast: HIGH_CONTRAST_THRESHOLDS, overviewFps: 1, white: 0.985, whiteArea: 0.72,
+  version: 'real-samples-v4', highContrast: HIGH_CONTRAST_THRESHOLDS, overviewFps: 1, white: 0.985, whiteArea: 0.72,
   lowerWhiteArea: 0.65, whiteTiles: 12,
   bottomWhiteArea: 0.65,
   darkLevel: 0.12, darkArea: 0.75, darkMedian: 0.08,
@@ -47,7 +47,10 @@ export const IColorTechnicalReport = z.object({
     displaySigma: z.number().nullable(), sourceSigma: z.number().nullable(), state: z.enum(['noisy', 'not-observed', 'unknown']) })),
   contrastSampling: z.object({ width: z.number(), height: z.number(), fps: z.literal(1), round: z.literal('up') }).optional(),
   contrastOverview: z.array(z.object({ startMs: z.number(), endMs: z.number(), metrics: IContrastFrame })),
-  exposure: diagnosis, sourceClipping: diagnosis, noise: diagnosis, highContrast: diagnosis,
+  exposure: diagnosis, sourceClipping: diagnosis, noise: diagnosis,
+  highContrast: diagnosis.extend({ state: z.enum(['detected', 'not-observed', 'not-dominant', 'needs-review', 'unknown']),
+    aggregation: z.object({ policyVersion: z.literal('dominant-duration-v1'), positiveDurationMs: z.number(), negativeDurationMs: z.number(),
+      unobservedDurationMs: z.number(), positiveFraction: z.number(), negativeFraction: z.number() }).optional() }),
   deferred: z.array(z.string()), warnings: z.array(z.string()),
 });
 export type ColorTechnicalReport = z.infer<typeof IColorTechnicalReport>;

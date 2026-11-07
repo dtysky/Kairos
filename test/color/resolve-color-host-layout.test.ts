@@ -10,6 +10,31 @@ const pythonPath = process.platform === 'win32'
   ? join(process.cwd(), 'vendor', 'resolve-color-host', '.venv', 'Scripts', 'python.exe')
   : join(process.cwd(), 'vendor', 'resolve-color-host', '.venv', 'bin', 'python');
 
+it('ships DRT grade frames with declared decompressed sizes for native Resolve import', async () => {
+  // Resolve 21.1.2 imported an unknown-size streaming frame as one empty node,
+  // although ordinary Zstandard decompression recovered the complete grade.
+  const { stdout } = await exec(pythonPath, ['-c', `
+import json,re,sys,zipfile
+from pathlib import Path
+rows=[]
+for name in ['default.drt','gyroflow-portrait-90.drt','gyroflow-portrait--90.drt']:
+    count=0
+    with zipfile.ZipFile(Path(sys.argv[1])/name) as z:
+        for entry in z.namelist():
+            if not entry.startswith('SeqContainer/') or not entry.endswith('.xml'): continue
+            for body in re.findall(rb'<Body>([0-9a-fA-F]+)</Body>',z.read(entry)):
+                frame=bytes.fromhex(body.decode())[1:]
+                assert frame[:4]==bytes.fromhex('28b52ffd'),name
+                descriptor=frame[4]
+                assert (descriptor >> 6) or (descriptor & 0x20),name+' has an unknown-size frame'
+                count+=1
+    assert count>0,name
+    rows.append(name)
+print(json.dumps(rows))
+`, join(process.cwd(), 'config')]);
+  expect(JSON.parse(stdout)).toHaveLength(3);
+});
+
 function toPortableTestPath(value: unknown): string {
   return String(value ?? '').replace(/\\/g, '/');
 }

@@ -1,12 +1,12 @@
 import { z } from 'zod';
-/** Image evidence, not a physical sun/subject detector. Small-source metrics remain diagnostic. */
-export const HIGH_CONTRAST_TRIAL_VERSION = 'high-contrast-trial-v1';
+/** Unified spatial contrast evidence; scene-level night exclusion is applied separately. */
+export const HIGH_CONTRAST_TRIAL_VERSION = 'high-contrast-trial-v2';
 export const HIGH_CONTRAST_THRESHOLDS = {
-  longEdge: 768, fps: 1, dark: 0.18, bright: 0.68, core: 0.88,
-  darkArea: 0.2, brightArea: 0.06, darkRegionArea: 0.12, brightRegionArea: 0.025,
-  regionGap: 0.5, coreMinPixels: 3, coreMaxArea: 0.02,
-  haloMedian: 0.3, ambientMidArea: 0.15, minIntervalMs: 3000, wholeClipFraction: 0.8,
-  coverageBasis: 'positive-time-union-with-sustained-run-v1',
+  version: 'unified-regions-v1', longEdge: 768, fps: 1, dark: 0.18, bright: 0.68,
+  darkRegionArea: 0.1, regionGap: 0.5, minRegionPixels: 3,
+} as const;
+export const HIGH_CONTRAST_AGGREGATION_POLICY = {
+  version: 'dominant-duration-v1', minIntervalMs: 3000, minimumCoverage: 0.98, majorityFraction: 0.5,
 } as const;
 export interface ContrastRegion {
   area: number; x: number; y: number; width: number; height: number; mean: number;
@@ -15,17 +15,13 @@ export interface ContrastFrame {
   darkArea: number; brightArea: number; midArea: number;
   darkMedian: number; brightMedian: number; p10: number; p50: number; p90: number;
   darkRegions: ContrastRegion[]; brightRegions: ContrastRegion[];
-  sources: Array<ContrastRegion & { haloMedian: number; coreToHalo: number; supported: boolean }>;
-  broadRegions: boolean; compactSource: boolean; compactSourceWithoutAmbient: boolean;
-  paths: Array<'broad-regions' | 'compact-source'>;
+  regionGap: number | null; hasContrast: boolean;
 }
 const region = z.object({ area: z.number(), x: z.number(), y: z.number(), width: z.number(), height: z.number(), mean: z.number() });
 export const IContrastFrame = z.object({
   darkArea: z.number(), brightArea: z.number(), midArea: z.number(), darkMedian: z.number(), brightMedian: z.number(),
   p10: z.number(), p50: z.number(), p90: z.number(), darkRegions: z.array(region), brightRegions: z.array(region),
-  sources: z.array(region.extend({ haloMedian: z.number(), coreToHalo: z.number(), supported: z.boolean() })),
-  broadRegions: z.boolean(), compactSource: z.boolean(), compactSourceWithoutAmbient: z.boolean(),
-  paths: z.array(z.enum(['broad-regions', 'compact-source'])),
+  regionGap: z.number().nullable(), hasContrast: z.boolean(),
 });
 function quantile(values: Float32Array | number[], q: number) {
   if (!values.length) return 0;
@@ -48,10 +44,19 @@ function regions(mask: Uint8Array, luma: Float32Array, width: number, height: nu
       if (x) visit(i - 1); if (x + 1 < width) visit(i + 1);
       if (y) visit(i - width); if (y + 1 < height) visit(i + width);
     }
-    if (tail >= HIGH_CONTRAST_THRESHOLDS.coreMinPixels) result.push({ area: tail / mask.length, x: left / width, y: top / height,
+    if (tail >= HIGH_CONTRAST_THRESHOLDS.minRegionPixels) result.push({ area: tail / mask.length, x: left / width, y: top / height,
       width: (right - left + 1) / width, height: (bottom - top + 1) / height, mean: total / tail });
   }
   return result.sort((a, b) => b.area - a.area);
+}
+
+/** Shared predicate also permits read-only comparison against recorded region statistics. */
+export function evaluateContrastRegions(darkRegions: ContrastRegion[], brightRegions: ContrastRegion[]) {
+  const darkRegion = darkRegions[0], brightRegion = brightRegions[0];
+  const regionGap = darkRegion && brightRegion ? brightRegion.mean - darkRegion.mean : null;
+  const hasContrast = Boolean(darkRegion && brightRegion && darkRegion.area >= HIGH_CONTRAST_THRESHOLDS.darkRegionArea
+    && regionGap !== null && regionGap >= HIGH_CONTRAST_THRESHOLDS.regionGap);
+  return { regionGap, hasContrast };
 }
 
 /** Full-range RGB48LE after a known diagnostic display transform. No filename or semantic labels. */
@@ -59,42 +64,22 @@ export function measureHighContrastFrame(frame: Buffer, width: number, height: n
   const n = width * height;
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || frame.length !== n * 6) throw new Error('Invalid RGB48 contrast frame');
   const t = HIGH_CONTRAST_THRESHOLDS, luma = new Float32Array(n);
-  const dark = new Uint8Array(n), bright = new Uint8Array(n), core = new Uint8Array(n);
+  const dark = new Uint8Array(n), bright = new Uint8Array(n);
   const darkValues: number[] = [], brightValues: number[] = []; let mid = 0;
   for (let i = 0; i < n; i++) {
     const o = i * 6, v = (0.2126 * frame.readUInt16LE(o) + 0.7152 * frame.readUInt16LE(o + 2) + 0.0722 * frame.readUInt16LE(o + 4)) / 65535;
     luma[i] = v;
     if (v < t.dark) { dark[i] = 1; darkValues.push(v); }
     if (v >= t.bright) { bright[i] = 1; brightValues.push(v); }
-    if (v >= t.core) core[i] = 1;
     if (v >= 0.3 && v < t.bright) mid++;
   }
   const darkRegions = regions(dark, luma, width, height), brightRegions = regions(bright, luma, width, height);
   const darkArea = darkValues.length / n, brightArea = brightValues.length / n;
   const darkMedian = quantile(darkValues, 0.5), brightMedian = quantile(brightValues, 0.5);
-  const broadRegions = darkArea >= t.darkArea && brightArea >= t.brightArea
-    && (darkRegions[0]?.area ?? 0) >= t.darkRegionArea && (brightRegions[0]?.area ?? 0) >= t.brightRegionArea
-    && brightMedian - darkMedian >= t.regionGap;
-  const sources = regions(core, luma, width, height).filter(r => r.area <= t.coreMaxArea).slice(0, 8).map(r => {
-    const cx = (r.x + r.width / 2) * width, cy = (r.y + r.height / 2) * height;
-    const radius = Math.max(5, Math.max(r.width * width, r.height * height) / 2), halo: number[] = [];
-    for (let y = Math.max(0, Math.floor(cy - radius * 3)); y < Math.min(height, cy + radius * 3); y++) {
-      for (let x = Math.max(0, Math.floor(cx - radius * 3)); x < Math.min(width, cx + radius * 3); x++) {
-        const distance = Math.hypot(x - cx, y - cy);
-        if (distance > radius * 1.5 && distance <= radius * 3) halo.push(luma[y * width + x]!);
-      }
-    }
-    const haloMedian = quantile(halo, 0.5);
-    return { ...r, haloMedian, coreToHalo: r.mean - haloMedian,
-      supported: haloMedian >= t.haloMedian && r.mean - darkMedian >= t.regionGap
-        && darkArea >= t.darkArea && (darkRegions[0]?.area ?? 0) >= t.darkRegionArea };
-  });
-  const compactSourceWithoutAmbient = sources.some(s => s.supported), midArea = mid / n;
-  const compactSource = compactSourceWithoutAmbient && midArea >= t.ambientMidArea;
-  return { darkArea, brightArea, midArea, darkMedian, brightMedian, p10: quantile(luma, 0.1), p50: quantile(luma, 0.5), p90: quantile(luma, 0.9),
-    darkRegions: darkRegions.slice(0, 3), brightRegions: brightRegions.slice(0, 3), sources,
-    broadRegions, compactSource, compactSourceWithoutAmbient,
-    paths: [...(broadRegions ? ['broad-regions' as const] : []), ...(compactSource ? ['compact-source' as const] : [])] };
+  const { regionGap, hasContrast } = evaluateContrastRegions(darkRegions, brightRegions);
+  return { darkArea, brightArea, midArea: mid / n, darkMedian, brightMedian,
+    p10: quantile(luma, 0.1), p50: quantile(luma, 0.5), p90: quantile(luma, 0.9),
+    darkRegions: darkRegions.slice(0, 3), brightRegions: brightRegions.slice(0, 3), regionGap, hasContrast };
 }
 
 export function summarizeHighContrastTrial(rows: Array<{ startMs: number; endMs: number; metrics: ContrastFrame }>, durationMs: number) {
@@ -109,41 +94,48 @@ export function summarizeHighContrastTrial(rows: Array<{ startMs: number; endMs:
     coveredEnd = Math.max(coveredEnd, r.endMs);
   }
   const intervals: Array<{ startMs: number; endMs: number }> = [];
-  for (const r of ordered.filter(r => r.metrics.paths.length)) {
+  for (const r of ordered.filter(r => r.metrics.hasContrast)) {
     const last = intervals.at(-1);
-    if (last && r.startMs <= last.endMs + 1) last.endMs = Math.max(last.endMs, r.endMs);
+    if (last && r.startMs <= last.endMs) last.endMs = Math.max(last.endMs, r.endMs);
     else intervals.push({ startMs: r.startMs, endMs: r.endMs });
   }
-  const sustained = intervals.filter(r => r.endMs - r.startMs >= Math.min(durationMs, HIGH_CONTRAST_THRESHOLDS.minIntervalMs));
+  const sustained = intervals.filter(r => r.endMs - r.startMs >= Math.min(durationMs, HIGH_CONTRAST_AGGREGATION_POLICY.minIntervalMs));
   const coverage = Math.min(1, covered / durationMs);
-  return { state: coverage < 0.98 ? 'unknown' : sustained.length ? 'candidate' : 'not-observed',
-    coverage, sampledFrames: rows.length, candidateFrames: rows.filter(r => r.metrics.paths.length).length,
-    candidateFraction: rows.filter(r => r.metrics.paths.length).length / Math.max(1, rows.length), intervals: sustained };
+  return { state: coverage < HIGH_CONTRAST_AGGREGATION_POLICY.minimumCoverage ? 'unknown' : sustained.length ? 'candidate' : 'not-observed',
+    coverage, coveredDurationMs: covered, sampledFrames: rows.length, candidateFrames: rows.filter(r => r.metrics.hasContrast).length,
+    candidateFraction: rows.filter(r => r.metrics.hasContrast).length / Math.max(1, rows.length), intervals: sustained };
 }
 
-/** Production measurement diagnosis: only broad regions qualify; partial changes require review. */
+/** Classify by dominant duration; minority intervals remain supplemental evidence. */
 export function summarizeHighContrast(rows: Array<{ startMs: number; endMs: number; metrics: ContrastFrame }>, durationMs: number) {
   if (!(durationMs > 0)) return { state: 'unknown' as const, reasons: ['反差采样时长未知'], intervals: [] };
-  const summary = summarizeHighContrastTrial(rows.map(r => ({ ...r, metrics: { ...r.metrics,
-    paths: r.metrics.broadRegions ? ['broad-regions' as const] : [] } })), durationMs);
+  const summary = summarizeHighContrastTrial(rows, durationMs);
   const positiveRanges: Array<{ startMs: number; endMs: number }> = [];
-  for (const row of rows.filter(r => r.metrics.broadRegions).sort((a, b) => a.startMs - b.startMs)) {
+  for (const row of rows.filter(r => r.metrics.hasContrast).sort((a, b) => a.startMs - b.startMs)) {
     const last = positiveRanges.at(-1);
-    if (last && row.startMs <= last.endMs + 1) last.endMs = Math.max(last.endMs, row.endMs);
+    if (last && row.startMs <= last.endMs) last.endMs = Math.max(last.endMs, row.endMs);
     else positiveRanges.push({ startMs: row.startMs, endMs: row.endMs });
   }
-  const fraction = positiveRanges.reduce((n, r) => n + r.endMs - r.startMs, 0) / durationMs;
-  const state = summary.state === 'unknown' ? 'unknown' : !summary.intervals.length ? 'not-observed'
-    : fraction >= HIGH_CONTRAST_THRESHOLDS.wholeClipFraction ? 'detected' : 'needs-review';
-  return { state: state as 'unknown' | 'not-observed' | 'detected' | 'needs-review', intervals: summary.intervals.length ? positiveRanges : [],
-    reasons: [state === 'unknown' ? '全片反差采样覆盖不足' : state === 'not-observed' ? '未检出持续广域亮暗反差；小光源不单独触发'
-      : state === 'detected' ? '持续广域亮暗反差覆盖至少 80% 时长；分类仍须排除夜景并检查上下文'
-        : `广域反差只覆盖部分区间（${(fraction * 100).toFixed(1)}%），不能给整条素材统一归类`] };
+  const positiveDurationMs = positiveRanges.reduce((n, r) => n + r.endMs - r.startMs, 0);
+  const observedDurationMs = summary.coveredDurationMs;
+  const negativeDurationMs = Math.max(0, observedDurationMs - positiveDurationMs);
+  const positiveFraction = positiveDurationMs / durationMs, negativeFraction = negativeDurationMs / durationMs;
+  const majority = HIGH_CONTRAST_AGGREGATION_POLICY.majorityFraction;
+  // Missing time is unknown, never counted as normal footage to manufacture a majority.
+  const ambiguousCoverage = summary.coverage < 1 && positiveFraction <= majority && negativeFraction <= majority;
+  const state = summary.state === 'unknown' || ambiguousCoverage ? 'unknown' : !summary.intervals.length ? 'not-observed'
+    : positiveFraction > majority ? 'detected' : 'not-dominant';
+  return { state: state as 'unknown' | 'not-observed' | 'detected' | 'not-dominant', intervals: positiveRanges,
+    aggregation: { policyVersion: HIGH_CONTRAST_AGGREGATION_POLICY.version, positiveDurationMs, negativeDurationMs,
+      unobservedDurationMs: Math.max(0, durationMs - observedDurationMs), positiveFraction, negativeFraction },
+    reasons: [state === 'unknown' ? '反差采样覆盖不足或缺测区间可能改变多数结论' : state === 'not-observed' ? '未检出有连贯暗部支持的持续亮暗反差'
+      : state === 'detected' ? `持续亮暗反差占多数（${(positiveFraction * 100).toFixed(1)}%）；分类仍须排除夜景并检查上下文`
+        : `亮暗反差未占多数（${(positiveFraction * 100).toFixed(1)}%）；按基础场景归类，局部区间保留为附加问题`] };
 }
 
 /** Category eligibility, separate from pixels. Context must be resolved from existing scene facts;
  * night capture time alone is insufficient (e.g. a normally lit interior). Unknown includes conflicts/transitions.
- * Night is excluded regardless of which measurement path fired. Never overwrite the raw measurements.
+ * Night is excluded regardless of measured contrast or source size. Never overwrite the raw measurements.
  */
 export function applyHighContrastScenePolicy<T extends { state: string }>(
   measurement: T,

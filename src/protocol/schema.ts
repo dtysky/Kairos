@@ -896,7 +896,7 @@ export const IColorAnalysisEvidence = z.object({
 export type IColorAnalysisEvidence = z.infer<typeof IColorAnalysisEvidence>;
 export const IColorClassification = z.object({
   ruleVersion: z.enum(['scene-v1', 'scene-v2-technical-pending']),
-  // dark-noisy/review are historical audit values; new scene-v5 decisions never emit them.
+  // dark-noisy/review are historical audit values; new scene-v7 decisions never emit them.
   category: z.enum(['portrait', 'presenter', 'overexposed', 'noisy', 'dark-noisy', 'high-contrast', 'night', 'twilight', 'day-drive-cast', 'day', 'review']),
   reasons: z.array(z.string()),
   reviewFlags: z.array(z.string()),

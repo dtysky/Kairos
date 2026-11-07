@@ -46,11 +46,18 @@ export async function assessColor(input: {
     lutPath: rawInput?.lutPath, lutHash: rawInput?.lutHash, blocker: rawInput?.blocker };
   const technicalFingerprint = colorFingerprint([COLOR_MEASUREMENT_VERSION, COLOR_THRESHOLDS, source,
     version.colorPrimaries, version.transferFunction, root.color?.inputColorSpace, tools]);
+  // v4 originally mixed aggregation policy into the pixel fingerprint. Its spatial
+  // measurements are identical; accept only that exact known signature for reuse.
+  const legacyV4Fingerprint = colorFingerprint([COLOR_MEASUREMENT_VERSION, { ...COLOR_THRESHOLDS,
+    highContrast: { ...COLOR_THRESHOLDS.highContrast, minIntervalMs: 3000, wholeClipFraction: 0.8,
+      coverageBasis: 'positive-time-union-with-sustained-run-v1' } }, source,
+    version.colorPrimaries, version.transferFunction, root.color?.inputColorSpace, tools]);
   const path = colorAssessmentPath(projectRoot, asset.id);
   const old = await readJsonOrNull(path, IAssessment);
   const intact = old && old.fingerprint === colorFingerprint({ schemaVersion: old.schemaVersion, assetId: old.assetId,
     inputFingerprint: old.inputFingerprint, technicalFingerprint: old.technicalFingerprint, technical: old.technical, decision: old.decision });
-  const reusable = intact && old.assetId === asset.id && old.technicalFingerprint === technicalFingerprint
+  const reusable = intact && old.assetId === asset.id
+    && [technicalFingerprint, legacyV4Fingerprint].includes(old.technicalFingerprint)
     && (!old.technical.decoder || old.technical.decoder === decoderIdentity);
   if (options.mode === 'verify' && (!reusable || old!.inputFingerprint !== colorInput.fingerprint)) {
     throw new Error(`${asset.id} 调色检测/分类缓存缺失或过期，请先重新 prepare_root`);
