@@ -10,7 +10,7 @@ description: >-
 
 # Kairos: Project Init
 
-2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 使用 scene-v5：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中、全部真实命中时长合计达到 80% 才自动归类，部分命中待复核；夜景硬排除，小光源不单独触发；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
+2026-11-05 正式约束：先读 `designs/media-version-analysis-color-pipeline.md`。Ingest 每素材最多 raw/target 两版本，先目标后原片；原片 LOG 帧套 LUT、明确 Rec.709 bypass，目标不重复套 LUT。内容指纹决定当前分析与缓存复用，mtime-only 不算内容更新。VLM 技术 colorEvidence 已撤回。Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。RCM 在 Group Pre 前统一输入到 DWG / Intermediate，五节点标准顺序保持不变，User1/User2 留给手调；详见 `designs/resolve-rcm-scene-pipeline.md`。旧技术组不自动迁移，追加不清空时间线。
 
 在正式跑 Ingest / Analyze / Script / Timeline 之前，先把项目内容层初始化好，并且保证这一步对迁移友好。
 

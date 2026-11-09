@@ -7,7 +7,6 @@ export const navigationGroups: NavigationGroup[] = [
     label: '素材准备',
     items: [
       { path: '/ingest-gps', label: '导入与 GPS', icon: 'ingest' },
-      { path: '/color', label: '达芬奇调色', icon: 'color' },
     ],
   },
   {
@@ -20,6 +19,7 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: '创作',
     items: [
+      { path: '/color', label: '达芬奇调色', icon: 'color' },
       { path: '/style', label: '风格分析', icon: 'style' },
       { path: '/edit', label: '剪辑流', icon: 'edit' },
       { path: '/timeline-export', label: '时间线与导出', icon: 'timeline' },

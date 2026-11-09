@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -8,14 +7,11 @@ import type { IColorInput } from '../../store/color-inputs.js';
 import { loadRuntimeConfig } from '../../store/project.js';
 import { readJsonOrNull, writeJson } from '../../store/writer.js';
 import { buildAnalysisInput, fingerprintMediaFile } from '../media/media-versions.js';
-import { classifyAnalyzedColor, type ColorDecision } from './classification.js';
+import { type ColorDecision } from './classification.js';
+import { colorFingerprint, buildColorAgentPacket, acceptedColorAgentDecision, ColorAgentAssetPendingError, verifyColorAgentPacketSources } from './agent-classification.js';
+export { colorFingerprint } from './agent-classification.js';
 import { COLOR_MEASUREMENT_VERSION, COLOR_THRESHOLDS, IColorTechnicalReport, measureColorTechnical, summarizeTechnical } from './technical-measurement.js';
 
-function canonical(value: unknown): string {
-  return JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
-    ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
-}
-export const colorFingerprint = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 const IAssessment = z.object({ schemaVersion: z.literal(1), assetId: z.string(), inputFingerprint: z.string(),
   technicalFingerprint: z.string(), technical: IColorTechnicalReport, decision: z.record(z.unknown()),
   fingerprint: z.string(), updatedAt: z.string() });
@@ -53,26 +49,42 @@ export async function assessColor(input: {
       coverageBasis: 'positive-time-union-with-sustained-run-v1' } }, source,
     version.colorPrimaries, version.transferFunction, root.color?.inputColorSpace, tools]);
   const path = colorAssessmentPath(projectRoot, asset.id);
+  const measurementPath = join(projectRoot, 'store/color-measurements', `${asset.id}.json`);
+  const measurement = await readJsonOrNull(measurementPath, z.object({ schemaVersion: z.literal(1), assetId: z.string(), technicalFingerprint: z.string(), technical: IColorTechnicalReport, fingerprint: z.string() }));
+  const measurementIntact = measurement && measurement.fingerprint === colorFingerprint({ schemaVersion: measurement.schemaVersion, assetId: measurement.assetId, technicalFingerprint: measurement.technicalFingerprint, technical: measurement.technical });
   const old = await readJsonOrNull(path, IAssessment);
   const intact = old && old.fingerprint === colorFingerprint({ schemaVersion: old.schemaVersion, assetId: old.assetId,
     inputFingerprint: old.inputFingerprint, technicalFingerprint: old.technicalFingerprint, technical: old.technical, decision: old.decision });
-  const reusable = intact && old.assetId === asset.id
-    && [technicalFingerprint, legacyV4Fingerprint].includes(old.technicalFingerprint)
-    && (!old.technical.decoder || old.technical.decoder === decoderIdentity);
-  if (options.mode === 'verify' && (!reusable || old!.inputFingerprint !== colorInput.fingerprint)) {
-    throw new Error(`${asset.id} 调色检测/分类缓存缺失或过期，请先重新 prepare_root`);
+  const candidate = measurementIntact ? measurement : intact ? old : null;
+  const reusable = candidate && candidate.assetId === asset.id
+    && [technicalFingerprint, legacyV4Fingerprint].includes(candidate.technicalFingerprint)
+    && (!candidate.technical.decoder || candidate.technical.decoder === decoderIdentity);
+  if (options.mode === 'verify' && (!reusable || !intact || old!.inputFingerprint !== colorInput.fingerprint
+    || old!.decision.ruleVersion !== 'color-agent-v1')) {
+    throw new Error(`${asset.id} 调色检测/Agent 分类缓存缺失或过期，请先重新 prepare_root`);
   }
-  const reuseMeasurement = reusable && (options.mode === 'verify' || (!options.force && old!.technical.status !== 'unavailable'));
-  const technical = reuseMeasurement ? old!.technical : await measureColorTechnical(sourcePath, source, tools,
-    detail => options.onProgress?.(`${asset.id}：${detail}`));
+  const reuseMeasurement = reusable && (options.mode === 'verify' || !options.force);
+  const technical = structuredClone(reuseMeasurement ? candidate!.technical : await measureColorTechnical(sourcePath, source, tools,
+    detail => options.onProgress?.(`${asset.id}：${detail}`)));
   if (technical.overview.length) summarizeTechnical(technical);
   const after = await fingerprintMediaFile(sourcePath, version);
   if (after.contentHash !== version.contentHash) throw new Error(`${asset.id} 检测期间原片已改变，请先 Ingest`);
-  const decision = classifyAnalyzedColor(colorInput, technical);
+  if (options.mode !== 'verify') {
+    const measurementPayload = { schemaVersion: 1 as const, assetId: asset.id, technicalFingerprint, technical };
+    const fingerprint = colorFingerprint(measurementPayload);
+    if (!measurementIntact || measurement.fingerprint !== fingerprint) await writeJson(measurementPath, { ...measurementPayload, fingerprint });
+  }
+  const packet = await buildColorAgentPacket({ projectRoot, asset, root, colorInput, sourcePath, technical, technicalFingerprint });
+  await verifyColorAgentPacketSources(projectRoot, packet);
+  const decision = await acceptedColorAgentDecision(projectRoot, packet);
+  if (!decision) {
+    if (options.mode === 'verify') throw new Error(`${asset.id} Agent 分类缺失或过期，请先重新 prepare_root`);
+    throw new ColorAgentAssetPendingError(packet);
+  }
   const payload = { schemaVersion: 1 as const, assetId: asset.id, inputFingerprint: colorInput.fingerprint,
     technicalFingerprint, technical, decision };
   const fingerprint = colorFingerprint(payload);
-  if (options.mode === 'verify' && fingerprint !== old!.fingerprint) throw new Error(`${asset.id} 分类规则已改变，请先重新 prepare_root`);
+  if (options.mode === 'verify' && fingerprint !== old!.fingerprint) throw new Error(`${asset.id} Agent 分类缓存已改变，请先重新 prepare_root`);
   if (intact && fingerprint === old!.fingerprint) return { ...payload, fingerprint, updatedAt: old!.updatedAt };
   const result = { ...payload, fingerprint, updatedAt: new Date().toISOString() };
   await writeJson(path, result);

@@ -1,4 +1,5 @@
 import * as analysisClassification from '../../src/modules/color/analysis-classification.js';
+import { ColorAgentBatchPendingError } from '../../src/modules/color/agent-classification.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -58,6 +59,28 @@ import {
 
 const workspaces: string[] = [];
 const syncLuts = transformPresets.syncReferencedResolveLuts;
+
+it('stages Agent classification without a Resolve preflight or mutation, including Prepare All', async () => {
+  const workspaceRoot = await createWorkspace();
+  const projectId = 'color-awaiting-agent';
+  const { projectRoot, rootId } = await seedSingleRootProject({ workspaceRoot, projectId, projectName: 'Waiting for Color Agent' });
+  const state = { status: 'pending-agent' as const, batchFingerprint: 'packet-batch', pendingCount: 1,
+    model: 'gpt-6.1-sol' as const, reasoningEffort: 'high' as const, handoffPath: join(projectRoot, 'handoff.md'),
+    submissionPath: join(projectRoot, 'submission.json'), updatedAt: new Date().toISOString() };
+  vi.mocked(analysisClassification.bindColorAnalysis).mockRejectedValue(new ColorAgentBatchPendingError(state));
+  const executor = createFakeExecutor();
+  const preflight = vi.spyOn(executor, 'preflight');
+  const prepare = vi.spyOn(executor, 'prepareRoot');
+  const result = await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+  expect(result.classificationStatus).toBe('pending-agent');
+  expect(preflight).not.toHaveBeenCalled();
+  expect(prepare).not.toHaveBeenCalled();
+  expect((await loadColorCurrent(projectRoot)).roots.find(r => r.rootId === rootId)?.classification).toEqual(state);
+  const all = await prepareAllProjectColorRoots({ workspaceRoot, projectId, executor });
+  expect(all.classificationStatus).toBe('pending-agent');
+  expect(all.roots).toEqual([expect.objectContaining({ rootId, status: 'pending-agent' })]);
+  expect(all.detail).not.toContain('全部 ready');
+});
 
 // These tests isolate Resolve orchestration; the real report/input gate is covered by color/analysis-classification.test.ts.
 beforeEach(() => {
@@ -1761,6 +1784,22 @@ describe('project color actions', () => {
       timelineStatus: 'ready',
       blockingReasons: [],
     });
+  });
+
+  it('clears a failed DRP export blocker only after the retry saves its snapshot', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-recover-drp-export';
+    const { projectRoot, rootId } = await seedSingleRootProject({ workspaceRoot, projectId, projectName: 'DRP Recovery' });
+    mockColorMetadata();
+    mockClipSignals({ gyroEligible: true });
+    const error = 'Unable to export Resolve project snapshot: /tmp/failed.drp';
+    await expect(prepareProjectColorRoot({ workspaceRoot, projectId, rootId,
+      executor: createFakeExecutor({ onSaveDrpSnapshot: async () => { throw new Error(error); } }),
+    })).rejects.toThrow(error);
+    expect((await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId)?.blockingReasons).toContain(error);
+    const result = await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor: createFakeExecutor() });
+    expect(result.blockingReasons).toEqual([]);
+    expect((await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId)).toMatchObject({ timelineStatus: 'ready', blockingReasons: [] });
   });
 
   it('rejects legacy promote after direct-root export', async () => {

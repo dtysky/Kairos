@@ -41,3 +41,5 @@
 - 根仓 `pnpm build` 与 Node 20 下 Console build 均通过。Console 保留已有大 bundle 提示。
 - 隔离项目 `projects/tmp-color-pipeline-20261105` 已补建 `store/color-inputs.json`，103 条记录，6 current / 97 missing，192057 bytes。二次刷新内容与 mtime 未变；6 份源报告及资产索引共 7 个文件哈希未变。
 - 6 份当前报告经正式 Color bind 从投影读取后，类型、临时分组和逐片 RCM 输入符合当前代码合同。未调用模型、未改 Resolve 工程。证据在该项目 `.tmp/color-inputs-verification.json`。
+
+2026-11-09：正式 Color 分类与 Analyze 分离，由 gpt-6.1-sol/high subagent 综合已有分析和原片技术测量。Prepare 缺当前决定时输出签名任务包并进入 pending-agent；使用 `node scripts/color-agent-classify.mjs submit <projectId> <rootId> <submissionFile>` 完整校验并提交后再继续 Prepare。接受记录原子存入 `store/color-classifications.json`，技术缓存独立存入 `store/color-measurements/`；独立用户澄清位于 `config/color-agent-context.json`。夜景与低照度共用第九类表中的 night 键，显示“夜景／低照度”；真实夜景排除大光比。旧语义正则及旧分类只读历史，不能兜底。详见 `designs/color-agent-classification.md`。

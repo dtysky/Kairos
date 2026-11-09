@@ -61,6 +61,7 @@ export interface IColorRootWorkspaceSummary {
 }
 
 export interface IColorGroupWorkspaceSummary {
+  nativeGroup?: boolean;
   groupKey: string;
   displayName: string;
   clipCount: number;
@@ -137,6 +138,7 @@ export function buildColorWorkspaceState(
 
       const currentView: IColorRootCurrentView = {
         rootId: root.id,
+        classification: storedCurrent?.classification,
         mirrorStatus: storedCurrent?.mirrorStatus ?? (canAccessRoot ? 'idle' : 'blocked'),
         timelineStatus: storedCurrent?.timelineStatus ?? (canAccessRoot ? 'missing' : 'blocked'),
         groupSyncStatus: storedCurrent?.groupSyncStatus ?? (
@@ -232,6 +234,7 @@ function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
     return currentGroups.map(current => ({
+    nativeGroup: current.nativeGroup,
     groupKey: current.groupKey,
     status: current.status,
     displayName: trimmed(current.displayName),
@@ -272,6 +275,7 @@ function materializeGroupWorkspaceSummaries(
       blockingReasons: group.clipKeys.length > 0 ? [] : ['该 Group 当前没有可执行 clip。'],
     };
     return {
+      nativeGroup: group.nativeGroup ?? current.nativeGroup,
       groupKey: group.groupKey,
       displayName: trimmed(group.displayName) ?? group.groupKey,
       clipCount: group.clipKeys.length,
@@ -312,6 +316,9 @@ function materializeGroupWorkspaceSummaries(
         dehazeStatus: clip.dehazeStatus,
         nrStatus: clip.nrStatus,
         clipRepairStatus: clip.clipRepairStatus,
+        classificationStatus: clip.classificationStatus,
+        classificationReasons: clip.classificationReasons,
+        reviewFlags: clip.reviewFlags,
         layoutStatus: clip.layoutStatus,
         reservedNodeIndices: clip.reservedNodeIndices,
         hostSummary: isPlainObject(clip.hostSummary) ? clip.hostSummary : {},
@@ -319,6 +326,7 @@ function materializeGroupWorkspaceSummaries(
       hostSummary: isPlainObject(group.hostSummary) ? group.hostSummary : {},
       current: {
         ...current,
+        nativeGroup: group.nativeGroup ?? current.nativeGroup,
         displayName: trimmed(current.displayName) ?? trimmed(group.displayName) ?? group.groupKey,
         clipCount: current.clipCount ?? group.clipKeys.length,
         logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
@@ -335,6 +343,7 @@ function materializeGroupWorkspaceSummaries(
   for (const current of normalizedCurrent) {
     if (materialized.some(group => group.groupKey === current.groupKey)) continue;
     materialized.push({
+      nativeGroup: current.nativeGroup,
       groupKey: current.groupKey,
       displayName: trimmed(current.displayName) ?? current.groupKey,
       clipCount: current.clipCount ?? 0,
@@ -350,6 +359,7 @@ function materializeGroupWorkspaceSummaries(
       hostSummary: {},
       current: {
         ...current,
+        nativeGroup: current.nativeGroup,
         displayName: trimmed(current.displayName) ?? current.groupKey,
         clipCount: current.clipCount ?? 0,
         logProfile: trimmed(current.logProfile),

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Checkbox, Drawer, Radio, Table, Progress } from 'antd';
+import { Checkbox, Drawer, Radio, Table, Progress, Tabs } from 'antd';
+import { colorNeedsApply, colorReadyForExport, colorProjectWorkflow, updateRootColorOutput, aggregateColorGroups } from './color-workflow.js';
 import { Button, Card, Divider, Modal, Tag } from './ui-compat.tsx';
 import { buildSpeechReviewAudioUrl } from './api.js';
 
@@ -1464,13 +1465,12 @@ export function ColorCurrentSummary({
     () => colorJobs,
     [colorJobs],
   );
-  const capabilityLabel = capability?.supported === false
-    ? 'blocked'
-    : capability
-      ? 'supported'
-      : 'unknown';
   const [exportAllDialog, setExportAllDialog] = React.useState(false);
   const [sectionOpen, setSectionOpen] = React.useState({});
+  const [activePanel, setActivePanel] = React.useState('groups');
+  const [copyStatus, setCopyStatus] = React.useState('');
+  const [sourceFilter, setSourceFilter] = React.useState('');
+  React.useEffect(() => { setActivePanel('groups'); setCopyStatus(''); setSourceFilter(''); }, [projectId]);
   const [externalDrpPath, setExternalDrpPath] = React.useState('');
   const preferredRootId = React.useMemo(
     () => resolvePreferredColorRootId(effectiveConfig, rootCards),
@@ -1511,14 +1511,6 @@ export function ColorCurrentSummary({
       promoteHistory: [],
     })
     : null;
-  const activeRootStageStatus = activeRoot ? resolveColorRootHeadlineStatus(activeRoot) : 'unknown';
-  const activeRootTone = resolveColorDashboardTone(activeRootStageStatus);
-  const activeRootLatestBatchId = activeRoot ? resolveColorRootLatestBatchId(activeRoot) : '';
-  const activeRootHeroDetail = activeRoot ? resolveColorRootHeroDetail(activeRoot) : '';
-  const activeRootLiveJob = activeRoot
-    ? liveColorJobs.find(job => matchesColorRoot({ rootId: getColorJobRootId(job) }, activeRoot.rootId))
-    : null;
-  const activeRootProgress = activeRootLiveJob?.progress || null;
   const activeRootPreflightBusy = activeRoot
     ? (busy?.[`color:preflight:${activeRoot.rootId}`] || busy?.['color:preflight'])
     : false;
@@ -1529,172 +1521,135 @@ export function ColorCurrentSummary({
     ? (busy?.[`color:drp-register:${activeRoot.rootId}`] || busy?.['color:drp-register'])
     : false;
   const activeRootLatestDrp = activeRoot?.latestDrpSnapshot || activeRoot?.current?.latestDrpSnapshot || null;
+  const workflow = colorProjectWorkflow(rootCards, liveColorJobs[0]);
+  const projectAgentPrompt = buildProjectColorClassificationAgentPrompt(projectId, workflow.pendingRoots);
+  const visibleRoots = sourceFilter ? rootCards.filter(root => root.rootId === sourceFilter) : rootCards;
+  const visibleGroups = aggregateColorGroups(visibleRoots);
+  const nextEnabled = !liveColorJobs.length && (workflow.action === 'agent'
+    ? Boolean(projectAgentPrompt)
+    : workflow.action === 'review_validation' ? true
+    : canRunProjectColorAction(workflow.action, rootCards, capability, liveColorJobs, busy, onRunColorAction));
+  const runNext = async () => {
+    if (workflow.action === 'agent') {
+      try {
+        if (!window.navigator?.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await window.navigator.clipboard.writeText(projectAgentPrompt);
+        setCopyStatus('已复制全部待分类任务，请粘贴到 Codex 执行。');
+      } catch { setCopyStatus('复制失败，请展开任务文件读取任务说明。'); }
+      return;
+    }
+    if (workflow.action === 'review_validation') {
+      setActiveRootId(workflow.validationPending[0]?.rootId || activeRootId);
+      setActivePanel('maintenance'); return;
+    }
+    if (workflow.action === 'export_all_roots') { setExportAllDialog(true); return; }
+    onRunColorAction?.({ action: workflow.action });
+  };
+  const changeRootOutput = (rootId, key, value) => setProjectBrief?.(current => updateRootColorOutput(current,
+    rootId, key, key === 'bitrateKbps' ? normalizeColorBitrateValue(value) : value));
 
   return (
     <div className="color-dashboard">
-      <Card className="panel color-roots-panel">
-        <div className="section-header">
-          <h2>Color Roots</h2>
-          <Tag>{capabilityLabel}</Tag>
-        </div>
-        <p className="muted">
-          先选择 Root，再执行项目级操作；正式参数继续在下方统一维护。
-        </p>
-        {colorJobs.length > 0 ? (
-          <div className="stack-list color-live-jobs">
-            {colorJobs.map(job => {
-              const progressSummary = formatColorJobProgress(job.progress);
-              const progressPercent = getColorProgressPercent(job.progress);
-              return (
-                <div key={job.jobId} className="job-item color-job-item">
-                  <div className="color-job-copy">
-                    <strong>{getColorJobRootId(job) || job.jobId}</strong>
-                    <div className="muted">{job.progress?.detail || job.progress?.stepLabel || job.status}</div>
-                    {progressSummary ? (
-                      <div className="color-job-progress">
-                        <div className="color-job-progress-bar" aria-hidden="true">
-                          <span style={{ width: `${progressPercent}%` }} />
-                        </div>
-                        <div className="muted color-job-progress-caption">{progressSummary}</div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <Tag>{job.status}</Tag>
-                </div>
-              );
-            })}
+      {!rootCards.length ? <Card className="panel"><p>尚未配置原始素材源。请先到 <a href="/project">项目设置</a> 登记路径，再 <a href="/ingest-gps">导入素材</a>。</p></Card> : null}
+      {activeRoot ? <>
+        <Card className="monitor-panel color-hero-panel">
+          <div className="section-header"><h2>项目调色</h2><Tag>{`${rootCards.length} 个目录 · 统一处理`}</Tag></div>
+          <ol className="color-workflow-steps" aria-label="调色流程">
+            {workflow.steps.map((step, index) => <li key={step.title} aria-current={index === workflow.current ? 'step' : undefined}
+              className={index === workflow.current ? 'is-current' : ''}>
+              <span className="color-step-number">{index + 1}</span>
+              <strong>{step.title}</strong><span className="color-step-status">{step.status}</span><small>{step.detail}</small>
+            </li>)}
+          </ol>
+          <div role="status">
+            <WorkflowPrompt eyebrow="当前下一步" title={workflow.title} body={workflow.body} tone={workflow.tone}
+              actions={<Button type="primary" disabled={!nextEnabled} onClick={runNext}>{workflow.label}</Button>}
+              detail={<>
+                {workflow.pendingRoots.length ? <>
+                  <details className="compact-disclosure"><summary>全部待分类任务文件</summary>
+                    {workflow.pendingRoots.map(root => <div key={root.rootId}><strong>{root.label || root.rootId}</strong>
+                      <div>{root.classification.handoffPath || '任务说明缺失，请重新准备项目。'}</div>
+                    </div>)}
+                  </details>
+                  {copyStatus ? <p>{copyStatus}</p> : null}
+                </> : null}
+                {workflow.prepared ? <div className="color-resolve-destination">
+                  <span>Resolve 工程：<strong>{activeRoot.resolveProjectName || '尚未回读名称'}</strong></span>
+                  <details><summary>{`${rootCards.length} 条调色时间线`}</summary>{rootCards.map(root => <div key={root.rootId}>{root.gradingTimelineName || root.label}</div>)}</details>
+                  <span>追加素材后，在维护区重新准备项目，有效结果会自动复用。</span>
+                </div> : null}
+                {workflow.blockers.length ? <div className="inline-actions"><a href="/ingest-gps">检查素材导入</a><a href="/analyze">查看素材分析</a>
+                  <Button onClick={() => setActivePanel('settings')}>检查项目设置</Button><Button onClick={() => setActivePanel('maintenance')}>查看诊断</Button></div> : null}
+              </>} />
           </div>
-        ) : null}
-        {rootCards.length > 0 ? (
-          <div className="inline-actions">
-            <Button
-              type={canRunProjectColorAction('relink_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-              disabled={!canRunProjectColorAction('relink_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
-              onClick={() => onRunColorAction?.({ action: 'relink_all_roots' })}
-            >
-              {describeProjectColorAction('relink_all_roots', rootCards, liveColorJobs, busy)}
-            </Button>
-            <Button
-              type={canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
-              disabled={!canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
-              onClick={() => onRunColorAction?.({ action: 'prepare_all_roots' })}
-            >
-              {describeProjectColorAction('prepare_all_roots', rootCards, liveColorJobs, busy)}
-            </Button>
-            <Button
-              type={canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-              disabled={!canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
-              onClick={() => setExportAllDialog(true)}
-            >
-              {describeProjectColorAction('export_all_roots', rootCards, liveColorJobs, busy)}
-            </Button>
-          </div>
-        ) : null}
-        {rootCards.length > 0 ? (
-          <div className="color-root-switcher">
-            {rootCards.map(root => {
-              const headlineStatus = resolveColorRootHeadlineStatus(root);
-              return (
-                <button
-                  key={root.key}
-                  type="button"
-                  className={`color-root-switcher-item${matchesColorRoot(root, activeRoot?.rootId) ? ' is-active' : ''}`}
-                  onClick={() => setActiveRootId(root.rootId)}
-                >
-                  <div className="color-root-switcher-top">
-                    <div>
-                      <strong>{root.label || root.rootId}</strong>
-                      <div className="muted color-root-switcher-description">{root.description || '未填写 description'}</div>
-                    </div>
-                    <Tag>{formatColorDashboardStatus(headlineStatus)}</Tag>
-                  </div>
-                  <div className="color-root-switcher-meta">
-                    <span>{`host ${root.hostPreflight?.status || 'unknown'}`}</span>
-                    <span>{`${root.blockers.length} blockers`}</span>
-                    <span>{describeColorGroupCount(root.groups)}</span>
-                  </div>
-                  <div className="color-root-switcher-sub">
-                    {resolveColorRootSwitcherSummary(root)}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="muted">当前还没有可展示的 color root。</p>
-        )}
-      </Card>
-
-      {activeRoot ? (
-        <>
-          <Card className="monitor-panel color-hero-panel">
-            <div className="color-hero-top">
-              <div className="color-hero-copy">
-                <div className="eyebrow">Current Root</div>
-                <div className="status-row">
-                  <div className={`status-pill tone-${activeRootTone}`}>
-                    {formatColorDashboardStatus(activeRootStageStatus)}
-                  </div>
-                  <div className="step-label">{activeRoot.label || activeRoot.rootId}</div>
-                </div>
-                {activeRoot.description ? (
-                  <div className="detail">{activeRoot.description}</div>
-                ) : null}
+          {liveColorJobs.length ? <div className="color-live-jobs">{liveColorJobs.map(job => <div key={job.jobId}>
+            <strong>{job.progress?.stepLabel || '项目任务进行中'}</strong><span>{job.progress?.detail || ''}</span>
+            <div>{formatColorJobProgress(job.progress)}</div>
+            {Number(job.progress?.total) > 0 ? <div className="color-job-progress-bar"><span style={{ width: `${getColorProgressPercent(job.progress)}%` }} /></div> : null}
+          </div>)}</div> : null}
+        </Card>
+        <Tabs className="color-detail-tabs" activeKey={activePanel} onChange={setActivePanel} items={[
+          { key: 'groups', label: '分组与素材', children: (
+            <Card className="panel color-groups-panel">
+              <div className="section-header"><h2>项目分组与素材</h2><Tag>{`${visibleGroups.filter(group => group.nativeGroup !== false).length} 类 · ${visibleGroups.reduce((sum, group) => sum + group.clipCount, 0)} 个片段`}</Tag></div>
+              <SelectField label="筛选素材目录" value={sourceFilter} onChange={setSourceFilter}
+                options={[{ value: '', label: '全部目录' }, ...rootCards.map(root => ({ value: root.rootId, label: root.label || root.rootId }))]} />
+              <p className="muted">跨目录查看最近同步的分组与分类依据。筛选只影响此列表，项目准备和导出仍处理全部目录。</p>
+              {!workflow.prepared && visibleGroups.length ? <p className="inline-warning">下方是上次同步的分组，本轮分类尚未应用到 Resolve。</p> : null}
+              <div className="color-group-list">
+                {visibleGroups.map(group => <div key={group.groupKey} className="color-group-row">
+                  <div className="color-group-row-top"><strong>{group.displayName}</strong><Tag>{`${group.clipCount} 个片段`}</Tag></div>
+                  {group.clips.length ? <details className="color-group-clip-details"><summary>{`查看素材与分类依据（${group.clips.length}）`}</summary>
+                    <div className="color-group-clip-list">{group.clips.map(clip => <div key={clip.displayKey} className="color-group-clip-row">
+                      <strong>{clip.displayName || clip.clipKey}</strong>
+                      <div className="muted">{clip.sourceLabel} · {clip.sourceTimeline}</div>
+                      <div>{clip.classificationReasons.join('；') || '没有可展示的分类理由'}</div>
+                      {clip.reviewFlags.length ? <div className="inline-warning">{clip.reviewFlags.join('；')}</div> : null}
+                      <details><summary>逐片技术与节点信息</summary><p className="muted">{describeColorClipRepairState(clip)}</p></details>
+                    </div>)}</div>
+                  </details> : null}
+                </div>)}
+                {!visibleGroups.length ? <p className="muted">尚无已同步分组。完成上方分类与应用步骤后，这里会列出分组和素材。</p> : null}
               </div>
-              <div className="color-hero-actions">
-                <Button
-                  type={canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'relink_media' })}
-                >
-                  {describeColorRootAction('relink_media', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
-                  type={canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
-                  disabled={!canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'prepare_root' })}
-                >
-                  {describeColorRootAction('prepare_root', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
-                  type={canRunColorRootAction('sync_groups', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('sync_groups', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_groups' })}
-                >
-                  {describeColorRootAction('sync_groups', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
-                  type={canRunColorRootAction('execute_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('execute_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'execute_root' })}
-                >
-                  {describeColorRootAction('execute_root', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
-                  type={canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'validate_batch', batchId: activeRoot.current?.latestBatchId })}
-                >
-                  {describeColorRootAction('validate_batch', activeRoot, liveColorJobs, busy)}
-                </Button>
-              </div>
-            </div>
-            <div className="detail">{activeRootHeroDetail}</div>
-            {activeRootProgress ? (
-              <div className="color-active-progress">
-                <div className="color-active-progress-top">
-                  <strong>{activeRootProgress.stepLabel || activeRootProgress.step || 'Color job'}</strong>
-                  <span>{formatColorJobProgress(activeRootProgress) || activeRootProgress.status || 'running'}</span>
+            </Card>
+          ) },
+          { key: 'settings', label: '项目设置', children: (
+            <Card className="panel color-config-panel">
+              <SectionHeader title="按目录配置" onSave={onSaveProjectRoots} busy={busy?.['project-brief']} actions={<Tag>{`${rootCards.length} 个目录`}</Tag>} />
+              <p className="muted">各目录独立设置编码、码率和输入色彩。编辑只作用于对应目录，完成后一次保存。</p>
+              {rootCards.map(root => <fieldset key={root.rootId} className="color-directory-settings">
+                <legend>{root.label || root.rootId}</legend>
+                <div className="field-grid color-output-grid">
+                  {[['container', '封装格式'], ['videoCodec', '视频编码'], ['audioCodec', '音频编码'], ['bitrateKbps', '视频码率 (kb/s)']].map(([key, label]) =>
+                    <Field key={key} label={label} value={root.renderPreset[key] ?? ''} type={key === 'bitrateKbps' ? 'number' : 'text'}
+                      onChange={value => changeRootOutput(root.rootId, key, value)} disabled={busy?.['project-brief']} />)}
                 </div>
-                <div className="color-job-progress-bar" aria-hidden="true">
-                  <span style={{ width: `${getColorProgressPercent(activeRootProgress)}%` }} />
-                </div>
-                {activeRootProgress.detail ? (
-                  <div className="muted">{activeRootProgress.detail}</div>
-                ) : null}
-              </div>
-            ) : null}
-            <details className="compact-disclosure color-maintenance-disclosure">
+                <details className="compact-disclosure color-input-exceptions"><summary>输入色彩与路径</summary>
+                  <p className="muted">输入色彩优先读取原片元数据。这里只补充该目录的缺失信息；路径在导入页维护。</p>
+                  <div className="compact-disclosure-body">
+                    <Field label={`当前素材路径 · ${root.label}`} value={root.currentPath || ''} onChange={noop} readOnly />
+                    <Field label={`原片路径 · ${root.label}`} value={root.displayRawPath || ''} onChange={noop} readOnly />
+                    <Field label={`原片 LOG / 色彩模式 · ${root.label}`} value={root.colorSpaceProfile || ''}
+                      onChange={value => updateProjectRootColorSpaceProfile(setProjectBrief, root.rootId, value)} disabled={busy?.['project-brief']} placeholder={COLOR_SOURCE_PROFILE_HINT} />
+                    <Field label={`RCM 输入空间（元数据缺失时） · ${root.label}`} value={root.inputColorSpace || ''}
+                      onChange={value => updateProjectRootInputColorSpace(setProjectBrief, root.rootId, value)} disabled={busy?.['project-brief']} />
+                    <SelectField label={`分析代理 LUT · ${root.label}`} value={root.transformPresetKey || ''}
+                      onChange={value => updateProjectRootTransformPresetKey(setProjectBrief, root.rootId, value)} options={root.transformPresetOptions} disabled={busy?.['project-brief']} />
+                  </div>
+                </details>
+              </fieldset>)}
+            </Card>
+          ) },
+          { key: 'maintenance', label: '维护与历史', children: (<div className="color-maintenance-stack">
+            <Card className="panel"><div className="section-header"><h2>项目维护</h2></div>
+              <div className="inline-actions">{['prepare_all_roots', 'relink_all_roots', 'export_all_roots'].map(action => <Button key={action}
+                disabled={!canRunProjectColorAction(action, rootCards, capability, liveColorJobs, busy, onRunColorAction)}
+                onClick={() => action === 'export_all_roots' ? setExportAllDialog(true) : onRunColorAction?.({ action })}>
+                {{ prepare_all_roots: '重新检查并准备项目', relink_all_roots: '重链项目素材', export_all_roots: '重新导出项目' }[action]}</Button>)}</div>
+            </Card>
+            <SelectField label="定位目录问题" value={activeRoot.rootId} onChange={setActiveRootId}
+              options={rootCards.map(root => ({ value: root.rootId, label: `${root.label || root.rootId} · ${formatColorDashboardStatus(resolveColorRootHeadlineStatus(root))}` }))} />
+            <details open className="compact-disclosure color-maintenance-disclosure">
               <summary>
                 <div className="compact-disclosure-copy">
                   <strong>Resolve 维护与快照</strong>
@@ -1704,12 +1659,18 @@ export function ColorCurrentSummary({
               </summary>
               <div className="compact-disclosure-body">
                 <div className="inline-actions color-maintenance-actions">
+                  {['prepare_root', 'relink_media', 'sync_groups', 'execute_root', 'validate_batch'].map(action => (
+                    <Button key={action} disabled={!canRunColorRootAction(action, activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                      onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action, ...(['validate_batch'].includes(action) ? { batchId: activeRoot.current?.latestBatchId } : {}) })}>
+                      {{ prepare_root: '重新检查与准备', relink_media: '重链原始素材', sync_groups: '同步 Resolve 分组', execute_root: '重新导出当前素材源', validate_batch: '重新校验最近一批' }[action]}
+                    </Button>
+                  ))}
                   <Button
                     type={activeRootPreflightBusy ? 'disabled' : 'default'}
                     disabled={activeRootPreflightBusy || typeof onRequestHostPreflight !== 'function'}
                     onClick={() => onRequestHostPreflight?.({ rootId: activeRoot.rootId })}
                   >
-                    {activeRootPreflightBusy ? '检查中…' : '复查 Host'}
+                    {activeRootPreflightBusy ? '检查中…' : '检查 Resolve 连接'}
                   </Button>
                   <Button
                     type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
@@ -1776,226 +1737,17 @@ export function ColorCurrentSummary({
                 </div>
               </div>
             </details>
-            {activeRoot.blockers.length > 0 ? (
-              <div className="inline-warning">
-                {`主 blocker：${activeRoot.blockers.slice(0, 2).join('；')}`}
-              </div>
-            ) : null}
-            <div className="headline-metrics color-headline-metrics">
-              <div className="headline-metric">
-                <div className="label">Host</div>
-                <div className="value">{activeRoot.hostPreflight?.status || 'unknown'}</div>
-                <div className="sub">{activeRoot.renderPresetSummary}</div>
-              </div>
-              <div className="headline-metric">
-                <div className="label">Blockers</div>
-                <div className="value">{String(activeRoot.blockers.length)}</div>
-                <div className="sub">{activeRoot.blockers.length > 0 ? '需要先解除阻塞' : '当前无显式 blocker'}</div>
-              </div>
-              <div className="headline-metric">
-                <div className="label">Groups</div>
-                <div className="value">{String(countNativeColorGroups(activeRoot.groups))}</div>
-                <div className="sub">{activeRoot.groups.length > 0 ? '可进入执行/校验' : '等待首次 Sync Groups'}</div>
-              </div>
-              <div className="headline-metric">
-                <div className="label">Chunks</div>
-                <div className="value">{formatColorPrepareChunkCount(activeRoot.current?.prepareChunks)}</div>
-                <div className="sub">{describeColorPrepareChunks(activeRoot.current?.prepareChunks)}</div>
-              </div>
-              <div className="headline-metric">
-                <div className="label">Latest Batch</div>
-                <div className="value value-compact">{activeRootLatestBatchId || 'none'}</div>
-                <div className="sub">{resolveColorRootBatchSummary(activeRoot)}</div>
-              </div>
-            </div>
-            <div className="monitor-stage-grid color-stage-grid">
-              {[
-                ['timeline', 'Timeline'],
-                ['mirror', 'Media Pool / Mirror'],
-                ['groupSync', 'Group Sync'],
-                ['batch', 'Batch'],
-              ].map(([key, label]) => {
-                const summary = summarizeColorStatusNode(
-                  key === 'groupSync'
-                    ? activeRoot.current?.groupSyncStatus
-                    : activeRoot.current?.[key] ?? activeRoot.current?.[`${key}Status`] ?? activeRoot.current?.[`${key}State`] ?? activeRoot.current?.[`${key}Phase`],
-                );
-                return (
-                  <div key={`${activeRoot.key}:${key}`} className={`monitor-stage-card state-${resolveColorStageCardState(summary.status)}`}>
-                    <div className="monitor-stage-head">
-                      <strong>{label}</strong>
-                      <Tag>{summary.status}</Tag>
-                    </div>
-                    <div className="muted">{summary.summary}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
 
-          <div className="color-detail-layout">
-            <div className="color-primary-stack">
-              <Card className="panel color-config-panel">
-                <SectionHeader
-                  title="所有 Root 配置"
-                  onSave={onSaveProjectRoots}
-                  busy={busy?.['project-brief']}
-                  actions={<Tag>{`${rootCards.length} 个 root`}</Tag>}
-                />
-                <p className="muted color-panel-copy">
-                  所有 root 的可填参数都集中在这里，同页可维护；不需要切换详情才能逐个填写。
-                </p>
-                <div className="color-config-list">
-                  {rootCards.map(root => {
-                    const rootStatus = resolveColorRootHeadlineStatus(root);
-                    const isActiveRoot = matchesColorRoot(root, activeRoot.rootId);
-                    return (
-                      <div key={`${root.key}:config`} className={`color-root-config-card${isActiveRoot ? ' is-active' : ''}`}>
-                        <div className="color-root-config-top">
-                          <div className="color-root-config-copy">
-                            <strong>{root.label || root.rootId}</strong>
-                            <div className="muted">
-                              {root.description || '未填写 description'}
-                            </div>
-                          </div>
-                          <div className="color-root-config-badges">
-                            {isActiveRoot ? <Tag>当前详情</Tag> : null}
-                            <Tag>{formatColorDashboardStatus(rootStatus)}</Tag>
-                          </div>
-                        </div>
-                        <div className="field-grid color-path-grid">
-                          <Field label="当前素材路径" value={root.currentPath || ''} onChange={noop} readOnly />
-                          <Field label="原始素材路径" value={root.displayRawPath || ''} onChange={noop} readOnly />
-                        </div>
-                        <div className="field-grid color-preset-grid">
-                          <Field
-                            label="container"
-                            value={root.renderPreset.container || ''}
-                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { container: value })}
-                            disabled={busy?.['project-brief']}
-                          />
-                          <Field
-                            label="videoCodec"
-                            value={root.renderPreset.videoCodec || ''}
-                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { videoCodec: value })}
-                            disabled={busy?.['project-brief']}
-                          />
-                          <Field
-                            label="audioCodec"
-                            value={root.renderPreset.audioCodec || ''}
-                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { audioCodec: value })}
-                            disabled={busy?.['project-brief']}
-                          />
-                          <Field
-                            label="bitrateKbps (kb/s)"
-                            type="number"
-                            step="1"
-                            inputMode="numeric"
-                            value={formatColorBitrateInput(root.bitrateKbps)}
-                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { bitrateKbps: value })}
-                            disabled={busy?.['project-brief']}
-                          />
-                          <Field
-                            label="colorSpaceProfile"
-                            value={root.colorSpaceProfile || ''}
-                            onChange={value => updateProjectRootColorSpaceProfile(setProjectBrief, root.rootId, value)}
-                            placeholder={COLOR_SOURCE_PROFILE_HINT}
-                            disabled={busy?.['project-brief']}
-                          />
-                          <Field
-                            label="RCM 输入空间（元数据缺失时）"
-                            value={root.inputColorSpace || ''}
-                            onChange={value => updateProjectRootInputColorSpace(setProjectBrief, root.rootId, value)}
-                            placeholder="例如 S-Gamut3.Cine/S-Log3"
-                            disabled={busy?.['project-brief']}
-                          />
-                          <SelectField
-                            label="分析代理 LUT（transformPresetKey）"
-                            value={root.transformPresetKey || ''}
-                            onChange={value => updateProjectRootTransformPresetKey(setProjectBrief, root.rootId, value)}
-                            options={root.transformPresetOptions || [{ value: '', label: '自动 / 按 profile' }]}
-                            disabled={busy?.['project-brief']}
-                          />
-                        </div>
-                        <div className="color-root-config-foot">
-                          <span>{resolveColorRootSwitcherSummary(root)}</span>
-                          <span>{root.renderPresetSummary}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <details className="compact-disclosure color-config-help">
-                  <summary>查看 Prepare / Group 技术说明</summary>
-                  <p className="field-help">
-                    {'`Prepare Root` 读取当前 Analyze 证据，按视觉类别创建 Group。RCM 先将逐片输入统一到 DWG / Intermediate，Group Pre 做类别基础调整，Clip 五节点保留逐片调整，Group Post 做风格；User1 不再自动放技术 LUT。已有普通 YRGB 工程需明确迁移，不能直接覆盖色彩设置。'}
-                  </p>
-                </details>
-              </Card>
-
-              <details className="compact-disclosure color-groups-disclosure">
-                <summary>
-                  <span className="compact-disclosure-copy">
-                    <strong>Groups</strong>
-                    <span>{`${describeColorGroupCount(activeRoot.groups)} · Clip Repair 默认收起`}</span>
-                  </span>
-                  <Tag>按需展开</Tag>
-                </summary>
-                <div className="compact-disclosure-body">
-                  <p className="muted color-panel-copy">
-                    Resolve Group 是创意调色真相；这里仅镜像状态和 clip repair 摘要。
-                  </p>
-                  <div className="color-group-list">
-                  {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
-                    <div key={`${activeRoot.key}:${group.groupKey}`} className="color-group-row">
-                      <div className="color-group-row-top">
-                        <div className="color-group-copy">
-                          <strong>{group.displayName}</strong>
-                          <div className="muted">{`${group.groupKey} · ${group.clipCount} clips`}</div>
-                          {describeColorGroupCreativeState(group) ? (
-                            <div className="muted">{describeColorGroupCreativeState(group)}</div>
-                          ) : null}
-                          {describeColorTechnicalSignals(group.hostSummary) ? (
-                            <div className="muted">{describeColorTechnicalSignals(group.hostSummary)}</div>
-                          ) : null}
-                          {describeColorClipRepairSummary(group.clips) ? (
-                            <div className="muted">{describeColorClipRepairSummary(group.clips)}</div>
-                          ) : null}
-                        </div>
-                        <Tag>{group.current?.status || 'ready'}</Tag>
-                      </div>
-                      {Array.isArray(group.clips) && group.clips.length > 0 ? (
-                        <details className="color-group-clip-details">
-                          <summary>{`Clip Repair (${group.clips.length})`}</summary>
-                          <div className="color-group-clip-list">
-                            {group.clips.map(clip => (
-                              <div key={`${group.groupKey}:${clip.clipKey}`} className="color-group-clip-row">
-                                <strong>{clip.displayName || clip.clipKey}</strong>
-                                <div className="muted">{clip.clipKey}</div>
-                                <div className="muted">{describeColorClipRepairState(clip)}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      ) : null}
-                    </div>
-                    )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div className="color-secondary-stack">
               <Card className="panel color-secondary-panel">
                 <div className="section-header">
                   <h2>高级诊断与归档</h2>
                   <Tag>readonly</Tag>
                 </div>
                 <p className="muted color-panel-copy">
-                  这里只保留只读诊断与 batch/archive 历史；用户可填写参数已经全部放到左侧配置区。
+                  这里只保留只读诊断与 batch/archive 历史；各目录参数位于项目设置。
                 </p>
                 <div className={`color-secondary-summary${activeRoot.blockers.length > 0 ? ' has-blockers' : ''}`}>
-                  <strong>{activeRoot.blockers.length > 0 ? `${activeRoot.blockers.length} 个 blocker` : '当前无显式 blocker'}</strong>
+                  <strong>{activeRoot.blockers.length > 0 ? `${activeRoot.blockers.length} 个阻塞项` : '当前无阻塞'}</strong>
                   <span>
                     {activeRoot.blockers.length > 0
                       ? activeRoot.blockers[0]
@@ -2034,14 +1786,13 @@ export function ColorCurrentSummary({
                 />
                 {activeRoot.current?.detail ? <p className="field-help">{activeRoot.current.detail}</p> : null}
               </Card>
-            </div>
-          </div>
-        </>
-      ) : null}
 
+          </div>) },
+        ]} />
+      </> : null}
       <Modal
         show={exportAllDialog}
-        title="确认 Export All Roots"
+        title="导出全部素材源"
         width={560}
         showClose
         closeOnClickBg
@@ -2065,12 +1816,13 @@ export function ColorCurrentSummary({
         )}
       >
         <div className="stack-list">
-          <p>{'这会按当前 root priority 顺序执行 `Execute -> Validate`。'}</p>
+          <p>{'请先完成各素材源在 Resolve 中的人工调色。此操作按素材源优先级依次导出并校验。'}</p>
           <p>每个 root 会按 raw 父目录拆临时时间线，直接渲染到对应当前素材目录并自动修复 metadata。</p>
           <p>如果某个 root 失败，任务会继续处理后续 roots，但整个 color job 最终会记为 failed。</p>
-          <p>{`本次目标 roots：${rootCards.map(root => root.label || root.rootId).join(' · ')}`}</p>
+          <p>{`本次素材源：${rootCards.map(root => root.label || root.rootId).join(' · ')}`}</p>
         </div>
       </Modal>
+
     </div>
   );
 }
@@ -2088,19 +1840,15 @@ function resolvePreferredColorRootId(config, rootCards) {
 
 function resolveColorRootHeadlineStatus(root) {
   if (!root) return 'unknown';
+  if (isColorClassificationPending(root)) return 'pending-agent';
   if (root.hostPreflight?.status === 'blocked' || root.blockers.length > 0) {
     return 'blocked';
   }
-  if (root.groups.some(group => ['queued', 'running'].includes(group.current?.status))) {
-    return 'running';
-  }
-  if (root.current?.activeStage) {
-    return 'running';
-  }
+  if (colorNeedsApply(root)) return 'pending-apply';
   if (root.hostPreflight?.status === 'degraded') {
     return 'degraded';
   }
-  if ([root.current?.groupSyncStatus, root.current?.timelineStatus, root.current?.mirrorStatus].includes('ready')) {
+  if (colorReadyForExport(root)) {
     return 'ready';
   }
   if ([root.current?.groupSyncStatus, root.current?.timelineStatus, root.current?.mirrorStatus].includes('missing')) {
@@ -2109,26 +1857,22 @@ function resolveColorRootHeadlineStatus(root) {
   return 'idle';
 }
 
-function resolveColorDashboardTone(status) {
-  const normalized = String(status || '').toLowerCase();
-  if (['failed', 'blocked'].includes(normalized)) return 'error';
-  if (['degraded', 'missing', 'queued'].includes(normalized)) return 'warn';
-  if (['ready', 'running', 'synced', 'rendered', 'staged', 'promoted', 'completed'].includes(normalized)) return 'ok';
-  return 'default';
-}
-
 function formatColorDashboardStatus(status) {
   switch (String(status || '').toLowerCase()) {
+    case 'pending-agent':
+      return '等待 Agent 分类';
+    case 'pending-apply':
+      return '待应用到 Resolve';
     case 'blocked':
-      return 'Blocked';
+      return '需处理';
     case 'running':
       return 'Running';
     case 'ready':
-      return 'Ready';
+      return '可在 Resolve 调色';
     case 'missing':
-      return 'Missing';
+      return '尚未准备';
     case 'degraded':
-      return 'Degraded';
+      return '连接存在兼容提示';
     case 'queued':
       return 'Queued';
     case 'failed':
@@ -2144,86 +1888,23 @@ function formatColorDashboardStatus(status) {
     case 'completed':
       return 'Completed';
     default:
-      return 'Idle';
+      return '待检查与准备';
   }
 }
 
-function resolveColorRootHeroDetail(root) {
-  if (!root) return '当前还没有可展示的 color root。';
-  if (getColorStringField(root.current, ['detail'])) {
-    return root.current.detail;
-  }
-  if (root.blockers.length > 0) {
-    return `当前有 ${root.blockers.length} 个 blocker。优先处理宿主、路径或 render preset 阻塞后再继续。`;
-  }
-  if (root.groups.length > 0) {
-    return `当前已同步 ${describeColorGroupCount(root.groups)}，可继续执行 root batch 或校验。`;
-  }
-  if (root.hostPreflight?.status === 'degraded') {
-    return '当前 Resolve host 可用但存在兼容降级，建议先复查宿主诊断。';
-  }
-  return '当前还没有正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。';
+function isColorClassificationPending(root) {
+  return root?.classification?.status === 'pending-agent';
 }
 
-function resolveColorRootSwitcherSummary(root) {
-  const activeStage = getColorStringField(root.current, ['activeStage']);
-  if (activeStage) {
-    return `当前阶段：${activeStage}`;
-  }
-  if (root.blockers.length > 0) {
-    return `主 blocker：${root.blockers[0]}`;
-  }
-  if (root.groups.length > 0) {
-    return `最近 root batch：${resolveColorRootLatestBatchId(root) || 'none'}。`;
-  }
-  return '等待首次 Prepare / Sync。';
-}
-
-function resolveColorRootLatestBatchId(root) {
-  return getColorStringField(root.current, ['latestBatchId']);
-}
-
-function resolveColorRootBatchSummary(root) {
-  if (!root) return '尚未产生 batch';
-  const validationStatus = getColorStringField(root.current, ['latestValidationStatus']);
-  if (validationStatus) {
-    return `validation ${validationStatus}`;
-  }
-  const batchStatus = getColorStringField(root.current, ['latestBatchStatus']);
-  if (batchStatus) {
-    return `batch ${batchStatus}`;
-  }
-  return root.groups.length > 0 ? '等待下一次 root batch' : '尚未产生 batch';
-}
-
-function formatColorPrepareChunkCount(chunks) {
-  const list = Array.isArray(chunks) ? chunks.filter(isPlainObject) : [];
-  if (list.length === 0) return 'none';
-  const ready = list.filter(chunk => getColorStringField(chunk, ['status']) === 'ready').length;
-  return `${ready}/${list.length}`;
-}
-
-function describeColorPrepareChunks(chunks) {
-  const list = Array.isArray(chunks) ? chunks.filter(isPlainObject) : [];
-  if (list.length === 0) return '未拆批';
-  const running = list.find(chunk => getColorStringField(chunk, ['status']) === 'running');
-  const failed = list.filter(chunk => getColorStringField(chunk, ['status']) === 'failed').length;
-  if (running) {
-    return `当前 ${Number(running.index ?? 0) + 1}/${Number(running.total ?? list.length)} · ${running.timelineName || running.chunkId}`;
-  }
-  if (failed > 0) {
-    return `${failed} 个 chunk 失败，可重试 Prepare`;
-  }
-  const clipCount = list.reduce((total, chunk) => total + Number(chunk.clipCount || 0), 0);
-  return `${clipCount} clips · 每批最多 50`;
-}
-
-function resolveColorStageCardState(status) {
-  const normalized = String(status || '').toLowerCase();
-  if (['running', 'queued'].includes(normalized)) return 'active';
-  if (['ready', 'completed', 'synced', 'rendered', 'promoted', 'staged'].includes(normalized)) return 'completed';
-  if (['failed', 'blocked'].includes(normalized)) return 'error';
-  return 'idle';
+function buildProjectColorClassificationAgentPrompt(projectId, roots) {
+  if (!projectId || !roots.length || roots.some(root => !root.classification?.handoffPath)) return '';
+  const quote = value => `'${String(value).replaceAll("'", "'\\''")}'`;
+  return [
+    `请完成 Kairos 项目 ${projectId} 的全部待分类任务。`,
+    '必须启动正式 subagent，指定 model=gpt-6.1-sol、reasoning_effort=high、fork_turns=none。只读取各 handoff 指定的精简输入，以原批次合同独立判断和提交，不混用批次签名，不把旧分类机械转换成新决定。',
+    ...roots.map(root => `目录 ${root.rootId}\n任务说明：${root.classification.handoffPath}\n提交：node scripts/color-agent-classify.mjs submit ${quote(projectId)} ${quote(root.rootId)} ${root.classification.submissionPath ? quote(root.classification.submissionPath) : '<submissionFile>'}`),
+    '全部提交成功后，统一运行 prepare_all_roots，应用项目分类到 Resolve。不要重跑 Analyze，也不要调用 Analyze LLM API。',
+  ].join('\n');
 }
 
 function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) {
@@ -2233,19 +1914,19 @@ function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) 
   const sections = [
     {
       key: hostSectionKey,
-      title: 'Host Diagnostics',
+      title: 'Resolve 连接诊断',
       defaultOpen: false,
       body: renderColorHostDiagnostics(root.hostPreflight),
     },
     {
       key: recentSectionKey,
-      title: 'Recent Batches',
+      title: '最近导出批次',
       defaultOpen: false,
       body: renderColorRecentBatches(archive?.recentBatches),
     },
     {
       key: failuresSectionKey,
-      title: 'Validation Failures',
+      title: '校验失败记录',
       defaultOpen: false,
       body: renderColorValidationFailures(archive?.validationFailures),
     },
@@ -2506,10 +2187,10 @@ function buildMinimalColorRootCards(config) {
   if (readModelRoots.length > 0) {
     return readModelRoots.map((root, index) => {
       const projectRoot = projectRootById.get(String(root.rootId || getColorRootId(root, index)));
-      const renderPreset = materializeProjectRootRenderPreset(projectRoot?.color?.renderPreset || root.renderPreset);
-      const colorSpaceProfile = materializeProjectRootColorSpaceProfile(projectRoot?.color?.colorSpaceProfile || root.colorSpaceProfile);
-      const inputColorSpace = normalizeColorOptionalString(projectRoot?.color?.inputColorSpace || root.inputColorSpace);
-      const transformPresetKey = materializeProjectRootTransformPresetKey(projectRoot?.color?.transformPresetKey || root.transformPresetKey);
+      const renderPreset = materializeProjectRootRenderPreset(projectRoot ? projectRoot.color?.renderPreset : root.renderPreset);
+      const colorSpaceProfile = materializeProjectRootColorSpaceProfile(projectRoot ? projectRoot.color?.colorSpaceProfile : root.colorSpaceProfile);
+      const inputColorSpace = normalizeColorOptionalString(projectRoot ? projectRoot.color?.inputColorSpace : root.inputColorSpace);
+      const transformPresetKey = materializeProjectRootTransformPresetKey(projectRoot ? projectRoot.color?.transformPresetKey : root.transformPresetKey);
       const current = materializeColorRootCurrent(isPlainObject(root.colorCurrent) ? root.colorCurrent : null);
       const hostPreflight = materializeColorHostPreflight(root.hostPreflight || current?.hostPreflight);
       const blockers = normalizeColorBlockers(root.blockingReasons || current?.blockingReasons);
@@ -2548,6 +2229,7 @@ function buildMinimalColorRootCards(config) {
         hostPreflight,
         blockers,
         blockerCountText: blockers.length > 0 ? `${blockers.length} blockers` : '',
+        classification: isPlainObject(root.classification) ? root.classification : current?.classification,
         current,
         groups: Array.isArray(root.groups)
           ? root.groups.filter(isPlainObject).map(materializeColorWorkspaceGroup)
@@ -2557,7 +2239,7 @@ function buildMinimalColorRootCards(config) {
   }
 
   return projectBriefMappings
-    .filter(root => getColorStringField(root, ['rawPath']))
+    .filter(root => root.enabled !== false && getColorStringField(root, ['rawPath']))
     .map((root, index) => {
       const renderPreset = materializeProjectRootRenderPreset(root.color?.renderPreset);
       const colorSpaceProfile = materializeProjectRootColorSpaceProfile(root.color?.colorSpaceProfile);
@@ -2723,42 +2405,6 @@ function normalizePathResolutionBlockers(summary) {
   return blockers
     .map(item => String(item || '').trim())
     .filter(Boolean);
-}
-
-function updateProjectRootRenderPreset(setProjectBrief, rootId, patch) {
-  if (typeof setProjectBrief !== 'function' || !rootId) return;
-  setProjectBrief(current => {
-    const config = isPlainObject(current) ? current : {};
-    const roots = Array.isArray(config.mappings)
-      ? config.mappings.filter(isPlainObject)
-      : [];
-    const index = roots.findIndex(root => String(root.rootId || root.id) === String(rootId));
-    if (index < 0) {
-      return config;
-    }
-    const existingRoot = roots[index];
-    const existingPreset = materializeProjectRootRenderPreset(existingRoot.color?.renderPreset);
-    const nextPreset = {
-      container: normalizeColorOptionalString(patch?.container) || existingPreset.container || 'mp4',
-      videoCodec: normalizeColorOptionalString(patch?.videoCodec) || existingPreset.videoCodec || 'h265',
-      audioCodec: normalizeColorOptionalString(patch?.audioCodec) || existingPreset.audioCodec || 'aac',
-      bitrateKbps: Object.prototype.hasOwnProperty.call(patch || {}, 'bitrateKbps')
-        ? normalizeColorBitrateValue(patch?.bitrateKbps)
-        : existingPreset.bitrateKbps,
-    };
-    const nextRoots = [...roots];
-    nextRoots[index] = {
-      ...existingRoot,
-      color: {
-        ...(isPlainObject(existingRoot.color) ? existingRoot.color : {}),
-        renderPreset: nextPreset,
-      },
-    };
-    return {
-      ...config,
-      mappings: nextRoots,
-    };
-  });
 }
 
 function updateProjectRootColorSpaceProfile(setProjectBrief, rootId, value) {
@@ -4444,7 +4090,7 @@ function canRunProjectColorAction(action, roots, capability, liveJobs, busy, onR
     return roots.some(root => Boolean(getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath'])));
   }
   if (action === 'export_all_roots') {
-    return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready');
+    return roots.every(colorReadyForExport);
   }
   return true;
 }
@@ -4463,7 +4109,7 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
     return Boolean(getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath']));
   }
   if (action === 'sync_groups' && !colorRootHasSyncableResolveGroups(root)) return false;
-  if (action === 'execute_root' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
+  if (action === 'execute_root' && !colorReadyForExport(root)) return false;
   if (action === 'promote_batch') {
     return Boolean(getColorStringField(root.current, ['pendingPromoteBatchId']) || (
       getColorStringField(root.current, ['latestBatchId']) && getColorStringField(root.current, ['latestValidationStatus']) === 'pass'
@@ -4509,6 +4155,7 @@ function describeColorRootAction(action, root, liveJobs, busy) {
     return getColorStringField(root.current, ['groupSyncStatus']) === 'ready' ? '重同步 Groups' : 'Sync Groups';
   }
   if (action === 'execute_root') {
+    if (isColorClassificationPending(root)) return '等待分类后导出';
     return getColorStringField(root.current, ['latestBatchId']) ? '重新 Execute Root' : 'Execute Root';
   }
   if (action === 'sync_batch_metadata') {
@@ -4526,31 +4173,6 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   const mirrorReady = ['ready', 'synced'].includes(getColorStringField(root.current, ['mirrorStatus']));
   const timelineReady = getColorStringField(root.current, ['timelineStatus']) === 'ready';
   return mirrorReady && timelineReady ? '重跑 Prep' : '准备 Root';
-}
-
-function describeProjectColorAction(action, roots, liveJobs, busy) {
-  if (busy?.['project-brief']) return '保存中…';
-  if (busy?.['job:color']) return '启动中…';
-  if ((liveJobs || []).some(job => getColorJobAction(job) === action)) {
-    if (action === 'relink_all_roots') return '统一重链中…';
-    return action === 'export_all_roots' ? '统一导出中…' : '统一准备中…';
-  }
-  if ((liveJobs || []).length > 0) return '等待当前 color job…';
-  if (!Array.isArray(roots) || roots.length === 0) {
-    if (action === 'relink_all_roots') return '无可重链 roots';
-    return action === 'export_all_roots' ? '无可导出 roots' : '无可准备 roots';
-  }
-  if (action === 'relink_all_roots') {
-    return roots.some(root => getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath']))
-      ? '重链全部素材'
-      : '等待原始路径';
-  }
-  if (action === 'export_all_roots') {
-    return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready')
-      ? 'Export All Roots'
-      : '等待所有 roots ready';
-  }
-  return 'Prepare All Roots';
 }
 
 function describeColorTechnicalSignals(hostSummary) {
@@ -4575,41 +4197,6 @@ function describeColorTechnicalSignals(hostSummary) {
   if (missingOrientationTemplateCount > 0) details.push(`missing portrait DRT: ${missingOrientationTemplateCount}`);
   if (repairTemplateStatus) details.push(`repair template: ${repairTemplateStatus}`);
   if (repairSeedSkippedReason) details.push('repair seed: 待 DRT 模板初始化');
-  return details.join(' · ');
-}
-
-function describeColorGroupCreativeState(group) {
-  const details = [];
-  if (group?.logProfile) details.push(`log: ${group.logProfile}`);
-  if (group?.orientationStatus) details.push(`orientation: ${group.orientationStatus}`);
-  if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
-  return details.join(' · ');
-}
-
-function describeColorClipRepairSummary(clips) {
-  if (!Array.isArray(clips) || clips.length === 0) return '';
-  const gyroCounts = countBy(clips.map(clip => clip?.gyroflowStatus || ''));
-  const dehazeCounts = countBy(clips.map(clip => clip?.dehazeStatus || ''));
-  const nrCounts = countBy(clips.map(clip => clip?.nrStatus || ''));
-  const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
-  const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
-  const orientationCounts = countBy(clips.map(clip => clip?.orientationStatus || ''));
-  const templateCounts = countBy(clips.map(clip => clip?.repairTemplateKey || ''));
-  const details = [];
-  const orientationSummary = summarizeCountMap('orientation', orientationCounts);
-  const templateSummary = summarizeCountMap('template', templateCounts);
-  const gyroSummary = summarizeCountMap('gyro', gyroCounts);
-  const dehazeSummary = summarizeCountMap('dehaze', dehazeCounts);
-  const nrSummary = summarizeCountMap('nr', nrCounts);
-  const repairSummary = summarizeCountMap('repair', repairCounts);
-  const layoutSummary = summarizeCountMap('layout', layoutCounts);
-  if (orientationSummary) details.push(orientationSummary);
-  if (templateSummary) details.push(templateSummary);
-  if (gyroSummary) details.push(gyroSummary);
-  if (dehazeSummary) details.push(dehazeSummary);
-  if (nrSummary) details.push(nrSummary);
-  if (repairSummary) details.push(repairSummary);
-  if (layoutSummary) details.push(layoutSummary);
   return details.join(' · ');
 }
 

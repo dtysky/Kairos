@@ -1,13 +1,11 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile, writeFile, rm, readdir, stat, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { assessColor, colorAssessmentPath, colorFingerprint } from '../../src/modules/color/assessment.js';
+import { ColorAgentAssetPendingError, submitColorAgentClassification } from '../../src/modules/color/agent-classification.js';
 import { COLOR_MEASUREMENT_VERSION, COLOR_THRESHOLDS, measureColorTechnical } from '../../src/modules/color/technical-measurement.js';
 import { loadRuntimeConfig } from '../../src/store/project.js';
-import { fingerprintMediaFile } from '../../src/modules/media/media-versions.js';
-import type { IColorInput } from '../../src/store/color-inputs.js';
-import type { IKtepAsset, IMediaRoot } from '../../src/protocol/schema.js';
+import { fixture, submission } from './agent-fixtures.js';
 vi.mock('../../src/modules/color/technical-measurement.js', async () => {
   const actual = await vi.importActual<any>('../../src/modules/color/technical-measurement.js');
   return { ...actual, measureColorTechnical: vi.fn(async (_path, source) => ({ ...actual.emptyTechnical(source, 10000), status: 'partial',
@@ -17,67 +15,53 @@ vi.mock('../../src/modules/color/technical-measurement.js', async () => {
 });
 const dirs: string[] = [];
 afterEach(async () => { vi.clearAllMocks(); await Promise.all(dirs.splice(0).map(d => rm(d, { recursive: true, force: true }))); });
-it('reuses measurements for semantic/GPS edits, verifies export without decode and rejects corrupted caches', async () => {
-  const w = await mkdtemp(join(tmpdir(), 'kairos-color-cache-')); dirs.push(w);
-  const p = join(w, 'projects/demo'), sourcePath = join(w, 'C001.MP4'); await mkdir(p, { recursive: true }); await writeFile(sourcePath, 'media-one');
-  const raw = { ...await fingerprintMediaFile(sourcePath), relativePath: 'C001.MP4', available: true, sourceProfile: 'rec709' as const };
-  const asset: IKtepAsset = { id: 'C001_camera', kind: 'video', sourcePath: 'C001.MP4', displayName: 'C001', durationMs: 10000, mediaVersions: { raw } };
-  const root: IMediaRoot = { id: 'camera', enabled: true, rootCode: 'camera', path: w, rawPath: w };
-  const colorInput: IColorInput = { assetId: asset.id, analysisStatus: 'current', reasons: [], fingerprint: 'one', updatedAt: 'now',
-    media: { kind: 'video', width: 3840, height: 2160, versions: { raw } },
-    facts: { type: 'broll', summary: '白天户外街道。', speech: { hasTranscript: false, ranges: [] }, visualWindows: [] },
-    sources: { assetFingerprint: 'a', reportPath: 'report' } };
-  const request = { workspaceRoot: w, projectRoot: p, asset, root, sourcePath, colorInput, transforms: { profiles: {}, discoveredPresets: {} } };
-  const first = await assessColor(request); expect(first.decision.category).toBe('day');
-  const path = colorAssessmentPath(p, asset.id); const time = (await stat(path)).mtimeMs;
-  expect(await assessColor(request)).toEqual(first); expect((await stat(path)).mtimeMs).toBe(time);
-  await assessColor(request, { mode: 'verify', force: true }); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
-  colorInput.fingerprint = 'gps-changed'; colorInput.facts!.gps = { source: 'pharos', confidence: 1, lat: 30, lng: 120 };
+async function pending(request: Parameters<typeof assessColor>[0]) {
+  try { await assessColor(request); throw new Error('expected pending'); }
+  catch (error) { expect(error).toBeInstanceOf(ColorAgentAssetPendingError); return (error as ColorAgentAssetPendingError).packet; }
+}
+async function snapshot(path: string): Promise<unknown> {
+  const s = await stat(path);
+  if (s.isDirectory()) return Object.fromEntries(await Promise.all((await readdir(path)).sort().map(async n => [n, await snapshot(join(path, n))])));
+  return { bytes: await readFile(path, 'utf8'), mtime: s.mtimeMs };
+}
+it('caches pending measurement, accepts only formal decisions, and makes export verification strictly read-only', async () => {
+  const f = await fixture(); dirs.push(f.workspaceRoot); await rm(join(f.projectRoot, 'store/color-measurements'), {recursive:true}); const request = f.requests[0];
+  const first = await pending(request);
+  expect(await pending(request)).toEqual(first); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
   await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
-  const second = await assessColor(request); expect(second.fingerprint).not.toBe(first.fingerprint); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
-  // The former v4 fingerprint included the 80% aggregation rule. Reuse those
-  // verified pixels, but never silently accept an old classification at export.
-  const previous = structuredClone(second) as any;
-  const runtime = await loadRuntimeConfig(w);
-  previous.technicalFingerprint = colorFingerprint([COLOR_MEASUREMENT_VERSION, { ...COLOR_THRESHOLDS,
-    highContrast: { ...COLOR_THRESHOLDS.highContrast, minIntervalMs: 3000, wholeClipFraction: 0.8,
-      coverageBasis: 'positive-time-union-with-sustained-run-v1' } }, previous.technical.source,
-    asset.mediaVersions!.raw!.colorPrimaries, asset.mediaVersions!.raw!.transferFunction, root.color?.inputColorSpace,
-    { ffmpegPath: runtime.ffmpegPath, ffprobePath: runtime.ffprobePath, ffmpegHwaccel: runtime.ffmpegHwaccel }]);
-  previous.decision.ruleVersion = 'scene-v6';
-  const { fingerprint: _priorHash, updatedAt: _priorTime, ...priorPayload } = previous;
-  previous.fingerprint = colorFingerprint(priorPayload);
-  const previousBytes = JSON.stringify(previous); await writeFile(path, previousBytes);
-  await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('分类规则已改变');
-  expect(await readFile(path, 'utf8')).toBe(previousBytes);
-  expect((await assessColor(request)).decision.ruleVersion).toBe('scene-v7');
+  const value = await submission(f.projectRoot, f.root.id, [first]);
+  await submitColorAgentClassification(f.projectRoot, f.root.id, value);
+  const accepted = await assessColor(request); expect(accepted.decision).toMatchObject({ category: 'day', ruleVersion: 'color-agent-v1' });
+  expect(await assessColor(request)).toEqual(accepted); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
+  const before = await snapshot(f.projectRoot);
+  expect(await assessColor(request, { mode: 'verify', force: true })).toEqual(accepted);
+  expect(await snapshot(f.projectRoot)).toEqual(before); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
+  const reportPath = join(f.projectRoot, `analysis/asset-reports/${request.asset.id}.json`);
+  const report = JSON.parse(await readFile(reportPath, 'utf8')); report.transcriptSegments[0].text = '文本改变但时间未改。'; await writeFile(reportPath, JSON.stringify(report));
+  const changedBefore = await snapshot(f.projectRoot);
+  await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
+  expect(await snapshot(f.projectRoot)).toEqual(changedBefore);
+  const second = await pending(request); expect(second.packetFingerprint).not.toBe(first.packetFingerprint);
   expect(measureColorTechnical).toHaveBeenCalledTimes(1);
-  await assessColor(request, { mode: 'verify' });
-  const tampered = JSON.parse(await readFile(path, 'utf8')); tampered.technical.exposure.state = 'detected'; await writeFile(path, JSON.stringify(tampered));
+});
+it('reuses only intact measurement-v4 pixels from old assessments and never falls back to their semantic decisions', async () => {
+  const f = await fixture(); dirs.push(f.workspaceRoot); await rm(join(f.projectRoot, 'store/color-measurements'), {recursive:true}); const request = f.requests[0];
+  const first = await pending(request), measurementPath = join(f.projectRoot, `store/color-measurements/${request.asset.id}.json`);
+  const runtime = await loadRuntimeConfig(f.workspaceRoot);
+  const legacyTechnicalFingerprint = colorFingerprint([COLOR_MEASUREMENT_VERSION, { ...COLOR_THRESHOLDS,
+    highContrast: { ...COLOR_THRESHOLDS.highContrast, minIntervalMs: 3000, wholeClipFraction: 0.8,
+      coverageBasis: 'positive-time-union-with-sustained-run-v1' } }, first.technical.source,
+    request.asset.mediaVersions!.raw!.colorPrimaries, request.asset.mediaVersions!.raw!.transferFunction, request.root.color?.inputColorSpace,
+    { ffmpegPath: runtime.ffmpegPath, ffprobePath: runtime.ffprobePath, ffmpegHwaccel: runtime.ffmpegHwaccel }]);
+  const payload = { schemaVersion: 1, assetId: request.asset.id, inputFingerprint: request.colorInput.fingerprint,
+    technicalFingerprint: legacyTechnicalFingerprint, technical: first.technical, decision: { ruleVersion: 'scene-v7', category: 'noisy', status: 'classified', reasons: ['OLD REGEX'] } };
+  const path = colorAssessmentPath(f.projectRoot, request.asset.id);
+  await mkdir(join(f.projectRoot, 'store/color-assessments'), {recursive:true});
+  await writeFile(path, JSON.stringify({ ...payload, fingerprint: colorFingerprint(payload), updatedAt: 'old' }));
+  await rm(measurementPath);
   await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
-  expect((await assessColor(request)).technical.exposure.state).toBe('not-observed'); expect(measureColorTechnical).toHaveBeenCalledTimes(2);
-  await writeFile(sourcePath, 'media-two'); asset.mediaVersions!.raw = { ...raw, ...await fingerprintMediaFile(sourcePath) };
-  await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
-  await assessColor(request); expect(measureColorTechnical).toHaveBeenCalledTimes(3);
-  const legacy = JSON.parse(await readFile(path, 'utf8'));
-  legacy.technical.version = 'color-measurement-v3'; legacy.technical.thresholdVersion = 'real-samples-v3';
-  const { fingerprint: _fingerprint, updatedAt: _updatedAt, ...payload } = legacy;
-  legacy.fingerprint = colorFingerprint(payload); await writeFile(path, JSON.stringify(legacy));
-  await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('过期');
-  expect(measureColorTechnical).toHaveBeenCalledTimes(3);
-  expect((await assessColor(request)).technical.version).toBe('color-measurement-v4');
-  expect(measureColorTechnical).toHaveBeenCalledTimes(4);
-  // Repair the former raw/target direction comparison using cached raw evidence.
-  const mismatch = JSON.parse(await readFile(path, 'utf8'));
-  Object.assign(mismatch.technical.probe, { displayWidth: 2160, displayHeight: 3840, rotationDegrees: 90 });
-  mismatch.decision.category = null; mismatch.decision.status = 'needs-review';
-  mismatch.decision.reasons = ['待调原片与资产显示方向不一致'];
-  const { fingerprint: _oldHash, updatedAt: _oldTime, ...mismatchPayload } = mismatch;
-  mismatch.fingerprint = colorFingerprint(mismatchPayload);
-  await writeFile(path, JSON.stringify(mismatch));
-  const factsBefore = structuredClone(colorInput);
-  await expect(assessColor(request, { mode: 'verify' })).rejects.toThrow('分类规则已改变');
-  expect((await assessColor(request)).decision.category).toBe('portrait');
-  expect(measureColorTechnical).toHaveBeenCalledTimes(4);
-  expect(colorInput).toEqual(factsBefore);
+  expect(await pending(request)).toEqual(first); expect(measureColorTechnical).toHaveBeenCalledTimes(1);
+  const corrupt = JSON.parse(await readFile(path, 'utf8')); corrupt.technical.exposure.state = 'detected'; await writeFile(path, JSON.stringify(corrupt));
+  await rm(measurementPath);
+  await pending(request); expect(measureColorTechnical).toHaveBeenCalledTimes(2);
 });

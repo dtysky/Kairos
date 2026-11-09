@@ -58,3 +58,5 @@ Ingest → Analyze → 调色分类/基础节点 → 目标输出到位后再次
 验收覆盖已有竖屏方向、模板 hash、transform、LOG/RCM 输入、分析与分类签名、复核状态/原因/附加问题及 Gyro 证据。局部新增和重复执行时本轮新值优先，其他 clips 不丢字段。真实完整素材追加回归比较旧 item id、范围、Inspector、grade versions 与 Group，并检查新 clips 五节点、输入空间和方向；不调整 C4994 的 Gyro 参数。
 
 本轮真实回归：`tmp-color-v5-20261106` 从 35 追加到 41 条，六份完整新素材经 Ingest / Analyze / scoped Prepare；旧 35 份报告及关键元数据不变。追加前后原生比对 35 条 Inspector/位置/Group 和 59 份 grade versions 无差异；再次执行三个 root 的同一局部 Prepare 后 41 条和 65 份 grade versions 无差异、无重复追加。新素材均具备标准五节点及正确 RCM 输入；白天行车、夜景、竖屏和黄昏四类建组，C5003 的口播表述未被规则识别、C0089 缺 GPS 且光线描述未命中规则，二者保持无组待复核，不作为分类全通过。C4578 的 Edit -90/Zoom1.7778 已回读，拉伸按用户要求暂缓。73 项相关测试、根仓与 Console 构建通过，ML stopped。完整审计位于忽略的 `.fixtures/incremental-20261109/completion.json`。
+
+2026-11-09：正式 Color 分类与 Analyze 分离，由 gpt-6.1-sol/high subagent 综合已有分析和原片技术测量。Prepare 缺当前决定时输出签名任务包并进入 pending-agent；使用 `node scripts/color-agent-classify.mjs submit <projectId> <rootId> <submissionFile>` 完整校验并提交后再继续 Prepare。接受记录原子存入 `store/color-classifications.json`，技术缓存独立存入 `store/color-measurements/`；独立用户澄清位于 `config/color-agent-context.json`。夜景与低照度共用第九类表中的 night 键，显示“夜景／低照度”；真实夜景排除大光比。旧语义正则及旧分类只读历史，不能兜底。详见 `designs/color-agent-classification.md`。

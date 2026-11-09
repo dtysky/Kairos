@@ -10,6 +10,10 @@ description: >-
 
 Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
 
+Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一次，共享列的素材与样本行、精确重复文本引用；完整 packet 按需取证。视图格式与分类策略签名独立，精简不使已接受结果失效；详见 `designs/color-agent-classification.md`。
+
+`/color` 主流程为“检查与检测 → Agent 分类 → 应用到 Resolve → 人工调色与导出 → 结果校验”，只突出当前动作。分类 ready 但保留 batchFingerprint 表示待应用，不能因旧 timeline ready 开放导出；准备完成不表示人工调色完成。默认展示分组与素材，配置和维护历史分栏；待 Agent 是交接待办，运行进度仅来自活跃 Supervisor job。侧栏调色入口位于创作组首项，总览注明其依赖已有分析且不阻塞编年史/剪辑。界面状态只在前端保存，详见 `designs/color-agent-classification.md`。 项目级调色：主流程一次准备全部目录、一次复制全部待分类任务、统一应用与导出，素材列表跨目录汇总。项目设置仍按目录独立配置编码、码率及 LOG/RCM/LUT；编辑只修改对应目录，一次保存全部草稿，不自动统一参数。不新增配置协议，不自动迁移现有设置或合并 Resolve Group。
+
 将临时 KTEP/manifest 审计或已确认的编辑交换稿导出到 DaVinci Resolve。
 
 2026-11-06 调色输入持久化：`store/color-inputs.json` 按 assetId 摘取已有素材报告和媒体元数据，合同见 `designs/color-inputs-store.md`。writeAssetReport 自动逐项同步，Ingest 更新资产后刷新；Color 读取前通过 refreshColorInputs 校验/补建，不依赖 spans，不调用模型或写技术结论。原报告先落盘，派生失败可修复，不必重跑已完成 Analyze；旧 colorEvidence/分类不进入新文件。
@@ -70,7 +74,7 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行 scene-v7 素材级分类与独立曝光/噪声/大光比检测（designs/color-assessment-v1.md）；大光比要求持续性与超过 50% 的真实命中时长，少数或各半保留基础场景，局部区间作附加信息，夜景硬排除。只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
+  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行独立曝光/噪声/大光比检测并生成 Color subagent 分类包（designs/color-agent-classification.md）；缺决定时等待指定 gpt-6.1-sol/high subagent，正式提交后继续 Prepare；大光比要求持续性与超过 50% 的真实命中时长，少数或各半保留基础场景，局部区间作附加信息，夜景硬排除。只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
   - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。

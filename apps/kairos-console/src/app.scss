@@ -2171,3 +2171,38 @@ pre {
     align-items: stretch;
   }
 }
+
+/* Color follows its actual Agent handoff workflow; diagnostic state is secondary. */
+.color-dashboard .color-root-switcher { margin-top: 12px; gap: 10px; }
+.color-dashboard .color-root-switcher-item { padding: 12px 14px; border-radius: 8px; gap: 6px; }
+.color-dashboard .color-root-switcher-meta { letter-spacing: normal; text-transform: none; }
+.color-project-actions { margin-top: 12px; }
+.color-workflow-steps {
+  list-style: none; margin: 12px 0 18px; padding: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;
+}
+.color-workflow-steps li {
+  display: grid; align-content: start; gap: 7px; min-width: 0;
+  border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+}
+.color-workflow-steps li.is-current { border-color: var(--accent); background: var(--accent-soft); }
+.color-step-number { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.color-step-status { font-size: 12px; }
+.color-workflow-steps small { color: var(--muted); line-height: 1.5; }
+.color-resolve-destination { display: grid; gap: 5px; overflow-wrap: anywhere; }
+.color-maintenance-stack { display: grid; gap: 16px; }
+.color-dashboard .color-job-item { display: flex; flex-wrap: wrap; gap: 10px; }
+.color-dashboard .workflow-prompt-detail { overflow-wrap: anywhere; }
+.color-detail-tabs .ant-tabs-nav { margin-bottom: 14px; }
+.color-dashboard .color-group-row { background: transparent; }
+.color-dashboard .color-group-clip-row { overflow-wrap: anywhere; }
+.color-dashboard .color-hero-panel .section-header { margin-bottom: 8px; }
+@media (max-width: 1100px) {
+  .color-workflow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .color-workflow-steps { grid-template-columns: 1fr; }
+  .color-workflow-steps li { grid-template-columns: 20px 1fr; }
+  .color-workflow-steps li small, .color-workflow-steps li .color-step-status { grid-column: 2; }
+  .color-dashboard .color-root-switcher { grid-template-columns: 1fr; }
+}

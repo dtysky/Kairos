@@ -172,7 +172,7 @@ def append_script_api_paths():
 
 SCENE_GROUP_NAMES = {
     "portrait": "竖屏", "presenter": "出镜口播", "overexposed": "大面积过曝", "noisy": "明显噪点",
-    "high-contrast": "逆光／大光比", "night": "普通夜景", "twilight": "清晨／黄昏", "day-drive-cast": "白天前挡行车",
+    "high-contrast": "逆光／大光比", "night": "夜景／低照度", "twilight": "清晨／黄昏", "day-drive-cast": "白天前挡行车",
     "day": "常规日景",
 }
 
@@ -245,6 +245,8 @@ def prepare_root(resolve, payload):
     clip_requests = normalize_clip_requests(payload.get("clips"))
     if any(request.get("colorManagementPolicy") == RCM_POLICY for request in clip_requests):
         ensure_project_rcm(project, initialize=True)
+        if any(request.get("sceneCategory") for request in clip_requests):
+            migrate_night_group_name(project)
     apply_timeline_spec(project, payload.get("timelineSpec"))
     media_pool = require_method(project, "GetMediaPool")()
     media_storage = require_method(resolve, "GetMediaStorage")()
@@ -3953,6 +3955,20 @@ def collect_color_groups_by_name(project):
         if isinstance(group_name, str) and group_name.strip():
             groups_by_name[group_name.strip()] = group
     return groups_by_name
+
+
+def migrate_night_group_name(project):
+    """Rename the existing object so Group Pre/Post grades and membership survive."""
+    groups = collect_color_groups_by_name(project)
+    legacy = groups.get("普通夜景")
+    if legacy is None:
+        return
+    target = SCENE_GROUP_NAMES["night"]
+    if target in groups:
+        raise HostError("resolve_scene_group_rename_conflict", "普通夜景与夜景／低照度同时存在，不能自动合并两套 Group 调色。")
+    renamed = safe_call(legacy, "SetName", target)
+    if renamed is not True or safe_call(legacy, "GetName") != target:
+        raise HostError("resolve_scene_group_rename_failed", "无法原位重命名夜景组；保留既有 Group 调色。")
 
 
 def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, previous_group_names_by_clip):

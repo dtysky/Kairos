@@ -85,12 +85,16 @@ describe('color workspace state', () => {
           syncedAt: '2026-04-19T10:00:00.000Z',
           timelineName: 'root__root-camera__grading',
           groups: [{
+            nativeGroup: true,
             groupKey: 'group-day',
             displayName: 'Day Group',
             clipKeys: ['day/clip001.mov'],
             clips: [{
               clipKey: 'day/clip001.mov',
               displayName: 'clip001',
+              classificationStatus: 'classified',
+              classificationReasons: ['室内低照度，不是出镜口播'],
+              reviewFlags: ['保留片内亮度变化'],
               gyroEligible: true,
               gyroflowStatus: 'ready-to-load',
               dehazeStatus: 'seeded-disabled',
@@ -142,6 +146,7 @@ describe('color workspace state', () => {
             latestBatchId: 'batch-2',
           }, {
             groupKey: 'group-legacy',
+            nativeGroup: false,
             status: 'blocked',
             blockingReasons: ['legacy blocked'],
           }],
@@ -157,7 +162,12 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.hostPreflight?.status).toBe('degraded');
     expect(state.colorRoots[0]?.groups[0]?.displayName).toBe('Day Group');
     expect(state.colorRoots[0]?.groups[0]?.clipCount).toBe(1);
+    expect(state.colorRoots[0]?.groups[0]?.nativeGroup).toBe(true);
+    expect(state.colorRoots[0]?.groups[1]?.nativeGroup).toBe(false);
     expect(state.colorRoots[0]?.groups[0]?.clips[0]).toMatchObject({
+      classificationStatus: 'classified',
+      classificationReasons: ['室内低照度，不是出镜口播'],
+      reviewFlags: ['保留片内亮度变化'],
       dehazeStatus: 'seeded-disabled',
       nrStatus: 'seeded-disabled',
       layoutStatus: 'canonical',
@@ -172,6 +182,7 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.colorCurrent.groups).toEqual([
       {
         groupKey: 'group-day',
+        nativeGroup: true,
         status: 'running',
         displayName: 'Day Group',
         clipCount: 1,
@@ -184,6 +195,7 @@ describe('color workspace state', () => {
       },
       {
         groupKey: 'group-legacy',
+        nativeGroup: false,
         status: 'blocked',
         displayName: 'group-legacy',
         clipCount: 0,

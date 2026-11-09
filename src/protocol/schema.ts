@@ -896,7 +896,7 @@ export const IColorAnalysisEvidence = z.object({
 export type IColorAnalysisEvidence = z.infer<typeof IColorAnalysisEvidence>;
 export const IColorClassification = z.object({
   ruleVersion: z.enum(['scene-v1', 'scene-v2-technical-pending']),
-  // dark-noisy/review are historical audit values; new scene-v7 decisions never emit them.
+  // dark-noisy/review are historical audit values; new Color Agent decisions never emit them.
   category: z.enum(['portrait', 'presenter', 'overexposed', 'noisy', 'dark-noisy', 'high-contrast', 'night', 'twilight', 'day-drive-cast', 'day', 'review']),
   reasons: z.array(z.string()),
   reviewFlags: z.array(z.string()),
@@ -1777,8 +1777,22 @@ export const IColorGroupCurrent = z.object({
 });
 export type IColorGroupCurrent = z.infer<typeof IColorGroupCurrent>;
 
+export const IColorAgentClassificationState = z.object({
+  status: z.enum(['pending-agent', 'ready']),
+  detail: z.string().optional(),
+  batchFingerprint: z.string().optional(),
+  pendingCount: z.number().int().nonnegative(),
+  model: z.literal('gpt-6.1-sol'),
+  reasoningEffort: z.literal('high'),
+  handoffPath: z.string().optional(),
+  submissionPath: z.string().optional(),
+  updatedAt: z.string(),
+});
+export type IColorAgentClassificationState = z.infer<typeof IColorAgentClassificationState>;
+
 export const IColorRootCurrent = z.object({
   rootId: z.string(),
+  classification: IColorAgentClassificationState.optional(),
   mirrorStatus: z.enum(['idle', 'running', 'ready', 'synced', 'stale', 'blocked']).optional(),
   timelineStatus: z.enum(['idle', 'running', 'missing', 'ready', 'blocked']).optional(),
   groupSyncStatus: z.enum(['idle', 'running', 'missing', 'ready', 'blocked']).optional(),

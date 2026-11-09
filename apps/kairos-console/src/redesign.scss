@@ -930,3 +930,40 @@ body {
 .llm-config-grid > label { display: flex; flex-direction: column; gap: 8px; }
 .llm-config-grid .ant-input-number { width: 100%; }
 .llm-config-panel details { margin-top: 16px; }
+
+/* Color: keep the next action visible, including in the narrow app browser. */
+.color-dashboard .panel.ant-card,
+.color-dashboard .monitor-panel.ant-card { padding: 0; }
+.color-dashboard .section-header { flex-direction: row; align-items: center; }
+.color-dashboard .section-header h2 { text-transform: none; }
+.color-dashboard .color-root-switcher { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.color-dashboard .color-root-switcher-top { flex-direction: column; align-items: flex-start; gap: 5px; }
+.color-dashboard .color-root-switcher-item.is-active {
+  border-color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  box-shadow: none;
+}
+.color-dashboard .color-project-actions > summary { min-height: 34px; padding: 6px 10px; justify-content: flex-start; gap: 8px; }
+.color-dashboard .color-workflow-steps { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.color-dashboard .color-group-row-top { flex-direction: row; align-items: center; }
+@media (max-width: 860px) {
+  .color-dashboard .color-workflow-steps li { padding: 8px; gap: 4px; }
+  .color-dashboard .color-workflow-steps small { display: none; }
+}
+@media (max-width: 600px) {
+  .color-dashboard .color-workflow-steps { grid-template-columns: 1fr; }
+  .color-dashboard .color-workflow-steps li { grid-template-columns: 20px 1fr auto; }
+  .color-dashboard .color-workflow-steps .color-step-status { grid-column: 3; }
+  .color-dashboard .color-root-switcher { grid-template-columns: 1fr; }
+  .color-dashboard .color-root-switcher-top { flex-direction: row; }
+}
+
+.color-output-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.color-input-exceptions { margin-top: 14px; }
+.color-dashboard .color-live-jobs > div { display: grid; gap: 6px; }
+.color-dashboard .color-groups-panel > .ant-card-body > .field { max-width: 330px; }
+@media (max-width: 860px) { .color-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .color-output-grid { grid-template-columns: 1fr; } }
+
+.color-directory-settings { min-width: 0; margin: 14px 0 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.color-directory-settings > legend { width: auto; padding: 0 6px; margin: 0; font-size: 14px; font-weight: 600; }

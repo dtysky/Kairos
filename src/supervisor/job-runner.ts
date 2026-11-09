@@ -369,7 +369,7 @@ async function runJob(
             && Array.isArray(result.roots)
             && result.roots.some(root => root.status === 'failed')
             ? 'failed'
-            : 'completed',
+            : result.classificationStatus === 'pending-agent' ? 'awaiting_agent' : 'completed',
         };
       } catch (error) {
         if (error instanceof ProjectColorBlockedError || error instanceof ColorPrepBlockedError) {

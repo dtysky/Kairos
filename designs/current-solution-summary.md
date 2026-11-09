@@ -2,11 +2,15 @@
 
 Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
 
-Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+
+Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一次，共享列的素材与样本行、精确重复文本引用；完整 packet 按需取证。视图格式与分类策略签名独立，精简不使已接受结果失效；详见 `designs/color-agent-classification.md`。
+
+`/color` 主流程为“检查与检测 → Agent 分类 → 应用到 Resolve → 人工调色与导出 → 结果校验”，只突出当前动作。分类 ready 但保留 batchFingerprint 表示待应用，不能因旧 timeline ready 开放导出；准备完成不表示人工调色完成。默认展示分组与素材，配置和维护历史分栏；待 Agent 是交接待办，运行进度仅来自活跃 Supervisor job。侧栏调色入口位于创作组首项，总览注明其依赖已有分析且不阻塞编年史/剪辑。界面状态只在前端保存，详见 `designs/color-agent-classification.md`。 项目级调色：主流程一次准备全部目录、一次复制全部待分类任务、统一应用与导出，素材列表跨目录汇总。项目设置仍按目录独立配置编码、码率及 LOG/RCM/LUT；编辑只修改对应目录，一次保存全部草稿，不自动统一参数。不新增配置协议，不自动迁移现有设置或合并 Resolve Group。
 
 2026-11-06：[素材级调色输入持久化](color-inputs-store.md) 将已有报告中的类型、描述、语音时间证据与媒体/输入色彩元数据摘入 `store/color-inputs.json`。报告逐条更新投影，Ingest 刷新新增/删除/版本变化，Color 校验源签名后消费；缺失或损坏可只读源事实补建。此层不依赖 spans、不生成技术判断，分类与独立检测现按 [首阶段合同](color-assessment-v1.md) 落地，测量产物与输入投影分离。
 
-2026-11-06：[技术判断边界纠正](color-technical-analysis-boundary.md) 已撤回 VLM 技术诊断合同；新报告不产出 colorEvidence/colorClassification，Color 忽略历史模型技术字段和旧分类。Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。已有 Resolve 工程不自动改动。以下后端接入“不改 prompt/分类”只描述接入本身的范围。
+2026-11-06：[技术判断边界纠正](color-technical-analysis-boundary.md) 已撤回 VLM 技术诊断合同；新报告不产出 colorEvidence/colorClassification，Color 忽略历史模型技术字段和旧分类。Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。已有 Resolve 工程不自动改动。以下后端接入“不改 prompt/分类”只描述接入本身的范围。
 
 2026-11-05：Analyze 视觉调用增加 [全局 LLM 后端配置](analyze-llm-backend.md)，`/project` 可选 local / OpenAI，后者默认 `gpt-6-luna / high`。Key 为本机私有配置，GET/PUT 只返回配置状态；每个作业读取一次工作区配置，项目 runtime 不覆盖 LLM。仅替换 `vlmAnalyze` 传输实现，不改分析阶段、并发、抽帧、prompt、分类规则或 ASR/Style/text LM。保存不使历史 report/checkpoint 失效；API 逐次请求用量写入项目 `.tmp/media-analyze/llm-requests.jsonl`，配置状态不冒充云端可用性。
 
@@ -707,9 +711,9 @@ flowchart TD
   - `/project`
 - 全局 Shell 的唯一正式左侧导航分组为：
   - `工作台 / 总览`
-  - `素材准备 / 导入与 GPS / 达芬奇调色`
+  - `素材准备 / 导入与 GPS`
   - `素材理解 / 素材分析 / 编年史`
-  - `创作 / 风格分析 / 剪辑流 / 时间线与导出`
+  - `创作 / 达芬奇调色 / 风格分析 / 剪辑流 / 时间线与导出`
   - `系统 / 项目`
 - 所有路由共享同一侧栏宽度、分组起点、图标槽和单一选中态；顶栏统一承载项目选择、服务状态和任务中心。1280–2560px 使用桌面布局，低于约 1100px 折叠侧栏并转单列。
 - Console 状态层使用 Context + reducer 管理当前项目、配置草稿、任务、服务与 Review；新增的导航、页签、筛选和展开状态只保存在前端本地，不改变项目文件 schema。

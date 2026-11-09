@@ -2,7 +2,11 @@
 
 Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
 
-Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
+
+Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一次，共享列的素材与样本行、精确重复文本引用；完整 packet 按需取证。视图格式与分类策略签名独立，精简不使已接受结果失效；详见 `designs/color-agent-classification.md`。
+
+`/color` 主流程为“检查与检测 → Agent 分类 → 应用到 Resolve → 人工调色与导出 → 结果校验”，只突出当前动作。分类 ready 但保留 batchFingerprint 表示待应用，不能因旧 timeline ready 开放导出；准备完成不表示人工调色完成。默认展示分组与素材，配置和维护历史分栏；待 Agent 是交接待办，运行进度仅来自活跃 Supervisor job。侧栏调色入口位于创作组首项，总览注明其依赖已有分析且不阻塞编年史/剪辑。界面状态只在前端保存，详见 `designs/color-agent-classification.md`。 项目级调色：主流程一次准备全部目录、一次复制全部待分类任务、统一应用与导出，素材列表跨目录汇总。项目设置仍按目录独立配置编码、码率及 LOG/RCM/LUT；编辑只修改对应目录，一次保存全部草稿，不自动统一参数。不新增配置协议，不自动迁移现有设置或合并 Resolve Group。
 
 Color 素材级派生输入采用 [store/color-inputs.json 合同](color-inputs-store.md)。`writeAssetReport` 在报告成功落盘后按素材刷新，Ingest 写入资产后全量核对，Color prepare/export 通过 `refreshColorInputs` 验证所需条目的源签名。投影逐项保留未变时间戳，原子替换、同项目写入串行；原始事实保持在 assets/root config/asset-reports，文件缺损可重建。该层不读 spans、不调用模型，不引入新技术或主类推断。
 
@@ -134,7 +138,7 @@ Console 在 0.19 深色重构后继续统一文字与容器的比例，避免出
 本轮在不改变 Supervisor、ML、Resolve host、项目文件 schema 或 API JSON 的前提下，重构 `apps/kairos-console/` 的桌面控制面：
 
 - 前端基线升级为 React 18、React Router 6、TypeScript 与 Ant Design 6，主题统一使用 `darkAlgorithm + compactAlgorithm`，并以 design tokens 固化深色、中性灰、铜橙强调色、状态色、间距、圆角与字号
-- 全局 Shell 使用固定左侧分组导航：`工作台 / 总览`、`素材准备 / 导入与 GPS / 达芬奇调色`、`素材理解 / 素材分析 / 编年史`、`创作 / 风格分析 / 剪辑流 / 时间线与导出`、`系统 / 项目`；所有子功能共享同一导航宽度、分组起点、图标槽与选中态，只允许一个当前菜单项
+- 全局 Shell 使用固定左侧分组导航：`工作台 / 总览`、`素材准备 / 导入与 GPS`、`素材理解 / 素材分析 / 编年史`、`创作 / 达芬奇调色 / 风格分析 / 剪辑流 / 时间线与导出`、`系统 / 项目`；所有子功能共享同一导航宽度、分组起点、图标槽与选中态，只允许一个当前菜单项
 - 顶栏统一承载项目选择器、项目 id 消歧、Supervisor/ML/Resolve 服务状态与任务中心；项目切换继续优先跟随活跃 project-scoped job，并在存在未保存分区草稿时阻塞切换直到用户确认
 - 页面内容使用一致的 `PageHeader -> status/summary -> primary workspace -> diagnostics` 层级；总览只保留项目健康、真实活跃任务、阻塞/Review 与紧凑工作流轨道，不复制各页面的完整操作面板
 - Analyze 与 Style 共享监控视觉组件，但 live job 与 durable progress cache 必须继续分开判断；Style 仍为 Workspace 范围、单分类监控
@@ -392,7 +396,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
   - group 级至少包含 `logProfile`、`orientationStatus`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
-- Color 使用 scene-v7：素材级 type＋明确描述＋语音判断出镜/前挡场景，GPS＋校正拍摄时间提供太阳上下文；独立原片检测大面积过曝区间与原分辨率连续帧噪点；“明显噪点”独立成类，不要求极暗，源端剪切单列审计。逆光/大光比采用独立亮暗区域测量，至少有一段连续 3 秒命中且真实命中时长超过 50% 才归大光比；少数或各半时沿用基础场景主类，局部区间与占比留作附加信息；夜景硬排除；亮区不设面积比例门槛，连贯暗部至少 10%，不再区分大小光源路径；白天车内行车按场景独立分类，不以偏色为前提。调色修正参数留待后续，频闪不纳入本轮剩余工作。待复核是状态而非第十组，新素材保持无组；原片 LOG/显示 LUT 与 RCM 分工独立，检测结果在 store/color-assessments/<assetId>.json 持久化。详见 designs/color-assessment-v1.md。旧 colorEvidence/colorClassification 只读审计；LOG 独立保留用于逐片技术转换。
+- Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。旧 colorEvidence/colorClassification 只读审计；LOG 独立保留用于逐片技术转换。
 - `gyro` 只参与 clip repair；历史 `lowlight / windshieldHaze / colorCastClass / exposureSceneClass` 仅兼容读取，正式 prepare 不调用这些分类器或抽帧。
 - clip repair 的正式合同当前已收口为固定节点图：
   - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
@@ -422,7 +426,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 
 ## 0.9 2026-04-21 DaVinci color 技术 profile / transform preset / workspace LUT 同步补记
 
-当前 `/color` 收口为“Analyze 视觉分类 + 原片色域/Gamma 真值 + 逐片 RCM 输入 + DWG/Intermediate + 视觉 Group”。以下 LUT 配置继续服务 Analyze 原片显示代理及旧 Resolve 兼容路径；新 scene prepare 不向 Clip 或 Group 注入技术 LUT。详见 [RCM 设计](resolve-rcm-scene-pipeline.md)。
+当前 `/color` 收口为“Analyze 已有事实 + 原片技术检测 + subagent 分类 + 逐片 RCM 输入 + DWG/Intermediate + 视觉 Group”。以下 LUT 配置继续服务 Analyze 原片显示代理及旧 Resolve 兼容路径；新 scene prepare 不向 Clip 或 Group 注入技术 LUT。详见 [RCM 设计](resolve-rcm-scene-pipeline.md)。
 
 本轮冻结后的正式口径如下：
 

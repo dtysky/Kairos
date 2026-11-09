@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { measureHighContrastFrame, summarizeHighContrast } from '../../src/modules/color/high-contrast-measurement.js';
 import type { IColorInput } from '../../src/store/color-inputs.js';
-import { classifyAnalyzedColor as classify } from '../../src/modules/color/classification.js';
 import { buildSolarContext, solarDay, solarElevation } from '../../src/modules/color/solar-context.js';
 import { emptyTechnical, measureFrame, measureNoiseBurst, summarizeTechnical, type ColorTechnicalReport } from '../../src/modules/color/technical-measurement.js';
 
-const classifyAnalyzedColor = (a: IColorInput, t: ColorTechnicalReport = report('normal-day')) => classify(a, t);
 
 function input(summary: string, type: NonNullable<IColorInput['facts']>['type'] = 'broll', speech = false): IColorInput {
   return { assetId: 'C001_camera', media: { kind: 'video', durationMs: 10000, capturedAt: '2026-10-01T04:00:00Z',
@@ -36,109 +34,6 @@ function report(kind: 'wide' | 'sky' | 'lamp' | 'clean-dark' | 'normal-day' | 'b
   r.noiseSamples = [1, 5, 9].map(i => ({ startMs: i * 1000, endMs: i * 1000 + 200, validPatches: 81, regions: 9, sourceSigma: 0, displaySigma: 0, state: 'not-observed' as const }));
   return summarizeTechnical(r);
 }
-
-describe('material scene rules', () => {
-  it('keeps the base scene when contrast is a minority and persists its intervals', () => {
-    const measured = report('normal-day');
-    const brightDark = measureHighContrastFrame(image(192, 108, (_x, y) => y < 40 ? 0.8 : 0.1), 192, 108);
-    measured.contrastOverview.slice(0, 4).forEach(r => { r.metrics = brightDark; });
-    measured.highContrast = summarizeHighContrast(measured.contrastOverview, 10000);
-    expect(measured.highContrast.state).toBe('not-dominant');
-    const drive = classifyAnalyzedColor(input('白天从车内透过挡风玻璃拍摄前方道路。', 'drive'), measured);
-    expect(drive).toMatchObject({ ruleVersion: 'scene-v7', category: 'day-drive-cast', status: 'classified',
-      highContrast: { state: 'not-dominant', measurement: { intervals: [{ startMs: 0, endMs: 4000 }], aggregation: { positiveFraction: 0.4 } } } });
-    expect(drive.reviewFlags.join(' ')).toContain('局部区间保留');
-    expect(classifyAnalyzedColor(input('白天户外风景。'), measured).category).toBe('day');
-    const twilight = input('日出时户外山坡。'); twilight.facts!.gps = undefined;
-    expect(classifyAnalyzedColor(twilight, measured).category).toBe('twilight');
-    const night = input('夜间道路与路灯。', 'drive'); night.media.capturedAt = '2026-10-01T14:00:00Z';
-    expect(classifyAnalyzedColor(night, measured)).toMatchObject({ category: 'night', highContrast: { state: 'excluded' } });
-  });
-  it('routes measured high contrast through actual lighting context and preserves category priorities', () => {
-    const measured = report('normal-day');
-    measured.highContrast = { state: 'detected', reasons: ['whole-clip regions'], intervals: [{ startMs: 0, endMs: 10000 }] };
-    const daylight = input('白天户外山坡，远处明亮天空。');
-    expect(classifyAnalyzedColor(daylight, measured).category).toBe('high-contrast');
-    const twilight = input('日出时户外山坡。'); twilight.facts!.gps = undefined;
-    expect(classifyAnalyzedColor(twilight, measured).category).toBe('high-contrast');
-    const night = input('夜间道路与路灯。', 'drive'); night.media.capturedAt = '2026-10-01T14:00:00Z';
-    const decision = classifyAnalyzedColor(night, measured);
-    expect(decision.category).toBe('night'); expect(decision.highContrast.state).toBe('excluded');
-    expect(decision.highContrast.measurement.state).toBe('detected');
-    const conflict = structuredClone(daylight); conflict.media.capturedAt = night.media.capturedAt;
-    expect(classifyAnalyzedColor(conflict, measured).category).toBeNull();
-    const interior = input('正常照明室内。'); interior.media.capturedAt = night.media.capturedAt;
-    expect(classifyAnalyzedColor(interior, measured).highContrast.context).toBe('non-night');
-    const partial = structuredClone(measured); partial.highContrast.state = 'needs-review';
-    partial.highContrast.intervals = [{ startMs: 2000, endMs: 5000 }];
-    expect(classifyAnalyzedColor(daylight, partial).category).toBeNull();
-    expect(classifyAnalyzedColor(night, partial).category).toBe('night');
-    expect(classifyAnalyzedColor(input('男子对着镜头讲述。', 'drive', true), measured).category).toBe('presenter');
-    const portrait = structuredClone(daylight); portrait.media.displayWidth = 2160; portrait.media.displayHeight = 3840; portrait.media.rotationDegrees = 90;
-    const portraitMeasurement = structuredClone(measured);
-    Object.assign(portraitMeasurement.probe!, { displayWidth: 2160, displayHeight: 3840, rotationDegrees: 90 });
-    expect(classifyAnalyzedColor(portrait, portraitMeasurement).category).toBe('portrait');
-    measured.noise.state = 'detected';
-    expect(classifyAnalyzedColor(daylight, measured).category).toBe('noisy');
-    expect(classifyAnalyzedColor(night, measured).category).toBe('noisy');
-    measured.exposure.state = 'detected';
-    expect(classifyAnalyzedColor(daylight, measured).category).toBe('overexposed');
-  });
-  it('recognizes externally filmed presenters and resolves drive/person conflict with description and speech', () => {
-    expect(classifyAnalyzedColor(input('别人拍摄，男子正在讲解沿途的风景。', 'broll', true)).category).toBe('presenter');
-    expect(classifyAnalyzedColor(input('A man is explaining the valley to his companion.', 'broll', true)).category).toBe('presenter');
-    expect(classifyAnalyzedColor(input('车内男子对着镜头讲述旅行经历。', 'drive', true)).category).toBe('presenter');
-    expect(classifyAnalyzedColor(input('A man in the driver’s seat is speaking directly to the camera.', 'drive', true)).category).toBe('presenter');
-    expect(classifyAnalyzedColor(input('A presenter stands beside camera equipment on a mountain summit, speaking as the sun rises.', 'talking-head', true)).category).toBe('presenter');
-  });
-  it('does not confuse voiceover, silent people, negation or speculative eating footage with presenter', () => {
-    expect(classifyAnalyzedColor(input('白天前方道路，伴随画外旁白。', 'drive', true)).category).toBe('day-drive-cast');
-    expect(classifyAnalyzedColor(input('白天从车内透过挡风玻璃拍摄前方道路。', 'drive')).category).toBe('day-drive-cast');
-    expect(classifyAnalyzedColor(input('白天街道上男子背影。', 'broll', true)).category).toBe('day');
-    expect(classifyAnalyzedColor(input('A man appears to be explaining dishes to the camera.', 'broll', true)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('A man is not speaking to the camera.', 'talking-head', true)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('男子对着镜头说话。', 'broll', false)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('A presenter stands beside equipment, not speaking.', 'talking-head', true)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('A presenter stands beside equipment. Speaking is heard in voiceover.', 'talking-head', true)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('A presenter stands beside equipment, speaking.', 'broll', false)).category).toBeNull();
-    expect(classifyAnalyzedColor(input('白天前方道路，只有旁白。', 'talking-head', true)).category).toBeNull();
-    const partial = input('白天室外风景。');
-    partial.facts!.visualWindows = [{ windowId: 'short', sourceInMs: 1000, sourceOutMs: 2000,
-      visualObservation: '男子对着镜头说话。', speech: { hasTranscript: true, ranges: [{ startMs: 1000, endMs: 2000 }] } }];
-    expect(classifyAnalyzedColor(partial).category).toBeNull();
-  });
-  it('uses raw orientation exclusively and only flags contradictions within the raw probe', () => {
-    const a = input('男子对着镜头说话。', 'talking-head', true);
-    const original = structuredClone(a), raw = report('normal-day');
-    // The analyzed target is landscape; both source rotation directions are valid.
-    for (const rotationDegrees of [90, -90]) {
-      Object.assign(raw.probe!, { displayWidth: 2160, displayHeight: 3840, rotationDegrees });
-      expect(classifyAnalyzedColor(a, raw).category).toBe('portrait');
-    }
-    expect(a).toEqual(original);
-    raw.probe!.rotationDegrees = 0;
-    expect(classifyAnalyzedColor(a, raw).reasons).toEqual(['待调原片旋转与显示尺寸冲突，需复核方向']);
-    // A portrait target must not force a landscape raw into the portrait group.
-    a.media.displayWidth = 2160; a.media.displayHeight = 3840; a.media.rotationDegrees = 90;
-    expect(classifyAnalyzedColor(a).category).toBe('presenter');
-    delete raw.probe;
-    expect(classifyAnalyzedColor(a, raw).reasons).toEqual(['待调原片显示方向未知']);
-    expect(classifyAnalyzedColor(input('白天城市街道。', 'drive')).category).toBeNull();
-  });
-  it('does not turn indoor night into outdoor night and preserves transitions', () => {
-    const a = input('灯光明亮的室内。'); a.media.capturedAt = '2026-10-01T14:00:00Z';
-    expect(classifyAnalyzedColor(a).category).toBe('day');
-    expect(classifyAnalyzedColor(input('白天车辆驶入地下停车库。', 'drive')).category).toBeNull();
-    a.facts!.summary = '室外街道。'; expect(classifyAnalyzedColor(a).category).toBe('night');
-    a.facts!.summary = '白天室外街道。'; expect(classifyAnalyzedColor(a).category).toBeNull();
-  });
-  it('does not turn technical words into measurements into high-contrast measurements', () => {
-    const a = input('明显过曝、高噪点、强逆光、严重偏色。');
-    const result = classifyAnalyzedColor(a);
-    expect(result.category).toBeNull(); expect(result.status).toBe('needs-review');
-    expect(result.reviewFlags.join(' ')).toContain('未检测');
-  });
-});
 
 describe('solar context', () => {
   it('handles timezone offsets, date boundaries, leap years and polar days without host timezone', () => {
@@ -180,7 +75,6 @@ describe('technical scope and false positives', () => {
     const transform = report('wide'); transform.overview.forEach(s => { s.source = report('bright-textured').overview[0]!.source; });
     expect(summarizeTechnical(transform).exposure.state).toBe('detected');
     expect(transform.sourceClipping.state).toBe('needs-review');
-    expect(classifyAnalyzedColor(input('白墙背景。'), report('wide')).category).toBeNull();
     const uniform = report('bright-textured');
     uniform.overview.forEach(s => { s.display = measureFrame(image(192, 108, () => 0.87), 192, 108); });
     expect(summarizeTechnical(uniform).exposure.state).toBe('needs-review');
@@ -189,24 +83,6 @@ describe('technical scope and false positives', () => {
     const r = report('normal-day'), bright = report('bright-textured');
     for (const i of [3, 4, 5]) r.overview[i] = bright.overview[i]!;
     expect(summarizeTechnical(r).exposure).toMatchObject({state: 'detected', intervals: [{ startMs: 3000, endMs: 6000 }]});
-    expect(classifyAnalyzedColor(input('白天前方道路。', 'drive'), r).category).toBe('overexposed');
-  });
-  it('classifies measured noise independently of brightness and does not call an incomplete scan negative', () => {
-    const a = input('夜间室外道路。'); a.media.capturedAt = '2026-10-01T14:00:00Z';
-    const clean = report('clean-dark'); expect(classifyAnalyzedColor(a, clean).category).toBe('night');
-    clean.noise.state = 'detected'; expect(classifyAnalyzedColor(a, clean).category).toBe('noisy');
-    const daylight = report('normal-day'); daylight.noise.state = 'detected';
-    expect(classifyAnalyzedColor(input('白天前方道路。', 'drive'), daylight).category).toBe('noisy');
-    expect(classifyAnalyzedColor(input('日出时室外山坡。'), daylight).category).toBe('noisy');
-    expect(classifyAnalyzedColor(input('男子对着镜头说话。', 'talking-head', true), daylight).category).toBe('presenter');
-    const portrait = input('白天前方道路。', 'drive'); portrait.media.displayWidth = 2160; portrait.media.displayHeight = 3840; portrait.media.rotationDegrees = 90;
-    const portraitMeasurement = structuredClone(daylight);
-    Object.assign(portraitMeasurement.probe!, { displayWidth: 2160, displayHeight: 3840, rotationDegrees: 90 });
-    expect(classifyAnalyzedColor(portrait, portraitMeasurement).category).toBe('portrait');
-    const overbright = report('bright-textured'); overbright.noise.state = 'detected';
-    expect(classifyAnalyzedColor(input('白天前方道路。', 'drive'), overbright).category).toBe('overexposed');
-    clean.noise.state = 'unknown'; expect(classifyAnalyzedColor(a, clean).reviewFlags).toContain('噪声测量未知');
-    clean.overview = clean.overview.slice(0, 2); expect(summarizeTechnical(clean).exposure.state).toBe('unknown');
   });
   it('estimates native temporal noise while rejecting coherent moving texture and drift', () => {
     let state = 991;

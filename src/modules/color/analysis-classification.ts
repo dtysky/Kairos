@@ -4,12 +4,13 @@ import { verifyAnalysisInput } from '../media/analysis-input.js';
 import { createHash } from 'node:crypto';
 import type { IColorClassification } from '../../protocol/schema.js';
 import { loadAssets } from '../../store/incremental.js';
-import { refreshColorInputs, isColorInputAssetCurrent } from '../../store/color-inputs.js';
+import { refreshColorInputs, loadColorInputs, isColorInputAssetCurrent } from '../../store/color-inputs.js';
 import { fingerprintMediaFile } from '../media/media-versions.js';
 import { CRCM_POLICY, resolveRcmInput } from './rcm-input.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import { COLOR_CATEGORY_LABELS } from './classification.js';
 import { assessColor, type AssessColorOptions } from './assessment.js';
+import { ColorAgentAssetPendingError, stageColorAgentBatch, type ColorAgentPacket } from './agent-classification.js';
 
 export interface IAnalyzedColorSource {
   rawRelativePath: string;
@@ -35,11 +36,13 @@ export async function bindColorAnalysis(projectRoot: string, rootId: string, inv
   const [assets, { roots }] = await Promise.all([loadAssets(projectRoot), loadIngestRoots(projectRoot)]);
   const assetsByRawPath = new Map(assets.filter(asset => asset.ingestRootId === rootId && asset.mediaVersions?.raw)
     .map(asset => [asset.mediaVersions!.raw!.relativePath, asset]));
-  const colorInputs = await refreshColorInputs(projectRoot, { assetIds: inventory.flatMap(item => {
+  const colorInputs = options.mode === 'verify' ? await loadColorInputs(projectRoot) : await refreshColorInputs(projectRoot, { assetIds: inventory.flatMap(item => {
     const asset = assetsByRawPath.get(item.rawRelativePath);
     return asset ? [asset.id] : [];
   }) });
+  if (!colorInputs) throw new Error('调色输入缓存缺失，请先 Prepare');
   const blockers: string[] = [];
+  const agentPackets: ColorAgentPacket[] = [];
   const bound: IAnalyzedColorSource[] = [];
   const pending: Array<{
     item: IAnalyzedColorSource; asset: (typeof assets)[number]; root: (typeof roots)[number];
@@ -72,7 +75,12 @@ export async function bindColorAnalysis(projectRoot: string, rootId: string, inv
   // Validate the entire requested scope before spending time decoding any eligible clip.
   if (blockers.length) throw new Error(`调色前置分析未就绪（${blockers.length} 条）：${blockers.slice(0, 20).join('；')}`);
   for (const { item, asset, root, colorInput, input, sourceContentHash } of pending) {
-    const assessment = await assessColor({ workspaceRoot, projectRoot, asset, root, colorInput, sourcePath: item.sourceAbsolutePath, transforms }, options);
+    let assessment;
+    try { assessment = await assessColor({ workspaceRoot, projectRoot, asset, root, colorInput, sourcePath: item.sourceAbsolutePath, transforms }, options); }
+    catch (error) {
+      if (error instanceof ColorAgentAssetPendingError) { agentPackets.push(error.packet); continue; }
+      throw error;
+    }
     const classification = assessment.decision;
     bound.push({ ...item, ...input, colorManagementPolicy: CRCM_POLICY, assetId: asset.id, sourceContentHash,
       analysisInputFingerprint: colorInput.analysisInput!.fingerprint, sceneCategory: classification.category ?? undefined,
@@ -81,5 +89,6 @@ export async function bindColorAnalysis(projectRoot: string, rootId: string, inv
       classificationFingerprint: createHash('sha256').update(JSON.stringify([CRCM_POLICY, sourceContentHash, input, assessment.fingerprint])).digest('hex'),
     });
   }
+  if (agentPackets.length) throw await stageColorAgentBatch(projectRoot, rootId, agentPackets);
   return bound;
 }

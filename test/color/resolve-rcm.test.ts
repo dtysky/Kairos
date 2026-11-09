@@ -3,6 +3,29 @@ import { promisify } from 'node:util';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 const exec = promisify(execFile);
+it('renames the night group in place and rejects an ambiguous two-group merge', async () => {
+  const script = `
+import importlib.util,json,sys
+s=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(s);s.loader.exec_module(h)
+class Group:
+ def __init__(self,name):self.name=name;self.pre=object();self.post=object();self.members=['a','b'];self.renames=0
+ def GetName(self):return self.name
+ def SetName(self,name):self.name=name;self.renames+=1;return True
+class Project:
+ def __init__(self,groups):self.groups=groups
+ def GetColorGroupsList(self):return self.groups
+old=Group('普通夜景');p=Project([old]);before=(id(old),id(old.pre),id(old.post),list(old.members))
+h.migrate_night_group_name(p);h.migrate_night_group_name(p)
+preserved=before==(id(p.groups[0]),id(old.pre),id(old.post),old.members)
+collision=Group('普通夜景')
+try:h.migrate_night_group_name(Project([collision,Group('夜景／低照度')]));code=None
+except h.HostError as e:code=e.code
+print(json.dumps({'name':old.name,'preserved':preserved,'renames':old.renames,'collision':code,'collisionName':collision.name}))
+`;
+  const { stdout } = await exec('python3', ['-c', script, join(process.cwd(), 'vendor/resolve-color-host/resolve-color-host.py')]);
+  expect(JSON.parse(stdout)).toEqual({ name: '夜景／低照度', preserved: true, renames: 1,
+    collision: 'resolve_scene_group_rename_conflict', collisionName: '普通夜景' });
+});
 it('initializes only empty projects, rejects settings/input drift, and never injects a Clip LUT under RCM', async () => {
   const script = `
 import importlib.util, json, sys

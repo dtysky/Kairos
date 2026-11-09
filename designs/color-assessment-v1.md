@@ -1,5 +1,7 @@
 # 素材级调色判定第一阶段
 
+2026-11-09 正式分类改用 `gpt-6.1-sol / high` subagent；低照度并入夜景，仍为九类。当前合同见 [Color Agent 分类正式管线](color-agent-classification.md)。下文 scene-v7 的语义正则与自动分类仅为历史，技术测量和已确认的原片/RCM边界继续沿用。
+
 当前大光比合同已升级 scene-v7 / measurement-v4 / dominant-duration-v1：统一反差检测并按多数时长归类，不区分大面积亮区与小光源，夜景仍硬排除。新阈值、缓存失效与验证范围见 [统一反差检测](color-high-contrast-v1.md)。下文旧版标定记录保留为历史。
 
 2026-11-06 用户确认实施：复用素材级报告，结合 type 与描述判断出镜讲述/前挡行车；GPS、校正拍摄时间与描述共同判断日照场景；先完成全片大面积过曝及噪声，现已继续接入逆光/大光比。此文取代 `color-technical-analysis-boundary.md` 的临时分类方案，不改变 Analyze 的请求、抽帧、ASR、窗口或原素材 type。

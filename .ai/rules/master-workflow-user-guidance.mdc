@@ -138,3 +138,7 @@ Kairos 的标准顺序是：
 - 不要让用户直接维护 `assets.json` / `spans.json` / `spans.meta.json` 这类派生产物
 - 不要在 Flow Plan 未确认的情况下执行 edit capability step
 - 不要在导出目标未确认时直接进入 Export
+
+2026-11-09：正式 Color 分类与 Analyze 分离，由 gpt-6.1-sol/high subagent 综合已有分析和原片技术测量。Prepare 缺当前决定时输出签名任务包并进入 pending-agent；使用 `node scripts/color-agent-classify.mjs submit <projectId> <rootId> <submissionFile>` 完整校验并提交后再继续 Prepare。接受记录原子存入 `store/color-classifications.json`，技术缓存独立存入 `store/color-measurements/`；独立用户澄清位于 `config/color-agent-context.json`。夜景与低照度共用第九类表中的 night 键，显示“夜景／低照度”；真实夜景排除大光比。旧语义正则及旧分类只读历史，不能兜底。详见 `designs/color-agent-classification.md`。
+
+`/color` 主流程为“检查与检测 → Agent 分类 → 应用到 Resolve → 人工调色与导出 → 结果校验”，只突出当前动作。分类 ready 但保留 batchFingerprint 表示待应用，不能因旧 timeline ready 开放导出；准备完成不表示人工调色完成。默认展示分组与素材，配置和维护历史分栏；待 Agent 是交接待办，运行进度仅来自活跃 Supervisor job。侧栏调色入口位于创作组首项，总览注明其依赖已有分析且不阻塞编年史/剪辑。界面状态只在前端保存，详见 `designs/color-agent-classification.md`。 项目级调色：主流程一次准备全部目录、一次复制全部待分类任务、统一应用与导出，素材列表跨目录汇总。项目设置仍按目录独立配置编码、码率及 LOG/RCM/LUT；编辑只修改对应目录，一次保存全部草稿，不自动统一参数。不新增配置协议，不自动迁移现有设置或合并 Resolve Group。

@@ -1002,7 +1002,7 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
       </section>
 
       <Card className="panel overview-workflow-panel">
-        <div className="section-header"><div><div className="eyebrow">Workflow</div><h2>主流程</h2></div><span className="muted">Color 为素材准备的可选增强；Style 作为 Workspace 输入接入 Edit。</span></div>
+        <div className="section-header"><div><div className="eyebrow">Workflow</div><h2>主流程</h2></div><span className="muted">素材分析后可进入 <Link to="/color">达芬奇调色</Link> 支线；调色不阻塞编年史与剪辑。风格分析作为工作区输入接入剪辑。</span></div>
         <div className="overview-workflow-track">
           {workflow.map((step, index) => (
             <React.Fragment key={step.path}>
@@ -1194,25 +1194,16 @@ function ColorPage({
     <div className="route-page">
       <RouteIntro
         title="达芬奇调色"
-        subtitle="从 Root 状态开始，集中完成 Resolve 准备、分组同步、执行与验证。"
+        subtitle="用已有素材分析和原片技术检测完成分类，在 Resolve 中调色，再导出与校验。"
       />
       {colorBlocked ? (
         <WorkflowPrompt
-          eyebrow="Blocked"
-          title="当前 capability 不支持 color"
-          body="capabilities 已明确标记 `color` 不支持。这个页面仍可查看和编辑配置，但不会提供运行入口，也不会影响主链。"
+          eyebrow="运行条件"
+          title="调色服务暂不可用"
+          body="可以查看分组与配置。请恢复本机 Resolve 服务后再开始调色任务。"
           tone="error"
           detail={colorCapabilityDetail || '请先确认后端是否已经开放 color 能力。'}
         />
-      ) : colorCapabilityDetail ? (
-        <section className="color-runtime-strip" title={colorCapabilityDetail}>
-          <div>
-            <div className="eyebrow">Resolve runtime</div>
-            <strong>同机 Resolve 后端已连接</strong>
-          </div>
-          <Tag color="success">Root 闭环可用</Tag>
-          <span>Relink → Prepare → Groups → Execute → Validate</span>
-        </section>
       ) : null}
       <ColorCurrentSummary
         config={config}

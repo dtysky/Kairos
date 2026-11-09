@@ -1,4 +1,5 @@
 import { bindColorAnalysis, type IAnalyzedColorSource } from './analysis-classification.js';
+import { ColorAgentBatchPendingError } from './agent-classification.js';
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { copyFile, mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises';
@@ -166,7 +167,7 @@ export interface IProjectColorActionInput {
 
 export interface IProjectColorActionRootResult {
   rootId: string;
-  status: 'succeeded' | 'failed';
+  status: 'succeeded' | 'failed' | 'pending-agent';
   actionSummary: string;
   batchId?: string;
   error?: string;
@@ -180,6 +181,7 @@ export interface IProjectColorActionResult {
   detail: string;
   blockingReasons: string[];
   roots?: IProjectColorActionRootResult[];
+  classificationStatus?: 'pending-agent' | 'ready';
 }
 
 type TWriteColorProgress = (
@@ -520,7 +522,7 @@ export async function snapshotProjectColorDrp(
       detail: formatColorDrpSnapshotDetail(savedSnapshot),
       currentJobId: undefined,
       activeStage: undefined,
-      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+      blockingReasons: filterResolvedDrpSaveBlockers(current.blockingReasons ?? []),
     }));
   }
 
@@ -914,6 +916,7 @@ export async function prepareAllProjectColorRoots(
   const roots: IProjectColorActionRootResult[] = [];
   let succeededRoots = 0;
   let failedRoots = 0;
+  let pendingAgentRoots = 0;
   for (const [index, rootSummary] of rootSummaries.entries()) {
     await writeColorProgress(progressPath, action, {
       status: 'running',
@@ -936,10 +939,12 @@ export async function prepareAllProjectColorRoots(
         action: 'prepare_root',
         suppressProgress: true,
       });
-      succeededRoots += 1;
+      const pending = result.classificationStatus === 'pending-agent';
+      if (pending) pendingAgentRoots += 1;
+      else succeededRoots += 1;
       roots.push({
         rootId: rootSummary.rootId,
-        status: 'succeeded',
+        status: pending ? 'pending-agent' : 'succeeded',
         actionSummary: result.detail,
       });
     } catch (error) {
@@ -953,9 +958,10 @@ export async function prepareAllProjectColorRoots(
     }
   }
 
-  const detail = failedRoots > 0
-    ? `Prepare All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
-    : `Prepare All Roots 完成：${succeededRoots} 个 roots 全部 ready。`;
+  const detail = pendingAgentRoots > 0
+    ? `Prepare All Roots：${succeededRoots} 个 ready，${pendingAgentRoots} 个等待 Agent 分类，${failedRoots} 个失败。`
+    : failedRoots > 0 ? `Prepare All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
+      : `Prepare All Roots 完成：${succeededRoots} 个 roots 全部 ready。`;
   await writeColorProgress(progressPath, action, {
     status: failedRoots > 0 ? 'failed' : 'succeeded',
     stepIndex: 2,
@@ -968,12 +974,14 @@ export async function prepareAllProjectColorRoots(
       totalRoots: rootSummaries.length,
       succeededRoots,
       failedRoots,
+      pendingAgentRoots,
     },
   });
 
   return {
     action,
     projectId: input.projectId,
+    classificationStatus: pendingAgentRoots ? 'pending-agent' : 'ready',
     detail,
     blockingReasons: roots
       .filter(root => root.status === 'failed')
@@ -1166,24 +1174,14 @@ export async function prepareProjectColorRoot(
     });
     throw new ColorPrepBlockedError(prepBlockers);
   }
-  const executor = resolveColorExecutor(context, input.executor);
-  const hostPreflight = await ensureActionHostPreflight({
-    context,
-    action,
-    executor,
-    progressPath,
-    suppressProgress: input.suppressProgress,
-    extra: {
-      projectId: input.projectId,
-      rootId: input.rootId,
-    },
-  });
   const scannedInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
   const requestedKeys = new Set((input.clipKeys ?? []).map(normalizePortablePath));
   const unknownKeys = [...requestedKeys].filter(key => !scannedInventory.some(item => item.rawRelativePath === key));
   if (unknownKeys.length) throw new ColorPrepBlockedError(unknownKeys.map(key => `prepare_root clip 不存在：${key}`));
   let measurementProgress = Promise.resolve();
-  const rawInventory = await bindColorAnalysis(context.projectRoot, context.rootId,
+  let rawInventory: IAnalyzedColorSource[];
+  try {
+    rawInventory = await bindColorAnalysis(context.projectRoot, context.rootId,
     requestedKeys.size ? scannedInventory.filter(item => requestedKeys.has(item.rawRelativePath)) : scannedInventory, {
       onProgress: detail => {
         measurementProgress = measurementProgress.then(() => writeProgress(progressPath, action, {
@@ -1193,7 +1191,29 @@ export async function prepareProjectColorRoot(
         void measurementProgress.catch(() => undefined);
       },
     });
+  } catch (error) {
+    await measurementProgress;
+    if (!(error instanceof ColorAgentBatchPendingError)) throw error;
+    const detail = `等待 Agent 分类：${error.state.pendingCount} 条素材，gpt-6.1-sol / high。分类提交后继续 Prepare。`;
+    await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current, classification: error.state, activeStage: undefined, currentJobId: undefined,
+      detail,
+    }));
+    await writeProgress(progressPath, action, {
+      status: 'succeeded', stepIndex: 1, current: 0, detail,
+      extra: { projectId: input.projectId, rootId: input.rootId, classification: error.state },
+    });
+    return { action, projectId: input.projectId, rootId: input.rootId, detail,
+      classificationStatus: 'pending-agent', blockingReasons: [] };
+  }
   await measurementProgress;
+  // Agent preparation is independent of Resolve; no host calls or scene mutation
+  // occur until every requested material has an accepted current decision.
+  const executor = resolveColorExecutor(context, input.executor);
+  const hostPreflight = await ensureActionHostPreflight({
+    context, action, executor, progressPath, suppressProgress: input.suppressProgress,
+    extra: { projectId: input.projectId, rootId: input.rootId },
+  });
   const scopePrefix = requestedKeys.size ? `scope-${hashString([...requestedKeys].sort().join('\n')).slice(0, 12)}-` : '';
   const mergeScopedChunks = (previous: IColorPrepareChunk[], incoming: IColorPrepareChunk[]): IColorPrepareChunk[] => scopePrefix
     ? [...previous.filter(chunk => !incoming.some(next => next.chunkId === chunk.chunkId)), ...incoming]
@@ -1505,6 +1525,7 @@ export async function prepareProjectColorRoot(
   savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
     mirrorStatus: lastPreparedMirrorStatus ?? 'synced',
+    classification: { status: 'ready', pendingCount: 0, model: 'gpt-6.1-sol', reasoningEffort: 'high', updatedAt: new Date().toISOString() },
     timelineStatus: 'ready',
     groupSyncStatus: 'ready',
     groupSyncAt: mergedSnapshot.syncedAt ?? current.groupSyncAt,
@@ -1514,7 +1535,7 @@ export async function prepareProjectColorRoot(
     hostSummary: mergeColorHostSummary(current.hostSummary, lastPreparedHostSummary, chunks),
     groups: syncedGroups,
     latestDrpSnapshot: drpSnapshots[drpSnapshots.length - 1] ?? current.latestDrpSnapshot,
-    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+    blockingReasons: filterResolvedDrpSaveBlockers(current.blockingReasons ?? []),
   }));
   await writeProgress(progressPath, action, {
     status: 'succeeded',
@@ -1543,6 +1564,7 @@ export async function prepareProjectColorRoot(
     gradingTimelineName: context.rootSummary.gradingTimelineName,
     mirrorStatus: savedRoot?.mirrorStatus,
     timelineStatus: savedRoot?.timelineStatus,
+    classificationStatus: 'ready',
     blockingReasons: savedRoot?.blockingReasons ?? [],
     detail: savedRoot?.detail ?? detail,
   };
@@ -3177,6 +3199,11 @@ async function failColorAction(
       extra,
     });
   }
+}
+
+/** Call only after a real successful DRP save, never from preflight alone. */
+function filterResolvedDrpSaveBlockers(blockers: string[]): string[] {
+  return filterPersistentColorBlockers(blockers).filter(blocker => !blocker.startsWith('Unable to export Resolve project snapshot:'));
 }
 
 function filterPersistentColorBlockers(blockers: string[]): string[] {

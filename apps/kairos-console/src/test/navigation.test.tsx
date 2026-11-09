@@ -8,6 +8,8 @@ import { navigationGroups, resolveNavigationPath } from '../navigation';
 describe('console navigation', () => {
   it('keeps the approved groups and aligns every item in one shared sidebar', () => {
     expect(navigationGroups.map(group => group.label)).toEqual(['工作台', '素材准备', '素材理解', '创作', '系统']);
+    expect(navigationGroups.find(group => group.label === '素材准备')?.items.some(item => item.path === '/color')).toBe(false);
+    expect(navigationGroups.find(group => group.label === '创作')?.items[0].path).toBe('/color');
     render(
       <MemoryRouter initialEntries={['/chronology']}>
         <ConsoleStateProvider><ConsoleSidebar /></ConsoleStateProvider>
