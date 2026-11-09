@@ -354,11 +354,11 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
   - 规范图重跑仍必须按最终 `gyroEligible` 布尔值重新请求 node1 开/关，因为 Gyro 是技术判断，不是 creative 用户区
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
-- ZV-E1 / Sony 竖屏 Gyro 保留方向识别，但不追加方向旋转：
+- ZV-E1 / Sony 竖屏的 Edit 旋转与 Gyroflow 参数分离：
   - ffprobe 的 `rotate/display matrix` 解析为 clip orientation truth
-  - 横屏使用 `config/default.drt`；竖屏保留历史模板映射：ffprobe 源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。模板键和文件名仅作兼容定位；两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，timeline `RotationAngle=0`，不能从元数据再派生 ±90° 补偿
+  - 横屏使用 `config/default.drt`；竖屏保留历史模板映射：ffprobe 源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。模板键和文件名仅作兼容定位；两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，Edit 旋转遵循下述独立规则。
   - 缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`，不阻塞素材导入、Group、LUT 或 timeline transform
-  - 2026-10-08 用户验证两处额外 ±90° 会导致防抖异常，取消后正常。修正只撤销 Gyroflow 输出与 timeline 的自动旋转，保留既有 fill zoom、ZoomGang、Pan、Tilt 与模板其他参数；横向编码 3840x2160、display-matrix 竖屏素材的 zoom 仍为 `1.7778`。代码和模板更新不自动重跑已有 root，也不覆盖当前工程的人工修正；用户显式重跑 prepare 时仍遵循下述模板 hash 迁移规则
+  - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
   - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 必须把当前 DRT hash 持久化回 clip snapshot
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
   - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；默认 DRT 不存在时，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
@@ -1572,3 +1572,6 @@ kairos/
 - 用户导入素材后可继续其他操作
 - 预处理结果持久化到 `cache/preprocess/`，中断可恢复
 - 并发度 = CPU 核心数 × 50%，避免打满系统
+
+
+2026-11-09：局部 `prepare_root` 的 `clipKeys` 只限制检测和写入；最终 `sync_groups` 必须合并本批 clips 与历史快照中未参与 clips 的完整元数据，本批同 key 优先，历史补充不触发重测或重套模板。Resolve 原生枚举决定实际片段、Group 和节点，不从历史快照复活已删除片段。详见 `designs/media-version-analysis-color-pipeline.md`。

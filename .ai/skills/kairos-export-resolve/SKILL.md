@@ -78,6 +78,10 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
 6. 视目标环境决定是否创建字幕轨或导出 `SRT`
 7. 返回 Resolve 项目 / 时间线信息和日志
 
+## Color 竖屏 Edit 旋转
+
+2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
+
 ## `/color` Direct-Root Export Rule
 
 - `execute_root` 必须以 `rawLocalPath` 对应的 Resolve root grading timeline 为导出真相，以当前 root `localPath` 为唯一最终输出 root。
@@ -120,3 +124,6 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
 Use `scripts/resolve-edit-tools.py` and [its contract](../../../designs/resolve-edit-tools.md) for capability queries, native timeline selection, explicit frame export and video-only fades/transitions/Inspector copying. Inspect exact project/timeline/item ids first; apply only explicitly authorized targets, preserve the reported recovery timeline and report partial changes on failure. This does not change voiceover, audio processing, grading or subtitle text. An available `--apply` flag does not require another approval when the user has already authorized the concrete action.
 
 2026-11-06 扩展实测：旧 portrait DRT 的 Zstandard frame 未声明解压大小（streaming frame）；本机 Resolve 21.1.2.10 导入后丢弃其 Clip grade，变成单空节点。以带 content size 的 frame 重新封装后，两份模板均原生导入为标准五节点。只改压缩封装，解压后的 protobuf SHA-256 不变，Gyroflow InputRotation/Rotation、timeline rotation 和构图参数均不改。维护 DRT 必须保留已知 frame content size，并以原生导入验证；文件中存在 OFX 字符串不能代替导入成功。
+
+
+2026-11-09：局部 `prepare_root` 的 `clipKeys` 只限制检测和写入；最终 `sync_groups` 必须合并本批 clips 与历史快照中未参与 clips 的完整元数据，本批同 key 优先，历史补充不触发重测或重套模板。Resolve 原生枚举决定实际片段、Group 和节点，不从历史快照复活已删除片段。详见 `designs/media-version-analysis-color-pipeline.md`。

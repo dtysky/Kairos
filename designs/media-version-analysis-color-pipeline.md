@@ -50,3 +50,11 @@ Ingest → Analyze → 调色分类/基础节点 → 目标输出到位后再次
 - Git 忽略项目下 `.fixtures/v2-20261105/production-report.html` 为实片与审计入口，`production-exercise-results.json` 为阶段结果，`resolve-live-20261105/repeat-validation.json` 为重跑结果。
 
 本次实片只覆盖九类中的三类，剩余 97 份尚未运行新 Analyze。闪烁只有疑似风险提示，未实现连续帧的完整闪烁测量。美肤、NR、Dehaze 参数未自动调整。没有覆盖目标视频的整片渲染；同路径原片更新的 ReplaceClip 路径经过宿主单测，真实更新场景验证到 Ingest。当前 Computer Use 无权限，因此桌面菜单/节点面板没有截图验收；以原生 API 和 ExportFrame 为实机证据。人工 spans 审查和 Chronology 仍按既有显式重建/提交流程处理。
+
+## 2026-11-09 局部 Prepare 的完整同步上下文
+
+`clipKeys` 只限制本轮检测和 Prepare 写入，不缩小最终 Resolve 时间线快照。最终 `sync_groups` 请求按 `rawRelativePath` 合并本轮已准备 clips 与历史快照中未参与的 clips：本轮结果优先，历史补充只用于同步上下文，不触发检测、导入、模板迁移或 transform 写入。历史记录即使本轮扫描未发现原片也提供给宿主匹配；是否仍在时间线、实际 Group 及节点状态由 Resolve 本次枚举决定，不把已删除片段重新加回。未准备且无历史记录的新文件不混入 prepared 上下文。
+
+验收覆盖已有竖屏方向、模板 hash、transform、LOG/RCM 输入、分析与分类签名、复核状态/原因/附加问题及 Gyro 证据。局部新增和重复执行时本轮新值优先，其他 clips 不丢字段。真实完整素材追加回归比较旧 item id、范围、Inspector、grade versions 与 Group，并检查新 clips 五节点、输入空间和方向；不调整 C4994 的 Gyro 参数。
+
+本轮真实回归：`tmp-color-v5-20261106` 从 35 追加到 41 条，六份完整新素材经 Ingest / Analyze / scoped Prepare；旧 35 份报告及关键元数据不变。追加前后原生比对 35 条 Inspector/位置/Group 和 59 份 grade versions 无差异；再次执行三个 root 的同一局部 Prepare 后 41 条和 65 份 grade versions 无差异、无重复追加。新素材均具备标准五节点及正确 RCM 输入；白天行车、夜景、竖屏和黄昏四类建组，C5003 的口播表述未被规则识别、C0089 缺 GPS 且光线描述未命中规则，二者保持无组待复核，不作为分类全通过。C4578 的 Edit -90/Zoom1.7778 已回读，拉伸按用户要求暂缓。73 项相关测试、根仓与 Console 构建通过，ML stopped。完整审计位于忽略的 `.fixtures/incremental-20261109/completion.json`。

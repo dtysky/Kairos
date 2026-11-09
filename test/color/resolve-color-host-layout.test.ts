@@ -1174,10 +1174,10 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
-  it('applies zero portrait rotation through Resolve without changing fill or framing', async () => {
+  it.each([-90, 90, 0])('applies portrait Edit rotation %s through Resolve without changing fill or framing', async rotationAngle => {
     const result = await applyTimelineTransform({
       transform: {
-        rotationAngle: 0,
+        rotationAngle,
         zoomGang: true,
         zoomX: 1.7778,
         zoomY: 1.7778,
@@ -1187,7 +1187,7 @@ describe('resolve color host clip layout helpers', () => {
     });
 
     expect(result.calls).toEqual([
-      ['RotationAngle', 0],
+      ['RotationAngle', rotationAngle],
       ['ZoomGang', true],
       ['ZoomX', 1.7778],
       ['ZoomY', 1.7778],

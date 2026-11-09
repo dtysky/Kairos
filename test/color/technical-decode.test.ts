@@ -15,7 +15,8 @@ it('decodes full-duration broad clipping and native clean/noisy bursts with real
         ? "nullsrc=s=384x384:r=12:d=4.5,format=gbrp16le,geq=r='if(lt(Y,150),52000,6000)':g='if(lt(Y,150),52000,6000)':b='if(lt(Y,150),52000,6000)'"
         : kind === 'wide'
         ? "nullsrc=s=384x384:r=12:d=4,format=gbrp16le,geq=r='if(lt(mod(X,16),13),65535,12000)':g='if(lt(mod(X,16),13),65535,12000)':b='if(lt(mod(X,16),13),65535,12000)'"
-        : `color=c=0x101010:s=384x384:r=12:d=4${kind === 'noisy' ? ',noise=alls=18:allf=t+u:all_seed=41' : ''}`;
+        // lavfi color emits limited-range YUV; convert before declaring the fixture full-range.
+        : `color=c=0x101010:s=384x384:r=12:d=4,scale=in_range=tv:out_range=pc,format=yuv420p${kind === 'noisy' ? ',noise=alls=18:allf=t+u:all_seed=41' : ''}`;
       await exec('ffmpeg', ['-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', filter, '-c:v', 'ffv1', '-color_range', 'pc', '-y', path]);
       const result = await measureColorTechnical(path, { role: 'raw', contentHash: kind, profile: 'rec709' });
       expect(result.coverage.ratio, JSON.stringify(result.warnings)).toBe(1);

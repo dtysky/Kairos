@@ -119,6 +119,9 @@ function buildClipRepairSnapshot(
     clipKey: String(clip.rawRelativePath ?? ''),
     displayName: String(clip.sourceStem ?? ''),
     sceneCategory: clip.sceneCategory,
+    classificationStatus: clip.classificationStatus,
+    classificationReasons: clip.classificationReasons,
+    reviewFlags: clip.reviewFlags,
     classificationFingerprint: clip.classificationFingerprint,
     analysisInputFingerprint: clip.analysisInputFingerprint,
     sourceContentHash: clip.sourceContentHash,
@@ -136,6 +139,7 @@ function buildClipRepairSnapshot(
     repairTemplateHash: clip.previousRepairTemplateHash,
     timelineTransform: clip.timelineTransform,
     gyroEligible,
+    gyroDataAvailable: clip.gyroDataAvailable,
     gyroflowStatus,
     dehazeStatus: 'seeded-disabled' as const,
     nrStatus: 'seeded-disabled' as const,
@@ -1485,7 +1489,7 @@ describe('project color actions', () => {
     }]);
   });
 
-  it.each([90, -90, 270])('keeps portrait rotation at zero for source rotation %s while preserving fill and template selection', async rotationDegrees => {
+  it.each([90, -90, 270])('maps raw portrait rotation %s to Edit rotation while preserving fill and template selection', async rotationDegrees => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-portrait-transform';
     const { rootId } = await seedSingleRootProject({
@@ -1548,7 +1552,7 @@ describe('project color actions', () => {
       gyroDataAvailable: true,
       gyroEligible: true,
       timelineTransform: {
-        rotationAngle: 0,
+        rotationAngle: rotationDegrees === 90 ? -90 : 90,
         zoomGang: true,
         zoomX: 1.7778,
         zoomY: 1.7778,
@@ -1556,6 +1560,66 @@ describe('project color actions', () => {
         tilt: 0,
       },
     });
+  });
+
+  it('preserves out-of-scope clip metadata when native sync enumerates the entire timeline', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'scoped-prepare-metadata';
+    const { projectRoot, rootId, rawLocalPath } = await seedSingleRootProject({
+      workspaceRoot, projectId, projectName: 'Scoped Prepare', rawFiles: ['portrait.mov', 'review.mov'],
+    });
+    await writeFile(join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'), 'portrait-drt');
+    mockColorMetadata({ displayWidth: 2160, displayHeight: 3840, rotationDegrees: 90 });
+    mockClipSignals({ gyroEligible: true, logProfile: 'slog3' });
+    let generation = 'v1';
+    vi.mocked(analysisClassification.bindColorAnalysis).mockImplementation(async (_p, _r, inventory) =>
+      inventory.map(clip => ({ ...clip,
+        sceneCategory: clip.rawRelativePath === 'review.mov' ? undefined : 'portrait',
+        classificationStatus: clip.rawRelativePath === 'review.mov' ? 'needs-review' : 'classified',
+        classificationReasons: ['source evidence'], reviewFlags: ['local-change'],
+        sourceContentHash: 'raw-' + clip.rawRelativePath,
+        analysisInputFingerprint: 'analysis-' + clip.rawRelativePath,
+        classificationFingerprint: generation + '-' + clip.rawRelativePath,
+        colorManagementPolicy: 'rcm-dwg-v1', inputColorSpace: 'S-Gamut3.Cine/S-Log3', inputColorSource: 'sony-sidecar-xml',
+      })));
+    const nativeItems = new Map<string, IColorExecutorClipInput>();
+    const prepareCalls: string[][] = [];
+    const executor = createFakeExecutor({
+      onPrepareRoot: async input => {
+        prepareCalls.push(input.clips.map(c => c.rawRelativePath));
+        for (const clip of input.clips) nativeItems.set(clip.rawRelativePath, clip);
+        return { resolveProjectName: input.resolveProjectName, gradingTimelineName: input.gradingTimelineName,
+          mirrorStatus: 'synced', timelineStatus: 'ready' };
+      },
+      onSyncGroups: async input => {
+        const requested = new Map(input.clips.map(c => [c.rawRelativePath, c]));
+        // Resolve enumerates all existing items, even those absent from the request.
+        return buildGroupsSnapshot({ ...input, clips: [...nativeItems].map(([key, clip]) =>
+          requested.get(key) ?? { rawRelativePath: key, sourceAbsolutePath: clip.sourceAbsolutePath, sourceStem: key }) }, 'resolve');
+      },
+    });
+    const prepare = (clipKeys?: string[]) => prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor, clipKeys });
+    await prepare();
+    const before = (await loadColorGroupsSnapshot(projectRoot, rootId))!.groups[0]!.clips;
+    // An offline old file and an unprepared new file must not erase existing native-item metadata.
+    await rm(join(rawLocalPath, 'review.mov'));
+    await writeFile(join(rawLocalPath, 'added.mov'), 'new raw');
+    await writeFile(join(rawLocalPath, 'not-prepared.mov'), 'unrequested');
+    for (const value of ['v2', 'v3']) {
+      generation = value;
+      await prepare(['added.mov']);
+      const after = (await loadColorGroupsSnapshot(projectRoot, rootId))!.groups[0]!.clips;
+      for (const old of before) expect(after.find(c => c.clipKey === old.clipKey)).toEqual(old);
+      expect(after.find(c => c.clipKey === 'added.mov')?.classificationFingerprint).toBe(value + '-added.mov');
+      expect(after.map(c => c.clipKey).sort()).toEqual(['added.mov', 'portrait.mov', 'review.mov']);
+    }
+    expect(prepareCalls.slice(1)).toEqual([['added.mov'], ['added.mov']]);
+    expect(vi.mocked(analysisClassification.bindColorAnalysis).mock.calls.slice(1).map(c => c[2].map(i => i.rawRelativePath)))
+      .toEqual([['added.mov'], ['added.mov']]);
+    nativeItems.delete('review.mov');
+    await prepare(['added.mov']);
+    expect((await loadColorGroupsSnapshot(projectRoot, rootId))!.groups[0]!.clipKeys.sort())
+      .toEqual(['added.mov', 'portrait.mov']);
   });
 
   it('reruns only the stale portrait chunk when a portrait DRT hash is stale', async () => {

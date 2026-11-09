@@ -1425,6 +1425,17 @@ export async function prepareProjectColorRoot(
   let mergedSnapshot: IColorGroupsSnapshotFile;
   let savedDrp: Awaited<ReturnType<IColorExecutor['saveDrpSnapshot']>>;
   try {
+    // Resolve sync enumerates the whole timeline, even after a scoped prepare.
+    // Supply unchanged clips' metadata without probing or preparing them again.
+    // The host still decides which items remain in the native timeline.
+    const preparedKeys = new Set(preparedClipsForSync.map(clip => clip.rawRelativePath));
+    const unchangedClipsForSync = buildColorSyncExecutorClipsForInventory(
+      [...previousClipSnapshots.keys()].filter(key => !preparedKeys.has(key)).map(key => ({
+        rawRelativePath: key,
+        sourceAbsolutePath: join(context.rootSummary.rawLocalPath!, key),
+      })),
+      previousClipSnapshots,
+    );
     mergedSnapshot = await runColorHostWithRetry(
       () => executor.syncGroups({
         projectId: input.projectId,
@@ -1433,7 +1444,7 @@ export async function prepareProjectColorRoot(
         gradingTimelineName: context.rootSummary.gradingTimelineName,
         rawPath: context.rootSummary.rawPath,
         rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-        clips: preparedClipsForSync,
+        clips: [...unchangedClipsForSync, ...preparedClipsForSync],
       }),
       `sync_groups:${context.rootId}:prepare-complete`,
     );
@@ -3665,9 +3676,9 @@ function resolveColorTimelineTransform(
     timelineHeight / fillDimensions.height,
   ));
   return {
-    // Source orientation identifies portrait media; it is not an extra rotation.
-    // Adding ±90 here and in the Gyroflow donor breaks portrait stabilization.
-    rotationAngle: 0,
+    // Edit rotation uses the opposite sign to the raw display matrix. It is
+    // independent of the Gyroflow input/output rotations stored in the DRT.
+    rotationAngle: rotation === 90 ? -90 : rotation === -90 ? 90 : 0,
     zoomGang: true,
     zoomX: fillScale,
     zoomY: fillScale,

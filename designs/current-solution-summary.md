@@ -157,10 +157,10 @@ Kairos 当前需要区分两层：
     - `Dehaze` 固定是第 2 节点且默认禁用
     - `User1`、`User2` 默认开启供逐片手调，输入转换由 RCM 在 Group Pre 前完成；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
     - `NR` 对所有视频 clip 固定预留在尾部，默认禁用，正式开关入口只有 Resolve
-    - ZV-E1 / Sony 竖屏素材不禁用 Gyro；ffprobe `rotation/display matrix` 只用于识别方向及选择兼容模板，不再据此追加旋转。两个竖屏 DRT 的 Gyroflow `InputRotation / Rotation` 均为 `0`，timeline `RotationAngle=0`。2026-10-08 用户实测确认去掉 Gyroflow 输出与 timeline 两处额外 ±90° 后防抖恢复正常，替代旧的双重旋转方案
+    - ZV-E1 / Sony 竖屏素材不禁用 Gyro；两个竖屏 DRT 的 Gyroflow `InputRotation / Rotation` 均为 `0`，Edit 旋转由原片方向独立确定。
     - 保留既有模板键和文件名：源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`；文件名中的角度仅为历史兼容标识，不代表模板仍写入该旋转
     - 竖屏方向 DRT 缺失时，素材导入、Group、LUT 和 timeline transform 继续执行，但该 clip 的 Gyro node 不自动开启，并标记 `pending-orientation-template`
-    - 竖屏素材在 root grading timeline 上的 `RotationAngle` 固定为 `0`；本次修正保留既有 `ZoomX / ZoomY / ZoomGang / Pan / Tilt` 计算和模板其他参数，横向编码 3840x2160、display-matrix 竖屏素材继续使用 `1.7778` fill zoom。既有工程的人工修正不随代码更新自动重跑或覆盖
+    - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
     - 如果已有 prepared root 的 portrait DRT hash 缺失或过期，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；prepare 完成后的最终 `sync_groups` 会写回当前 DRT hash，后续 hash 未变时仍按 canonical repair preserve 路径执行
     - 旧非规范 clip 图记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到新规范，规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍会按 `gyroEligible` 重申 Gyro node1 开关；如果默认 DRT 缺失，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
     - workspace `config/default.drt` 是唯一正式 cold-start / legacy rebuild 来源；仓库不再携带默认 `config/default.drx`，DRX 不再作为大批量自动 fallback
@@ -894,3 +894,6 @@ flowchart TD
 3. 再读 [architecture.md](./architecture.md)
 4. 若需要项目目录与数据落点，再读 [project-structure.md](./project-structure.md)
 5. 若需要历史推导，再回到各迭代设计文档
+
+
+2026-11-09：局部 `prepare_root` 的 `clipKeys` 只限制检测和写入；最终 `sync_groups` 必须合并本批 clips 与历史快照中未参与 clips 的完整元数据，本批同 key 优先，历史补充不触发重测或重套模板。Resolve 原生枚举决定实际片段、Group 和节点，不从历史快照复活已删除片段。详见 `designs/media-version-analysis-color-pipeline.md`。
