@@ -1,5 +1,30 @@
 # RCM 输入统一与视觉分组
 
+## 2026-11-10：统一七节点模板
+
+用户确认横屏、原生竖屏及 ±90° 素材统一使用 `config/default.drt`，不再按方向维护不同调色模板。新的 Clip 顺序固定为 `Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`；以用户在 `调色分类 scene-v5 20261106 [Color]` 的 C4786.MP4 上制作的七节点为效果参数来源。技术还原仍由 RCM 在 Group Pre 之前完成。
+
+- 原片独立 probe 仍决定竖屏分类与 Edit Transform：`+90 → -90`、`-90/270 → +90`、原生竖屏无 quarter-turn 为 0。既有 fill/framing 算法不变；Analyze 不参与方向判断。
+- 新建片段只从统一七节点 DRT seed；Gyroflow 按 gyroEligible 开启，Dehaze/NR 默认关闭，User1/User2 默认开启，Beauty/Blemish 只对已接受的 presenter 主类默认开启。不新增自适应肤色限定器或效果参数推断。
+- 重复 Prepare 保留既有节点及人工参数；已有五节点作为兼容结构保留，不能因模板 hash 或旧 portrait key 改变而 ResetAllGrades。已有七节点必须识别 Beauty/Blemish 的独立角色，不能把它们当 User 区或把第 5 节点当 NR。同组重复准备不覆盖人工开关；明确从 presenter 移出时关闭美颜对，进入 presenter 时开启。
+- 历史 portrait 模板 key 只作历史审计，新请求统一 default；旧模板文件退出正式路径。保留旧片段实际 seed hash，不冒充已套用新模板。存量五节点的增补迁移须有单独可验证的非破坏性路径，本轮不全图覆盖。
+- 模板清理不得把来源素材的路径、镜头、Gyroflow 状态缓存当通用参数。保留用户效果设置；清理和原生导入须有审计。DRT 压缩必须声明 Zstandard frame content size。
+- 验收：原生导入严格七节点及 presenter/non-presenter 开关；重复 Prepare 保留节点、Inspector 和 Group 前后层；同时运行宿主/管线测试、根仓和 Console 构建。用户本轮明确暂缓竖屏实际效果验证：Gyroflow Load 后会自行改变角度，另行处理；本轮不修改旋转规则、不继续渲染验证、不宣称 Gyroflow 加载/稳定/方向效果通过。
+
+### 本轮验收记录
+
+Resolve Studio 21.2.0.6，独立 `Kairos 统一七节点验证 20261110` / `Unified Seven Real Sources`。C4786、C4922、C4540 原生导入统一七节点，presenter 的 5/6 开启、其它主类关闭，NR 为第 7 节点。额外将验证副本 C4994 设置为历史五节点，给两种结构加入手调 CDL、标签、Inspector 与人工开关后重复正式 host Prepare：四条 item 身份、范围、属性与开关完全保留，8 份 Clip/Group grade versions 经连续无修改导出控制后无参数差异，历史 portrait seed key/hash 保留。C4786 验证副本进出 presenter 时仅两个美颜开关按约定变化，其余手调保留。
+
+87 项宿主/执行器/RCM/管线测试、根仓 `pnpm build` 与 Console build 通过。原 scene-v5 工程的 C4786 七节点与其他旧五节点未批量重套，原工程已保存恢复备份。源模板提取、逐字段清理审计、原生导入与保留性比较位于 Git 忽略的 `projects/tmp-color-v5-20261106/.fixtures/unified-seven-20261110/`。本轮只清理 Gyroflow 的 ProjectPath/LoadedProject/LoadedLens/Status 来源缓存，保留用户节点效果参数；所有角度与实际 Gyroflow 效果问题按用户要求留待后续。
+
+### 崩溃日志复核与验收边界
+
+2026-11-10 日志复核确认，保留的五份 crash dump 分别发生于 11 月 9 日 13:52、17:10 和 11 月 10 日 13:21、15:08、17:09。前四次为 SIGSEGV，堆栈共同涉及 Resolve DVIP GPU 图像处理，其中两次包含 OFX 平面/交错图像转换；最后一次为 SIGTRAP，涉及 Metal/IOGPU command queue/buffer 释放，发生在 Resolve 恢复活动、Color 页播放约四秒后。原生符号可能不完整，不能据此认定某个插件为根因。
+
+15:08 的崩溃发生在独立七节点验证工程切入 Color 页时，先前“脚本连接/句柄失效”的解释应由此证据纠正。结构、开关、手调保留与代码测试结果仍有效，但不代表播放、页面切换或效果运行稳定性通过。类似堆栈在统一七节点接入前已有记录；当前也没有明确的内存耗尽日志，不能直接归咎于七节点模板、Gyroflow、Beauty 或瑕疵移除。本轮尚未进行逐项效果隔离复现，也未修复崩溃。
+
+原始日志副本和诊断记录保存在 Git 忽略的 `projects/tmp-color-v5-20261106/.fixtures/resolve-crash-20261110/`；本地七节点验证状态已修正为 `structural-checks-passed-runtime-stability-unresolved`。后续稳定性验证使用备份保护的独立副本和同一素材，逐项隔离效果；不以批量重套正式工程代替排查。
+
 状态：2026-11-05 已实施并完成隔离工程实测，替代同日第一轮“Clip User1 放技术 LUT”的方案。
 
 ## 原因与处理顺序

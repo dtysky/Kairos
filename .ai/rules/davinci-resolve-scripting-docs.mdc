@@ -26,7 +26,7 @@ The user-requested online mirror is:
 - Do not implement Resolve scripting behavior from memory when a local/API doc check is possible.
 - Do not treat the Gist as merely a link index; Kairos' local doc is the working document.
 - Do not claim unsupported API behavior exists unless it is present in the installed docs or proven by live Resolve introspection.
-- Do not claim color node enabled/readback state from `SetNodeEnabled()` alone; official docs expose `SetNodeEnabled()` but not `GetNodeEnabled()`.
+- Do not claim color node enabled/readback state from `SetNodeEnabled()` alone; Resolve 21.2 exposes `GetNodeEnabled()` and requires actual readback; older versions may lack it.
 - Do not claim an OFX such as Gyroflow has loaded source-specific data merely because `GetToolsInNode()` shows the OFX shell.
 - Prefer live-verified clean DRT donor paths over DRX-only assumptions for Gyroflow source loading; a DRX repair template is layout evidence, not load evidence, unless a live probe proves otherwise.
 - If live Resolve verification is required, report the exact project/timeline/clips used.

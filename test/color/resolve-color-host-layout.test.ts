@@ -17,7 +17,7 @@ it('ships DRT grade frames with declared decompressed sizes for native Resolve i
 import json,re,sys,zipfile
 from pathlib import Path
 rows=[]
-for name in ['default.drt','gyroflow-portrait-90.drt','gyroflow-portrait--90.drt']:
+for name in ['default.drt']:
     count=0
     with zipfile.ZipFile(Path(sys.argv[1])/name) as z:
         for entry in z.namelist():
@@ -32,7 +32,7 @@ for name in ['default.drt','gyroflow-portrait-90.drt','gyroflow-portrait--90.drt
     rows.append(name)
 print(json.dumps(rows))
 `, join(process.cwd(), 'config')]);
-  expect(JSON.parse(stdout)).toHaveLength(3);
+  expect(JSON.parse(stdout)).toHaveLength(1);
 });
 
 function toPortableTestPath(value: unknown): string {
@@ -418,6 +418,7 @@ print(json.dumps(result, ensure_ascii=False))
 async function applyReservedDefaults(payload: {
   gyroEligible: boolean;
   resetTailReservedNodes: boolean;
+  sceneCategory?: string;
 }) {
   const code = `
 import importlib.util
@@ -435,6 +436,14 @@ class FakeGraph:
     def __init__(self):
         self.calls = []
 
+    def GetNumNodes(self): return 7
+
+    def GetToolsInNode(self, n):
+        return {1:["OFX: Gyroflow"],2:["OFX: Dehaze"],5:["OFX: Beauty"],6:["OFX: Blemish Removal"],7:["OFX: Noise Reduction"]}.get(n,[])
+
+    def GetNodeEnabled(self, n):
+        return next((v for i,v in reversed(self.calls) if i==n),None)
+
     def SetNodeEnabled(self, node_index, enabled):
         self.calls.append([node_index, enabled])
         return True
@@ -449,7 +458,7 @@ class FakeItem:
 item = FakeItem()
 result = module.apply_reserved_node_defaults(
     item,
-    {"gyroEligible": payload["gyroEligible"]},
+    {"gyroEligible": payload["gyroEligible"],"sceneCategory":payload.get("sceneCategory")},
     payload["resetTailReservedNodes"],
 )
 print(json.dumps({"result": result, "calls": item.graph.calls}, ensure_ascii=False))
@@ -610,6 +619,7 @@ module.build_timeline_item_map = fake_build_timeline_item_map
 module.find_first_timeline_video_item = lambda timeline: template_item if timeline == "template-timeline" else None
 module.clip_like_has_grade_content = lambda item: item is old_donor_item
 module.clip_like_has_canonical_repair_layout = lambda item: True
+module.apply_scene_clip_transform = lambda *args: "rcm-input-managed"
 
 result = module.seed_clip_repairs(
     "target-timeline",
@@ -618,7 +628,10 @@ result = module.seed_clip_repairs(
         "rawRelativePath": "day1/A001.mov",
         "sourceStem": "A001",
         "gyroEligible": True,
-        "repairTemplateKey": "portrait--90",
+        "repairTemplateKey": "default",
+        "previousRepairTemplateKey": "portrait--90",
+        "colorManagementPolicy": module.RCM_POLICY,
+        "sceneCategory": "portrait",
         "previousRepairTemplateHash": "hash-v1",
         "orientationStatus": "portrait",
     }],
@@ -631,7 +644,9 @@ result = module.seed_clip_repairs(
             "path": "/tmp/portrait.drt",
         },
     },
-    repair_template_timelines={"portrait--90": "template-timeline"},
+    repair_template_timelines={"default": "template-timeline"},
+    preserved_clip_keys={"day1/A001.mov"},
+    previous_group_names_by_clip={"day1/A001.mov": module.SCENE_GROUP_NAMES["portrait"]},
 )
 print(json.dumps({"calls": calls, "state": result["day1/A001.mov"]}, ensure_ascii=False))
 `;
@@ -1132,18 +1147,18 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
-  it('forces portrait template reseed when the recorded DRT hash is missing or stale', async () => {
+  it('never treats template hash drift as permission to reset existing grades', async () => {
     await expect(shouldForceRepairTemplateReseed({
       repairTemplateKey: 'portrait-90',
       currentRepairTemplateHash: 'hash-v2',
       hasTemplateSource: true,
-    })).resolves.toEqual({ result: true });
+    })).resolves.toEqual({ result: false });
     await expect(shouldForceRepairTemplateReseed({
       repairTemplateKey: 'portrait-90',
       previousRepairTemplateHash: 'hash-v1',
       currentRepairTemplateHash: 'hash-v2',
       hasTemplateSource: true,
-    })).resolves.toEqual({ result: true });
+    })).resolves.toEqual({ result: false });
     await expect(shouldForceRepairTemplateReseed({
       repairTemplateKey: 'portrait-90',
       previousRepairTemplateHash: 'hash-v2',
@@ -1157,20 +1172,18 @@ describe('resolve color host clip layout helpers', () => {
     })).resolves.toEqual({ result: false });
   });
 
-  it('resets stale portrait clip grades before reapplying the orientation DRT', async () => {
+  it('preserves stale portrait grades instead of applying the new template', async () => {
     const result = await seedForcedPortraitTemplateReseed();
 
-    expect(result.calls.slice(0, 2)).toEqual([
-      'target.ResetAllGrades',
-      'template.CopyGrades',
-    ]);
+    expect(result.calls).toEqual([]);
     expect(result.state).toMatchObject({
-      seededRepairDonorKind: 'orientation-drt',
-      resetExistingGradeBeforeTemplate: true,
-      forcedRepairTemplateReseed: true,
+      copiedExistingGrade: true,
+      seededRepairDonorKind: null,
+      resetExistingGradeBeforeTemplate: false,
+      forcedRepairTemplateReseed: false,
       repairTemplateKey: 'portrait--90',
       previousRepairTemplateHash: 'hash-v1',
-      repairTemplateHash: 'hash-v2',
+      repairTemplateHash: 'hash-v1',
     });
   });
 
@@ -1416,8 +1429,24 @@ describe('resolve color host clip layout helpers', () => {
     });
 
     expect(result).toEqual({
-      result: { enabled: [1, 3, 4], disabled: [2, 5] },
-      calls: [[1, true], [2, false], [5, false], [3, true], [4, true]],
+      result: { enabled: [1, 3, 4], disabled: [2, 5, 6, 7] },
+      calls: [[1, true], [2, false], [3, true], [4, true], [5, false], [6, false], [7, false]],
     });
+  });
+});
+
+
+describe('unified seven-node template', () => {
+  it('recognizes Beauty and Blemish separately from User1/User2 and NR', async () => {
+    const result = await inspectLayout({nodeCount: 7, gyroEligible: true,
+      toolsByNode: {1: ['OFX: Gyroflow'], 2: ['OFX: Dehaze'], 5: ['OFX: Beauty'], 6: ['OFX: Blemish Removal'], 7: ['OFX: Noise Reduction']},
+      nodeEnabledByNode: {5: true, 6: true, 7: false},
+    });
+    expect(result).toMatchObject({layoutStatus: 'canonical', nrStatus: 'seeded-disabled', reservedNodeIndices: {gyro: 1, dehaze: 2, userStart: 3, userEnd: 4, beauty: 5, blemish: 6, nr: 7}});
+  });
+  it.each(['presenter', 'portrait', 'day'])('initializes beauty only for presenter, category=%s', async sceneCategory => {
+    const result = await applyReservedDefaults({gyroEligible: false, resetTailReservedNodes: true, sceneCategory});
+    expect(result.calls.filter(([n]) => n === 5 || n === 6)).toEqual([[5, sceneCategory === 'presenter'], [6, sceneCategory === 'presenter']]);
+    expect(result.calls).toContainEqual([7, false]);
   });
 });

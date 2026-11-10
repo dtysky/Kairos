@@ -259,10 +259,14 @@ def prepare_root(resolve, payload):
     save_project(project, resolve)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
+    existing_items_before = build_timeline_item_map(timeline, payload["rawLocalPath"])
     # Moving an old technical Group changes its grade. New scene mode never silently migrates it.
     for request in clip_requests:
         if not is_scene_request(request):
             continue
+        existing_item = existing_items_before.get(request["rawRelativePath"])
+        if existing_item is not None and not clip_like_has_canonical_repair_layout(existing_item):
+            raise HostError("resolve_scene_layout_migration_required", "Existing custom grade requires a scoped migration; refusing to replace manual nodes.")
         previous_group = previous_group_names_by_clip.get(request["rawRelativePath"])
         if previous_group and request.get("colorManagementPolicy") == RCM_POLICY and not request.get("sceneCategory"):
             raise HostError("resolve_scene_review_preserve_group", f"Classification now needs review; preserve existing group grade: {previous_group}")
@@ -347,6 +351,8 @@ def prepare_root(resolve, payload):
             donor_timeline,
             repair_templates,
             repair_template_timelines,
+            preserved_clip_keys=set(existing_timeline_items_by_clip),
+            previous_group_names_by_clip=previous_group_names_by_clip,
         )
         save_project(project, resolve)
 
@@ -3107,10 +3113,6 @@ def get_repair_template_assets(payload):
         "default": stringify_signal_value(supplied_templates.get("default"))
         or explicit_default_drt
         or str(config_root / "default.drt"),
-        "portrait-90": stringify_signal_value(supplied_templates.get("portrait-90"))
-        or str(config_root / "gyroflow-portrait-90.drt"),
-        "portrait--90": stringify_signal_value(supplied_templates.get("portrait--90"))
-        or str(config_root / "gyroflow-portrait--90.drt"),
     }
     return {
         key: build_repair_template_asset(key, path)
@@ -3168,10 +3170,11 @@ def import_repair_template_timeline(media_pool, template_path):
         )
     safe_call(timeline, "SetName", build_temp_render_timeline_name("__Kairos Repair Template"))
     donor_item = find_first_timeline_video_item(timeline)
-    if donor_item is None or not clip_like_has_canonical_repair_layout(donor_item):
+    if donor_item is None or not clip_like_has_seven_node_layout(donor_item):
+        delete_timeline(media_pool, timeline)
         raise HostError(
             "resolve_repair_template_invalid",
-            "Imported clip repair DRT does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
+            "Imported DRT must contain Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR.",
             {"drtPath": str(template_path)},
         )
     return timeline
@@ -3188,8 +3191,9 @@ def import_repair_template_timelines(media_pool, repair_templates, clip_requests
 
 
 def resolve_clip_repair_template_key(clip_request):
-    key = stringify_signal_value(clip_request.get("repairTemplateKey"))
-    return key or "default"
+    # Orientation belongs to Edit Transform. Historical portrait keys are audit
+    # metadata only and must never choose a different donor or trigger a reset.
+    return "default"
 
 
 def get_clip_repair_template(repair_templates, clip_request):
@@ -3221,7 +3225,7 @@ def clip_like_has_grade_content(item):
 
 
 def list_requested_repair_kinds(clip_request):
-    return ["gyro", "user1", "user2", "dehaze", "nr"]
+    return ["gyro", "dehaze", "user1", "user2", "beauty", "blemish", "nr"]
 
 
 def list_available_repair_donor_kinds(repair_template_kind):
@@ -3270,6 +3274,8 @@ def seed_clip_repairs(
     donor_timeline=None,
     repair_templates=None,
     repair_template_timelines=None,
+    preserved_clip_keys=None,
+    previous_group_names_by_clip=None,
 ):
     target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
     donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
@@ -3308,6 +3314,8 @@ def seed_clip_repairs(
         )
         if donor_item is not None and is_scene_request(clip_request) and force_template_reseed:
             raise HostError("resolve_scene_template_drift", "Existing scene grade needs an explicit portrait template migration; refusing to reset manual grades.")
+        if donor_item is not None and is_scene_request(clip_request) and not clip_like_has_canonical_repair_layout(donor_item):
+            raise HostError("resolve_scene_layout_migration_required", "Existing custom grade requires a scoped migration; refusing to replace manual nodes.")
         if (
             donor_item is not None
             and donor_item is not target_item
@@ -3315,8 +3323,11 @@ def seed_clip_repairs(
             and clip_like_has_canonical_repair_layout(donor_item)
             and not force_template_reseed
         ):
-            result = safe_call(donor_item, "CopyGrades", [target_item])
-            if result is False:
+            # Existing scene items already own their grades (and other versions).
+            # Copy only when the timeline really had to be rebuilt.
+            same_item = clip_key in (preserved_clip_keys or set())
+            result = True if same_item else safe_call(donor_item, "CopyGrades", [target_item])
+            if result is not True:
                 raise HostError(
                     "resolve_clip_repair_copy_failed",
                     f"Unable to preserve existing clip repair grade for: {clip_key}",
@@ -3325,6 +3336,15 @@ def seed_clip_repairs(
             node_default_state = {"enabled": [], "disabled": []} if is_scene_request(clip_request) else apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
+            repair_template_hash = stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
+            repair_template_key = stringify_signal_value(clip_request.get("previousRepairTemplateKey")) or repair_template_key
+            if is_scene_request(clip_request):
+                previous_group = (previous_group_names_by_clip or {}).get(clip_key)
+                desired_group = SCENE_GROUP_NAMES.get(clip_request.get("sceneCategory"))
+                if (previous_group == SCENE_GROUP_NAMES["presenter"]) != (desired_group == SCENE_GROUP_NAMES["presenter"]):
+                    beauty_state = apply_beauty_node_defaults(target_item, clip_request)
+                    forced_enabled_node_indices.extend(beauty_state["enabled"])
+                    forced_disabled_node_indices.extend(beauty_state["disabled"])
         elif repair_template_source_item is not None:
             rebuilt_legacy_grade = donor_item is not None and clip_like_has_grade_content(donor_item)
             if force_template_reseed:
@@ -3415,7 +3435,7 @@ def seed_clip_repairs(
     if invalid_repair_layouts:
         raise HostError(
             "resolve_repair_template_invalid_layout",
-            "Applied clip repair template does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
+            "Applied clip repair template does not match the seven-node contract.",
             {
                 "templateKind": repair_template_kind,
                 "templatePath": str(repair_template_path) if repair_template_path is not None else None,
@@ -3428,7 +3448,7 @@ def seed_clip_repairs(
 
 def apply_scene_clip_transform(item, request, preserve_existing):
     if not clip_like_has_canonical_repair_layout(item):
-        raise HostError("resolve_scene_template_missing", "Scene grading requires the canonical five-node DRT template.")
+        raise HostError("resolve_scene_template_missing", "Scene grading requires the canonical Clip DRT layout (seven-node or preserved legacy).")
     graph = safe_call(item, "GetNodeGraph")
     if request.get("colorManagementPolicy") == RCM_POLICY:
         if request.get("resolvedLutRelativePath") or request.get("resolvedLutAbsolutePath"):
@@ -3490,16 +3510,9 @@ def apply_repair_drx(item, repair_drx_path, clip_key):
 
 
 def should_force_repair_template_reseed(clip_request, repair_template, repair_template_source_item):
-    if repair_template_source_item is None:
-        return False
-    template_key = resolve_clip_repair_template_key(clip_request)
-    if template_key not in ("portrait-90", "portrait--90"):
-        return False
-    current_hash = stringify_signal_value(repair_template.get("hash"))
-    if not current_hash:
-        return False
-    previous_hash = stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
-    return previous_hash != current_hash
+    # A new template is for new clips. Hash drift is never permission to erase
+    # existing grades, including historical portrait templates.
+    return False
 
 
 def reset_clip_repair_grade(item, clip_key):
@@ -3542,6 +3555,17 @@ def clip_like_has_canonical_repair_layout(item):
     return layout_state.get("layoutStatus") == "canonical"
 
 
+def clip_like_has_seven_node_layout(item):
+    graph = safe_call(item, "GetNodeGraph")
+    tools = collect_graph_tools_by_node(graph)
+    return (parse_int(safe_call(graph, "GetNumNodes")) == 7
+            and contains_gyroflow_tool(tools.get(1))
+            and contains_dehaze_tool(tools.get(2))
+            and contains_beauty_tool(tools.get(5))
+            and contains_blemish_tool(tools.get(6))
+            and contains_noise_reduction_tool(tools.get(7)))
+
+
 def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     graph = safe_call(item, "GetNodeGraph")
     node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
@@ -3560,7 +3584,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         else clip_request.get("gyroDataAvailable")
     )
     orientation_status = stringify_signal_value(clip_request.get("orientationStatus"))
-    repair_template_key = stringify_signal_value(clip_request.get("repairTemplateKey"))
+    repair_template_key = stringify_signal_value((repair_seed_state or {}).get("repairTemplateKey")) or stringify_signal_value(clip_request.get("repairTemplateKey"))
     repair_template_hash = stringify_signal_value((repair_seed_state or {}).get("repairTemplateHash")) if isinstance(repair_seed_state, dict) else stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
     timeline_transform = clip_request.get("timelineTransform") if isinstance(clip_request.get("timelineTransform"), dict) else None
     layout_state = inspect_clip_repair_layout(
@@ -3746,6 +3770,33 @@ def contains_dehaze_tool(tools):
     return any("dehaze" in str(tool).lower() for tool in tools or [])
 
 
+def contains_beauty_tool(tools):
+    return any("beauty" in str(tool).lower() for tool in tools or [])
+
+
+def contains_blemish_tool(tools):
+    return any("blemish removal" in str(tool).lower() for tool in tools or [])
+
+
+def set_reserved_node_enabled(graph, node_index, enabled):
+    if safe_call(graph, "SetNodeEnabled", node_index, enabled) is not True:
+        raise HostError("resolve_node_enable_failed", f"Cannot set reserved node {node_index} enabled={enabled}")
+    actual = safe_call(graph, "GetNodeEnabled", node_index)
+    # Resolve 21.2 adds readback. Older installations still return None.
+    if isinstance(actual, bool) and actual != enabled:
+        raise HostError("resolve_node_enable_mismatch", f"Reserved node {node_index} enabled readback differs")
+
+
+def apply_beauty_node_defaults(item, clip_request):
+    if not clip_like_has_seven_node_layout(item):
+        return {"enabled": [], "disabled": []}
+    enabled = clip_request.get("sceneCategory") == "presenter"
+    graph = safe_call(item, "GetNodeGraph")
+    for index in (5, 6):
+        set_reserved_node_enabled(graph, index, enabled)
+    return {"enabled": [5, 6] if enabled else [], "disabled": [] if enabled else [5, 6]}
+
+
 def apply_reserved_node_defaults(item, clip_request, reset_tail_reserved_nodes):
     graph = safe_call(item, "GetNodeGraph")
     if graph is None:
@@ -3754,21 +3805,16 @@ def apply_reserved_node_defaults(item, clip_request, reset_tail_reserved_nodes):
     disabled = []
     node_defaults = {1: clip_request.get("gyroEligible") is True}
     if reset_tail_reserved_nodes:
-        node_defaults.update({2: False, 5: False})
+        if not clip_like_has_seven_node_layout(item):
+            raise HostError("resolve_repair_template_invalid", "New clips require the unified seven-node DRT")
+        presenter = clip_request.get("sceneCategory") == "presenter"
+        node_defaults.update({2: False, 3: True, 4: True, 5: presenter, 6: presenter, 7: False})
     for node_index, enabled in node_defaults.items():
-        result = safe_call(graph, "SetNodeEnabled", node_index, bool(enabled))
-        if result is False:
-            continue
+        set_reserved_node_enabled(graph, node_index, bool(enabled))
         if enabled:
             enabled_nodes.append(node_index)
         else:
             disabled.append(node_index)
-    if reset_tail_reserved_nodes:
-        for node_index in (3, 4):
-            result = safe_call(graph, "SetNodeEnabled", node_index, True)
-            if result is False:
-                continue
-            enabled_nodes.append(node_index)
     return {"enabled": enabled_nodes, "disabled": disabled}
 
 
@@ -3802,16 +3848,22 @@ def inspect_clip_repair_layout(
     gyro_index = find_first_matching_node_index(node_count, tools_by_node, contains_gyroflow_tool)
     nr_index = find_last_matching_node_index(node_count, tools_by_node, contains_noise_reduction_tool)
     dehaze_index = find_first_matching_node_index(node_count, tools_by_node, contains_dehaze_tool)
+    beauty_index = find_first_matching_node_index(node_count, tools_by_node, contains_beauty_tool)
+    blemish_index = find_first_matching_node_index(node_count, tools_by_node, contains_blemish_tool)
 
     layout_status = "legacy-layout"
     user_start = 3 if gyro_index == 1 and dehaze_index == 2 else None
     user_end = (nr_index - 1) if nr_index is not None else None
+    seven_node = (node_count == 7 and beauty_index == 5 and blemish_index == 6 and nr_index == 7)
+    if seven_node:
+        user_end = 4
     user_node_count = (user_end - user_start + 1) if user_start is not None and user_end is not None else 0
     if (
         gyro_index == 1
         and dehaze_index == 2
         and nr_index == node_count
         and user_node_count >= 2
+        and (seven_node or (beauty_index is None and blemish_index is None))
     ):
         layout_status = "canonical"
 
@@ -3826,6 +3878,10 @@ def inspect_clip_repair_layout(
         reserved_node_indices["dehaze"] = dehaze_index
     if nr_index is not None:
         reserved_node_indices["nr"] = nr_index
+    if beauty_index is not None:
+        reserved_node_indices["beauty"] = beauty_index
+    if blemish_index is not None:
+        reserved_node_indices["blemish"] = blemish_index
 
     forced_disabled = set((repair_seed_state or {}).get("forcedDisabledNodeIndices") or [])
     if gyro_index == 1:
@@ -5017,6 +5073,7 @@ def normalize_clip_requests(clips):
             "rotationDegrees": parse_float(clip.get("rotationDegrees")),
             "orientationStatus": stringify_signal_value(clip.get("orientationStatus")),
             "repairTemplateKey": stringify_signal_value(clip.get("repairTemplateKey")) or "default",
+            "previousRepairTemplateKey": stringify_signal_value(clip.get("previousRepairTemplateKey")),
             "previousRepairTemplateHash": stringify_signal_value(clip.get("previousRepairTemplateHash")),
             "timelineTransform": clip.get("timelineTransform") if isinstance(clip.get("timelineTransform"), dict) else None,
             "fps": parse_float(clip.get("fps")),

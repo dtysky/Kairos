@@ -107,6 +107,7 @@ export interface IColorExecutorClipInput extends IAnalyzedColorSource {
   rotationDegrees?: number;
   orientationStatus?: 'unknown' | 'horizontal' | 'portrait';
   repairTemplateKey?: string;
+  previousRepairTemplateKey?: string;
   previousRepairTemplateHash?: string;
   previousSourceContentHash?: string;
   timelineTransform?: {

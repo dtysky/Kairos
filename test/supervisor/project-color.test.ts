@@ -545,7 +545,7 @@ describe('project color actions', () => {
       timelineStatus: 'blocked',
     });
     expect(root?.detail).toContain('config/default.drt');
-    expect(root?.detail).toContain('五节点');
+    expect(root?.detail).toContain('七节点');
     expect(root?.prepareChunks.map(chunk => chunk.status)).toEqual(['failed']);
   });
 
@@ -1558,8 +1558,6 @@ describe('project color actions', () => {
 
     expect(prepared[0]?.repairTemplates).toMatchObject({
       default: join(workspaceRoot, 'config', 'default.drt'),
-      'portrait-90': join(workspaceRoot, 'config', 'gyroflow-portrait-90.drt'),
-      'portrait--90': join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'),
     });
     expect(prepared[0]?.timelineSpec).toEqual({
       width: 3840,
@@ -1571,7 +1569,7 @@ describe('project color actions', () => {
       displayHeight: 3840,
       rotationDegrees,
       orientationStatus: 'portrait',
-      repairTemplateKey: rotationDegrees === 90 ? 'portrait--90' : 'portrait-90',
+      repairTemplateKey: 'default',
       gyroDataAvailable: true,
       gyroEligible: true,
       timelineTransform: {
@@ -1645,7 +1643,7 @@ describe('project color actions', () => {
       .toEqual(['added.mov', 'portrait.mov']);
   });
 
-  it('reruns only the stale portrait chunk when a portrait DRT hash is stale', async () => {
+  it('preserves existing portrait seed provenance when the unified template changes', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-portrait-template-rebuild';
     const portraitPath = 'day1/A0000PORTRAIT.MP4';
@@ -1661,7 +1659,7 @@ describe('project color actions', () => {
     });
     await mkdir(join(workspaceRoot, 'config'), { recursive: true });
     await writeFile(join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'), 'portrait-template-v2', 'utf-8');
-    const currentPortraitTemplateHash = createHash('sha256').update('portrait-template-v2').digest('hex');
+    await writeFile(join(workspaceRoot, 'config', 'default.drt'), 'seven-node-v2', 'utf-8');
 
     vi.spyOn(mediaProbe, 'probe').mockImplementation(async filePath => {
       const isPortrait = filePath.endsWith('A0000PORTRAIT.MP4');
@@ -1704,6 +1702,7 @@ describe('project color actions', () => {
           ? {
               ...clip,
               repairTemplateHash: 'stale-template-hash',
+              repairTemplateKey: 'portrait--90',
             }
           : clip),
       })),
@@ -1734,15 +1733,9 @@ describe('project color actions', () => {
       }),
     });
 
-    expect(prepareCalls).toHaveLength(1);
-    expect(prepareCalls[0]?.resetTimeline).toBe(false);
-    expect(prepareCalls[0]?.clips.map(clip => clip.rawRelativePath)).toContain(portraitPath);
-    expect(prepareCalls[0]?.clips.find(clip => clip.rawRelativePath === portraitPath)).toMatchObject({
-      previousRepairTemplateHash: 'stale-template-hash',
-      repairTemplateKey: 'portrait--90',
-    });
+    expect(prepareCalls).toHaveLength(0);
     expect(syncPortraitClip).toMatchObject({
-      previousRepairTemplateHash: currentPortraitTemplateHash,
+      previousRepairTemplateHash: 'stale-template-hash',
       repairTemplateKey: 'portrait--90',
     });
   });

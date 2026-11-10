@@ -1,6 +1,10 @@
 # Kairos — 当前方案总结
 
-Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与独立 Edit 旋转，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
+Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
+
+2026-11-10 验收边界补充：七节点结构、开关和手调保留检查、87 项测试及两套 build 已通过；Resolve 运行稳定性仍未确认。日志确认本轮验证切入 Color 页时发生过 GPU 处理链崩溃，且此前已有同类记录；根因与逐项效果隔离尚未完成，不能把结构校验通过解释成 Gyroflow 或播放稳定性通过。详见上述设计文档的崩溃日志复核记录。
 
 Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
 
@@ -142,7 +146,7 @@ Kairos 当前需要区分两层：
     - `gyroEligible` 是显式声明判定：同名 `.gyroflow` 视为用户已准备稳定工程；关联 Sony XML sidecar 明确声明 Gyroscope 即可请求开启 Gyro，不按机型名称做白名单判断。`gyroDataAvailable` 独立记录运动数据声明；缺少证据时保持未知，不能由启用判定、模板可用性或 `.gyroflow` 文件存在反推。启用请求不等于 Gyroflow 已成功载入有效样本。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 不扫描、不单独开启 Gyro，也不能用来猜测 log profile
     - 素材技术真值优先级固定为 `显式 sidecar > root fallback`
     - DJI 若没有显式技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
-  - 当前 scene prepare 使用 RCM v2：逐片 Input Color Space → DWG/Intermediate → Group Pre → 五节点 Clip → Group Post → Rec.709 Gamma 2.4；项目、timeline 和每条素材的设置必须回读验证。
+  - 当前 scene prepare 使用 RCM v2：逐片 Input Color Space → DWG/Intermediate → Group Pre → 七节点 Clip → Group Post → Rec.709 Gamma 2.4；项目、timeline 和每条素材的设置必须回读验证。
     - Sony 明确的色域/Gamma 优先；缺失时使用显式 `root.color.inputColorSpace`，不能只凭 S-Log3 猜色域，D-Log M 不能当 D-Log。
     - 新空项目可初始化；已有非 RCM 项目必须显式迁移，普通 prepare 不改变整个旧工程的色彩科学。
     - Group Pre 用于统一工作空间的类别基础调整；Clip User1/User2 不注入技术 LUT，已有用户节点和调整保留。
@@ -154,19 +158,19 @@ Kairos 当前需要区分两层：
     - `Clip` 是固定 repair/local-exception 层，不是主 creative 面
     - `/color` 只准备、镜像并执行这些结构，不把 creative 参数重新搬回 Console
   - 当前 `prepare_root` 还必须把每条可执行视频 clip 规范化到固定 repair 节点图：
-    - 当前正式路径只在同 clip 旧 repair 已经是 canonical 时用 Resolve `CopyGrades` 沿用；legacy / brand-new clip 统一从 canonical donor 重建
-    - 所有可执行视频 clip 固定布局为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
+    - 现有 scene item 原位保留调色；只有重建 item 时才从其恢复 donor CopyGrades。新片段使用七节点，自定义旧图阻塞迁移
+    - 新视频 clip 固定布局为 `Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR`
     - `Gyro` 固定是第 1 节点：旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 都必须按最终 `gyroEligible` 布尔判定重申 node1 开关；`gyroEligible=true` 请求开启并进入 `ready-to-load`，`gyroEligible=false` 仍预留但请求关闭并进入 `seeded-disabled`
     - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不是 Gyroflow 已执行 source-specific `Load for current file` 的证据
     - `Dehaze` 固定是第 2 节点且默认禁用
     - `User1`、`User2` 默认开启供逐片手调，输入转换由 RCM 在 Group Pre 前完成；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
     - `NR` 对所有视频 clip 固定预留在尾部，默认禁用，正式开关入口只有 Resolve
-    - ZV-E1 / Sony 竖屏素材不禁用 Gyro；两个竖屏 DRT 的 Gyroflow `InputRotation / Rotation` 均为 `0`，Edit 旋转由原片方向独立确定。
-    - 保留既有模板键和文件名：源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`；文件名中的角度仅为历史兼容标识，不代表模板仍写入该旋转
-    - 竖屏方向 DRT 缺失时，素材导入、Group、LUT 和 timeline transform 继续执行，但该 clip 的 Gyro node 不自动开启，并标记 `pending-orientation-template`
-    - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
-    - 如果已有 prepared root 的 portrait DRT hash 缺失或过期，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；prepare 完成后的最终 `sync_groups` 会写回当前 DRT hash，后续 hash 未变时仍按 canonical repair preserve 路径执行
-    - 旧非规范 clip 图记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到新规范，规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍会按 `gyroEligible` 重申 Gyro node1 开关；如果默认 DRT 缺失，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
+    - ZV-E1 / Sony 竖屏素材不禁用 Gyro；统一 DRT 的 Gyroflow `InputRotation / Rotation` 均为 `0`，Edit 旋转由原片方向独立确定。
+    - 横屏与所有竖屏共用 `config/default.drt`；Gyroflow InputRotation/Rotation 均为 0。历史 portrait key 只作来源审计。
+    - 缺少统一 `config/default.drt` 时所有方向的 Prepare 都阻塞，不回退单节点或另选方向模板。
+    - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。统一 DRT 的 Gyroflow `InputRotation / Rotation=0` 及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
+    - 模板 hash 变化不触发重跑、ResetAllGrades 或覆盖手调；保存片段实际使用的历史 seed hash，新片段使用当前统一模板。
+    - 现有 scene 自定义节点图不自动覆盖；已有兼容五节点保留。新片段严格使用七节点，非规范图需要明确的迁移。
     - workspace `config/default.drt` 是唯一正式 cold-start / legacy rebuild 来源；仓库不再携带默认 `config/default.drx`，DRX 不再作为大批量自动 fallback
     - live Resolve 验证显示，干净 DRT donor 路径可以在渲染时触发 Gyroflow source-specific load；显式外部 DRX 只能作为人工诊断材料，不能当成 load 证据
   - 当前 `sync_groups` 已扩展成 group + clip 双层镜像：

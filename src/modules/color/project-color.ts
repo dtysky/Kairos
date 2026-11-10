@@ -102,9 +102,6 @@ const CCOLOR_METADATA_SYNC_CONCURRENCY = 2;
 const CCOLOR_METADATA_TEMP_PREFIX = '.kairos-meta-';
 const CCOLOR_SIDECAR_EXTENSIONS = new Set(['.srt', '.wav', '.flac', '.m4a', '.aac', '.mp3']);
 const CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY = 'default';
-const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY = 'portrait-90';
-const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY = 'portrait--90';
-const CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL = '方向 DRT 模板已更新，需重新 seed portrait repair。';
 const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; label: string }>> = {
   relink_media: [
     { key: 'relink_media', label: '重链 Resolve 素材路径' },
@@ -1225,7 +1222,7 @@ export async function prepareProjectColorRoot(
     rawInventory,
     context.rootSummary.gradingTimelineName,
     existingRootCurrent?.prepareChunks ?? [],
-  ).map(chunk => refreshPrepareChunkForRepairTemplateDrift({ ...chunk, chunkId: scopePrefix + chunk.chunkId }, previousClipSnapshots, repairTemplateHashes));
+  ).map(chunk => ({ ...chunk, chunkId: scopePrefix + chunk.chunkId }));
   if (chunks.length === 0) {
     const emptyBlockers = ['当前 root 没有可准备的 raw 视频。'];
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
@@ -1364,10 +1361,6 @@ export async function prepareProjectColorRoot(
         syncLuts: true,
       });
       transformWarnings.push(...preparedClipTransforms.warnings);
-      preparedClipsForSync.push(...applyCurrentColorRepairTemplateHashes(
-        preparedClipTransforms.clips,
-        repairTemplateHashes,
-      ));
       const resetTimeline = chunk.items.some(item => item.analysisInputFingerprint) ? false : shouldResetColorPrepareTimeline(chunks, chunk);
       const prepared = await runColorHostWithRetry(
         () => executor.prepareRoot({
@@ -1388,6 +1381,17 @@ export async function prepareProjectColorRoot(
         }),
         `prepare_root:${context.rootId}:${chunk.chunkId}`,
       );
+      // Record the donor actually used, not the newest workspace file hash.
+      // Existing five-node/manual grades may intentionally keep an older seed.
+      const preparedSnapshots = buildColorClipRepairSnapshotIndex(prepared.groupsSnapshot);
+      preparedClipsForSync.push(...preparedClipTransforms.clips.map(clip => {
+        const actual = preparedSnapshots.get(clip.rawRelativePath);
+        return {
+          ...clip,
+          repairTemplateKey: actual?.repairTemplateKey ?? clip.previousRepairTemplateKey ?? clip.repairTemplateKey,
+          previousRepairTemplateHash: actual?.repairTemplateHash ?? clip.previousRepairTemplateHash,
+        };
+      }));
       lastPreparedMirrorStatus = prepared.mirrorStatus;
       lastPreparedHostSummary = prepared.hostSummary;
       lastPreparedResolveProjectName = prepared.resolveProjectName;
@@ -3571,9 +3575,8 @@ function buildColorSyncExecutorClipsForInventory(
       rotationDegrees: previous?.rotationDegrees,
       orientationStatus: previous?.orientationStatus,
       repairTemplateKey,
-      previousRepairTemplateHash: previous?.repairTemplateKey === repairTemplateKey
-        ? previous?.repairTemplateHash
-        : undefined,
+      previousRepairTemplateKey: previous?.repairTemplateKey,
+      previousRepairTemplateHash: previous?.repairTemplateHash,
       timelineTransform: previous?.timelineTransform,
       logProfile: previous?.logProfile as IColorExecutorClipInput['logProfile'],
       gyroDataAvailable: previous?.gyroDataAvailable,
@@ -3601,24 +3604,11 @@ function applyPreviousColorRepairSnapshots(
 ): IColorExecutorClipInput[] {
   return clips.map(clip => {
     const previous = previousClipSnapshots.get(clip.rawRelativePath);
-    if (!previous?.repairTemplateHash || previous.repairTemplateKey !== clip.repairTemplateKey) return clip;
+    if (!previous) return clip;
     return {
       ...clip,
+      previousRepairTemplateKey: previous.repairTemplateKey,
       previousRepairTemplateHash: previous.repairTemplateHash,
-    };
-  });
-}
-
-function applyCurrentColorRepairTemplateHashes(
-  clips: IColorExecutorClipInput[],
-  repairTemplateHashes: Record<string, string | undefined>,
-): IColorExecutorClipInput[] {
-  return clips.map(clip => {
-    const currentHash = repairTemplateHashes[clip.repairTemplateKey ?? CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY];
-    if (!currentHash) return clip;
-    return {
-      ...clip,
-      previousRepairTemplateHash: currentHash,
     };
   });
 }
@@ -3626,15 +3616,7 @@ function applyCurrentColorRepairTemplateHashes(
 function resolveColorRepairTemplateKeyFromSnapshot(
   previous?: IColorClipRepairSnapshot,
 ): string | undefined {
-  if (!previous) return undefined;
-  if (previous.orientationStatus !== 'portrait') return previous.repairTemplateKey;
-  return resolveColorClipOrientation({
-    rotationDegrees: previous.rotationDegrees,
-    displayWidth: previous.displayWidth,
-    displayHeight: previous.displayHeight,
-    width: previous.encodedWidth,
-    height: previous.encodedHeight,
-  } as Awaited<ReturnType<typeof probe>>).repairTemplateKey;
+  return previous?.repairTemplateKey;
 }
 
 function resolveColorClipOrientation(
@@ -3655,17 +3637,8 @@ function resolveColorClipOrientation(
       : 'unknown';
   return {
     orientationStatus,
-    repairTemplateKey: orientationStatus === 'portrait'
-      ? resolveColorPortraitRepairTemplateKey(rotation)
-      : CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY,
+    repairTemplateKey: CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY,
   };
-}
-
-function resolveColorPortraitRepairTemplateKey(
-  ffprobeRotationDegrees: number | undefined,
-): string {
-  if (ffprobeRotationDegrees === -90) return CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY;
-  return CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY;
 }
 
 function applyColorTimelineTransforms(
@@ -3750,8 +3723,6 @@ function resolveColorPortraitFillDimensions(
 function buildColorRepairTemplates(workspaceRoot: string): Record<string, string> {
   return {
     [CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY]: join(workspaceRoot, 'config', 'default.drt'),
-    [CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY]: join(workspaceRoot, 'config', 'gyroflow-portrait-90.drt'),
-    [CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY]: join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'),
   };
 }
 
@@ -3771,50 +3742,16 @@ function buildMissingDefaultRepairTemplateBlockers(input: {
   repairTemplateHashes: Record<string, string | undefined>;
 }): string[] {
   if (input.repairTemplateHashes[CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY]) return [];
-  const defaultOrUnknownClipCount = input.rawInventory.filter(item => {
-    const previousTemplateKey = resolveColorRepairTemplateKeyFromSnapshot(
-      input.previousClipSnapshots.get(item.rawRelativePath),
-    );
-    return !previousTemplateKey || previousTemplateKey === CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY;
-  }).length;
-  if (defaultOrUnknownClipCount === 0) return [];
+  const clipCount = input.rawInventory.length;
+  if (clipCount === 0) return [];
   const defaultTemplatePath = buildColorRepairTemplates(input.workspaceRoot)[CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY];
   const displayDefaultTemplatePath = defaultTemplatePath.replace(/\\/g, '/');
   return [
-    `缺少默认 Clip Repair DRT：${displayDefaultTemplatePath}。当前 root 有 ${defaultOrUnknownClipCount} 个默认或未知方向 clips 需要用它建立 Gyro -> Dehaze -> User1 -> User2 -> NR 五节点；prepare_root 已阻塞，避免写出缺 repair 节点的 ready 状态。请先导出正式五节点 DRT 到该路径后重跑 Prepare Root。`,
+    `缺少默认 Clip Repair DRT：${displayDefaultTemplatePath}。当前 root 有 ${clipCount} 个 clips 需要用它建立 Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR 七节点；prepare_root 已阻塞，避免写出缺 repair 节点的 ready 状态。请先导出正式七节点 DRT 到该路径后重跑 Prepare Root。`,
   ];
 }
 
-function refreshPrepareChunkForRepairTemplateDrift(
-  chunk: IColorPrepareChunkPlan,
-  previousClipSnapshots: Map<string, IColorClipRepairSnapshot>,
-  repairTemplateHashes: Record<string, string | undefined>,
-): IColorPrepareChunkPlan {
-  if (chunk.status !== 'ready') return chunk;
-  const stalePortraitClip = chunk.rawRelativePaths.some(clipKey => {
-    const previous = previousClipSnapshots.get(clipKey);
-    if (previous?.orientationStatus !== 'portrait') return false;
-    const templateKey = resolveColorRepairTemplateKeyFromSnapshot(previous);
-    if (
-      templateKey !== CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY
-      && templateKey !== CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY
-    ) {
-      return false;
-    }
-    const currentHash = repairTemplateHashes[templateKey];
-    return Boolean(currentHash && previous.repairTemplateHash !== currentHash);
-  });
-  if (!stalePortraitClip) return chunk;
-  return {
-    ...chunk,
-    status: 'pending',
-    completedAt: undefined,
-    detail: CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL,
-  };
-}
-
 function shouldResetColorPrepareTimeline(chunks: IColorPrepareChunkPlan[], chunk: IColorPrepareChunkPlan): boolean {
-  if (chunk.detail === CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL) return false;
   return !chunks.some(candidate => candidate.index < chunk.index && candidate.status === 'ready');
 }
 

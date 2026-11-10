@@ -8,7 +8,9 @@ description: >-
 
 # Kairos: Export To Resolve
 
-Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与独立 Edit 旋转，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
+Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
 Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一次，共享列的素材与样本行、精确重复文本引用；完整 packet 按需取证。视图格式与分类策略签名独立，精简不使已接受结果失效；详见 `designs/color-agent-classification.md`。
 
@@ -74,7 +76,7 @@ Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行独立曝光/噪声/大光比检测并生成 Color subagent 分类包（designs/color-agent-classification.md）；缺决定时等待指定 gpt-6.1-sol/high subagent，正式提交后继续 Prepare；大光比要求持续性与超过 50% 的真实命中时长，少数或各半保留基础场景，局部区间作附加信息，夜景硬排除。只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。标准五节点 DRT 保持不变。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
+  - `/color` prepare 先验证当前 raw/target 登记及 Analyze 语义报告，再执行独立曝光/噪声/大光比检测并生成 Color subagent 分类包（designs/color-agent-classification.md）；缺决定时等待指定 gpt-6.1-sol/high subagent，正式提交后继续 Prepare；大光比要求持续性与超过 50% 的真实命中时长，少数或各半保留基础场景，局部区间作附加信息，夜景硬排除。只给有证据的主类建立 Group，待复核保持无组；旧模型 colorEvidence 不参与；RCM 在 Group Pre 之前统一各片输入，工作空间为 DWG/Intermediate，输出 Rec.709 Gamma 2.4；回读项目/时间线及素材输入空间，User1/User2 不自动写技术 LUT。新片段使用统一七节点 DRT，已有五节点不自动覆盖。已有旧技术组不自动迁移；渐进追加不清空时间线，也不重置既有节点和手动 transform。见 `designs/media-version-analysis-color-pipeline.md`。
   - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。
@@ -84,7 +86,7 @@ Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一
 
 ## Color 竖屏 Edit 旋转
 
-2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
+2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。统一 DRT 的 Gyroflow `InputRotation / Rotation=0` 及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
 
 ## `/color` Direct-Root Export Rule
 

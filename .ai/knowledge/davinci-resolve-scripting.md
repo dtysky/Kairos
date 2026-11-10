@@ -1,6 +1,8 @@
 # DaVinci Resolve Scripting Local Documentation
 
-Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与独立 Edit 旋转，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
+Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
 DRP maintenance must open an existing matching project without creating a project or selecting a timeline. For `save_drp_snapshot`, use the documented ProjectManager `SaveProject()` and require `True`, then require `ExportProject()` success and a non-empty valid DRP ZIP before atomically replacing latest. The general render preflight may create a project, so it is not a backup prerequisite. A running Resolve process does not prove that scripting is available: on 2026-10-18, Resolve's log showed script-server `failed to bind socket: Error 1` while the main editor was running. Diagnose this separately from project content, and do not operate or restart the editor merely to verify a code fix.
 
@@ -20,7 +22,7 @@ project/timeline automation.
 - Local official docs, Linux: `/opt/resolve/Developer/Scripting/README.md`
 - Online mirror requested by user: `https://gist.github.com/X-Raym/2f2bf453fc481b9cca624d7ca0e19de8`
 - Online readable mirror from that Gist: `https://extremraym.com/cloud/resolve-scripting-doc/`
-- Current installed version: **DaVinci Resolve Studio 21.1.2.10** (2026-10-29); local `CHANGELOG.md` updated 22 Oct 2026. Read `README.md`, `DaVinciResolveScript.pyi`, and `CHANGELOG.md` together. `README.txt` is a legacy fallback only.
+- Current installed version: **DaVinci Resolve Studio 21.2.0.6** (2026-11-10); local `CHANGELOG.md` updated 4 Nov 2026. Read `README.md`, `DaVinciResolveScript.pyi`, and `CHANGELOG.md` together. `README.txt` is a legacy fallback only.
 - Historical Gist reference: `DaVinci Resolve Scripting API Doc v20.3`; use installed 21.1.2 docs for current signatures.
 - Last checked in Kairos: `2026-11-02` (media import batch signatures and live behavior; other API checks retain their dated scope below)
 
@@ -221,7 +223,7 @@ Important graph constraints:
 - Live Resolve 21.1.2 verification on 2026-11-04 found that a `GetNodeGraph()` handle retained across `AddVersion()` / `LoadVersionByName()` can still write to the previously active local version. Acquire a fresh graph after every version change, then verify `GetCurrentVersion()` and read back the LUT from another freshly acquired graph. A successful setter call alone does not establish which version was changed; validate representative native motion renders as well.
 - `ApplyGradeFromDRX(path, gradeMode)` grade modes are: `0` no keyframes, `1` source-timecode aligned, `2` start-frames aligned.
 - `SetLUT()` succeeds only for LUT paths Resolve already knows; use `project.RefreshLUTList()` after copying LUTs.
-- The official docs expose `SetNodeEnabled()` but do not expose `GetNodeEnabled()`.
+- Resolve 21.2 documents `GetNodeEnabled()`; native readback verified on 2026-11-10. Older installations may return no state.
 - The official docs do not expose color-node insert, move, or delete operations.
 - The official docs do not expose OpenFX parameter getters/setters or a generic "click OFX button" operation.
 - `GetToolsInNode(nodeIndex)` returns tool names such as `OFX: Gyroflow`, `OFX: Dehaze`, or `OFX: Noise Reduction`; it does not prove the OFX has loaded source-specific data.
@@ -240,17 +242,17 @@ Kairos checked the local Gyroflow OpenFX bundle and upstream plugin source while
 - `SetNodeEnabled(1, True)` can request that the Gyroflow node be enabled, but it does not trigger `LoadCurrent`.
 - A live probe on project `tmp 调色流程测试 2026-04-20 15 32 30 [Color]`, duplicated timeline `kairos-test action6 [Color]`, and clip `DJI_20260217100743_0227_D.MP4` confirmed that applying `config/default.drx`, calling `SetNodeEnabled` on nodes 1-5, and exporting the current frame still added `0` bytes to `gyroflow-openfx.log`.
 - A second live probe in the same project confirmed that importing `vendor/resolve-color-host/donors/gyro-only.drt`, copying its grade to `DJI_20260217100743_0227_D.MP4`, enabling node 1, and exporting the current frame added Gyroflow log entries for that exact DJI file. This means a clean DRT donor can trigger Gyroflow's own current-file path during render, while the current DRX template does not.
-- For Kairos bulk clip repair, use a clean canonical five-node DRT donor as the only automatic seed source. Treat DRX as manual diagnostic material only; do not use `ApplyGradeFromDRX()` as a large-batch fallback unless a new live probe proves it is stable and source-correct.
-- Color Edit rotation is independent of Gyroflow: for portrait sources, map normalized raw ffprobe rotation +90 to timeline `RotationAngle=-90`, and -90/270 to `RotationAngle=+90`; native portrait sources without a quarter-turn use 0. On 2026-11-08 the user and native readback confirmed C4922/C4994/C4082 in the original Color project use -90 with zoom 1.7778; the test project incorrectly used 0 and exported sideways pictures. This supersedes the earlier blanket-zero timeline policy. Keep both DRTs’ Gyroflow `InputRotation=0 / Rotation=0`, historical template names, and existing fill/framing calculations. Do not rerun Analyze or automatically overwrite existing manual transforms; repair existing clips only in an explicitly scoped maintenance operation.
-- If a portrait DRT hash is missing or stale on an already prepared root, rerun the affected chunk and reset the stale portrait clip with `ResetAllGrades()` before reapplying the orientation DRT. Live testing showed a fresh single-clip timeline plus the same DRT path is clean, so stale old-clip OFX state must be cleared before DRT reapply.
-- Resolve scripting exposes timeline item transform keys such as `RotationAngle`, `ZoomX`, `ZoomY`, `ZoomGang`, `Pan`, and `Tilt`, but the documented API still does not expose generic Gyroflow OFX parameter setters. Do not replace orientation-specific DRTs with guessed OFX parameter writes.
+- For Kairos bulk clip repair, use a clean canonical seven-node DRT donor as the only automatic seed source. Treat DRX as manual diagnostic material only; do not use `ApplyGradeFromDRX()` as a large-batch fallback unless a new live probe proves it is stable and source-correct.
+- Color Edit rotation is independent of Gyroflow: for portrait sources, map normalized raw ffprobe rotation +90 to timeline `RotationAngle=-90`, and -90/270 to `RotationAngle=+90`; native portrait sources without a quarter-turn use 0. On 2026-11-08 the user and native readback confirmed C4922/C4994/C4082 in the original Color project use -90 with zoom 1.7778; the test project incorrectly used 0 and exported sideways pictures. This supersedes the earlier blanket-zero timeline policy. Keep the unified DRT’s Gyroflow `InputRotation=0 / Rotation=0` and existing fill/framing calculations. Do not rerun Analyze or automatically overwrite existing manual transforms; repair existing clips only in an explicitly scoped maintenance operation.
+- 模板 hash 变化不触发重跑、ResetAllGrades 或覆盖手调；保存片段实际使用的历史 seed hash，新片段使用当前统一模板。
+- Resolve scripting exposes timeline item transform keys such as `RotationAngle`, `ZoomX`, `ZoomY`, `ZoomGang`, `Pan`, and `Tilt`, but the documented API still does not expose generic Gyroflow OFX parameter setters. Do not replace the unified DRT with guessed OFX parameter writes.
 
 ### RCM input management (live verified 2026-11-05, Resolve Studio 21.1.2.10)
 
 - Project settings: `colorScienceMode=davinciYRGBColorManagedv2`, `isAutoColorManage=0`, `rcmPresetMode=Custom`, `separateColorSpaceAndGamma=0`, `colorSpaceTimeline=DaVinci WG/Intermediate`, `colorSpaceOutput=Rec.709 Gamma 2.4`, `inputDRT=None`, `outputDRT=DaVinci`, `timelineWorkingLuminanceMode=HDR 1000`, `useColorSpaceAwareGradingTools=1`. Read back the final full state and effective timeline state; a successful setter alone is insufficient.
 - Verified combined `MediaPoolItem.SetClipProperty("Input Color Space", value)` strings are `S-Gamut3.Cine/S-Log3`, `DJI D-Gamut/D-Log`, and `Rec.709 (Scene)`. The Sony string has **no** `Sony ` prefix. In combined mode, `Input Gamma` may retain an unrelated value; verify the combined property instead.
 - Complete Sony CaptureColorPrimaries/CaptureGammaEquation wins over root fallback. Missing S-Log3 gamut, generic HLG, and D-Log M require an explicit supported input; never substitute DJI D-Log for D-Log M.
-- `Graph.SetNodeLabel()` is documented in the installed `.pyi`; `GetNodeEnabled()` is not. Do not invent a node-enable readback API or claim enabled-state validation from `SetNodeEnabled` alone.
+- `Graph.SetNodeLabel()` and, since 21.2, `GetNodeEnabled()` are documented and locally verified; verify the setter and actual getter rather than claiming readback from a setter alone.
 
 ### Color Groups
 
@@ -275,7 +277,7 @@ Kairos no longer uses DRX as the formal large-batch cold-start / legacy-rebuild 
 - Do not claim a node is enabled from `SetNodeEnabled()` alone unless the workflow has also verified the result by a supported side effect, UI check, rendered/DRX output, or explicit project state.
 - Do not claim Gyroflow has performed `Load from file` merely because `OFX: Gyroflow` exists in node 1.
 - Do not claim Gyroflow has performed `Load from file` merely because `SetNodeEnabled(1, True)` returned success or a current-frame export succeeded.
-- Do not invent `GetNodeEnabled()`: it is not in the official docs and returns no reliable state in current Kairos testing.
+- Use `GetNodeEnabled()` on Resolve 21.2; unavailable readback on older versions remains unknown.
 - Do not assume Resolve scripting can edit OFX internal parameters. If a task needs that, first prove the method exists locally or design around a DRX/DRT/template workflow.
 - Do not assume `GrabStill()` / `GrabAllStills()` is harmless in production logic; it mutates Gallery state unless temporary stills are deleted.
 - Do not assume node graph mutations are safe on user grades; Kairos `/color` must preserve canonical reruns and only rebuild legacy graphs under the documented contract.

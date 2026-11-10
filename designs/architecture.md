@@ -1,6 +1,8 @@
 # Kairos — 架构设计 v2
 
-Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与独立 Edit 旋转，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+
+Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
 Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。 Prepare 复用来源/算法匹配的缓存，导出只验证不重测；不会自动设置曝光、WB 或 NR 参数。
 
@@ -309,7 +311,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - 该文档吸收用户指定的 X-Raym Gist 镜像与本机 Resolve 官方 `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) 的关键 API 口径
 - 任何 DaVinci Resolve scripting、`/color`、Resolve export、DRX/DRT、LUT automation、render job、Group、node graph 或 vendored Resolve host 任务，必须先读该本地文档
 - 版本敏感方法仍需按当前安装版 Resolve `README.md` / `DaVinciResolveScript.pyi` / `CHANGELOG.md` (legacy: `README.txt`) 实测/核对，不能从记忆或旧设计推断
-- 当前明确记录的高风险点包括：官方 docs 有 `SetNodeEnabled()` 但没有可靠 `GetNodeEnabled()`，`GetToolsInNode()` 只能证明 OFX shell 存在，不能证明 Gyroflow 已完成 source-specific load
+- 当前明确记录的高风险点包括：Resolve 21.2 提供 `GetNodeEnabled()` 回读，旧版本缺失时保持未知，`GetToolsInNode()` 只能证明 OFX shell 存在，不能证明 Gyroflow 已完成 source-specific load
 
 ## 0.11 2026-04-23 DaVinci color 固定节点图与项目级批处理补记
 
@@ -346,27 +348,26 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - metadata 修复、sidecar 同步与 validation 都是用户后续对单 root/latest batch 手动触发的独立动作
   - 任一 root 失败时继续后续 roots
   - 只要存在失败 root，整个 job 最终记为 failed
-- clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
-  - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
+- clip repair 的正式用户口径不再是 donor matrix，而是统一固定七节点图：
+  - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR`
   - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
   - `ready-to-load` 只证明 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不证明 Gyroflow 已执行 source-specific `Load for current file`
   - `Dehaze` 是第 2 个保留节点，默认禁用
   - `User1`、`User2` 默认开启供逐片手调，RCM 在 Group Pre 前统一输入；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
   - `gyroEligible` 是一个最终布尔值：关联 Sony XML 的 Gyroscope 声明或同名 `.gyroflow` 工程，不使用硬编码机型白名单；`gyroDataAvailable` 独立记录声明，缺证据为未知，不能从是否启用反推；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
-- `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排，但重申最终 Gyro 开关”：
+- `prepare_root` 对现有 scene canonical clip graph 的正式行为是原位保留所有节点参数及开关：
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
-  - 规范图重跑仍必须按最终 `gyroEligible` 布尔值重新请求 node1 开/关，因为 Gyro 是技术判断，不是 creative 用户区
+  - scene 规范图重跑不重申 Gyro；只有新片段初始化时按 `gyroEligible` 设置 node1，legacy 非 scene 路径保留原兼容行为
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
 - ZV-E1 / Sony 竖屏的 Edit 旋转与 Gyroflow 参数分离：
   - ffprobe 的 `rotate/display matrix` 解析为 clip orientation truth
-  - 横屏使用 `config/default.drt`；竖屏保留历史模板映射：ffprobe 源 `rotation=90` 使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 使用 `config/gyroflow-portrait-90.drt`。模板键和文件名仅作兼容定位；两个模板的 Gyroflow `InputRotation / Rotation` 均为 `0`，Edit 旋转遵循下述独立规则。
-  - 缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`，不阻塞素材导入、Group、LUT 或 timeline transform
-  - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。两个 DRT 的 Gyroflow `InputRotation / Rotation=0`、历史模板映射及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
-  - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 必须把当前 DRT hash 持久化回 clip snapshot
+  - 横屏与所有竖屏共用 `config/default.drt`；Gyroflow InputRotation/Rotation 均为 0。历史 portrait key 只作来源审计。
+  - 缺少统一 `config/default.drt` 时所有方向的 Prepare 都阻塞，不回退单节点或另选方向模板。
+  - 2026-11-08 修正：Edit 旋转与 Gyroflow 参数独立。竖屏素材按原片 probe 的归一化 rotation 设置 Edit `RotationAngle`：`+90 → -90`、`-90/270 → +90`；无四分之一圈旋转的原生竖屏为 `0`。用户及原生回读确认原 Color 工程 C4922/C4994/C4082 均为 `-90 / Zoom=1.7778`，测试工程误设 `0` 且预览横倒，废止此前 timeline 一律归零的口径。统一 DRT 的 Gyroflow `InputRotation / Rotation=0` 及 fill/framing 计算保持原样；不重跑 Analyze，不自动覆盖既有人工 transform，存量修复仅处理明确指定的片段。
+  - 模板 hash 变化不触发重跑、ResetAllGrades 或覆盖手调；保存片段实际使用的历史 seed hash，新片段使用当前统一模板。
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
-  - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；默认 DRT 不存在时，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
-  - 如果用户把新节点加在 `NR` 后面，下次 `prepare_root` 也会按 legacy layout 处理并重建
+  - 现有 scene 自定义节点图不自动覆盖；已有兼容五节点保留。新片段严格使用七节点，非规范图需要明确的迁移。
   - 这是 clip repair 迁移代价，不影响 Resolve Group creative 真相
 - `color/groups/<rootId>.json` 的 clip snapshot 正式扩展为：
   - `gyroEligible`
@@ -399,9 +400,9 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - Color 正式分类使用 `gpt-6.1-sol / high` subagent，综合素材级 type、完整描述、原报告语音、原片独立 probe、GPS/校正时间与技术测量；代码不再用语义正则决定类别。Prepare 先测量并复用有效缓存，缺当前 Agent 决定时生成带签名 packet/handoff，状态为 pending-agent；完整提交经来源/证据/技术约束校验后原子写入 store/color-classifications.json，再继续 Prepare。独立用户澄清放 config/color-agent-context.json，不修改原报告。九类中夜景与室内低照度合并为“夜景／低照度”，竖屏独占、人物优先；噪点独立且不要求暗。实际夜景排除大光比，非夜间大光比沿用连续命中且严格超过50%的技术门槛；偏色量、频闪和修正参数仍未检测/应用。检测写 store/color-measurements，正式 assessment 只消费有效 Agent 决定；导出只校验，旧语义决定不得兜底。详见 designs/color-agent-classification.md。旧 colorEvidence/colorClassification 只读审计；LOG 独立保留用于逐片技术转换。
 - `gyro` 只参与 clip repair；历史 `lowlight / windshieldHaze / colorCastClass / exposureSceneClass` 仅兼容读取，正式 prepare 不调用这些分类器或抽帧。
 - clip repair 的正式合同当前已收口为固定节点图：
-  - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
+  - 同 clip 旧 repair 原位保留；重建 item 才通过恢复 donor CopyGrades。历史 portrait 模板 hash 不触发 reset/reapply
   - brand-new clip 若没有旧 repair，宿主必须建立 canonical layout，而不是把 donor matrix 当成用户口径
-  - 所有视频 clip 统一为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
+  - 新视频 clip 统一为 `Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR`
   - `gyroEligible` 只决定 Gyro 默认/重申启停，不决定是否存在 Gyro 节点
   - `Dehaze / NR` 默认状态都是 `seeded-disabled`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
@@ -417,8 +418,8 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 开启
-  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 关闭
+  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 开启
+  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> Beauty -> Blemish Removal -> NR`，并在旧策略每次 `prepare_root`（新 scene prepare 重跑保留已有开关） 请求 Gyro 关闭
   - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
@@ -472,7 +473,7 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
   - 若 workspace 中没有同路径 LUT，Kairos 不得立刻 blocked；应继续把该路径作为 Resolve LUT 路径交给宿主验证可见性
 - 当前 RCM scene prepare 逐片设置 MediaPoolItem 的 `Input Color Space`，项目采用 Custom RCM v2、DWG/Intermediate 工作空间和 Rec.709 Gamma 2.4 输出；项目、timeline 有效设置以及素材输入空间回读不符即阻塞。
   - 只有空项目允许初始化 RCM；已有未受管项目、旧技术 LUT 工程不能静默迁移。
-  - 五节点 User1/User2 不自动写入或清除技术 LUT；保持用户逐片调整，准备签名使用 `rcm-dwg-v1`。
+  - Clip User1/User2 不自动写入或清除技术 LUT；保持用户逐片调整，准备签名使用 `rcm-dwg-v1`。
   - `sync_groups` 只读验证与镜像；`execute_root` 在渲染前重新验证色彩管理和输入，设置漂移不得写 ready 或继续导出。
   - 旧 LUT 准备仍遵守 workspace copy-missing / 已安装内容冲突阻塞规则；Resolve 缺少所需 LUT 时提示 Refresh LUT List。该依赖不适用于新 RCM scene prepare。
 - `/color` read model 与 UI 当前需要明确区分：

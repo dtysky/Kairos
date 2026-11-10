@@ -1598,6 +1598,8 @@ export const IColorClipReservedNodeIndices = z.object({
   userEnd: z.number().int().positive().optional(),
   dehaze: z.number().int().positive().optional(),
   nr: z.number().int().positive().optional(),
+  beauty: z.number().int().positive().optional(),
+  blemish: z.number().int().positive().optional(),
 });
 export type IColorClipReservedNodeIndices = z.infer<typeof IColorClipReservedNodeIndices>;
 

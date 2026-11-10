@@ -65,3 +65,14 @@
 若 Resolve 临时断线导致 DRP 导出失败，后续正式 Prepare 或备份动作真正保存成功后，应清除该次导出失败的历史 blocker，避免时间线已 ready 而 Console 仍误报阻塞；仅 preflight 成功不能清除尚未恢复的备份错误。
 
 验收覆盖来源/策略失效、完整原子提交、非法技术阳性、竖屏独占、实际夜景排除、低照度合并、旧正则缓存拒绝、增量/重复 Prepare、导出只读门控及 Console 待 Agent 显示。必须分别运行根仓和 Console build。测试工程 41 条须从正式生成的输入包由指定 subagent 重新确认；原生回读实际 Group，并对比更新前后 item 身份、帧位、Inspector、RCM、Clip/Group 节点和调色数据。
+
+## 2026-11-10 增量与同路径更新实机验收
+
+沿用被 Git 忽略的 `tmp-color-v5-20261106`，保留原 41 条与三个设备目录，追加完整 C4996（96 秒，raw + target）及 DJI_20260925130741_0098_D（120 秒，raw-only）。全程使用正式 Supervisor Ingest / scoped Analyze / Prepare All、`gpt-6.1-sol / high` subagent 和提交入口；未修改分类合同、阈值或 Analyze 流程。
+
+- Ingest 只新增两项，旧 41 项元数据复用；Analyze 分别选择 target 和带 D-Log 显示转换的 raw，原 41 份报告字节不变。首次 Prepare 只生成两条待 Agent 项，等待阶段 Resolve 仍为 41 条。两个子代理决定均为常规日景：田野跟拍配旁白不算出镜口播，航拍跟车不算前挡行车。接受后原时间线增至 43 条，新片有标准五节点和真实 Group。
+- 只改变 C4996 raw/target 的文件时间，Ingest 后 43 份分析输入签名不变；Prepare 不生成新任务，报告、技术缓存、接受结果和 assessment 均复用，无重复追加。
+- 同路径原片更新只操作新增样本的隔离副本：修改 PCM 音频采样字节，保留完整时长、视频、容器元数据和陀螺数据，target 保持原样。Ingest 只改变该 raw 内容签名，全部 43 份分析报告保留；过期提交被拒绝且接受记录未部分写入。Prepare 只重测该素材并产生一条新 Agent 任务；重新判断、提交和应用后，正式宿主请求携带该片不同的前后内容 hash，原生刷新成功，片段身份/范围/Inspector/节点和手调不变。再次 Prepare 缓存无变化。此场景验证文件内容失效与原生刷新，不代表已标定画面变化后的技术检测阈值。
+- 测试结束恢复原片原始字节，正式 Ingest / Prepare 重建得到与首次追加完全一致的 packet/batch 指纹；原子代理 submission 经当前来源校验后重新接受，再完成 Resolve 更新。最终保留 43 条、三个目录 ready，原 41 条接受记录和 164 份既有报告/缓存/packet 字节不变；73 份 Clip/Group 调色版本无创作差异，RCM、竖屏 Inspector 与五节点保留。SaveProject 和 latest DRP 均成功，ML stopped，无活跃作业。
+
+原生 DRT 对比统一在每条时间线导出前读取 Group 属性，避免已记录的 getter 初始化字段造成误报；原始差异和归一读取后的比较均留档。本轮只做实机验收和记录，不改运行时代码，不执行视频导出或调色修正。完整证据为忽略目录 `.fixtures/agent-incremental-20261110/completion.json` 及逐阶段 facts、原生 DRT、提交与作业记录。

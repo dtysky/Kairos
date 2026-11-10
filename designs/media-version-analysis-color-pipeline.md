@@ -1,6 +1,6 @@
 # 素材版本、先分析后调色与渐进导入
 
-Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与标准模板选择，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
+Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏分类与独立 Edit 旋转，不属于素材视觉分析。Analyze 所选 target 的尺寸或旋转不同不构成调色方向冲突，不因此重跑分析；只对 raw 自身元数据矛盾或未知作复核。
 
 状态：已实现，2026-11-05 完成下述范围验收。Resolve 使用 [RCM 输入统一](resolve-rcm-scene-pipeline.md)，取代第一轮 User1 LUT 方案。用户已确认先查目标、再找原片；本设计取代早期调色试验中“调色阶段独立重新理解画面”的临时方案。
 
@@ -26,7 +26,7 @@ Ingest → Analyze → 调色分类/基础节点 → 目标输出到位后再次
 
 原始 LOG/色域是技术输入维度，不因视觉分类消失。Resolve 需使用真实 Group，并保持既有 `Gyro → Dehaze → User1 → User2 → NR` 标准节点模板；不能用单节点 CDL 替代。技术 LUT 和视觉类别不能互相覆盖；同组不同 LOG 的技术转换必须逐片正确。重跑只补新增或明确失效输入，不重置用户已经完成的节点。
 
-新管线逐片明确 MediaPoolItem Input Color Space，由 RCM 在 Group Pre 前统一到 DWG/Intermediate，输出 Rec.709 Gamma 2.4；保留标准五节点，User1/User2 留给手调。Scene Group 不写技术 LUT，竖屏、夜景等不与 LOG 交叉。旧版 LOG/orientation Group、非 RCM 或旧 User1 技术 LUT 工程不自动迁移；改用隔离的新调色工程或另行确认迁移。既有标准节点和手调保留。尚未经实际动态验证的美肤、NR、Dehaze 参数不由分类器猜值。
+新管线逐片明确 MediaPoolItem Input Color Space，由 RCM 在 Group Pre 前统一到 DWG/Intermediate，输出 Rec.709 Gamma 2.4；新片段使用统一七节点（Gyroflow/Dehaze/User1/User2/Beauty/Blemish/NR），已有五节点保留，User1/User2 留给手调。Scene Group 不写技术 LUT，竖屏、夜景等不与 LOG 交叉。旧版 LOG/orientation Group、非 RCM 或旧 User1 技术 LUT 工程不自动迁移；改用隔离的新调色工程或另行确认迁移。既有标准节点和手调保留。尚未经实际动态验证的美肤、NR、Dehaze 参数不由分类器猜值。
 
 准备签名使用 rcm-dwg-v1，覆盖原片内容、输入色域/Gamma 对应的 RCM 输入空间和当前分析分类，即使分析来自 target 也不遗漏 raw 技术变化。原片色彩元数据或 root profile 改变须先 Ingest；导出前复核签名及实际项目、timeline、逐素材输入设置，变化或缺少准备证据时阻塞。Analyze 原片显示代理仍校验 LUT 内容，target 分析不依赖 Resolve 技术 LUT。渐进 prepare 仅追加缺失片段，保留已有时间线项、Inspector 和节点状态；同路径原片内容更新通过 ReplaceClip 刷新并回读验证。
 
