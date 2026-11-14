@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-11-13T09:07:48.630Z",
+  "updatedAt": "2026-11-14T15:21:16.301Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-11-13T09:07:44Z",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-11-14T15:21:14Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,10 +19,10 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "93082e23-5140-4c34-a2c1-20fd935b0f69",
+        "attemptId": "64310ccd-2a78-4b10-bfc7-23d8e1a095c5",
         "status": "succeeded",
-        "startedAt": "2026-11-13T09:07:43.775Z",
-        "finishedAt": "2026-11-13T09:07:48.628Z",
+        "startedAt": "2026-11-14T15:21:14.423Z",
+        "finishedAt": "2026-11-14T15:21:16.301Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual"
@@ -398,10 +398,19 @@
           "mode": "manual",
           "retention": "latest-only",
           "action": "manual"
+        },
+        {
+          "attemptId": "64310ccd-2a78-4b10-bfc7-23d8e1a095c5",
+          "status": "succeeded",
+          "startedAt": "2026-11-14T15:21:14.423Z",
+          "finishedAt": "2026-11-14T15:21:16.301Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-11-13T09:07:48.630Z"
+      "updatedAt": "2026-11-14T15:21:16.301Z"
     }
   }
 }
