@@ -166,6 +166,35 @@ describe('Resolve Volc voiceover Supervisor service', () => {
     expect(result.units[0]?.overflowMs).toBeGreaterThan(300);
   });
 
+  it('refines cached audio at a post-release pause without resynthesizing or changing media', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture(true);
+    const first = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    const media = await readFile(first.units[0]!.resolveAudioPath);
+    expect(first.units[0]?.alignment).toMatchObject({ speechEndMs: 800, sourceEndMs: 950,
+      tailAdjustment: { reason: 'quiet_pause', originalEndMs: 1150 } });
+    expect(first.units[1]?.alignment?.sourceEndMs).toBe(2590);
+    const second = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(client.calls).toBe(1);
+    expect(second.units[0]?.alignment).toEqual(first.units[0]?.alignment);
+    expect(await readFile(second.units[0]!.resolveAudioPath)).toEqual(media);
+    expect(second.units.map(unit => unit.subtitle.startFrame)).toEqual([108000, 108300]);
+  });
+
+  it('blocks undecodable tail analysis and reuses the cached audio on retry', async () => {
+    const { workspaceRoot, job, client } = await alignedFixture();
+    const runtimePath = join(workspaceRoot, 'config/runtime.json');
+    const runtime = JSON.parse(await readFile(runtimePath, 'utf8'));
+    runtime.ffmpegPath = join(workspaceRoot, 'missing-ffmpeg');
+    await writeFile(runtimePath, JSON.stringify(runtime));
+    const first = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(first.units.every(unit => unit.alignment?.reason === 'tail_audio_analysis_failed')).toBe(true);
+    delete runtime.ffmpegPath;
+    await writeFile(runtimePath, JSON.stringify(runtime));
+    const second = await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
+    expect(second.units.every(unit => unit.alignment?.status === 'aligned')).toBe(true);
+    expect(client.calls).toBe(1);
+  });
+
   it('does not silently pay again when the alignment sidecar is damaged', async () => {
     const { workspaceRoot, job, client } = await alignedFixture();
     await synthesizeResolveVolcVoiceoverJob({ workspaceRoot, job, client });
@@ -408,7 +437,7 @@ function createFakeTtsClient(audio: Buffer): IVolcTtsClient & { calls: number } 
   };
 }
 
-async function alignedFixture() {
+async function alignedFixture(withBreaths = false) {
   const workspaceRoot = await createWorkspaceFixture({
     brief: { name: '测试', voiceoverMedia: { path: 'PLACEHOLDER' } },
     runtime: { voiceover: { volcApiKey: 'test-key', defaultProfile: 'narrator', profiles: [
@@ -422,6 +451,14 @@ async function alignedFixture() {
   audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22);
   audio.writeUInt32LE(24000, 24); audio.writeUInt32LE(48000, 28); audio.writeUInt16LE(2, 32);
   audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(audio.length - 44, 40);
+  if (withBreaths) {
+    // Timestamps end before audible release; later, quieter bursts represent breaths.
+    for (const [start, end, amplitude] of [[0.2, 0.93, 0.1], [1.02, 1.15, 0.01], [1.5, 2.57, 0.1], [2.7, 2.9, 0.01]]) {
+      for (let sample = Math.round(start! * 24000); sample < Math.round(end! * 24000); sample++) {
+        audio.writeInt16LE(Math.round(32767 * amplitude! * Math.sin(2 * Math.PI * 300 * sample / 24000)), 44 + sample * 2);
+      }
+    }
+  }
   const client: IVolcTtsClient & { calls: number } = {
     calls: 0,
     async synthesize(text, settings) {

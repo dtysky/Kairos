@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alignVoiceoverSubtitles, type IVoiceoverWord } from '../../src/modules/voiceover/subtitle-alignment.js';
+import { alignVoiceoverSubtitles, refineVoiceoverTails, type IVoiceoverWord } from '../../src/modules/voiceover/subtitle-alignment.js';
 
 const word = (text: string, startTime: number, endTime: number): IVoiceoverWord => ({ word: text, startTime, endTime });
 
@@ -54,5 +54,59 @@ describe('voiceover subtitle alignment', () => {
   it('requires measured audio duration and refuses timestamps beyond the audio', () => {
     expect(alignVoiceoverSubtitles(['甲'], [word('甲', 0, 1)], null)[0]?.reason).toBe('audio_duration_unknown');
     expect(alignVoiceoverSubtitles(['甲'], [word('甲', 0, 1.1)], 1000)[0]?.reason).toBe('timestamp_range_invalid');
+  });
+});
+
+describe('voiceover post-word quiet pauses', () => {
+  const envelope = (spans: Array<[number, number, number]>, durationMs = 1800) => {
+    const levelsDbfs = Array.from({ length: durationMs / 10 }, () => -75);
+    for (const [start, end, db] of spans) levelsDbfs.fill(db, start / 10, end / 10);
+    return { frameMs: 10, durationMs, levelsDbfs };
+  };
+  const alignment = () => alignVoiceoverSubtitles(['古村', '再见'], [word('古村', 0.1, 1), word('再见', 1.6, 1.7)], 1800);
+
+  it('keeps a release beyond the word timestamp and cuts in the following pause before a breath', () => {
+    const rows = alignment();
+    const audio = envelope([[100, 1000, -22], [1000, 1120, -34], [1220, 1300, -46], [1600, 1720, -24]]);
+    const result = refineVoiceoverTails(rows, audio);
+    expect(result[0]).toMatchObject({ speechEndMs: 1000, sourceStartMs: 50, sourceEndMs: 1140,
+      tailAdjustment: { reason: 'quiet_pause', originalEndMs: 1300 } });
+    expect(result[1]?.sourceEndMs).toBe(1740);
+    expect(rows[0]?.sourceEndMs).toBe(1300);
+  });
+
+  it('does not shave off sustained quiet consonants when there is no separate quiet pause', () => {
+    const rows = alignment();
+    const result = refineVoiceoverTails(rows, envelope([[100, 1000, -22], [1000, 1300, -40]]));
+    expect(result[0]?.sourceEndMs).toBe(1300);
+    expect(result[0]?.tailAdjustment?.reason).toBe('no_stable_pause');
+  });
+
+  it('ignores a short dip inside a release and waits for a sustained quiet interval', () => {
+    const result = refineVoiceoverTails(alignment(), envelope([
+      [100, 1020, -22], [1050, 1130, -32], [1230, 1300, -45],
+    ]));
+    expect(result[0]?.sourceEndMs).toBe(1150);
+  });
+
+  it('uses relative levels so gain changes do not move the cut', () => {
+    const audio = envelope([[100, 1100, -22], [1220, 1300, -44]]);
+    const quieter = { ...audio, levelsDbfs: audio.levelsDbfs.map(db => db - 15) };
+    expect(refineVoiceoverTails(alignment(), audio)[0]?.sourceEndMs)
+      .toBe(refineVoiceoverTails(alignment(), quieter)[0]?.sourceEndMs);
+  });
+
+  it('retains the safe bound for short gaps or missing speech energy', () => {
+    const rows = alignVoiceoverSubtitles(['甲', '乙'], [word('甲', 0.1, 1), word('乙', 1.06, 1.4)], 1800);
+    expect(refineVoiceoverTails(rows, envelope([[100, 1000, -20]]))[0]?.sourceEndMs).toBe(1030);
+    expect(refineVoiceoverTails(alignment(), envelope([]))[0]?.sourceEndMs).toBe(1300);
+  });
+
+  it('refuses invalid or truncated decoded audio and preserves blocked rows', () => {
+    expect(() => refineVoiceoverTails(alignment(), envelope([], 1000))).toThrow(/cover/);
+    const bad = envelope([]); bad.levelsDbfs[0] = NaN;
+    expect(() => refineVoiceoverTails(alignment(), bad)).toThrow(/cover/);
+    const rows = [{ status: 'blocked' as const, reason: 'timestamps_missing' }];
+    expect(refineVoiceoverTails(rows, envelope([]))).toEqual(rows);
   });
 });

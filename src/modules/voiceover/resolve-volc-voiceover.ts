@@ -8,7 +8,8 @@ import { loadProjectBriefConfig, loadRuntimeConfig, writeJson } from '../../stor
 import type { IRuntimeConfig } from '../../store/project.js';
 import { probe } from '../media/probe.js';
 import { stripGeneratedSubtitlePeriods } from '../nle/subtitle-text.js';
-import { alignVoiceoverSubtitles, CVOICEOVER_ALIGNMENT_VERSION, voiceoverMatchText, type IVoiceoverAlignment, type IVoiceoverWord } from './subtitle-alignment.js';
+import { alignVoiceoverSubtitles, refineVoiceoverTails, CVOICEOVER_ALIGNMENT_VERSION, voiceoverMatchText, type IVoiceoverAlignment, type IVoiceoverWord } from './subtitle-alignment.js';
+import { readVoiceoverAudioEnvelope } from './audio-envelope.js';
 
 const CDEFAULT_TTS_ENDPOINT = 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
 const CDEFAULT_RESOURCE_ID = 'seed-icl-2.0';
@@ -300,7 +301,18 @@ export async function synthesizeResolveVolcVoiceoverJob(input: {
       const sources = [...job.subtitles].sort(subtitleSortCompare);
       const texts = sources.map(row => stripGeneratedSubtitlePeriods(cleanSubtitleText(row.text ?? row.name)));
       const words = merged.provider.alignedWords as IVoiceoverWord[] ?? [];
-      const alignments = alignVoiceoverSubtitles(texts, words, merged.durationMs);
+      let alignments = alignVoiceoverSubtitles(texts, words, merged.durationMs);
+      if (!merged.provider.alignmentCacheError && alignments.some(row => row.status === 'aligned')) {
+        try {
+          const envelope = await readVoiceoverAudioEnvelope(merged.rawAudioPath, runtime.ffmpegPath?.trim() || 'ffmpeg');
+          alignments = refineVoiceoverTails(alignments, envelope);
+        } catch (error) {
+          merged.provider.tailAnalysisError = error instanceof Error ? error.message : String(error);
+          alignments = alignments.map(row => row.status === 'aligned'
+            ? { ...row, status: 'blocked', reason: 'tail_audio_analysis_failed' }
+            : row);
+        }
+      }
       for (const [index, source] of sources.entries()) {
         const text = texts[index]!;
         const alignment = alignments[index]!;

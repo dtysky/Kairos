@@ -20,6 +20,8 @@ The production media pipeline is now **Ingest raw/target versions → Analyze �
 
 字幕配音插件 0.3.3 默认启用 **Align to subtitles**：整组合成一次，再按字词时间戳分句放回各条原字幕起点；完整插入，超出字幕结束只提示，异常逐句显示，重复执行复用缓存并跳过已插入片段。使用方式与校验边界见 [字幕配音分句对齐](designs/resolve-voiceover-alignment.md)。
 
+2026-11-15：分句句尾按原合成音频的稳定低能量停顿收尾，保留末字收音、避开后续换气；无可信停顿保留安全上界，解码失败明确阻塞。已有音频/字词缓存继续复用，普通重试不自动改动旧配音。
+
 Resolve 21.1.2 适配：已接入原生粗剪恒速变速、版本能力检查、时间线选区、指定帧预览及明确目标的视频淡入淡出／转场／属性复制。入口与字幕 API 实测边界见 [Resolve edit tools](designs/resolve-edit-tools.md)。该次适配限于剪辑 API；当前调色管线见上文。
 
 

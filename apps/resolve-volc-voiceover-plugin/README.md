@@ -91,9 +91,10 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 - `Align to subtitles` is on by default (plugin 0.3.3). Selected rows are
   synthesized together once with TTS2.0/ICL2.0 word timestamps. Each original
   subtitle gets an independent audio item at its original start, referencing a
-  different source range of the same imported audio file. Sentence tails retain
-  the pause through the midpoint to the next sentence; the final tail reaches
-  the media end. Audio source end frames are not reduced by one frame. Subtitle text, timing
+  different source range of the same imported audio file. Sentence tails end in a stable low-energy pause after the last word, retaining
+  its release while excluding later breaths. Without a reliable pause, retain
+  the sentence-midpoint/media-end bound. Decode failures block alignment;
+  original media and word caches are reused. Audio source end frames are not reduced by one frame. Subtitle text, timing
   and video edits remain unchanged. Merged text strips terminal `。` / `.` from
   each subtitle line; `？`, `！`, and internal punctuation are preserved.
 - Aligned sentences are inserted in full at each
