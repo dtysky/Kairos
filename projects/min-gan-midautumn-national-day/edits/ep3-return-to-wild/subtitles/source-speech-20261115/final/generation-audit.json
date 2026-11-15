@@ -1,0 +1,19 @@
+{
+  "project": "中秋国庆闽赣自驾 [Edit]",
+  "timeline": "回程进入山野 [ep3-return-to-wild]",
+  "timelineId": "ae01e0f5-d139-4c64-8ee7-bcde26929552",
+  "fps": 30,
+  "clips": 158,
+  "cues": 235,
+  "phoneIncluded": true,
+  "source": "actual enabled A1 clip bounds and reviewed spans; existing aligned tokens locate trimmed text",
+  "shortCues": [
+    {
+      "id": "subtitle-source-speech-00181",
+      "startMs": 1587996,
+      "endMs": 1588033,
+      "text": "有",
+      "language": "zh"
+    }
+  ]
+}

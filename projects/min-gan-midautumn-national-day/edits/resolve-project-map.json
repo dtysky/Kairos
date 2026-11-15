@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-11-14T15:21:16.301Z",
+  "updatedAt": "2026-11-15T14:49:09.351Z",
   "projects": {
     "中秋国庆闽赣自驾 [Edit]": {
       "projectName": "中秋国庆闽赣自驾 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "中秋国庆闽赣自驾 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/resolve-projects/Edit/中秋国庆闽赣自驾 [Edit].drp",
-        "createdAt": "2026-11-14T15:21:14Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\min-gan-midautumn-national-day\\edits\\resolve-projects\\Edit\\中秋国庆闽赣自驾 [Edit].drp",
+        "createdAt": "2026-11-15T14:49:04Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,10 +19,10 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "latestSnapshotAttempt": {
-        "attemptId": "64310ccd-2a78-4b10-bfc7-23d8e1a095c5",
+        "attemptId": "17d3d73e-0d31-4366-a3a8-e569d65bca58",
         "status": "succeeded",
-        "startedAt": "2026-11-14T15:21:14.423Z",
-        "finishedAt": "2026-11-14T15:21:16.301Z",
+        "startedAt": "2026-11-15T14:49:04.327Z",
+        "finishedAt": "2026-11-15T14:49:09.350Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual"
@@ -407,10 +407,72 @@
           "mode": "manual",
           "retention": "latest-only",
           "action": "manual"
+        },
+        {
+          "attemptId": "8d32baf8-be26-4544-a832-47120b6e0f9a",
+          "status": "succeeded",
+          "startedAt": "2026-11-15T13:06:58.158Z",
+          "finishedAt": "2026-11-15T13:07:03.195Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
+        },
+        {
+          "attemptId": "18eccc0d-53cb-4009-aa6c-a8b9a838fada",
+          "status": "succeeded",
+          "startedAt": "2026-11-15T13:31:37.541Z",
+          "finishedAt": "2026-11-15T13:31:43.904Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline_finish"
+        },
+        {
+          "attemptId": "cbf48bf8-007b-439b-aec5-cac9961a3944",
+          "status": "failed",
+          "startedAt": "2026-11-15T13:33:56.970Z",
+          "finishedAt": "2026-11-15T13:33:57.152Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline_finish",
+          "error": {
+            "code": "resolve_project_save_failed",
+            "message": "Resolve 工程保存失败，未导出 DRP。"
+          }
+        },
+        {
+          "attemptId": "f5b6325a-efc5-4288-81b8-3342c2bd14ae",
+          "status": "failed",
+          "startedAt": "2026-11-15T13:34:20.340Z",
+          "finishedAt": "2026-11-15T13:34:26.764Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline_finish",
+          "error": {
+            "code": "resolve_color_host_unhandled",
+            "message": "[WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'H:\\\\SacredGrove\\\\Kairos\\\\projects\\\\min-gan-midautumn-national-day\\\\edits\\\\resolve-projects\\\\Edit\\\\.中秋国庆闽赣自驾 [Edit]-20261115T133420Z-f3715ee8.tmp.drp'"
+          }
+        },
+        {
+          "attemptId": "e47d0f7e-def2-4ad2-82a9-006ee0c146cf",
+          "status": "succeeded",
+          "startedAt": "2026-11-15T13:34:38.919Z",
+          "finishedAt": "2026-11-15T13:34:45.126Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline_finish"
+        },
+        {
+          "attemptId": "17d3d73e-0d31-4366-a3a8-e569d65bca58",
+          "status": "succeeded",
+          "startedAt": "2026-11-15T14:49:04.327Z",
+          "finishedAt": "2026-11-15T14:49:09.350Z",
+          "mode": "manual",
+          "retention": "latest-only",
+          "action": "manual"
         }
       ],
       "snapshots": [],
-      "updatedAt": "2026-11-14T15:21:16.301Z"
+      "updatedAt": "2026-11-15T14:49:09.351Z"
     }
   }
 }
