@@ -155,7 +155,7 @@
   },
   "audioMedia": {
     "rootId": "audio",
-    "path": "/Volumes/SSDMAX/audios",
+    "path": "/Users/dtysky/Projects/audios",
     "alternatePaths": [
       {
         "path": "F:\\vlog-proj\\audios"

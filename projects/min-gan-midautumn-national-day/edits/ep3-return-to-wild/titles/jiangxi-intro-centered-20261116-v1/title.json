@@ -1,0 +1,61 @@
+{
+  "status": "applied-and-verified",
+  "text": "江西·初秋",
+  "subtitle": null,
+  "projectName": "中秋国庆闽赣自驾 [Edit]",
+  "timelineName": "江西｜初秋 · 片头 [ep3-return-to-wild-intro]",
+  "timelineId": "23a2caac-95ae-4225-913e-721a6ebe9e78",
+  "videoItemIds": [
+    "76892b2f-3e5f-4dba-b6bc-b4893f3f5b4a",
+    "562ada65-fc03-42d3-8363-d1a9477ba9c5"
+  ],
+  "start": 989,
+  "end": 1446,
+  "fps": 30,
+  "resolution": [
+    3840,
+    2160
+  ],
+  "font": "Xingkai SC",
+  "style": "Bold",
+  "fontChoice": "Available native macOS Xingkai family, following Wuyishan STXingkai style. Final rendered appearance must be checked.",
+  "size": 0.202,
+  "tracking": 1.08,
+  "center": [
+    0.5,
+    0.708
+  ],
+  "color": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "fadeInFrames": 18,
+  "fadeOutFrames": 18,
+  "nativeEditable": true,
+  "draftAuditDir": ".tmp/ep3-centered-title-20261116-ph70a2ov",
+  "designReference": "User approved the centered white calligraphic preview after requesting a Wuyishan-style formal title.",
+  "backupTimelineName": "江西｜初秋 · 片头 [ep3-return-to-wild-intro] [before centered title 20261116-145837]",
+  "backupTimelineId": "4a85315c-5685-461e-b8ab-2412cc415a55",
+  "titleItemId": "6a32eba6-3a61-4345-949a-3663c5860771",
+  "compositionFile": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/JiangxiEarlyAutumn.comp",
+  "carrierPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/title-transparent-carrier.mov",
+  "actualPreviews": [
+    "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/actual-preview-terraces.png",
+    "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/actual-preview-presenter.png"
+  ],
+  "verified": {
+    "originalVideoAudioSubtitleItemsUnchanged": true,
+    "originalTrackStateUnchanged": true,
+    "timelineFrames": 1446,
+    "titleStartFrame": 989,
+    "titleEndFrameExclusive": 1446,
+    "titleFrames": 457,
+    "fadeInFrames": 18,
+    "fadeOutFrames": 18,
+    "nativeTextEditable": true,
+    "renderedTitleAndFadeReviewed": true,
+    "projectSaved": true
+  }
+}

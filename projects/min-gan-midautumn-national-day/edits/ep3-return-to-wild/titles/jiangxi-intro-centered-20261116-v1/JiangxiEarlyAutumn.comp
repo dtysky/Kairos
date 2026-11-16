@@ -1,0 +1,164 @@
+Composition {
+	CurrentTime = 0,
+	RenderRange = { 0, 456 },
+	GlobalRange = { 0, 456 },
+	CurrentID = 4,
+	HiQ = true,
+	PlaybackUpdateMode = 0,
+	StereoMode = false,
+	Version = "DaVinci Resolve Studio 21.2.0.0006",
+	SavedOutputs = 1,
+	HeldTools = 0,
+	DisabledTools = 0,
+	LockedTools = 0,
+	AudioOffset = 0,
+	Resumable = true,
+	OutputClips = {
+	},
+	Tools = {
+		MediaIn1 = Loader {
+			ExtentSet = true,
+			CustomData = {
+				MediaProps = {
+					MEDIA_AUDIO_TRACKS_DESC = {
+						{
+							MEDIA_AUDIO_BIT_DEPTH = 32,
+							MEDIA_AUDIO_FRAME_RATE = 30,
+							MEDIA_AUDIO_NUM_CHANNELS = 2,
+							MEDIA_AUDIO_SAMPLE_RATE = 48000,
+							MEDIA_AUDIO_START_TIME = 0,
+							MEDIA_AUDIO_TRACK_ID = "Timeline Audio",
+							MEDIA_AUDIO_TRACK_NAME = "Timeline Audio [江西｜初秋 · 片头 [ep3-return-to-wild-intro]]"
+						}
+					},
+					MEDIA_AUDIO_TRACKS_NUM = 1,
+					MEDIA_FORMAT_TYPE = "QuickTime",
+					MEDIA_HAS_AUDIO = true,
+					MEDIA_HEIGHT = 1080,
+					MEDIA_ID = "68e7520f-a885-48b3-8786-4461ede02491",
+					MEDIA_IS_SOURCE_RES = true,
+					MEDIA_MARK_IN = 0,
+					MEDIA_MARK_OUT = 456,
+					MEDIA_NAME = "江西·初秋",
+					MEDIA_NUM_FRAMES = 480,
+					MEDIA_NUM_LAYERS = 1,
+					MEDIA_PAR = 1,
+					MEDIA_PATH = "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/title-transparent-carrier.mov",
+					MEDIA_SRC_FRAME_RATE = 30,
+					MEDIA_START_FRAME = 0,
+					MEDIA_WIDTH = 1920,
+					__Queried = true
+				},
+			},
+			Inputs = {
+				GlobalOut = Input { Value = 479, },
+				AudioTrack = Input { Value = FuID { "Timeline Audio" }, },
+				Layer = Input { Value = "0", },
+				ClipTimeEnd = Input { Value = 479, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				DeepOutputMode = Input {
+					Value = 0,
+					Disabled = true,
+				},
+			},
+			Version = 1,
+			Clips = {
+				Clip {
+					ID = "Clip1",
+					Multiframe = true,
+					Filename = "/Users/dtysky/Projects/dtysky/Kairos/projects/min-gan-midautumn-national-day/edits/ep3-return-to-wild/titles/jiangxi-intro-centered-20261116-v1/title-transparent-carrier.mov",
+					Length = 480,
+					LengthSetManually = true,
+					GlobalEnd = 479,
+					TrimOut = 479,
+				}
+			}
+		},
+		JiangxiEarlyAutumn = TextPlus {
+			ExtentSet = true,
+			Inputs = {
+				GlobalOut = Input { Value = 456, },
+				Width = Input { Value = 3840, },
+				Height = Input { Value = 2160, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input { Value = { 0.5, 0.708 }, },
+				LayoutRotation = Input { Value = 1, },
+				CharacterSpacing = Input { Value = 1.08, },
+				TransformRotation = Input { Value = 1, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "江西·初秋", },
+				Font = Input { Value = "Xingkai SC", },
+				Style = Input { Value = "Bold", },
+				Size = Input { Value = 0.202, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			Version = 1
+		},
+		MediaOut1 = Saver {
+			Inputs = {
+				Index = Input { Value = "0", },
+				Input = Input {
+					SourceOp = "JiangxiEarlyAutumn",
+					Source = "Output",
+				}
+			},
+		}
+	},
+	Frames = {
+	},
+	Prefs = {
+		Comp = {
+			Paths = {
+				Map = {
+					["ResolveCaches:"] = "/Users/dtysky/Movies/CacheClip/2790ca2a-c4fb-47db-976f-de8e16ebd2aa/e40c39bc-3b32-4a8f-b7aa-20ee878dc135/6a32eba6-3a61-4345-949a-3663c5860771/Fusion",
+				}
+			},
+			FlowView = {
+				FullToolIndicator = false
+			},
+			Interactive = {
+				Proxy = {
+					Scale = 1,
+				},
+			},
+			FrameFormat = {
+				GuideRatio = 1.77777777777778,
+				DepthFull = 3,
+				DepthPreview = 3,
+				DepthInteractive = 3,
+			},
+			Unsorted = {
+				GlobalEnd = 456
+			},
+			Views = {
+				View1 = {
+				},
+				Defaults = {
+					MaterialViewer = {
+						Options = {
+							TextureDepth = "int8"
+						},
+					},
+					Guides = {
+						SafeImage = true,
+						Center = true,
+						SafeTitle = true,
+					},
+					Viewer = {
+						Layer = "",
+					},
+					View3D = {
+						Options = {
+							ShowUVTangentVectors = false,
+						},
+						TextureDepth = "int8",
+					},
+				},
+			},
+			SpellCheck = {
+			}
+		}
+	},
+}
