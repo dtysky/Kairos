@@ -12,6 +12,8 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
 
 Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
+2026-11-18 调色范围确认：组前曲线与 Clip 级自动修正均暂缓，Group Post 自动风格也暂缓。正式管线保留独立技术检测、Agent 分类、RCM、真实 Color Group、统一七节点准备及导出校验，实际调色由用户完成；保留已有手调和 Beauty／AI 瑕疵移除的模板参数。新片口播默认开关及同组重跑保留合同不变，不代表已自动选肤色。自然还原 A/B/C 仅为隔离试验，不接入固定类别曲线、逐片修正或私有效果模板；详见 `designs/resolve-rcm-scene-pipeline.md`。
+
 Color subagent 默认阅读批次 `agent-input-v2.json`：规则/结构说明一次，共享列的素材与样本行、精确重复文本引用；完整 packet 按需取证。视图格式与分类策略签名独立，精简不使已接受结果失效；详见 `designs/color-agent-classification.md`。
 
 `/color` 主流程为“检查与检测 → Agent 分类 → 应用到 Resolve → 人工调色与导出 → 结果校验”，只突出当前动作。分类 ready 但保留 batchFingerprint 表示待应用，不能因旧 timeline ready 开放导出；准备完成不表示人工调色完成。默认展示分组与素材，配置和维护历史分栏；待 Agent 是交接待办，运行进度仅来自活跃 Supervisor job。侧栏调色入口位于创作组首项，总览注明其依赖已有分析且不阻塞编年史/剪辑。界面状态只在前端保存，详见 `designs/color-agent-classification.md`。 项目级调色：主流程一次准备全部目录、一次复制全部待分类任务、统一应用与导出，素材列表跨目录汇总。项目设置仍按目录独立配置编码、码率及 LOG/RCM/LUT；编辑只修改对应目录，一次保存全部草稿，不自动统一参数。不新增配置协议，不自动迁移现有设置或合并 Resolve Group。

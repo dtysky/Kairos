@@ -4,6 +4,8 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
 
 Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
+2026-11-18 调色范围确认：组前曲线与 Clip 级自动修正均暂缓，Group Post 自动风格也暂缓。正式管线保留独立技术检测、Agent 分类、RCM、真实 Color Group、统一七节点准备及导出校验，实际调色由用户完成；保留已有手调和 Beauty／AI 瑕疵移除的模板参数。新片口播默认开关及同组重跑保留合同不变，不代表已自动选肤色。自然还原 A/B/C 仅为隔离试验，不接入固定类别曲线、逐片修正或私有效果模板；详见 `designs/resolve-rcm-scene-pipeline.md`。
+
 DRP maintenance must open an existing matching project without creating a project or selecting a timeline. For `save_drp_snapshot`, use the documented ProjectManager `SaveProject()` and require `True`, then require `ExportProject()` success and a non-empty valid DRP ZIP before atomically replacing latest. The general render preflight may create a project, so it is not a backup prerequisite. A running Resolve process does not prove that scripting is available: on 2026-10-18, Resolve's log showed script-server `failed to bind socket: Error 1` while the main editor was running. Diagnose this separately from project content, and do not operate or restart the editor merely to verify a code fix.
 
 This is Kairos' local working documentation for DaVinci Resolve scripting. It is not just
@@ -49,6 +51,7 @@ Use [the edit tools contract](../../designs/resolve-edit-tools.md) and `scripts/
 - Live `SetSpeed({Percentage: 200..500, RippleTimeline: true})` preserved source start and retimed linked audio automatically. Source end can move by output-frame quantization. Apply once after append; validate speed, duration, source window and linked bounds before the next placement. Keep existing drive/aerial eligibility and user-confirmed treatments.
 - Live `DuplicateTimeline` selects the new copy. Restore only from our own recovery copy to the verified original target. A new transition appears as a separate track item; include returned transition ids in inventory validation.
 - Subtitle `GetName` reads actual text and `SetPosition` moves an existing subtitle. `SetName` returned False; subtitle offset getters returned None. No verified arbitrary subtitle-text create/write API or automatic SRT import is exposed by our bridge. `SetTranscription` writes media-pool transcript data, not subtitle text. Do not promise general subtitle editing based on generic TimelineItem methods.
+- 2026-11-16，Resolve 21.2.0.6 独立 EP3 片头实测：`MediaPool.ImportMedia([srtPath])` 返回 `Type=Subtitle` 的池项；`AppendToTimeline([{mediaPoolItem: subtitleItem, recordFrame: 0, trackIndex: 1}])` 创建全部 7 条真实字幕，但忽略 `recordFrame=0`，按已有时间线末尾加 SRT cue 偏移放置，返回值仅含首条字幕。必须从 subtitle track 重新枚举全部字幕，以 `SetPosition` 对齐逐条目标帧，并校验 `GetName / GetStart / GetEnd` 与 cue 数量。此为一次性任务验证，不表示正式桥接器已支持自动导入；不得修改 timeline.generate 只输出 SRT 的契约。该机 `Timeline.ExportFrame` 未包含原生字幕，不能仅凭无字幕的静帧判定导入失败。
 - `GetEffects/AddEffect/DeleteEffects` are not color-node graph APIs, and `Effect.GetFusionComp` is not a general OFX parameter setter. Audio, grading and effect-parameter work remains outside this change.
 
 ## Photo Fusion Source Identity (2026-10-21)

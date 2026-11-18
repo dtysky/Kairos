@@ -4,6 +4,8 @@ Color 方向判定只使用待调原片的独立 probe；90° / -90° 供竖屏�
 
 Color 从 2026-11-10 起统一使用 `config/default.drt` 七节点：`Gyroflow → Dehaze → User1 → User2 → Beauty → Blemish Removal → Noise Reduction`。方向只决定竖屏分类和独立 Edit Transform（raw +90→Edit -90，raw -90/270→Edit +90），不再选择 DRT。新片段的 Beauty/Blemish 仅 presenter 默认开启；同组重跑保留人工开关，进出 presenter 时只调整这两个开关。既有五节点、手调、Inspector 与实际 seed hash 保留，模板变化不触发 ResetAllGrades；自定义图需明确迁移。参见 `designs/resolve-rcm-scene-pipeline.md`。
 
+2026-11-18 调色范围确认：组前曲线与 Clip 级自动修正均暂缓，Group Post 自动风格也暂缓。正式管线保留独立技术检测、Agent 分类、RCM、真实 Color Group、统一七节点准备及导出校验，实际调色由用户完成；保留已有手调和 Beauty／AI 瑕疵移除的模板参数。新片口播默认开关及同组重跑保留合同不变，不代表已自动选肤色。自然还原 A/B/C 仅为隔离试验，不接入固定类别曲线、逐片修正或私有效果模板；详见 `designs/resolve-rcm-scene-pipeline.md`。
+
 This file is the root bootstrap entry for any agent working in this repository.
 
 It does not replace the actual rules, design docs, or skills. Its job is to make sure they are discoverable and read in a stable order.
